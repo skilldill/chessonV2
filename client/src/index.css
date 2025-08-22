@@ -54,12 +54,20 @@ body {
     transform: translateY(-50px);
   }
   100% {
-    opacity: 1;
-    transform: translateY(-70px);
+    opacity: .8;
+    transform: translateY(-60px);
   }
 }
 
 .containerComingSoon {
   opacity: 0;
-  animation: comingSoonAnimation 3s 2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  animation: comingSoonAnimation 3s 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.chessImage {
+  width: 30px;
+  height: 30px;
 }
