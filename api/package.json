@@ -1,0 +1,25 @@
+{
+  "name": "math-battle-api",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "start": "bun run index.ts",
+    "dev": "bun --watch run index.ts",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/mongoose": "^5.11.97"
+  },
+  "peerDependencies": {
+    "typescript": "^5.8.2"
+  },
+  "dependencies": {
+    "elysia": "0.7.4",
+    "mongoose": "^8.16.0",
+    "uuid": "^11.1.0"
+  },
+  "bun": {
+    "module": "index.ts"
+  }
+}

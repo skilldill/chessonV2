@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+mockUsers.md
+
+# SQLite database
+*.db
+*.db-journal
+
+# Logs
+*.log
+npm-debug.log*
+
+# Build output
+dist/
+build/
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Docker volumes
+docker-volumes/ 
