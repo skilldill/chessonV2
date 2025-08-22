@@ -1,5 +1,5 @@
 {
-  "name": "math-battle-api",
+  "name": "chesson-api",
   "module": "index.ts",
   "type": "module",
   "scripts": {
