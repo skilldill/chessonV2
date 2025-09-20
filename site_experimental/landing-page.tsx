@@ -330,92 +330,115 @@ function AnimatedChessPiece({
   const [pieceType] = useState(() => Math.floor(Math.random() * 4))
   const pieceColor = pieceId % 2 === 0 ? "#8b5cf6" : "#ffffff"
 
+  const cellSize = 3
+  const min = -13.5
+  const max = 13.5
+
   const getPositionKey = (pos: THREE.Vector3) => `${pos.x},${pos.z}`
+
+  // Список всех валидных клеток на поле (10×10)
+  const allCells = useRef<string[]>([])
+  if (allCells.current.length === 0) {
+    for (let x = min; x <= max; x += cellSize) {
+      for (let z = min; z <= max; z += cellSize) {
+        allCells.current.push(`${x + 1.5},${z + 1.5}`)
+      }
+    }
+  }
 
   useEffect(() => {
     const initialKey = getPositionKey(currentPosition.current)
     occupiedPositions.add(initialKey)
-
     return () => {
       occupiedPositions.delete(initialKey)
     }
   }, [])
 
+  const clampSnap = (v: THREE.Vector3) => {
+    v.x = Math.max(min, Math.min(max, Math.round((v.x - 1.5) / cellSize) * cellSize + 1.5))
+    v.z = Math.max(min, Math.min(max, Math.round((v.z - 1.5) / cellSize) * cellSize + 1.5))
+    v.y = 0.5
+    return v
+  }
+
+  // Пытаемся сделать "шахматный" ход; если нет — берём любую свободную клетку
   const getChessMove = (current: THREE.Vector3, type: number) => {
-    const cellSize = 3 // Grid cell size
-    const possibleMoves: [number, number][] = [
-      [cellSize, 0],
-      [-cellSize, 0], // horizontal
-      [0, cellSize],
-      [0, -cellSize], // vertical
-      [cellSize, cellSize],
-      [-cellSize, -cellSize], // diagonal
-      [cellSize, -cellSize],
-      [-cellSize, cellSize], // diagonal
-      [cellSize * 2, 0],
-      [-cellSize * 2, 0], // longer horizontal
-      [0, cellSize * 2],
-      [0, -cellSize * 2], // longer vertical
-      [cellSize * 2, cellSize],
-      [-cellSize * 2, -cellSize], // longer diagonal
-      [cellSize, cellSize * 2],
-      [-cellSize, -cellSize * 2], // longer diagonal
+    const steps: [number, number][] = [
+      [cellSize, 0], [-cellSize, 0], [0, cellSize], [0, -cellSize],
+      [cellSize, cellSize], [-cellSize, -cellSize], [cellSize, -cellSize], [-cellSize, cellSize],
+      [cellSize * 2, 0], [-cellSize * 2, 0], [0, cellSize * 2], [0, -cellSize * 2],
+      [cellSize * 2, cellSize], [-cellSize * 2, -cellSize], [cellSize, cellSize * 2], [-cellSize, -cellSize * 2],
     ]
+    const shuffled = [...steps].sort(() => Math.random() - 0.5)
 
-    const shuffledMoves = [...possibleMoves].sort(() => Math.random() - 0.5)
-
-    for (const move of shuffledMoves) {
-      const newPos = new THREE.Vector3(current.x + move[0], 0.5, current.z + move[1])
-
-      newPos.x = Math.max(-13.5, Math.min(13.5, Math.round((newPos.x - 1.5) / 3) * 3 + 1.5))
-      newPos.z = Math.max(-13.5, Math.min(13.5, Math.round((newPos.z - 1.5) / 3) * 3 + 1.5))
-
-      const posKey = getPositionKey(newPos)
-
-      if (!occupiedPositions.has(posKey)) {
-        return newPos
-      }
+    for (const [dx, dz] of shuffled) {
+      const np = clampSnap(new THREE.Vector3(current.x + dx, 0.5, current.z + dz))
+      const key = getPositionKey(np)
+      if (!occupiedPositions.has(key)) return np
     }
 
+    // fallback — ищем любую свободную клетку на всём поле
+    const freeCells = allCells.current.filter((key) => !occupiedPositions.has(key))
+    if (freeCells.length > 0) {
+      // избегаем возврата в ту же клетку
+      const notCurrent = freeCells.filter((k) => k !== getPositionKey(current))
+      const pool = notCurrent.length ? notCurrent : freeCells
+      const [xStr, zStr] = pool[Math.floor(Math.random() * pool.length)].split(",")
+      return new THREE.Vector3(parseFloat(xStr), 0.5, parseFloat(zStr))
+    }
+
+    // теоретически недостижимо при 10 фигурах на 100 клетках
     return new THREE.Vector3(current.x, 0.5, current.z)
   }
 
-  useEffect(() => {
-    const randomInterval = 2000 + Math.random() * 1500 // 2000-3500ms random interval
-    const interval = setInterval(() => {
-      const currentKey = getPositionKey(currentPosition.current)
-      const newPosition = getChessMove(currentPosition.current, pieceType)
-      const newKey = getPositionKey(newPosition)
-
-      if (currentKey !== newKey) {
-        occupiedPositions.delete(currentKey)
-        occupiedPositions.add(newKey)
-        setTargetPosition(newPosition)
-      }
-    }, randomInterval)
-
-    return () => clearInterval(interval)
-  }, [pieceType])
-
-  useFrame((state, delta) => {
-    if (meshRef.current) {
-      currentPosition.current.lerp(targetPosition, 0.05)
-      meshRef.current.position.copy(currentPosition.current)
+  // Движение к цели
+  useFrame(() => {
+    if (!meshRef.current) return
+    // сглаживание
+    currentPosition.current.lerp(targetPosition, 0.06)
+    // снап, когда почти пришли
+    if (currentPosition.current.distanceTo(targetPosition) < 0.01) {
+      currentPosition.current.copy(targetPosition)
     }
+    meshRef.current.position.copy(currentPosition.current)
   })
+
+  // Рекурсивный таймер: новый рандомный интервал после каждого хода
+  useEffect(() => {
+    let cancelled = false
+
+    const scheduleNextMove = () => {
+      const delay = 2000 + Math.random() * 1500 // 2000–3500 мс на каждый новый ход
+      const t = setTimeout(() => {
+        if (cancelled) return
+        const currentKey = getPositionKey(currentPosition.current)
+        const next = getChessMove(currentPosition.current, pieceType)
+        const nextKey = getPositionKey(next)
+        if (currentKey !== nextKey) {
+          occupiedPositions.delete(currentKey)
+          occupiedPositions.add(nextKey)
+          setTargetPosition(next)
+        }
+        scheduleNextMove() // планируем следующий шаг с новым delay
+      }, delay)
+      // возвращаем clearer для этого цикла
+      return () => clearTimeout(t)
+    }
+
+    const clear = scheduleNextMove()
+    return () => {
+      cancelled = true
+      clear()
+    }
+  }, [pieceType])
 
   const renderChessPiece = () => {
     switch (pieceType) {
-      case 0:
-        return <ChessPawn color={pieceColor} />
-      case 1:
-        return <ChessRook color={pieceColor} />
-      case 2:
-        return <ChessQueen color={pieceColor} />
-      case 3:
-        return <ChessKing color={pieceColor} />
-      default:
-        return <ChessPawn color={pieceColor} />
+      case 0: return <ChessPawn color={pieceColor} />
+      case 1: return <ChessRook color={pieceColor} />
+      case 2: return <ChessQueen color={pieceColor} />
+      case 3: return <ChessKing color={pieceColor} />
+      default: return <ChessPawn color={pieceColor} />
     }
   }
 
@@ -425,6 +448,7 @@ function AnimatedChessPiece({
     </group>
   )
 }
+
 
 function Scene() {
   const initialPositions: [number, number, number][] = [
