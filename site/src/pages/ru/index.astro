@@ -1,6 +1,6 @@
 ---
-import Layout from "../layouts/Layout.astro";
-import { Chessboard3D } from "../components/Chessboard3D";
+import Layout from "../../layouts/Layout.astro";
+import { Chessboard3D } from "../../components/Chessboard3D";
 ---
 
 <Layout>
@@ -16,15 +16,15 @@ import { Chessboard3D } from "../components/Chessboard3D";
 			class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 text-center"
 		>
 			<h1 class="font-bold mb-8 max-w-4xl mx-auto text-3xl sm:text-4xl md:text-5xl lg:text-7xl">
-				Online Chess — <br> play for free with friends
+				Онлайн шахматы — играй бесплатно с друзьями
 			</h1>
 			<h2 class="mb-10 font-normal text-xl sm:text-2xl md:text-3xl lg:text-4xl">
-				Create a room in seconds and start a game without registration
+				Создай комнату за секунду и начни партию без регистрации
 			</h2>
 			<button
 				class="bg-white text-black font-bold py-3 px-6 rounded-md hover:bg-gray-200 transition duration-300 text-lg cursor-pointer"
 			>
-				Create Room
+				Создать комнату
 			</button>
 		</div>
 		<Chessboard3D client:only />
