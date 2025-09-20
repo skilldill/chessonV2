@@ -1,0 +1,32 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { Chessboard3D } from "../components/Chessboard3D";
+---
+
+<Layout>
+	<div class="relative w-full h-screen bg-black text-white overflow-hidden">
+		<header class="absolute top-0 left-0 right-0 z-10 p-4">
+			<nav class="flex justify-between items-center max-w-6xl mx-auto">
+			  <div class="flex items-center">
+				<img src="/chesson-logo.svg" alt="Chesson Logo" />
+			  </div>
+			</nav>
+		  </header>
+		<div
+			class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 text-center"
+		>
+			<h1 class="font-bold mb-8 max-w-4xl mx-auto text-7xl">
+				Онлайн шахматы — играй бесплатно с друзьями
+			</h1>
+			<h2 class="mb-10 font-normal text-2xl">
+				Создай комнату за секунду и начни партию без регистрации
+			</h2>
+			<button
+				class="bg-white text-black font-bold py-3 px-6 rounded-md hover:bg-gray-200 transition duration-300 text-lg cursor-pointer"
+			>
+				Создать комнату
+			</button>
+		</div>
+		<Chessboard3D client:only />
+	</div>
+</Layout>
