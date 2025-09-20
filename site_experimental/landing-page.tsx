@@ -13,10 +13,8 @@ const occupiedPositions = new Set<string>()
 function SpinningLogo() {
   const groupRef = useRef<THREE.Group>(null)
 
-  useFrame((state, delta) => {
-    if (groupRef.current) {
-      groupRef.current.rotation.y += delta * 0.5
-    }
+  useFrame((_, delta) => {
+    if (groupRef.current) groupRef.current.rotation.y += delta * 0.5
   })
 
   return (
@@ -162,7 +160,6 @@ function ChessRook({ color }: { color: string }) {
 function ChessQueen({ color }: { color: string }) {
   return (
     <group>
-      {/* Base */}
       <mesh position={[0, 0.08, 0]} castShadow>
         <cylinderGeometry args={[0.8, 0.8, 0.2, 20]} />
         <meshStandardMaterial color={color} metalness={0.3} roughness={0.4} />
@@ -175,14 +172,10 @@ function ChessQueen({ color }: { color: string }) {
         <cylinderGeometry args={[0.7, 0.75, 0.08, 20]} />
         <meshStandardMaterial color={color} metalness={0.3} roughness={0.4} />
       </mesh>
-
-      {/* Lower body - wider base tapering upward */}
       <mesh position={[0, 0.65, 0]} castShadow>
         <cylinderGeometry args={[0.45, 0.65, 0.8, 20]} />
         <meshStandardMaterial color={color} metalness={0.3} roughness={0.4} />
       </mesh>
-
-      {/* Mid section with decorative rings */}
       <mesh position={[0, 1.15, 0]} castShadow>
         <cylinderGeometry args={[0.52, 0.45, 0.3, 20]} />
         <meshStandardMaterial color={color} metalness={0.3} roughness={0.4} />
@@ -191,20 +184,14 @@ function ChessQueen({ color }: { color: string }) {
         <cylinderGeometry args={[0.48, 0.52, 0.1, 20]} />
         <meshStandardMaterial color={color} metalness={0.3} roughness={0.4} />
       </mesh>
-
-      {/* Upper stem - elegant taper */}
       <mesh position={[0, 1.8, 0]} castShadow>
         <cylinderGeometry args={[0.35, 0.45, 0.8, 20]} />
         <meshStandardMaterial color={color} metalness={0.3} roughness={0.4} />
       </mesh>
-
-      {/* Crown base - wider section */}
       <mesh position={[0, 2.35, 0]} castShadow>
         <cylinderGeometry args={[0.55, 0.35, 0.4, 20]} />
         <meshStandardMaterial color={color} metalness={0.3} roughness={0.4} />
       </mesh>
-
-      {/* Crown decorative rings */}
       <mesh position={[0, 2.6, 0]} castShadow>
         <cylinderGeometry args={[0.58, 0.55, 0.08, 20]} />
         <meshStandardMaterial color={color} metalness={0.3} roughness={0.4} />
@@ -213,14 +200,10 @@ function ChessQueen({ color }: { color: string }) {
         <cylinderGeometry args={[0.56, 0.58, 0.06, 20]} />
         <meshStandardMaterial color={color} metalness={0.3} roughness={0.4} />
       </mesh>
-
-      {/* Crown top - rounded dome shape */}
       <mesh position={[0, 2.95, 0]} castShadow>
         <cylinderGeometry args={[0.45, 0.56, 0.3, 20]} />
         <meshStandardMaterial color={color} metalness={0.3} roughness={0.4} />
       </mesh>
-
-      {/* Spherical finial at the very top */}
       <mesh position={[0, 3.25, 0]} castShadow>
         <sphereGeometry args={[0.2, 16, 12]} />
         <meshStandardMaterial color={color} metalness={0.3} roughness={0.4} />
@@ -232,7 +215,6 @@ function ChessQueen({ color }: { color: string }) {
 function ChessKing({ color }: { color: string }) {
   return (
     <group>
-      {/* Base with decorative rings */}
       <mesh position={[0, 0.08, 0]} castShadow>
         <cylinderGeometry args={[0.8, 0.8, 0.2, 20]} />
         <meshStandardMaterial color={color} metalness={0.3} roughness={0.4} />
@@ -245,68 +227,46 @@ function ChessKing({ color }: { color: string }) {
         <cylinderGeometry args={[0.7, 0.75, 0.08, 20]} />
         <meshStandardMaterial color={color} metalness={0.3} roughness={0.4} />
       </mesh>
-
-      {/* Lower body - wide base tapering upward */}
       <mesh position={[0, 0.75, 0]} castShadow>
         <cylinderGeometry args={[0.45, 0.65, 1.0, 20]} />
         <meshStandardMaterial color={color} metalness={0.3} roughness={0.4} />
       </mesh>
-
-      {/* Decorative beaded ring */}
       <mesh position={[0, 1.35, 0]} castShadow>
         <cylinderGeometry args={[0.52, 0.45, 0.12, 20]} />
         <meshStandardMaterial color={color} metalness={0.3} roughness={0.4} />
       </mesh>
-
-      {/* Mid stem - elegant taper */}
       <mesh position={[0, 1.8, 0]} castShadow>
         <cylinderGeometry args={[0.38, 0.48, 0.8, 20]} />
         <meshStandardMaterial color={color} metalness={0.3} roughness={0.4} />
       </mesh>
-
-      {/* Another decorative beaded ring */}
       <mesh position={[0, 2.3, 0]} castShadow>
         <cylinderGeometry args={[0.45, 0.38, 0.15, 20]} />
         <meshStandardMaterial color={color} metalness={0.3} roughness={0.4} />
       </mesh>
-
-      {/* Upper stem continuing the taper */}
       <mesh position={[0, 2.7, 0]} castShadow>
         <cylinderGeometry args={[0.32, 0.42, 0.6, 20]} />
         <meshStandardMaterial color={color} metalness={0.3} roughness={0.4} />
       </mesh>
-
-      {/* Crown base - bulbous section like in reference */}
       <mesh position={[0, 3.2, 0]} castShadow>
         <sphereGeometry args={[0.55, 20, 16]} />
         <meshStandardMaterial color={color} metalness={0.3} roughness={0.4} />
       </mesh>
-
-      {/* Decorative beaded ring around crown */}
       <mesh position={[0, 3.6, 0]} castShadow>
         <cylinderGeometry args={[0.42, 0.45, 0.08, 20]} />
         <meshStandardMaterial color={color} metalness={0.3} roughness={0.4} />
       </mesh>
-
-      {/* Crown top section */}
       <mesh position={[0, 3.85, 0]} castShadow>
         <cylinderGeometry args={[0.35, 0.42, 0.3, 20]} />
         <meshStandardMaterial color={color} metalness={0.3} roughness={0.4} />
       </mesh>
-
-      {/* Cross - vertical beam */}
       <mesh position={[0, 4.2, 0]} castShadow>
         <boxGeometry args={[0.08, 0.6, 0.08]} />
         <meshStandardMaterial color={color} metalness={0.3} roughness={0.4} />
       </mesh>
-
-      {/* Cross - horizontal beam */}
       <mesh position={[0, 4.35, 0]} castShadow>
         <boxGeometry args={[0.35, 0.08, 0.08]} />
         <meshStandardMaterial color={color} metalness={0.3} roughness={0.4} />
       </mesh>
-
-      {/* Cross center reinforcement */}
       <mesh position={[0, 4.35, 0]} castShadow>
         <boxGeometry args={[0.12, 0.12, 0.12]} />
         <meshStandardMaterial color={color} metalness={0.3} roughness={0.4} />
@@ -320,6 +280,8 @@ function AnimatedChessPiece({
   pieceId,
 }: { initialPosition: [number, number, number]; pieceId: number }) {
   const meshRef = useRef<THREE.Group>(null)
+  const highlightMatRef = useRef<THREE.MeshStandardMaterial>(null)
+
   const snappedInitial: [number, number, number] = [
     Math.round(initialPosition[0] / 3) * 3 + 1.5,
     initialPosition[1],
@@ -336,7 +298,7 @@ function AnimatedChessPiece({
 
   const getPositionKey = (pos: THREE.Vector3) => `${pos.x},${pos.z}`
 
-  // Список всех валидных клеток на поле (10×10)
+  // список всех клеток 10×10
   const allCells = useRef<string[]>([])
   if (allCells.current.length === 0) {
     for (let x = min; x <= max; x += cellSize) {
@@ -361,8 +323,8 @@ function AnimatedChessPiece({
     return v
   }
 
-  // Пытаемся сделать "шахматный" ход; если нет — берём любую свободную клетку
-  const getChessMove = (current: THREE.Vector3, type: number) => {
+  // ходы бесконечные: если нет «шахматных» — прыжок на любую свободную клетку
+  const getChessMove = (current: THREE.Vector3, _type: number) => {
     const steps: [number, number][] = [
       [cellSize, 0], [-cellSize, 0], [0, cellSize], [0, -cellSize],
       [cellSize, cellSize], [-cellSize, -cellSize], [cellSize, -cellSize], [-cellSize, cellSize],
@@ -377,38 +339,43 @@ function AnimatedChessPiece({
       if (!occupiedPositions.has(key)) return np
     }
 
-    // fallback — ищем любую свободную клетку на всём поле
-    const freeCells = allCells.current.filter((key) => !occupiedPositions.has(key))
-    if (freeCells.length > 0) {
-      // избегаем возврата в ту же клетку
+    const freeCells = allCells.current.filter((k) => !occupiedPositions.has(k))
+    if (freeCells.length) {
       const notCurrent = freeCells.filter((k) => k !== getPositionKey(current))
       const pool = notCurrent.length ? notCurrent : freeCells
       const [xStr, zStr] = pool[Math.floor(Math.random() * pool.length)].split(",")
       return new THREE.Vector3(parseFloat(xStr), 0.5, parseFloat(zStr))
     }
 
-    // теоретически недостижимо при 10 фигурах на 100 клетках
     return new THREE.Vector3(current.x, 0.5, current.z)
   }
 
-  // Движение к цели
+  // плавное движение + анимация яркости подсветки
   useFrame(() => {
     if (!meshRef.current) return
-    // сглаживание
+
     currentPosition.current.lerp(targetPosition, 0.06)
-    // снап, когда почти пришли
-    if (currentPosition.current.distanceTo(targetPosition) < 0.01) {
-      currentPosition.current.copy(targetPosition)
+    const dist = currentPosition.current.distanceTo(targetPosition)
+
+    if (highlightMatRef.current) {
+      const targetOpacity = dist < 0.02 ? 0.85 : 0.0
+      highlightMatRef.current.opacity = THREE.MathUtils.lerp(
+        highlightMatRef.current.opacity ?? 0,
+        targetOpacity,
+        0.2
+      )
     }
+
+    if (dist < 0.01) currentPosition.current.copy(targetPosition)
     meshRef.current.position.copy(currentPosition.current)
   })
 
-  // Рекурсивный таймер: новый рандомный интервал после каждого хода
+  // рекурсивный таймер хода
   useEffect(() => {
     let cancelled = false
 
     const scheduleNextMove = () => {
-      const delay = 2000 + Math.random() * 1500 // 2000–3500 мс на каждый новый ход
+      const delay = 2000 + Math.random() * 1500
       const t = setTimeout(() => {
         if (cancelled) return
         const currentKey = getPositionKey(currentPosition.current)
@@ -419,9 +386,8 @@ function AnimatedChessPiece({
           occupiedPositions.add(nextKey)
           setTargetPosition(next)
         }
-        scheduleNextMove() // планируем следующий шаг с новым delay
+        scheduleNextMove()
       }, delay)
-      // возвращаем clearer для этого цикла
       return () => clearTimeout(t)
     }
 
@@ -444,11 +410,24 @@ function AnimatedChessPiece({
 
   return (
     <group ref={meshRef} position={snappedInitial}>
+      {/* подсветка клетки под фигурой */}
+      <mesh position={[0, -0.49, 0]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={1}>
+        <planeGeometry args={[3, 3]} />
+        <meshStandardMaterial
+          ref={highlightMatRef}
+          color={"#868686"}
+          emissive={"#868686"}
+          emissiveIntensity={0.1}
+          transparent
+          opacity={0}
+          depthWrite={false}
+        />
+      </mesh>
+
       {renderChessPiece()}
     </group>
   )
 }
-
 
 function Scene() {
   const initialPositions: [number, number, number][] = [
@@ -505,7 +484,7 @@ function Scene() {
           const isLightSquare = (row + col) % 2 === 1
           const cellX = -22.5 + col * 3
           const cellZ = -22.5 + row * 3
-          const cellKey = `${cellX + 1.5},${cellZ + 1.5}` // Offset to match piece positioning
+          const cellKey = `${cellX + 1.5},${cellZ + 1.5}`
           const isOccupied = occupiedPositions.has(cellKey)
 
           if (isLightSquare) {
@@ -559,6 +538,7 @@ export default function Component() {
           </ul>
         </nav>
       </header>
+
       <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 text-center">
         <h1 className="font-bold mb-8 max-w-4xl mx-auto text-7xl">Онлайн шахматы — играй бесплатно с друзьями</h1>
         <h2 className="mb-10 font-normal text-2xl">Создай комнату за секунду и начни партию без регистрации</h2>
@@ -568,6 +548,7 @@ export default function Component() {
           </button>
         </a>
       </div>
+
       <Canvas shadows camera={{ position: [30, 30, 30], fov: 50 }} className="absolute inset-0">
         <Scene />
       </Canvas>
