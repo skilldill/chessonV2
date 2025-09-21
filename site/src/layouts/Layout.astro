@@ -1,16 +1,73 @@
 ---
 import '../styles/global.css';
+
+const {
+	lang,
+	title,
+	description,
+	canonicalUrl,
+	ogImage,
+	locale,
+} = Astro.props;
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang={lang}>
 	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta charset="utf-8" />
+		<title>
+			{title}
+		</title>
+		<meta
+			name="description"
+			content={description}
+		/>
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<link rel="canonical" href={canonicalUrl} />
+
+		<link rel="icon" href="/favicon.ico" type="image/x-icon" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Astro Basics</title>
+
+		<!-- Open Graph -->
+		<meta property="og:title" content={title} />
+		<meta
+			property="og:description"
+			content={description}
+		/>
+		<meta property="og:type" content="website" />
+		<meta property="og:url" content={canonicalUrl} />
+		<meta
+			property="og:image"
+			content={ogImage}
+		/>
+		<meta property="og:site_name" content={title} />
+		<meta property="og:locale" content={locale} />
+
+		<!-- Twitter -->
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content={title} />
+		<meta
+			name="twitter:description"
+			content={description}
+		/>
+		<meta
+			name="twitter:image"
+			content={ogImage}
+		/>
+
+		<!-- JSON-LD: WebSite -->
+		<script type="application/ld+json">
+			{
+				"@context": "https://schema.org",
+				"@type": "WebSite",
+				"name": "ChessOn",
+				"url": "https://chesson.me/"
+			}
+		</script>
+
 	</head>
+
+
 	<body>
 		<slot />
 	</body>
