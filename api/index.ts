@@ -145,6 +145,7 @@ app.ws('/ws/room', {
           }
       }
   },
+
   message(ws, { message }) {
       const { roomId } = ws.data.query;
       const room = rooms.get(roomId);
@@ -176,55 +177,21 @@ app.ws('/ws/room', {
           }
       }
   },
+
   close(ws) {
-      const { roomId } = ws.data.query;
-      const room = rooms.get(roomId);
-      if (!room) return;
+    const { roomId } = ws.data.query;
+    const room = rooms.get(roomId);
+    if (!room) return;
 
-      // Находим пользователя по WebSocket соединению
-      let disconnectedUserId: string | null = null;
-      let disconnectedUserName: string | null = null;
-      
-      for (const [userId, userData] of room.users) {
-          if (userData.ws === ws) {
-              disconnectedUserId = userId;
-              disconnectedUserName = userData.userName;
-              break;
-          }
+    for (const [_, userData] of room.users) {
+      const { userName } = userData;
+
+      if (userName !== ws.data.query.userName) {
+        userData.ws.send({ system: true, message: `${ws.data.query.userName} отключился` });
+      } else {
+        userData.isConnected = false;
       }
-
-      if (!disconnectedUserId || !disconnectedUserName) return;
-
-      // Помечаем пользователя как отключенного, но не удаляем из комнаты
-      const userData = room.users.get(disconnectedUserId);
-      if (userData) {
-          userData.isConnected = false;
-          userData.ws = null as any; // Очищаем ссылку на WebSocket
-      }
-
-      // уведомляем подключенных пользователей об отключении
-      for (const [id, userData] of room.users) {
-          if (id !== disconnectedUserId && userData.isConnected && userData.ws) {
-              userData.ws.send({ system: true, message: `${disconnectedUserName} отключился` });
-          }
-      }
-
-      // Проверяем, есть ли подключенные пользователи
-      const connectedUsers = Array.from(room.users.values()).filter(user => user.isConnected);
-      
-      // если нет подключенных пользователей — удаляем комнату через 5 минут
-      if (connectedUsers.length === 0) {
-          setTimeout(() => {
-              const room = rooms.get(roomId);
-              if (room) {
-                  const stillConnected = Array.from(room.users.values()).filter(user => user.isConnected);
-                  if (stillConnected.length === 0) {
-                      rooms.delete(roomId);
-                      console.log(`Комната ${roomId} удалена из-за отсутствия подключенных пользователей`);
-                  }
-              }
-          }, 5 * 60 * 1000); // 5 минут
-      }
+    }
   }
 });
 
