@@ -50,11 +50,26 @@ type CursorPosition = {
     y: number;
 };
 
+type GameResult = {
+    resultType: "mat" | "pat" | "draw" | "resignation";
+    winColor?: "white" | "black";
+};
+
+type DrawOffer = {
+    from: string;
+    to: string;
+    status: "pending" | "accepted" | "declined";
+};
+
 type GameState = {
     currentFEN: string;
     moveHistory: MoveData[];
     currentPlayer: "white" | "black";
     gameStarted: boolean;
+    gameEnded: boolean;
+    gameResult?: GameResult;
+    drawOffer?: DrawOffer;
+    drawOfferCount: { [userId: string]: number };
 };
 
 type UserData = {
@@ -90,7 +105,11 @@ app.post('/api/rooms', () => {
       currentFEN: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", // Starting position
       moveHistory: [],
       currentPlayer: "white" as "white" | "black",
-      gameStarted: false
+      gameStarted: false,
+      gameEnded: false,
+      gameResult: undefined,
+      drawOffer: undefined,
+      drawOfferCount: {}
     }
   };
   rooms.set(roomId, room);
@@ -138,6 +157,32 @@ app.ws('/ws/room', {
         x: t.Number(),
         y: t.Number()
       })
+    }),
+    t.Object({
+      type: t.Literal("gameResult"),
+      gameResult: t.Object({
+        resultType: t.Union([
+          t.Literal("mat"),
+          t.Literal("pat"),
+          t.Literal("draw"),
+          t.Literal("resignation")
+        ]),
+        winColor: t.Optional(t.Union([
+          t.Literal("white"),
+          t.Literal("black")
+        ]))
+      })
+    }),
+    t.Object({
+      type: t.Literal("drawOffer"),
+      action: t.Union([
+        t.Literal("offer"),
+        t.Literal("accept"),
+        t.Literal("decline")
+      ])
+    }),
+    t.Object({
+      type: t.Literal("resign")
     })
   ]),
 
@@ -152,7 +197,11 @@ app.ws('/ws/room', {
               currentFEN: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
               moveHistory: [],
               currentPlayer: "white" as "white" | "black",
-              gameStarted: false
+              gameStarted: false,
+              gameEnded: false,
+              gameResult: undefined,
+              drawOffer: undefined,
+              drawOfferCount: {}
             }
           };
           rooms.set(roomId, room);
@@ -300,6 +349,11 @@ app.ws('/ws/room', {
               return;
           }
 
+          if (room.gameState.gameEnded) {
+              ws.send({ system: true, message: "Игра уже завершена" });
+              return;
+          }
+
           // Проверяем, что ход делает правильный игрок
           if (senderUserData.color !== room.gameState.currentPlayer) {
               ws.send({ system: true, message: "Не ваш ход!" });
@@ -337,6 +391,254 @@ app.ws('/ws/room', {
                       from: senderUserData.userName,
                       userId: senderUserId,
                       time: Date.now()
+                  });
+              }
+          }
+      } else if (data.type === "gameResult") {
+          // Результат игры
+          if (!room.gameState.gameStarted) {
+              ws.send({ system: true, message: "Игра еще не началась" });
+              return;
+          }
+
+          if (room.gameState.gameEnded) {
+              ws.send({ system: true, message: "Игра уже завершена" });
+              return;
+          }
+
+          // Обновляем состояние игры
+          room.gameState.gameEnded = true;
+          room.gameState.gameResult = data.gameResult;
+
+          // Отправляем результат всем игрокам
+          for (const [id, userData] of room.users) {
+              if (userData.isConnected && userData.ws) {
+                  userData.ws.send({
+                      type: "gameResult",
+                      gameResult: data.gameResult,
+                      from: senderUserData.userName,
+                      userId: senderUserId,
+                      gameState: room.gameState,
+                      time: Date.now()
+                  });
+              }
+          }
+
+          // Отправляем системное сообщение о результате
+          let resultMessage = "";
+          if (data.gameResult.resultType === "mat") {
+              resultMessage = `Мат! Победили ${data.gameResult.winColor === "white" ? "белые" : "черные"}!`;
+          } else if (data.gameResult.resultType === "pat") {
+              resultMessage = "Пат! Ничья!";
+          } else if (data.gameResult.resultType === "draw") {
+              resultMessage = "Ничья!";
+          } else if (data.gameResult.resultType === "resignation") {
+              resultMessage = `Сдача! Победили ${data.gameResult.winColor === "white" ? "белые" : "черные"}!`;
+          }
+
+          for (const [id, userData] of room.users) {
+              if (userData.isConnected && userData.ws) {
+                  userData.ws.send({
+                      system: true,
+                      message: resultMessage,
+                      type: "gameEnd"
+                  });
+              }
+          }
+      } else if (data.type === "drawOffer") {
+          // Предложение ничьей
+          if (!room.gameState.gameStarted) {
+              ws.send({ system: true, message: "Игра еще не началась" });
+              return;
+          }
+
+          if (room.gameState.gameEnded) {
+              ws.send({ system: true, message: "Игра уже завершена" });
+              return;
+          }
+
+          if (data.action === "offer") {
+              // Предложение ничьей
+              if (room.gameState.drawOffer && room.gameState.drawOffer.status === "pending") {
+                  ws.send({ system: true, message: "Уже есть активное предложение ничьей" });
+                  return;
+              }
+
+              // Проверяем лимит предложений ничьей (максимум 2 на игрока)
+              const offerCount = room.gameState.drawOfferCount[senderUserId] || 0;
+              if (offerCount >= 2) {
+                  ws.send({ system: true, message: "Вы исчерпали лимит предложений ничьей" });
+                  return;
+              }
+
+              // Находим оппонента
+              let opponentUserId: string | null = null;
+              let opponentUserName: string | null = null;
+              for (const [id, userData] of room.users) {
+                  if (id !== senderUserId) {
+                      opponentUserId = id;
+                      opponentUserName = userData.userName;
+                      break;
+                  }
+              }
+
+              if (!opponentUserId || !opponentUserName) {
+                  ws.send({ system: true, message: "Оппонент не найден" });
+                  return;
+              }
+
+              // Создаем предложение ничьей
+              room.gameState.drawOffer = {
+                  from: senderUserId,
+                  to: opponentUserId,
+                  status: "pending"
+              };
+
+              // Увеличиваем счетчик предложений
+              room.gameState.drawOfferCount[senderUserId] = offerCount + 1;
+
+              // Отправляем предложение оппоненту
+              const opponent = room.users.get(opponentUserId);
+              if (opponent && opponent.ws) {
+                  opponent.ws.send({
+                      type: "drawOffer",
+                      action: "offer",
+                      from: senderUserData.userName,
+                      userId: senderUserId,
+                      gameState: room.gameState,
+                      time: Date.now()
+                  });
+              }
+
+              // Уведомляем отправителя
+              ws.send({ 
+                  system: true, 
+                  message: `Предложение ничьей отправлено ${opponentUserName}` 
+              });
+
+          } else if (data.action === "accept") {
+              // Принятие предложения ничьей
+              if (!room.gameState.drawOffer || room.gameState.drawOffer.status !== "pending") {
+                  ws.send({ system: true, message: "Нет активного предложения ничьей" });
+                  return;
+              }
+
+              if (room.gameState.drawOffer.to !== senderUserId) {
+                  ws.send({ system: true, message: "Это предложение не для вас" });
+                  return;
+              }
+
+              // Обновляем статус предложения
+              room.gameState.drawOffer.status = "accepted";
+
+              // Завершаем игру ничьей
+              room.gameState.gameEnded = true;
+              room.gameState.gameResult = {
+                  resultType: "draw"
+              };
+
+              // Отправляем результат всем игрокам
+              for (const [id, userData] of room.users) {
+                  if (userData.isConnected && userData.ws) {
+                      userData.ws.send({
+                          type: "gameResult",
+                          gameResult: room.gameState.gameResult,
+                          from: senderUserData.userName,
+                          userId: senderUserId,
+                          gameState: room.gameState,
+                          time: Date.now()
+                      });
+                  }
+              }
+
+              // Отправляем системное сообщение
+              for (const [id, userData] of room.users) {
+                  if (userData.isConnected && userData.ws) {
+                      userData.ws.send({
+                          system: true,
+                          message: "Предложение ничьей принято! Игра завершена ничьей.",
+                          type: "gameEnd"
+                      });
+                  }
+              }
+
+          } else if (data.action === "decline") {
+              // Отклонение предложения ничьей
+              if (!room.gameState.drawOffer || room.gameState.drawOffer.status !== "pending") {
+                  ws.send({ system: true, message: "Нет активного предложения ничьей" });
+                  return;
+              }
+
+              if (room.gameState.drawOffer.to !== senderUserId) {
+                  ws.send({ system: true, message: "Это предложение не для вас" });
+                  return;
+              }
+
+              // Обновляем статус предложения
+              room.gameState.drawOffer.status = "declined";
+
+              // Уведомляем отправителя предложения
+              const offerSender = room.users.get(room.gameState.drawOffer.from);
+              if (offerSender && offerSender.ws) {
+                  offerSender.ws.send({
+                      system: true,
+                      message: `${senderUserData.userName} отклонил предложение ничьей`
+                  });
+              }
+
+              // Уведомляем отклоняющего
+              ws.send({ 
+                  system: true, 
+                  message: "Предложение ничьей отклонено" 
+              });
+
+              // Очищаем предложение
+              room.gameState.drawOffer = undefined;
+          }
+
+      } else if (data.type === "resign") {
+          // Сдача
+          if (!room.gameState.gameStarted) {
+              ws.send({ system: true, message: "Игра еще не началась" });
+              return;
+          }
+
+          if (room.gameState.gameEnded) {
+              ws.send({ system: true, message: "Игра уже завершена" });
+              return;
+          }
+
+          // Определяем победителя (противоположный цвет)
+          const winnerColor = senderUserData.color === "white" ? "black" : "white";
+
+          // Завершаем игру сдачей
+          room.gameState.gameEnded = true;
+          room.gameState.gameResult = {
+              resultType: "resignation",
+              winColor: winnerColor
+          };
+
+          // Отправляем результат всем игрокам
+          for (const [id, userData] of room.users) {
+              if (userData.isConnected && userData.ws) {
+                  userData.ws.send({
+                      type: "gameResult",
+                      gameResult: room.gameState.gameResult,
+                      from: senderUserData.userName,
+                      userId: senderUserId,
+                      gameState: room.gameState,
+                      time: Date.now()
+                  });
+              }
+          }
+
+          // Отправляем системное сообщение
+          for (const [id, userData] of room.users) {
+              if (userData.isConnected && userData.ws) {
+                  userData.ws.send({
+                      system: true,
+                      message: `Сдача! Победили ${winnerColor === "white" ? "белые" : "черные"}!`,
+                      type: "gameEnd"
                   });
               }
           }
