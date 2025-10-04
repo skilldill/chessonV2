@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "start": "bun run index.ts",
-    "dev": "bun --watch run index.ts",
+    "dev": "WITHOUT_MONGO=true bun --watch run index.ts",
     "test": "bun test"
   },
   "devDependencies": {

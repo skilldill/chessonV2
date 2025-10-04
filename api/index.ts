@@ -4,7 +4,9 @@ import { ElysiaWS } from 'elysia/ws';
 import { v4 as uuidv4 } from 'uuid';
 
 // Connect to MongoDB
-connectDB();
+if (process.env.WITHOUT_MONGO !== 'true') {
+  connectDB();
+}
 
 const app = new Elysia();
 
@@ -27,8 +29,14 @@ function generateShortId(): string {
   return (short1 + short2 + short3).substring(0, 8);
 }
 
+type UserData = {
+    userName: string;
+    ws: ElysiaWS<any, any>;
+    isConnected: boolean;
+};
+
 type Room = {
-    users: Map<string, ElysiaWS<any, any>>;
+    users: Map<string, UserData>;
 };
 
 const rooms = new Map<string, Room>();
@@ -67,13 +75,6 @@ app.ws('/ws/room', {
 
   open(ws) {
       const { roomId, userName } = ws.data.query;
-      
-      // Генерируем уникальный ID для пользователя используя короткий формат
-      const userId = generateShortId();
-      
-      // Сохраняем userId и userName в WebSocket для использования в других методах
-      (ws as any).userId = userId;
-      (ws as any).userName = userName;
 
       let room = rooms.get(roomId);
       if (!room) {
@@ -81,38 +82,94 @@ app.ws('/ws/room', {
           rooms.set(roomId, room);
       }
 
-      // если уже 2 участника → не пускаем
+      // Проверяем, есть ли уже пользователь с таким именем в комнате
+      let existingUserId: string | null = null;
+      for (const [userId, userData] of room.users) {
+          if (userData.userName === userName) {
+              existingUserId = userId;
+              break;
+          }
+      }
+
+      // Если пользователь с таким именем уже есть, заменяем его соединение
+      if (existingUserId) {
+          const existingUserData = room.users.get(existingUserId);
+          if (existingUserData) {
+              // Закрываем старое соединение
+              existingUserData.ws.close();
+          }
+          
+          // Обновляем данные пользователя с новым WebSocket
+          room.users.set(existingUserId, {
+              userName: userName,
+              ws: ws,
+              isConnected: true
+          });
+
+          // Приветствие для вернувшегося пользователя
+          ws.send({ system: true, message: `Добро пожаловать обратно в комнату ${roomId}, ${userName}! Ваш ID: ${existingUserId}` });
+
+          // Уведомляем других пользователей о возвращении
+          for (const [id, userData] of room.users) {
+              if (id !== existingUserId) {
+                  userData.ws.send({ system: true, message: `${userName} вернулся в комнату` });
+              }
+          }
+          return;
+      }
+
+      // Если уже 2 участника → не пускаем
       if (room.users.size >= 2) {
           ws.send({ system: true, message: 'Комната занята' });
           ws.close();
           return;
       }
 
-      room.users.set(userId, ws);
+      // Генерируем новый ID для нового пользователя
+      const userId = generateShortId();
 
-      // приветствие
+      // Сохраняем данные нового пользователя в комнате
+      room.users.set(userId, {
+          userName: userName,
+          ws: ws,
+          isConnected: true
+      });
+
+      // приветствие для нового пользователя
       ws.send({ system: true, message: `Добро пожаловать в комнату ${roomId}, ${userName}! Ваш ID: ${userId}` });
 
-      // уведомляем второго, если он есть
-      for (const [id, socket] of room.users) {
+      // уведомляем других пользователей о подключении
+      for (const [id, userData] of room.users) {
           if (id !== userId) {
-              socket.send({ system: true, message: `${userName} подключился` });
+              userData.ws.send({ system: true, message: `${userName} подключился` });
           }
       }
   },
   message(ws, { message }) {
       const { roomId } = ws.data.query;
-      const userId = (ws as any).userId;
-      const userName = (ws as any).userName;
       const room = rooms.get(roomId);
       if (!room) return;
 
-      // пересылаем сообщение другому участнику
-      for (const [id, socket] of room.users) {
-          if (id !== userId) {
-              socket.send({
-                  from: userName,
-                  userId: userId,
+      // Находим пользователя по WebSocket соединению
+      let senderUserId: string | null = null;
+      let senderUserName: string | null = null;
+      
+      for (const [userId, userData] of room.users) {
+          if (userData.ws === ws) {
+              senderUserId = userId;
+              senderUserName = userData.userName;
+              break;
+          }
+      }
+
+      if (!senderUserId || !senderUserName) return;
+
+      // пересылаем сообщение другим подключенным участникам
+      for (const [id, userData] of room.users) {
+          if (id !== senderUserId && userData.isConnected && userData.ws) {
+              userData.ws.send({
+                  from: senderUserName,
+                  userId: senderUserId,
                   message,
                   time: Date.now()
               });
@@ -121,21 +178,52 @@ app.ws('/ws/room', {
   },
   close(ws) {
       const { roomId } = ws.data.query;
-      const userId = (ws as any).userId;
-      const userName = (ws as any).userName;
       const room = rooms.get(roomId);
       if (!room) return;
 
-      room.users.delete(userId);
-
-      // уведомляем оставшегося
-      for (const socket of room.users.values()) {
-          socket.send({ system: true, message: `${userName} отключился` });
+      // Находим пользователя по WebSocket соединению
+      let disconnectedUserId: string | null = null;
+      let disconnectedUserName: string | null = null;
+      
+      for (const [userId, userData] of room.users) {
+          if (userData.ws === ws) {
+              disconnectedUserId = userId;
+              disconnectedUserName = userData.userName;
+              break;
+          }
       }
 
-      // если комната опустела — удаляем
-      if (room.users.size === 0) {
-          rooms.delete(roomId);
+      if (!disconnectedUserId || !disconnectedUserName) return;
+
+      // Помечаем пользователя как отключенного, но не удаляем из комнаты
+      const userData = room.users.get(disconnectedUserId);
+      if (userData) {
+          userData.isConnected = false;
+          userData.ws = null as any; // Очищаем ссылку на WebSocket
+      }
+
+      // уведомляем подключенных пользователей об отключении
+      for (const [id, userData] of room.users) {
+          if (id !== disconnectedUserId && userData.isConnected && userData.ws) {
+              userData.ws.send({ system: true, message: `${disconnectedUserName} отключился` });
+          }
+      }
+
+      // Проверяем, есть ли подключенные пользователи
+      const connectedUsers = Array.from(room.users.values()).filter(user => user.isConnected);
+      
+      // если нет подключенных пользователей — удаляем комнату через 5 минут
+      if (connectedUsers.length === 0) {
+          setTimeout(() => {
+              const room = rooms.get(roomId);
+              if (room) {
+                  const stillConnected = Array.from(room.users.values()).filter(user => user.isConnected);
+                  if (stillConnected.length === 0) {
+                      rooms.delete(roomId);
+                      console.log(`Комната ${roomId} удалена из-за отсутствия подключенных пользователей`);
+                  }
+              }
+          }, 5 * 60 * 1000); // 5 минут
       }
   }
 });
