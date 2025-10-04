@@ -29,14 +29,45 @@ function generateShortId(): string {
   return (short1 + short2 + short3).substring(0, 8);
 }
 
+// Функция для назначения случайного цвета игроку
+function assignRandomColor(): "white" | "black" {
+  const colors: ("white" | "black")[] = ["white", "black"];
+  return colors[Math.floor(Math.random() * colors.length)];
+}
+
+type MoveData = {
+    FEN: string;
+    from: [number, number];
+    to: [number, number];
+    figure: { 
+        color: "white" | "black";
+        type: "pawn" | "bishop" | "knight" | "rook" | "queen" | "king";
+    };
+};
+
+type CursorPosition = {
+    x: number;
+    y: number;
+};
+
+type GameState = {
+    currentFEN: string;
+    moveHistory: MoveData[];
+    currentPlayer: "white" | "black";
+    gameStarted: boolean;
+};
+
 type UserData = {
     userName: string;
     ws: ElysiaWS<any, any>;
     isConnected: boolean;
+    color?: "white" | "black";
+    cursorPosition?: CursorPosition;
 };
 
 type Room = {
     users: Map<string, UserData>;
+    gameState: GameState;
 };
 
 const rooms = new Map<string, Room>();
@@ -52,8 +83,16 @@ app.post('/api/rooms', () => {
   // Generate unique room ID using short format
   const roomId = generateShortId();
   
-  // Create empty room
-  const room = { users: new Map() };
+  // Create empty room with initial game state
+  const room = { 
+    users: new Map(),
+    gameState: {
+      currentFEN: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", // Starting position
+      moveHistory: [],
+      currentPlayer: "white" as "white" | "black",
+      gameStarted: false
+    }
+  };
   rooms.set(roomId, room);
   
   return {
@@ -69,16 +108,53 @@ app.ws('/ws/room', {
       userName: t.String()
   }),
 
-  body: t.Object({
+  body: t.Union([
+    t.Object({
+      type: t.Literal("message"),
       message: t.String()
-  }),
+    }),
+    t.Object({
+      type: t.Literal("move"),
+      moveData: t.Object({
+        FEN: t.String(),
+        from: t.Tuple([t.Number(), t.Number()]),
+        to: t.Tuple([t.Number(), t.Number()]),
+        figure: t.Object({
+          color: t.Union([t.Literal("white"), t.Literal("black")]),
+          type: t.Union([
+            t.Literal("pawn"),
+            t.Literal("bishop"),
+            t.Literal("knight"),
+            t.Literal("rook"),
+            t.Literal("queen"),
+            t.Literal("king")
+          ])
+        })
+      })
+    }),
+    t.Object({
+      type: t.Literal("cursor"),
+      position: t.Object({
+        x: t.Number(),
+        y: t.Number()
+      })
+    })
+  ]),
 
   open(ws) {
       const { roomId, userName } = ws.data.query;
 
       let room = rooms.get(roomId);
       if (!room) {
-          room = { users: new Map() };
+          room = { 
+            users: new Map(),
+            gameState: {
+              currentFEN: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+              moveHistory: [],
+              currentPlayer: "white" as "white" | "black",
+              gameStarted: false
+            }
+          };
           rooms.set(roomId, room);
       }
 
@@ -103,11 +179,19 @@ app.ws('/ws/room', {
           room.users.set(existingUserId, {
               userName: userName,
               ws: ws,
-              isConnected: true
+              isConnected: true,
+              color: existingUserData?.color,
+              cursorPosition: existingUserData?.cursorPosition
           });
 
           // Приветствие для вернувшегося пользователя
-          ws.send({ system: true, message: `Добро пожаловать обратно в комнату ${roomId}, ${userName}! Ваш ID: ${existingUserId}` });
+          ws.send({ 
+            system: true, 
+            message: `Добро пожаловать обратно в комнату ${roomId}, ${userName}! Ваш ID: ${existingUserId}`,
+            type: "reconnection",
+            gameState: room.gameState,
+            userColor: existingUserData?.color
+          });
 
           // Уведомляем других пользователей о возвращении
           for (const [id, userData] of room.users) {
@@ -128,52 +212,133 @@ app.ws('/ws/room', {
       // Генерируем новый ID для нового пользователя
       const userId = generateShortId();
 
+      // Назначаем цвет пользователю случайным образом
+      const assignedColor = assignRandomColor();
+
       // Сохраняем данные нового пользователя в комнате
       room.users.set(userId, {
           userName: userName,
           ws: ws,
-          isConnected: true
+          isConnected: true,
+          color: assignedColor,
+          cursorPosition: { x: 0, y: 0 }
       });
 
       // приветствие для нового пользователя
-      ws.send({ system: true, message: `Добро пожаловать в комнату ${roomId}, ${userName}! Ваш ID: ${userId}` });
+      ws.send({ 
+        system: true, 
+        message: `Добро пожаловать в комнату ${roomId}, ${userName}! Ваш ID: ${userId}`,
+        type: "connection",
+        userColor: assignedColor,
+        gameState: room.gameState
+      });
 
       // уведомляем других пользователей о подключении
       for (const [id, userData] of room.users) {
           if (id !== userId) {
-              userData.ws.send({ system: true, message: `${userName} подключился` });
+              userData.ws.send({ 
+                system: true, 
+                message: `${userName} подключился`,
+                opponentColor: assignedColor
+              });
+          }
+      }
+
+      // Если теперь 2 игрока, начинаем игру
+      if (room.users.size === 2) {
+          room.gameState.gameStarted = true;
+          
+          // Уведомляем всех игроков о начале игры
+          for (const [id, userData] of room.users) {
+              userData.ws.send({
+                  system: true,
+                  message: "Игра началась! Белые ходят первыми.",
+                  type: "gameStart",
+                  gameState: room.gameState
+              });
           }
       }
   },
 
-  message(ws, { message }) {
+  message(ws, data) {
       const { roomId } = ws.data.query;
       const room = rooms.get(roomId);
       if (!room) return;
 
       // Находим пользователя по WebSocket соединению
       let senderUserId: string | null = null;
-      let senderUserName: string | null = null;
+      let senderUserData: UserData | null = null;
       
       for (const [userId, userData] of room.users) {
-          if (userData.ws === ws) {
+          if (userData.userName === ws.data.query.userName) {
               senderUserId = userId;
-              senderUserName = userData.userName;
+              senderUserData = userData;
               break;
           }
       }
 
-      if (!senderUserId || !senderUserName) return;
+      if (!senderUserId || !senderUserData) return;
 
-      // пересылаем сообщение другим подключенным участникам
-      for (const [id, userData] of room.users) {
-          if (id !== senderUserId && userData.isConnected && userData.ws) {
-              userData.ws.send({
-                  from: senderUserName,
-                  userId: senderUserId,
-                  message,
-                  time: Date.now()
-              });
+      // Обрабатываем различные типы сообщений
+      if (data.type === "message") {
+          // Обычное текстовое сообщение
+          for (const [id, userData] of room.users) {
+              if (id !== senderUserId && userData.isConnected && userData.ws) {
+                  userData.ws.send({
+                      type: "message",
+                      from: senderUserData.userName,
+                      userId: senderUserId,
+                      message: data.message,
+                      time: Date.now()
+                  });
+              }
+          }
+      } else if (data.type === "move") {
+          // Шахматный ход
+          if (!room.gameState.gameStarted) {
+              ws.send({ system: true, message: "Игра еще не началась" });
+              return;
+          }
+
+          // Проверяем, что ход делает правильный игрок
+          if (senderUserData.color !== room.gameState.currentPlayer) {
+              ws.send({ system: true, message: "Не ваш ход!" });
+              return;
+          }
+
+          // Обновляем состояние игры
+          room.gameState.currentFEN = data.moveData.FEN;
+          room.gameState.moveHistory.push(data.moveData);
+          room.gameState.currentPlayer = room.gameState.currentPlayer === "white" ? "black" : "white";
+
+          // Отправляем ход всем игрокам кроме отправителя
+          for (const [id, userData] of room.users) {
+              if (id !== senderUserId && userData.isConnected && userData.ws) {
+                  userData.ws.send({
+                      type: "move",
+                      moveData: data.moveData,
+                      from: senderUserData.userName,
+                      userId: senderUserId,
+                      gameState: room.gameState,
+                      time: Date.now()
+                  });
+              }
+          }
+      } else if (data.type === "cursor") {
+          // Позиция курсора
+          senderUserData.cursorPosition = data.position;
+
+          // Отправляем позицию курсора другим игрокам
+          for (const [id, userData] of room.users) {
+              if (id !== senderUserId && userData.isConnected && userData.ws) {
+                  userData.ws.send({
+                      type: "cursor",
+                      position: data.position,
+                      from: senderUserData.userName,
+                      userId: senderUserId,
+                      time: Date.now()
+                  });
+              }
           }
       }
   },
