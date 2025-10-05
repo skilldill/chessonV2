@@ -96,3 +96,10 @@ export interface HealthCheckResponse {
   status: string;
   timestamp: string;
 }
+
+export interface ChatMessage {
+  from: string;
+  message: string;
+  userId: string;
+  time: number;
+};

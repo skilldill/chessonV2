@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState } from "react";
 import type { 
     WSServerMessage, 
     WSClientMessage, 
@@ -6,39 +6,39 @@ import type {
     ChessColor, 
     MoveData, 
     CursorPosition, 
-    GameResult 
+    GameResult, 
+    ChatMessage
 } from "../types";
 
 const WS_URL = 'ws://localhost:4000/ws/room';
+const INITIAL_GAME_STATE = {
+    currentFEN: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+    moveHistory: [],
+    currentPlayer: "white" as ChessColor,
+    gameStarted: false,
+    gameEnded: false,
+    gameResult: undefined,
+    drawOffer: undefined,
+    drawOfferCount: {}
+}
 
 export const useRoomWS = (roomId: string) => {
     const refWS = useRef<WebSocket | null>(null);
-    const [gameState, setGameState] = useState<GameState>({
-        currentFEN: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-        moveHistory: [],
-        currentPlayer: "white",
-        gameStarted: false,
-        gameEnded: false,
-        gameResult: undefined,
-        drawOffer: undefined,
-        drawOfferCount: {}
-    });
     
+    const [gameState, setGameState] = useState<GameState>(INITIAL_GAME_STATE);
     const [isConnected, setIsConnected] = useState<boolean>(false);
-    const [userColor, setUserColor] = useState<ChessColor | undefined>(undefined);
-    const [opponentColor, setOpponentColor] = useState<ChessColor | undefined>(undefined);
-    const [opponentName, setOpponentName] = useState<string | undefined>(undefined);
+    const [userColor, setUserColor] = useState<ChessColor>();
+
+    const [opponentColor, setOpponentColor] = useState<ChessColor>();
+    const [opponentName, setOpponentName] = useState<string>();
+    const [opponentCursor, setOpponentCursor] = useState<CursorPosition>();
+
     const [systemMessages, setSystemMessages] = useState<string[]>([]);
-    const [opponentCursor, setOpponentCursor] = useState<CursorPosition | undefined>(undefined);
+    const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
 
-    const [chatMessages, setChatMessages] = useState<Array<{
-        from: string;
-        message: string;
-        time: number;
-        userId: string;
-    }>>([]);
+    const [lastMove, setLastMove] = useState<MoveData>();
 
-    const handleMessage = useCallback((data: WSServerMessage) => {
+    const handleMessage = (data: WSServerMessage) => {
         // Обработка системных сообщений
         if (data.system) {
             if (data.message) {
@@ -51,6 +51,7 @@ export const useRoomWS = (roomId: string) => {
             case 'connection':
             case 'reconnection':
                 if (data.userColor) {
+                    console.log('userColor', data.userColor);
                     setUserColor(data.userColor);
                 }
                 if (data.gameState) {
@@ -84,6 +85,7 @@ export const useRoomWS = (roomId: string) => {
             case 'move':
                 if (data.gameState) {
                     setGameState(data.gameState);
+                    setLastMove(data.moveData);
                 }
                 break;
 
@@ -113,9 +115,9 @@ export const useRoomWS = (roomId: string) => {
                 }
                 break;
         }
-    }, []);
+    };
 
-    const connectToRoom = useCallback((userName: string) => {
+    const connectToRoom = (userName: string) => {
         if (refWS.current?.readyState === WebSocket.OPEN) {
             refWS.current.close();
         }
@@ -144,46 +146,46 @@ export const useRoomWS = (roomId: string) => {
                 console.error('Error parsing message:', error);
             }
         };
-    }, [roomId, handleMessage]);
+    };
 
-    const disconnect = useCallback(() => {
+    const disconnect = () => {
         if (refWS.current) {
             refWS.current.close();
         }
-    }, []);
+    };
 
-    const sendMessage = useCallback((message: WSClientMessage) => {
+    const sendMessage = (message: WSClientMessage) => {
         if (refWS.current?.readyState === WebSocket.OPEN) {
             refWS.current.send(JSON.stringify(message));
         } else {
             console.error('WebSocket is not connected');
         }
-    }, []);
+    };
 
     // Вспомогательные функции для отправки различных типов сообщений
-    const sendChatMessage = useCallback((message: string) => {
+    const sendChatMessage = (message: string) => {
         sendMessage({ type: 'message', message });
-    }, [sendMessage]);
+    };
 
-    const sendMove = useCallback((moveData: MoveData) => {
+    const sendMove =(moveData: MoveData) => {
         sendMessage({ type: 'move', moveData });
-    }, [sendMessage]);
+    };
 
-    const sendCursorPosition = useCallback((position: CursorPosition) => {
+    const sendCursorPosition = (position: CursorPosition) => {
         sendMessage({ type: 'cursor', position });
-    }, [sendMessage]);
+    };
 
-    const sendGameResult = useCallback((gameResult: GameResult) => {
+    const sendGameResult = (gameResult: GameResult) => {
         sendMessage({ type: 'gameResult', gameResult });
-    }, [sendMessage]);
+    };
 
-    const sendDrawOffer = useCallback((action: 'offer' | 'accept' | 'decline') => {
+    const sendDrawOffer = (action: 'offer' | 'accept' | 'decline') => {
         sendMessage({ type: 'drawOffer', action });
-    }, [sendMessage]);
+    };
 
-    const sendResignation = useCallback(() => {
+    const sendResignation = () => {
         sendMessage({ type: 'resign' });
-    }, [sendMessage]);
+    };
 
     return {
         // Состояние
@@ -199,7 +201,8 @@ export const useRoomWS = (roomId: string) => {
         // Функции подключения
         connectToRoom,
         disconnect,
-        
+        lastMove,
+
         // Функции отправки сообщений
         sendChatMessage,
         sendMove,
