@@ -13,7 +13,6 @@ const WS_URL = 'ws://localhost:4000/ws/room';
 
 export const useRoomWS = (roomId: string) => {
     const refWS = useRef<WebSocket | null>(null);
-    const [isConnected, setIsConnected] = useState<boolean>(false);
     const [gameState, setGameState] = useState<GameState>({
         currentFEN: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
         moveHistory: [],
@@ -24,21 +23,22 @@ export const useRoomWS = (roomId: string) => {
         drawOffer: undefined,
         drawOfferCount: {}
     });
+    
+    const [isConnected, setIsConnected] = useState<boolean>(false);
     const [userColor, setUserColor] = useState<ChessColor | undefined>(undefined);
     const [opponentColor, setOpponentColor] = useState<ChessColor | undefined>(undefined);
     const [opponentName, setOpponentName] = useState<string | undefined>(undefined);
     const [systemMessages, setSystemMessages] = useState<string[]>([]);
+    const [opponentCursor, setOpponentCursor] = useState<CursorPosition | undefined>(undefined);
+
     const [chatMessages, setChatMessages] = useState<Array<{
         from: string;
         message: string;
         time: number;
         userId: string;
     }>>([]);
-    const [opponentCursor, setOpponentCursor] = useState<CursorPosition | undefined>(undefined);
 
     const handleMessage = useCallback((data: WSServerMessage) => {
-        console.log('Received message:', data);
-
         // Обработка системных сообщений
         if (data.system) {
             if (data.message) {
