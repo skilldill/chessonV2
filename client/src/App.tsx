@@ -1,18 +1,14 @@
-import femaleTechnologist from './assets/female-technologist.png';
-import shrug from './assets/shrug.png';
+import { AppScreen } from "./screens/AppScreen/AppScreen";
+import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 
 function App() {
   return (
-    <div className="container">
-      <div className="containerTitle">
-        <h1 className="titleChesson">Chesson.ru</h1>
-      </div>
-      <div className="containerComingSoon">
-        <img src={shrug} alt="Девушка не понимает" className="chessImage" />
-        <img src={femaleTechnologist} alt="Девушка-технолог" className="chessImage" />
-      </div>
-    </div>
-  )
+    <Router>
+      <Switch>
+        <Route path="/:roomId" component={AppScreen} />
+      </Switch>
+    </Router>
+  );
 }
 
 export default App
