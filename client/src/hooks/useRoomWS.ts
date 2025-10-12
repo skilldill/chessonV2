@@ -28,14 +28,11 @@ export const useRoomWS = (roomId: string) => {
     const [gameState, setGameState] = useState<GameState>(INITIAL_GAME_STATE);
     const [isConnected, setIsConnected] = useState<boolean>(false);
     const [userColor, setUserColor] = useState<ChessColor>();
-
     const [opponentColor, setOpponentColor] = useState<ChessColor>();
     const [opponentName, setOpponentName] = useState<string>();
     const [opponentCursor, setOpponentCursor] = useState<CursorPosition>();
-
     const [systemMessages, setSystemMessages] = useState<string[]>([]);
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-
     const [lastMove, setLastMove] = useState<MoveData>();
 
     const handleMessage = (data: WSServerMessage) => {
@@ -51,7 +48,6 @@ export const useRoomWS = (roomId: string) => {
             case 'connection':
             case 'reconnection':
                 if (data.userColor) {
-                    console.log('userColor', data.userColor);
                     setUserColor(data.userColor);
                 }
                 if (data.gameState) {

@@ -12,7 +12,7 @@ export const AppScreen = () => {
         isConnected, 
         gameState, 
         userColor,
- 
+        lastMove,
         connectToRoom, 
         sendMove, 
     } = useRoomWS(roomId || "");
@@ -29,12 +29,13 @@ export const AppScreen = () => {
     }
 
     // Если игра началась, показываем игровой экран
-    if (gameState.gameStarted) {
+    if (userColor && gameState.gameStarted) {
         return (
             <GameScreen
-                gameState={gameState}
-                playerColor={userColor || "white"}
+                // gameState={gameState}
+                playerColor={userColor}
                 onMove={sendMove}
+                currentMove={lastMove}
             />
         );
     }
