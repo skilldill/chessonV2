@@ -191,7 +191,7 @@ app.ws('/ws/room', {
 
       let room = rooms.get(roomId);
       if (!room) {
-          room = { 
+          room = {
             users: new Map(),
             gameState: {
               currentFEN: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
@@ -262,7 +262,8 @@ app.ws('/ws/room', {
       const userId = generateShortId();
 
       // Назначаем цвет пользователю случайным образом
-      const assignedColor = assignRandomColor();
+      const assignedColor = room.users.size === 0 ? assignRandomColor() : 
+        room.users.get(Array.from(room.users.keys())[0] as string)?.color === "white" ? "black" : "white";
 
       // Сохраняем данные нового пользователя в комнате
       room.users.set(userId, {
