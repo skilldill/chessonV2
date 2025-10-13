@@ -32,7 +32,7 @@ export const AppScreen = () => {
     if (userColor && gameState.gameStarted) {
         return (
             <GameScreen
-                // gameState={gameState}
+                gameState={gameState}
                 playerColor={userColor}
                 onMove={sendMove}
                 currentMove={lastMove}

@@ -1,27 +1,25 @@
 import { ChessBoard, JSChessEngine } from "react-chessboard-ui";
 import type { ChessColor, GameState, MoveData } from "../../types";
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useMemo } from "react";
+import { ChessboardWrap } from "../../components/ChessboardWrap/ChessboardWrap";
+
 
 type GameScreenProps = {
-    // gameState: GameState;
+    gameState: GameState;
     playerColor: ChessColor;
     onMove: (moveData: MoveData) => void;
     currentMove?: MoveData;
 }
 
 export const GameScreen: React.FC<GameScreenProps> = memo(({ playerColor, onMove, currentMove }) => {
-    const [changeMove, setChangeMove] = useState<any>();
-
     const reversed = useMemo(() => playerColor === "black", [playerColor]);
-    
-    useEffect(() => {
-        JSChessEngine.reverseMove
-        if (currentMove) {
-            setChangeMove({
-                move: currentMove,
-                withTransition: true
-            });
-        }
+
+    const externalChangeMove = useMemo(() => {
+        if (!currentMove) return undefined;
+        return {
+            move: currentMove,
+            withTransition: true
+        };
     }, [currentMove]);
 
     const handleMove = (moveData: MoveData) => {
@@ -30,16 +28,27 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({ playerColor, onMove
     }
 
     return (
-        <div>
-            <ChessBoard
-                FEN="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-                onChange={(moveData) => handleMove(moveData as MoveData)} 
-                onEndGame={() => {}}
-                reversed={playerColor === "black"}
-                change={changeMove}
-                playerColor={playerColor}
-                // change={gameState.moveHistory.length > 0 ? { move: gameState.moveHistory[gameState.moveHistory.length - 1], withTransition: true } : undefined}
-            />
+        <div className="bg-back-primary grid grid-cols-[1fr_720px_1fr] h-screen items-center">
+            <div></div>
+            <div>
+                <ChessboardWrap>
+                    <ChessBoard
+                        FEN="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+                        onChange={(moveData) => handleMove(moveData as MoveData)} 
+                        onEndGame={() => {}}
+                        reversed={playerColor === "black"}
+                        change={externalChangeMove}
+                        playerColor={playerColor}
+                        config={{ 
+                            cellSize: 84, 
+                            whiteCellColor: "#E5E7EB",
+	                        blackCellColor: "#A5AEBD",
+                            circleMarkColor: "#0069A8",
+                        }}
+                    />
+                </ChessboardWrap>
+            </div>
+            <div></div>
 
             {/* <button onClick={() => {
                 onMove({

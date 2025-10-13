@@ -4,19 +4,22 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "VITE_TEST_MODE=true vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tailwindcss/vite": "^4.1.14",
     "@types/react-router": "^5.1.20",
     "@types/react-router-dom": "^5.3.3",
+    "classnames": "^2.5.1",
     "react": "^19.1.1",
     "react-chessboard-ui": "^1.4.2",
     "react-dom": "^19.1.1",
     "react-router": "^5.3.4",
-    "react-router-dom": "^5.3.4"
+    "react-router-dom": "^5.3.4",
+    "tailwindcss": "^4.1.14"
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",
