@@ -54,7 +54,7 @@ function injectStylesOnce() {
     filter: brightness(1.05) saturate(1.08);
   }
   .plasma-btn:not([data-disabled="true"]):active {
-    transform: scale(0.98);
+    transform: scaleX(0.95) scaleY(1.05);
   }
   .plasma-btn:focus-visible {
     box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.9), 0 0 0 4px rgba(181, 96, 255, 0.26);
@@ -90,7 +90,7 @@ function hexToRgba(hex: string, alpha: number) {
   const v = hex.replace("#", "");
   const bigint = parseInt(v.length === 3 ? v.split("").map(c=>c+c).join("") : v, 16);
   const r = (bigint >> 16) & 255;
-  const g = (bigint >> 8) & 255;
+  const g = (bigint >> 16) & 255;
   const b = bigint & 255;
   return `rgba(${r},${g},${b},${alpha})`;
 }

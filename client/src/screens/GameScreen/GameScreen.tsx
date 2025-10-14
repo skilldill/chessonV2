@@ -2,8 +2,7 @@ import { ChessBoard, JSChessEngine } from "react-chessboard-ui";
 import type { ChessColor, GameState, MoveData } from "../../types";
 import { memo, useMemo } from "react";
 import { ChessboardWrap } from "../../components/ChessboardWrap/ChessboardWrap";
-import { PlasmaButton } from "../../components/PlasmaButton/PlasmaButton";
-
+import { GameScreenControls } from "../../components/GameScreenControls/GameScreenControls";
 
 type GameScreenProps = {
     gameState: GameState;
@@ -48,7 +47,11 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({ playerColor, onMove
                         }}
                     />
                 </ChessboardWrap>
-                <PlasmaButton />
+                <GameScreenControls
+                    onDrawOffer={() => {}}
+                    onResignation={() => {}}
+                    onQuitGame={() => {}}
+                />
             </div>
             <div></div>
 
