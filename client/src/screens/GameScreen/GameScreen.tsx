@@ -2,6 +2,7 @@ import { ChessBoard, JSChessEngine } from "react-chessboard-ui";
 import type { ChessColor, GameState, MoveData } from "../../types";
 import { memo, useMemo } from "react";
 import { ChessboardWrap } from "../../components/ChessboardWrap/ChessboardWrap";
+import FluidGradientPillButton from "../../components/FluidGradientPillButton/FluidGradientPillButton";
 
 
 type GameScreenProps = {
@@ -47,6 +48,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({ playerColor, onMove
                         }}
                     />
                 </ChessboardWrap>
+                <FluidGradientPillButton />
             </div>
             <div></div>
 
