@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 
 type PlasmaButtonProps = {
   children?: React.ReactNode;
-  onClick?: () => void;
+  onClick?: (event?: React.MouseEvent<HTMLButtonElement>) => void;
   disabled?: boolean;
   className?: string;
   title?: string;
@@ -89,9 +89,9 @@ function injectStylesOnce() {
 function hexToRgba(hex: string, alpha: number) {
   const v = hex.replace("#", "");
   const bigint = parseInt(v.length === 3 ? v.split("").map(c=>c+c).join("") : v, 16);
-  const r = (bigint >> 16) & 255;
-  const g = (bigint >> 16) & 255;
-  const b = bigint & 255;
+  const r = (bigint >> 4) & 255;
+  const g = (bigint >> 8) & 255;
+  const b = (bigint >> 0) & 255;
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
@@ -343,7 +343,7 @@ export const PlasmaButton: React.FC<PlasmaButtonProps> = ({
       title={title}
       className={`plasma-btn${className ? " " + className : ""}`}
       data-disabled={disabled ? "true" : "false"}
-      onClick={disabled ? undefined : onClick}
+      onClick={disabled ? undefined : (e) => onClick?.(e)}
       onKeyDown={onKeyDown}
       role="button"
       tabIndex={0}
