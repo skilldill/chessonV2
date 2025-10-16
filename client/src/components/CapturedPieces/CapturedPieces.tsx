@@ -16,7 +16,7 @@ export const CapturedPieces: FC<CapturedPiecesProps> = ({ FEN, color, figure, li
     const capturedPieces = useMemo(() => getCapturedPieces(FEN, color), [FEN]);
     const materialPercents = useMemo(() => getMaterialPercents(FEN), [FEN]);
 
-    const handleClick = () => {
+    const toggleListsVisible = () => {
         setIsVisible(!isVisible);
     };
 
@@ -24,19 +24,9 @@ export const CapturedPieces: FC<CapturedPiecesProps> = ({ FEN, color, figure, li
         setIsVisible(false);
     };
 
-    useEffect(() => {
-        window.addEventListener('click', closeList);
-        return () => {
-            window.removeEventListener('click', closeList);
-        };
-    }, []);
-
     return (
-        <div className="relative" onClick={(event) => event.stopPropagation()}>
-            <div 
-                onClick={handleClick}
-                className="relative w-[144px] h-[80px] bg-back-secondary flex rounded-lg overflow-hidden transition-all duration-200 active:scale-95 cursor-pointer"
-            >
+        <div className="relative" onMouseEnter={toggleListsVisible} onMouseLeave={closeList}>
+            <div className="relative w-[144px] h-[80px] bg-back-secondary flex rounded-lg overflow-hidden transition-all duration-200 active:scale-95 cursor-pointer">
                 <div className="h-full bg-indigo-400/20" style={{ width: `${materialPercents.white.percentOfStart}%` }} />
                 <div className="absolute top-0 right-0 bottom-0 left-0 flex items-center justify-center">
                     {figure && DEFAULT_PIECES_MAP[`${figure.type}-${figure.color}`](40)}

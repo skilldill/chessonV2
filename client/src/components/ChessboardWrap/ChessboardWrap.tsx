@@ -46,7 +46,7 @@ export const ChessboardWrap: FC<PropsWithChildren<ChessboardWrapProps>> = (
     );
 
     return (
-        <div className="bg-back-secondary/20 grid grid-rows-[24px_1fr_24px] rounded-2xl">
+        <div className="bg-gray-400/20 grid grid-rows-[24px_1fr_24px] rounded-2xl">
             {lettersRow}
             <div className="grid grid-cols-[24px_1fr_24px]">
                 {numbersRow}
