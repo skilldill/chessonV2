@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState, type FC } from 'react';
+import { useMemo, useState, type FC } from 'react';
 import { DEFAULT_PIECES_MAP, type Figure, type FigureColor } from 'react-chessboard-ui';
 import { getCapturedPieces } from '../../utils/getCapturedPieces';
 import { getMaterialPercents } from '../../utils/getMaterialPercents';
 import cn from 'classnames';
+import styles from './CapturedPieces.module.css';
 
 type CapturedPiecesProps = {
     FEN: string;
@@ -24,6 +25,9 @@ export const CapturedPieces: FC<CapturedPiecesProps> = ({ FEN, color, figure, li
         setIsVisible(false);
     };
 
+    const piecesListClassname = listInBottom ? styles.piecesListBottom : styles.piecesListTop;
+    const piecesListVisibleClassname = listInBottom ? styles.piecesListBottomVisible : styles.piecesListTopVisible;
+
     return (
         <div className="relative" onMouseEnter={toggleListsVisible} onMouseLeave={closeList}>
             <div className="relative w-[144px] h-[80px] bg-back-secondary flex rounded-lg overflow-hidden transition-all duration-200 active:scale-95 cursor-pointer">
@@ -33,18 +37,16 @@ export const CapturedPieces: FC<CapturedPiecesProps> = ({ FEN, color, figure, li
                 </div>
             </div>
             {materialPercents[color].percentOfStart < 100 && (
-                <div 
-                    className={cn("bg-back-secondary rounded-lg p-[20px] absolute right-0  grid grid-cols-[28px_28px_28px_28px_28px_28px] grid-rows-[28px_28px_28px] gap-2 transition-all duration-200", {
-                        'top-[88px] opacity-0 scale-10 translate-y-[-30px] origin-top-right': listInBottom,
-                        'bottom-[88px] opacity-0 scale-0 translate-y-[-30px] origin-bottom-right': !listInBottom,
-                        'opacity-100 scale-100 translate-y-[0px]': isVisible,
-                    })}
-                >
-                    {capturedPieces.map((piece) => (
-                        <div key={piece} className="flex items-center gap-2">
-                            {DEFAULT_PIECES_MAP[piece](40)}
-                        </div>
-                    ))}
+                <div className={cn(piecesListClassname, {
+                    [piecesListVisibleClassname]: isVisible,
+                })}>
+                    <div className="bg-back-secondary rounded-lg p-[20px] grid grid-cols-[28px_28px_28px_28px_28px_28px] grid-rows-[28px_28px_28px] gap-2">
+                        {capturedPieces.map((piece) => (
+                            <div key={piece} className="flex items-center gap-2">
+                                {DEFAULT_PIECES_MAP[piece](40)}
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
         </div>
