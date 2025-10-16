@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { ChessTimer } from './ChessTimer';
+import { ChessTimer } from '../ChessTimer';
 
 const meta: Meta<typeof ChessTimer> = {
     title: 'Components/ChessTimer',
