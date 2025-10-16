@@ -3,6 +3,8 @@ import type { ChessColor, GameState, MoveData } from "../../types";
 import { memo, useMemo } from "react";
 import { ChessboardWrap } from "../../components/ChessboardWrap/ChessboardWrap";
 import { GameScreenControls } from "../../components/GameScreenControls/GameScreenControls";
+import { CapturedPieces } from "../../components/CapturedPieces/CapturedPieces";
+import { ChessTimer } from "../../components/ChessTimer/ChessTimer";
 
 type GameScreenProps = {
     gameState: GameState;
@@ -11,7 +13,7 @@ type GameScreenProps = {
     currentMove?: MoveData;
 }
 
-export const GameScreen: React.FC<GameScreenProps> = memo(({ playerColor, onMove, currentMove }) => {
+export const GameScreen: React.FC<GameScreenProps> = memo(({ playerColor, onMove, currentMove, gameState }) => {
     const reversed = useMemo(() => playerColor === "black", [playerColor]);
 
     const externalChangeMove = useMemo(() => {
@@ -29,7 +31,27 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({ playerColor, onMove
 
     return (
         <div className="bg-back-primary grid grid-cols-[1fr_720px_1fr] h-screen items-center">
-            <div></div>
+            <div className="flex justify-end p-[16px]">
+                <div className="flex flex-col gap-y-[8px]">
+                    <CapturedPieces 
+                        FEN={'rnbqkbn1/pppppp2/8/8/8/8/PPP1PPPP/RNB1KBN1 w KQkq - 1 1'}
+                        color={playerColor === "white" ? "black" : "white"}
+                        figure={{
+                            type: "pawn",
+                            color: playerColor === "white" ? "black" : "white",
+                        }}
+                    />
+                    <CapturedPieces 
+                        FEN={'rnbqkbn1/pppppp2/8/8/8/8/PPP1PPPP/RNB1KBN1 w KQkq - 1 1'}
+                        color={playerColor}
+                        figure={{
+                            type: "pawn",
+                            color: playerColor,
+                        }}
+                        listInBottom={true}
+                    />
+                </div>
+            </div>
             <div>
                 <ChessboardWrap>
                     <ChessBoard
@@ -53,7 +75,19 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({ playerColor, onMove
                     onQuitGame={() => {}}
                 />
             </div>
-            <div></div>
+            <div className="flex justify-start p-[16px]">
+                <div className="flex flex-col gap-y-[8px]">
+                    <ChessTimer
+                        initSeconds={300}
+                        seconds={100}
+                    />
+                    <ChessTimer
+                        initSeconds={300}
+                        seconds={100}
+                        timeLineBottom={true}
+                    />
+                </div>
+            </div>
 
             {/* <button onClick={() => {
                 onMove({
