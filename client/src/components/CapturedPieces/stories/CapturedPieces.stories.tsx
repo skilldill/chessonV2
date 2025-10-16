@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { CapturedPieces } from './CapturedPieces';
+import { CapturedPieces } from '../CapturedPieces';
 
 const meta: Meta<typeof CapturedPieces> = {
     title: 'Components/CapturedPieces',
@@ -29,6 +29,7 @@ export const AfterFewMoves: Story = {
             color: "black",
             type: "rook",
         },
+        listInBottom: true,
     },
 };
 
