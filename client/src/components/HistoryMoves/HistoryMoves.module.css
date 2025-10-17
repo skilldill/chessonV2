@@ -1,0 +1,39 @@
+@keyframes openRowAnimation {
+    0% {
+        min-height: 0px;
+        height: 0px;
+    }
+
+    100% {
+        min-height: 32px;
+        height: 32px;
+    }
+}
+
+.movesRow {
+    min-height: 0px;
+    height: 0px;
+    overflow: hidden;
+    animation: openRowAnimation .3s 0s 1 linear forwards;
+}
+
+@keyframes openCellAnimation {
+    0% {
+        min-height: 0px;
+        height: 0px;
+    }
+
+    100% {
+        min-height: 20px;
+        height: 20px;
+    }
+}
+
+.movesCell {
+    min-height: 0px;
+    height: 0px;
+    transform: scale(0);
+    overflow: hidden;
+    animation: openCellAnimation .3s 0s 1 linear forwards;
+}
+
