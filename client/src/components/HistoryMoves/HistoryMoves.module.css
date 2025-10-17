@@ -32,7 +32,6 @@
 .movesCell {
     min-height: 0px;
     height: 0px;
-    transform: scale(0);
     overflow: hidden;
     animation: openCellAnimation .3s 0s 1 linear forwards;
 }
