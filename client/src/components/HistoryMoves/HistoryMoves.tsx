@@ -1,15 +1,50 @@
-import type { FC, useMemo } from "react";
+import { useState, type FC } from "react";
 import type { MoveData } from "react-chessboard-ui";
 import { groupByTwoMoves } from "../../utils/groupByTwoMoves";
 import { getReadableMoveNotation } from "../../utils/getReadableMoveNotation";
-
+import { Resizable } from 're-resizable';
+import { DraggableWrap } from "../DraggableWrap/DraggableWrap";
 
 type HistoryMovesProps = {
     moves: MoveData[];
 }
 
+const DEFAULT_SIZE = {
+    width: 256,
+    height: 160,
+};
+
 export const HistoryMoves: FC<HistoryMovesProps> = ({ moves }) => {
-    const groupedMoves = groupByTwoMoves(moves).map((moveItem) => moveItem.map((move) => getReadableMoveNotation(move)));
-    console.log(groupedMoves);
-    return <div>History Moves</div>;
+    const [size, setSize] = useState(DEFAULT_SIZE);
+
+    const groupedMoves = groupByTwoMoves(moves)
+        .map((moveItem) => moveItem.map((move) => getReadableMoveNotation(move)));
+
+    return (
+        <DraggableWrap>
+            <Resizable
+                size={size}
+                maxWidth={DEFAULT_SIZE.width}
+                minWidth={DEFAULT_SIZE.width}
+                minHeight={100}
+                onResizeStop={(...args) => {
+                    setSize((prev) => ({
+                        ...prev,
+                        height: prev.height + args[3].height
+                    }));
+                }}
+            >
+                <div className="relative w-full h-full p-[8px] bg-back-secondary rounded-xl overflow-hidden flex flex-col justify-end">
+                    <div className="absolute top-0 left-0 right-0 h-[98px] bg-gradient-to-t from-zink-950 to-black" />
+                    {groupedMoves.map((moveItem, index) => (
+                        <div key={moveItem[0]} className="flex items-center gap-x-[8px] px-[4px] py-[6px] hover:bg-white/4 transition-all duration-200 cursor-pointer grid grid-cols-[40px_1fr_1fr]">
+                            <span className="text-sm text-gray-400">{index + 1}.</span>
+                            <span className="text-sm text-white">{moveItem[0]}</span>
+                            <span className="text-sm text-white">{moveItem[1]}</span>
+                        </div>
+                    ))}
+                </div>
+            </Resizable>
+        </DraggableWrap>
+    );
 };
