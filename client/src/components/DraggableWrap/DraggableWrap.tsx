@@ -13,6 +13,7 @@ export const DraggableWrap: React.FC<PropsWithChildren<DraggableWrapProps>> = ({
     const [isGrabbing, setIsGrabbing] = useState(false);
     const [cursporPosition, setCursporPosition] = useState<Position>({ x: 0, y: 0 });
     const [translatedPosition, setTranslatedPosition] = useState<Position>();
+    const [clickOffset, setClickOffset] = useState<Position>({ x: 0, y: 0 });
     const refWrap = useRef<HTMLDivElement>(null);
 
     const externalStyles = styles || {};
@@ -20,11 +21,18 @@ export const DraggableWrap: React.FC<PropsWithChildren<DraggableWrapProps>> = ({
     const handleMouseDown = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
         if (!refWrap.current) return;
 
-        const { clientY } = event;
+        const { clientX, clientY } = event;
         const rect = refWrap.current.getBoundingClientRect();
         const relativeY = clientY - rect.top;
         const draggableAreaHeight = rect.height * 0.9;
-        setIsGrabbing(relativeY < draggableAreaHeight);
+        
+        if (relativeY < draggableAreaHeight) {
+            // Сохраняем смещение от точки клика до центра элемента
+            const offsetX = clientX - (rect.left + rect.width / 2);
+            const offsetY = clientY - (rect.top + rect.height / 2);
+            setClickOffset({ x: offsetX, y: offsetY });
+            setIsGrabbing(true);
+        }
     }
 
     const handleMouseUp = () => {
@@ -48,10 +56,10 @@ export const DraggableWrap: React.FC<PropsWithChildren<DraggableWrapProps>> = ({
     useEffect(() => {
         if (!isGrabbing || !refWrap.current) return;
         setTranslatedPosition({
-            x: cursporPosition.x - (refWrap.current.offsetLeft + refWrap.current.offsetWidth / 2),
-            y: cursporPosition.y - (refWrap.current.offsetTop + refWrap.current.offsetHeight / 2),
+            x: cursporPosition.x - (refWrap.current.offsetLeft + refWrap.current.offsetWidth / 2) - clickOffset.x,
+            y: cursporPosition.y - (refWrap.current.offsetTop + refWrap.current.offsetHeight / 2) - clickOffset.y,
         })
-    }, [cursporPosition, isGrabbing, refWrap.current])
+    }, [cursporPosition, isGrabbing, clickOffset, refWrap.current])
 
     return (
         <div
