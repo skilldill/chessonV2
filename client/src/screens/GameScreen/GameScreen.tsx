@@ -5,6 +5,7 @@ import { ChessboardWrap } from "../../components/ChessboardWrap/ChessboardWrap";
 import { GameScreenControls } from "../../components/GameScreenControls/GameScreenControls";
 import { CapturedPieces } from "../../components/CapturedPieces/CapturedPieces";
 import { ChessTimer } from "../../components/ChessTimer/ChessTimer";
+import { HistoryMoves } from "../../components/HistoryMoves/HistoryMoves";
 
 type GameScreenProps = {
     gameState: GameState;
@@ -33,7 +34,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({ playerColor, onMove
         <div className="bg-back-primary grid grid-cols-[1fr_720px_1fr] h-screen items-center">
             <div className="flex justify-end p-[16px]">
                 <div className="flex flex-col gap-y-[8px]">
-                    <CapturedPieces 
+                    <CapturedPieces
                         FEN={'rnbqkbn1/pppppp2/8/8/8/8/PPP1PPPP/RNB1KBN1 w KQkq - 1 1'}
                         color={playerColor === "white" ? "black" : "white"}
                         figure={{
@@ -76,6 +77,9 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({ playerColor, onMove
                 />
             </div>
             <div className="flex justify-start p-[16px]">
+                <div className="fixed top-[40px] right-[40px]">
+                    <HistoryMoves moves={[]} />
+                </div>
                 <div className="flex flex-col gap-y-[8px]">
                     <ChessTimer
                         initSeconds={300}

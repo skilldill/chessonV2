@@ -12,8 +12,9 @@ type DraggableWrapProps = {
 export const DraggableWrap: React.FC<PropsWithChildren<DraggableWrapProps>> = ({ children, styles }) => {
     const [isGrabbing, setIsGrabbing] = useState(false);
     const [cursporPosition, setCursporPosition] = useState<Position>({ x: 0, y: 0 });
-    const [translatedPosition, setTranslatedPosition] = useState<Position>();
+    const [translatedPosition, setTranslatedPosition] = useState<Position>({ x: 0, y: 0 });
     const [clickOffset, setClickOffset] = useState<Position>({ x: 0, y: 0 });
+    const [initialPosition, setInitialPosition] = useState<Position>({ x: 0, y: 0 });
     const refWrap = useRef<HTMLDivElement>(null);
 
     const externalStyles = styles || {};
@@ -31,6 +32,13 @@ export const DraggableWrap: React.FC<PropsWithChildren<DraggableWrapProps>> = ({
             const offsetX = clientX - (rect.left + rect.width / 2);
             const offsetY = clientY - (rect.top + rect.height / 2);
             setClickOffset({ x: offsetX, y: offsetY });
+            
+            // Сохраняем текущую позицию центра элемента (с учетом предыдущих перемещений)
+            setInitialPosition({ 
+                x: rect.left + rect.width / 2, 
+                y: rect.top + rect.height / 2 
+            });
+            
             setIsGrabbing(true);
         }
     }
@@ -54,12 +62,13 @@ export const DraggableWrap: React.FC<PropsWithChildren<DraggableWrapProps>> = ({
     }, [])
 
     useEffect(() => {
-        if (!isGrabbing || !refWrap.current) return;
+        if (!isGrabbing) return;
+        
         setTranslatedPosition({
-            x: cursporPosition.x - (refWrap.current.offsetLeft + refWrap.current.offsetWidth / 2) - clickOffset.x,
-            y: cursporPosition.y - (refWrap.current.offsetTop + refWrap.current.offsetHeight / 2) - clickOffset.y,
+            x: cursporPosition.x - initialPosition.x - clickOffset.x,
+            y: cursporPosition.y - initialPosition.y - clickOffset.y,
         })
-    }, [cursporPosition, isGrabbing, clickOffset, refWrap.current])
+    }, [cursporPosition, isGrabbing, clickOffset, initialPosition])
 
     return (
         <div
@@ -68,7 +77,7 @@ export const DraggableWrap: React.FC<PropsWithChildren<DraggableWrapProps>> = ({
             style={{
                 ...externalStyles,
                 cursor: isGrabbing ? 'grabbing' : 'grab',
-                transform: translatedPosition ? `translate(${translatedPosition.x}px, ${translatedPosition.y}px)` : 'translate(0px, 0px)',
+                transform: `translate(${translatedPosition.x}px, ${translatedPosition.y}px)`,
             }}
         >
             {children}
