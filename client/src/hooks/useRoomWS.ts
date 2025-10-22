@@ -35,6 +35,8 @@ export const useRoomWS = (roomId: string) => {
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
     const [lastMove, setLastMove] = useState<MoveData>();
 
+    const [movesHistory, setMovesHistory] = useState<MoveData[]>([]);
+
     const handleMessage = (data: WSServerMessage) => {
         // Обработка системных сообщений
         if (data.system) {
@@ -52,6 +54,7 @@ export const useRoomWS = (roomId: string) => {
                 }
                 if (data.gameState) {
                     setGameState(data.gameState);
+                    setMovesHistory(data.gameState.moveHistory);
                 }
                 break;
 
@@ -82,6 +85,7 @@ export const useRoomWS = (roomId: string) => {
                 if (data.gameState) {
                     setGameState(data.gameState);
                     setLastMove(data.moveData);
+                    setMovesHistory(data.gameState.moveHistory);
                 }
                 break;
 
@@ -164,6 +168,7 @@ export const useRoomWS = (roomId: string) => {
     };
 
     const sendMove =(moveData: MoveData) => {
+        setMovesHistory((moves) => [...moves, moveData]); 
         sendMessage({ type: 'move', moveData });
     };
 
@@ -208,6 +213,9 @@ export const useRoomWS = (roomId: string) => {
         sendResignation,
         
         // Общая функция отправки
-        sendMessage
+        sendMessage,
+
+        // Преобразованные данные
+        movesHistory,
     };
 };

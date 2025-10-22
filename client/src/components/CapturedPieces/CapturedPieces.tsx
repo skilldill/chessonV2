@@ -31,7 +31,7 @@ export const CapturedPieces: FC<CapturedPiecesProps> = ({ FEN, color, figure, li
     return (
         <div className="relative" onMouseEnter={toggleListsVisible} onMouseLeave={closeList}>
             <div className="relative w-[144px] h-[80px] bg-back-secondary flex rounded-lg overflow-hidden transition-all duration-200 active:scale-95 cursor-pointer">
-                <div className="h-full bg-indigo-400/20" style={{ width: `${materialPercents.white.percentOfStart}%` }} />
+                <div className="h-full bg-indigo-400/20" style={{ width: `${materialPercents[color].percentOfStart}%` }} />
                 <div className="absolute top-0 right-0 bottom-0 left-0 flex items-center justify-center">
                     {figure && DEFAULT_PIECES_MAP[`${figure.type}-${figure.color}`](40)}
                 </div>

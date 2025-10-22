@@ -13,8 +13,7 @@ export const DraggableWrap: React.FC<PropsWithChildren<DraggableWrapProps>> = ({
     const [isGrabbing, setIsGrabbing] = useState(false);
     const [cursporPosition, setCursporPosition] = useState<Position>({ x: 0, y: 0 });
     const [translatedPosition, setTranslatedPosition] = useState<Position>({ x: 0, y: 0 });
-    const [clickOffset, setClickOffset] = useState<Position>({ x: 0, y: 0 });
-    const [initialPosition, setInitialPosition] = useState<Position>({ x: 0, y: 0 });
+    const [dragStartPosition, setDragStartPosition] = useState<Position>({ x: 0, y: 0 });
     const refWrap = useRef<HTMLDivElement>(null);
 
     const externalStyles = styles || {};
@@ -28,17 +27,8 @@ export const DraggableWrap: React.FC<PropsWithChildren<DraggableWrapProps>> = ({
         const draggableAreaHeight = rect.height * 0.9;
         
         if (relativeY < draggableAreaHeight) {
-            // Сохраняем смещение от точки клика до центра элемента
-            const offsetX = clientX - (rect.left + rect.width / 2);
-            const offsetY = clientY - (rect.top + rect.height / 2);
-            setClickOffset({ x: offsetX, y: offsetY });
-            
-            // Сохраняем текущую позицию центра элемента (с учетом предыдущих перемещений)
-            setInitialPosition({ 
-                x: rect.left + rect.width / 2, 
-                y: rect.top + rect.height / 2 
-            });
-            
+            // Сохраняем позицию мыши в момент начала перетаскивания
+            setDragStartPosition({ x: clientX, y: clientY });
             setIsGrabbing(true);
         }
     }
@@ -64,11 +54,18 @@ export const DraggableWrap: React.FC<PropsWithChildren<DraggableWrapProps>> = ({
     useEffect(() => {
         if (!isGrabbing) return;
         
+        // Вычисляем смещение от начальной позиции мыши
+        const deltaX = cursporPosition.x - dragStartPosition.x;
+        const deltaY = cursporPosition.y - dragStartPosition.y;
+        
         setTranslatedPosition({
-            x: cursporPosition.x - initialPosition.x - clickOffset.x,
-            y: cursporPosition.y - initialPosition.y - clickOffset.y,
-        })
-    }, [cursporPosition, isGrabbing, clickOffset, initialPosition])
+            x: translatedPosition.x + deltaX,
+            y: translatedPosition.y + deltaY,
+        });
+        
+        // Обновляем начальную позицию мыши для следующего кадра
+        setDragStartPosition({ x: cursporPosition.x, y: cursporPosition.y });
+    }, [cursporPosition, isGrabbing])
 
     return (
         <div

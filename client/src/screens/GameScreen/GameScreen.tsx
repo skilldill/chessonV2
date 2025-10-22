@@ -10,11 +10,20 @@ import { HistoryMoves } from "../../components/HistoryMoves/HistoryMoves";
 type GameScreenProps = {
     gameState: GameState;
     playerColor: ChessColor;
-    onMove: (moveData: MoveData) => void;
+    movesHistory: MoveData[];
     currentMove?: MoveData;
+
+    onMove: (moveData: MoveData) => void;
 }
 
-export const GameScreen: React.FC<GameScreenProps> = memo(({ playerColor, onMove, currentMove, gameState }) => {
+export const GameScreen: React.FC<GameScreenProps> = memo(({ 
+    playerColor, 
+    gameState,
+    currentMove,
+    movesHistory,
+    
+    onMove, 
+}) => {
     const reversed = useMemo(() => playerColor === "black", [playerColor]);
 
     const externalChangeMove = useMemo(() => {
@@ -35,7 +44,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({ playerColor, onMove
             <div className="flex justify-end p-[16px]">
                 <div className="flex flex-col gap-y-[8px]">
                     <CapturedPieces
-                        FEN={'rnbqkbn1/pppppp2/8/8/8/8/PPP1PPPP/RNB1KBN1 w KQkq - 1 1'}
+                        FEN={movesHistory.length > 0 ? movesHistory[movesHistory.length - 1].FEN : 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'}
                         color={playerColor === "white" ? "black" : "white"}
                         figure={{
                             type: "pawn",
@@ -43,7 +52,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({ playerColor, onMove
                         }}
                     />
                     <CapturedPieces 
-                        FEN={'rnbqkbn1/pppppp2/8/8/8/8/PPP1PPPP/RNB1KBN1 w KQkq - 1 1'}
+                        FEN={movesHistory.length > 0 ? movesHistory[movesHistory.length - 1].FEN : 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'}
                         color={playerColor}
                         figure={{
                             type: "pawn",
@@ -77,8 +86,8 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({ playerColor, onMove
                 />
             </div>
             <div className="flex justify-start p-[16px]">
-                <div className="fixed top-[40px] right-[40px]">
-                    <HistoryMoves moves={[]} />
+                <div className="fixed top-[40px] right-[40px] z-40">
+                    <HistoryMoves moves={movesHistory} />
                 </div>
                 <div className="flex flex-col gap-y-[8px]">
                     <ChessTimer
@@ -92,19 +101,6 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({ playerColor, onMove
                     />
                 </div>
             </div>
-
-            {/* <button onClick={() => {
-                onMove({
-                    FEN: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-                    from: [0, 0],
-                    to: [0, 0],
-                    figure: {
-                        color: playerColor,
-                        type: "pawn"
-                    }
-                });
-            }}>Make Move</button>
-            {JSON.stringify(currentMove)} */}
         </div>
     )
 })

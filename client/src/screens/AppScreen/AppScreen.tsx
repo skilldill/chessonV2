@@ -13,8 +13,10 @@ export const AppScreen = () => {
         gameState, 
         userColor,
         lastMove,
+        movesHistory,
+
         connectToRoom, 
-        sendMove, 
+        sendMove,
     } = useRoomWS(roomId || "");
     const { userName, setUserName } = useUserData();
 
@@ -33,6 +35,7 @@ export const AppScreen = () => {
         return (
             <GameScreen
                 gameState={gameState}
+                movesHistory={movesHistory}
                 playerColor={userColor}
                 onMove={sendMove}
                 currentMove={lastMove}
