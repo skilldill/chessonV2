@@ -1,29 +1,30 @@
 import { ChessBoard, JSChessEngine } from "react-chessboard-ui";
 import type { ChessColor, GameState, MoveData } from "../../types";
-import { memo, useMemo } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import { ChessboardWrap } from "../../components/ChessboardWrap/ChessboardWrap";
 import { GameScreenControls } from "../../components/GameScreenControls/GameScreenControls";
 import { CapturedPieces } from "../../components/CapturedPieces/CapturedPieces";
 import { ChessTimer } from "../../components/ChessTimer/ChessTimer";
 import { HistoryMoves } from "../../components/HistoryMoves/HistoryMoves";
+import { INITIAL_FEN } from "../../constants/chess";
 
 type GameScreenProps = {
     gameState: GameState;
     playerColor: ChessColor;
     movesHistory: MoveData[];
     currentMove?: MoveData;
-
     onMove: (moveData: MoveData) => void;
 }
 
 export const GameScreen: React.FC<GameScreenProps> = memo(({ 
-    playerColor, 
+    playerColor,
     gameState,
     currentMove,
     movesHistory,
     
     onMove, 
 }) => {
+    const [initialFEN, setInitialFEN] = useState(INITIAL_FEN);
     const reversed = useMemo(() => playerColor === "black", [playerColor]);
 
     const externalChangeMove = useMemo(() => {
@@ -39,12 +40,16 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
         onMove(move as MoveData);
     }
 
+    useEffect(() => {
+        setInitialFEN(gameState.currentFEN);
+    }, [])
+
     return (
         <div className="bg-back-primary grid grid-cols-[1fr_720px_1fr] h-screen items-center">
             <div className="flex justify-end p-[16px]">
                 <div className="flex flex-col gap-y-[8px]">
                     <CapturedPieces
-                        FEN={movesHistory.length > 0 ? movesHistory[movesHistory.length - 1].FEN : 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'}
+                        FEN={movesHistory.length > 0 ? movesHistory[movesHistory.length - 1].FEN : initialFEN}
                         color={playerColor === "white" ? "black" : "white"}
                         figure={{
                             type: "pawn",
@@ -52,7 +57,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                         }}
                     />
                     <CapturedPieces 
-                        FEN={movesHistory.length > 0 ? movesHistory[movesHistory.length - 1].FEN : 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'}
+                        FEN={movesHistory.length > 0 ? movesHistory[movesHistory.length - 1].FEN : initialFEN}
                         color={playerColor}
                         figure={{
                             type: "pawn",
@@ -63,9 +68,9 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                 </div>
             </div>
             <div>
-                <ChessboardWrap>
+                <ChessboardWrap reverse={playerColor === "black"}>
                     <ChessBoard
-                        FEN="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+                        FEN={initialFEN}
                         onChange={(moveData) => handleMove(moveData as MoveData)} 
                         onEndGame={() => {}}
                         reversed={playerColor === "black"}
@@ -103,4 +108,4 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
             </div>
         </div>
     )
-})
+});
