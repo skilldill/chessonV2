@@ -7,7 +7,8 @@ import type {
     MoveData, 
     CursorPosition, 
     GameResult, 
-    ChatMessage
+    ChatMessage,
+    TimerState
 } from "../types";
 
 const WS_URL = 'ws://localhost:4000/ws/room';
@@ -19,7 +20,13 @@ const INITIAL_GAME_STATE = {
     gameEnded: false,
     gameResult: undefined,
     drawOffer: undefined,
-    drawOfferCount: {}
+    drawOfferCount: {},
+    timer: {
+        whiteTime: 600, // 10 минут по умолчанию
+        blackTime: 600, // 10 минут по умолчанию
+        whiteIncrement: 0, // без добавки времени
+        blackIncrement: 0  // без добавки времени
+    }
 }
 
 export const useRoomWS = (roomId: string) => {
@@ -34,6 +41,7 @@ export const useRoomWS = (roomId: string) => {
     const [systemMessages, setSystemMessages] = useState<string[]>([]);
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
     const [lastMove, setLastMove] = useState<MoveData>();
+    const [timer, setTimer] = useState<TimerState | undefined>(INITIAL_GAME_STATE.timer);
 
     const [movesHistory, setMovesHistory] = useState<MoveData[]>([]);
 
@@ -104,6 +112,17 @@ export const useRoomWS = (roomId: string) => {
             case 'drawOffer':
                 if (data.gameState) {
                     setGameState(data.gameState);
+                }
+                break;
+
+            case 'timerTick':
+                if (data.timer) {
+                    setTimer(data.timer);
+                    // Обновляем таймер в gameState тоже
+                    setGameState(prev => ({
+                        ...prev,
+                        timer: data.timer
+                    }));
                 }
                 break;
 
@@ -198,6 +217,7 @@ export const useRoomWS = (roomId: string) => {
         systemMessages,
         chatMessages,
         opponentCursor,
+        timer,
         
         // Функции подключения
         connectToRoom,

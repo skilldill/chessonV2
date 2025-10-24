@@ -34,6 +34,14 @@ export interface DrawOffer {
   status: "pending" | "accepted" | "declined";
 }
 
+// Типы для таймера
+export interface TimerState {
+  whiteTime: number; // время в секундах
+  blackTime: number; // время в секундах
+  whiteIncrement?: number; // добавка времени за ход в секундах
+  blackIncrement?: number; // добавка времени за ход в секундах
+}
+
 // Типы для состояния игры
 export interface GameState {
   currentFEN: string;
@@ -44,6 +52,7 @@ export interface GameState {
   gameResult?: GameResult;
   drawOffer?: DrawOffer;
   drawOfferCount: { [userId: string]: number };
+  timer?: TimerState;
 }
 
 // Типы для WebSocket сообщений от клиента
@@ -59,7 +68,7 @@ export type WSClientMessage =
 export interface WSServerMessage {
   system?: boolean;
   message?: string;
-  type?: "connection" | "reconnection" | "gameStart" | "gameEnd" | "message" | "move" | "cursor" | "gameResult" | "drawOffer";
+  type?: "connection" | "reconnection" | "gameStart" | "gameEnd" | "message" | "move" | "cursor" | "gameResult" | "drawOffer" | "timerTick";
   userColor?: ChessColor;
   opponentColor?: ChessColor;
   gameState?: GameState;
@@ -70,6 +79,8 @@ export interface WSServerMessage {
   from?: string;
   userId?: string;
   time?: number;
+  timer?: TimerState;
+  currentPlayer?: ChessColor;
 }
 
 // Типы для состояния комнаты
