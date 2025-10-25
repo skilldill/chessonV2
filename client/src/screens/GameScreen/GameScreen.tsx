@@ -1,5 +1,5 @@
 import { ChessBoard, JSChessEngine } from "react-chessboard-ui";
-import type { ChessColor, GameState, MoveData } from "../../types";
+import type { ChessColor, GameState, MoveData, TimerState } from "../../types";
 import { memo, useEffect, useMemo, useState } from "react";
 import { ChessboardWrap } from "../../components/ChessboardWrap/ChessboardWrap";
 import { GameScreenControls } from "../../components/GameScreenControls/GameScreenControls";
@@ -7,12 +7,14 @@ import { CapturedPieces } from "../../components/CapturedPieces/CapturedPieces";
 import { ChessTimer } from "../../components/ChessTimer/ChessTimer";
 import { HistoryMoves } from "../../components/HistoryMoves/HistoryMoves";
 import { INITIAL_FEN } from "../../constants/chess";
+import { useTimers } from "../../hooks/useTimers";
 
 type GameScreenProps = {
     gameState: GameState;
     playerColor: ChessColor;
     movesHistory: MoveData[];
     currentMove?: MoveData;
+    timer?: TimerState;
     onMove: (moveData: MoveData) => void;
 }
 
@@ -21,11 +23,17 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
     gameState,
     currentMove,
     movesHistory,
-    
-    onMove, 
+    timer,
+    onMove,
 }) => {
     const [initialFEN, setInitialFEN] = useState(INITIAL_FEN);
     const reversed = useMemo(() => playerColor === "black", [playerColor]);
+    const { 
+        opponentTime, 
+        playerTime,
+        initialOpponentTime,
+        initialPlayerTime, 
+    } = useTimers({ timer, playerColor, gameState });
 
     const externalChangeMove = useMemo(() => {
         if (!currentMove) return undefined;
@@ -95,13 +103,15 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                     <HistoryMoves moves={movesHistory} />
                 </div>
                 <div className="flex flex-col gap-y-[8px]">
+                    {/* Таймер соперника (верхний) */}
                     <ChessTimer
-                        initSeconds={300}
-                        seconds={100}
+                        initSeconds={initialOpponentTime}
+                        seconds={opponentTime}
                     />
+                    {/* Таймер игрока (нижний) */}
                     <ChessTimer
-                        initSeconds={300}
-                        seconds={100}
+                        initSeconds={initialPlayerTime}
+                        seconds={playerTime}
                         timeLineBottom={true}
                     />
                 </div>

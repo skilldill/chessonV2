@@ -14,6 +14,7 @@ export const AppScreen = () => {
         userColor,
         lastMove,
         movesHistory,
+        timer,
 
         connectToRoom, 
         sendMove,
@@ -39,6 +40,7 @@ export const AppScreen = () => {
                 playerColor={userColor}
                 onMove={sendMove}
                 currentMove={lastMove}
+                timer={timer}
             />
         );
     }

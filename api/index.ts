@@ -8,6 +8,8 @@ if (process.env.WITHOUT_MONGO !== 'true') {
   connectDB();
 }
 
+const DEFAULT_TIME_SECONDS = 600;
+
 const app = new Elysia();
 
 // Функция для генерации коротких уникальных ID
@@ -61,6 +63,15 @@ type DrawOffer = {
     status: "pending" | "accepted" | "declined";
 };
 
+type TimerState = {
+    whiteTime: number; // время в секундах
+    blackTime: number; // время в секундах
+    whiteIncrement?: number; // добавка времени за ход в секундах
+    blackIncrement?: number; // добавка времени за ход в секундах
+    initialWhiteTime: number; // изначальное время белых в секундах
+    initialBlackTime: number; // изначальное время черных в секундах
+};
+
 type GameState = {
     currentFEN: string;
     moveHistory: MoveData[];
@@ -70,6 +81,7 @@ type GameState = {
     gameResult?: GameResult;
     drawOffer?: DrawOffer;
     drawOfferCount: { [userId: string]: number };
+    timer?: TimerState;
 };
 
 type UserData = {
@@ -86,6 +98,119 @@ type Room = {
 };
 
 const rooms = new Map<string, Room>();
+const roomTimers = new Map<string, NodeJS.Timeout>();
+
+// Функция для создания таймера комнаты
+function createRoomTimer(roomId: string) {
+  // Очищаем существующий таймер если есть
+  const existingTimer = roomTimers.get(roomId);
+  if (existingTimer) {
+    clearInterval(existingTimer);
+  }
+
+  // Создаем новый таймер
+  const timer = setInterval(() => {
+    const room = rooms.get(roomId);
+    if (!room || !room.gameState.timer || room.gameState.gameEnded || !room.gameState.gameStarted) {
+      return;
+    }
+
+    const { timer: timerState, currentPlayer } = room.gameState;
+    
+    // Уменьшаем время текущего игрока
+    if (currentPlayer === "white") {
+      timerState.whiteTime--;
+      if (timerState.whiteTime < 0) {
+        // Время белых истекло - черные выиграли
+        room.gameState.gameEnded = true;
+        room.gameState.gameResult = {
+          resultType: "resignation",
+          winColor: "black"
+        };
+
+        // Отправляем результат всем игрокам
+        for (const [id, userData] of room.users) {
+          if (userData.isConnected && userData.ws) {
+            userData.ws.send({
+              type: "gameResult",
+              gameResult: room.gameState.gameResult,
+              gameState: room.gameState,
+              time: Date.now()
+            });
+          }
+        }
+
+        // Отправляем системное сообщение
+        for (const [id, userData] of room.users) {
+          if (userData.isConnected && userData.ws) {
+            userData.ws.send({
+              system: true,
+              message: "Время белых истекло! Победили черные!",
+              type: "gameEnd"
+            });
+          }
+        }
+
+        // Очищаем таймер
+        clearInterval(timer);
+        roomTimers.delete(roomId);
+        return;
+      }
+    } else {
+      timerState.blackTime--;
+      if (timerState.blackTime < 0) {
+        // Время черных истекло - белые выиграли
+        room.gameState.gameEnded = true;
+        room.gameState.gameResult = {
+          resultType: "resignation",
+          winColor: "white"
+        };
+
+        // Отправляем результат всем игрокам
+        for (const [id, userData] of room.users) {
+          if (userData.isConnected && userData.ws) {
+            userData.ws.send({
+              type: "gameResult",
+              gameResult: room.gameState.gameResult,
+              gameState: room.gameState,
+              time: Date.now()
+            });
+          }
+        }
+
+        // Отправляем системное сообщение
+        for (const [id, userData] of room.users) {
+          if (userData.isConnected && userData.ws) {
+            userData.ws.send({
+              system: true,
+              message: "Время черных истекло! Победили белые!",
+              type: "gameEnd"
+            });
+          }
+        }
+
+        // Очищаем таймер
+        clearInterval(timer);
+        roomTimers.delete(roomId);
+        return;
+      }
+    }
+
+    // Отправляем обновленное время всем игрокам
+    for (const [id, userData] of room.users) {
+      if (userData.isConnected && userData.ws) {
+        userData.ws.send({
+          type: "timerTick",
+          timer: timerState,
+          currentPlayer: currentPlayer,
+          time: Date.now()
+        });
+      }
+    }
+  }, 1000); // Каждую секунду
+
+  roomTimers.set(roomId, timer);
+}
 
 // Healthcheck endpoint
 app.get('/api/health', () => ({
@@ -94,9 +219,15 @@ app.get('/api/health', () => ({
 }));
 
 // Create room endpoint
-app.post('/api/rooms', () => {
+app.post('/api/rooms', ({ body }) => {
   // Generate unique room ID using short format
   const roomId = generateShortId();
+  
+  // Извлекаем конфигурацию таймеров или используем значения по умолчанию
+  const timerConfig = (body as any) || {};
+  const whiteTime = timerConfig.whiteTimer || DEFAULT_TIME_SECONDS;
+  const blackTime = timerConfig.blackTimer || DEFAULT_TIME_SECONDS;
+  const increment = timerConfig.increment || 0;
   
   // Create empty room with initial game state
   const room = { 
@@ -109,7 +240,15 @@ app.post('/api/rooms', () => {
       gameEnded: false,
       gameResult: undefined,
       drawOffer: undefined,
-      drawOfferCount: {}
+      drawOfferCount: {},
+      timer: {
+        whiteTime: whiteTime,
+        blackTime: blackTime,
+        whiteIncrement: increment,
+        blackIncrement: increment,
+        initialWhiteTime: whiteTime,
+        initialBlackTime: blackTime
+      }
     }
   };
   rooms.set(roomId, room);
@@ -117,7 +256,12 @@ app.post('/api/rooms', () => {
   return {
     success: true,
     roomId,
-    message: 'Комната успешно создана'
+    message: 'Комната успешно создана',
+    timerConfig: {
+      whiteTimer: whiteTime,
+      blackTimer: blackTime,
+      increment: increment
+    }
   };
 });
 
@@ -183,6 +327,9 @@ app.ws('/ws/room', {
     }),
     t.Object({
       type: t.Literal("resign")
+    }),
+    t.Object({
+      type: t.Literal("timerTick")
     })
   ]),
 
@@ -201,7 +348,15 @@ app.ws('/ws/room', {
               gameEnded: false,
               gameResult: undefined,
               drawOffer: undefined,
-              drawOfferCount: {}
+              drawOfferCount: {},
+              timer: {
+                whiteTime: DEFAULT_TIME_SECONDS, // 10 минут по умолчанию
+                blackTime: DEFAULT_TIME_SECONDS, // 10 минут по умолчанию
+                whiteIncrement: 0, // без добавки времени
+                blackIncrement: 0, // без добавки времени
+                initialWhiteTime: DEFAULT_TIME_SECONDS, // 10 минут по умолчанию
+                initialBlackTime: DEFAULT_TIME_SECONDS // 10 минут по умолчанию
+              }
             }
           };
           rooms.set(roomId, room);
@@ -241,6 +396,21 @@ app.ws('/ws/room', {
             gameState: room.gameState,
             userColor: existingUserData?.color
           });
+
+          // Отправляем текущее состояние таймера если игра идет
+          if (room.gameState.gameStarted && !room.gameState.gameEnded && room.gameState.timer) {
+            ws.send({
+              type: "timerTick",
+              timer: room.gameState.timer,
+              currentPlayer: room.gameState.currentPlayer,
+              time: Date.now()
+            });
+            
+            // Убеждаемся, что таймер комнаты работает
+            if (!roomTimers.has(roomId)) {
+              createRoomTimer(roomId);
+            }
+          }
 
           // Уведомляем других пользователей о возвращении
           for (const [id, userData] of room.users) {
@@ -283,6 +453,16 @@ app.ws('/ws/room', {
         gameState: room.gameState
       });
 
+      // Отправляем текущее состояние таймера если игра уже идет
+      if (room.gameState.gameStarted && !room.gameState.gameEnded && room.gameState.timer) {
+        ws.send({
+          type: "timerTick",
+          timer: room.gameState.timer,
+          currentPlayer: room.gameState.currentPlayer,
+          time: Date.now()
+        });
+      }
+
       // уведомляем других пользователей о подключении
       for (const [id, userData] of room.users) {
           if (id !== userId) {
@@ -297,6 +477,9 @@ app.ws('/ws/room', {
       // Если теперь 2 игрока, начинаем игру
       if (room.users.size === 2) {
           room.gameState.gameStarted = true;
+          
+          // Запускаем таймер комнаты
+          createRoomTimer(roomId);
           
           // Уведомляем всех игроков о начале игры
           for (const [id, userData] of room.users) {
@@ -364,6 +547,16 @@ app.ws('/ws/room', {
           // Обновляем состояние игры
           room.gameState.currentFEN = data.moveData.FEN;
           room.gameState.moveHistory.push(data.moveData);
+          
+          // Добавляем время за ход (increment) если есть
+          if (room.gameState.timer) {
+            if (senderUserData.color === "white" && room.gameState.timer.whiteIncrement) {
+              room.gameState.timer.whiteTime += room.gameState.timer.whiteIncrement;
+            } else if (senderUserData.color === "black" && room.gameState.timer.blackIncrement) {
+              room.gameState.timer.blackTime += room.gameState.timer.blackIncrement;
+            }
+          }
+          
           room.gameState.currentPlayer = room.gameState.currentPlayer === "white" ? "black" : "white";
 
           // Отправляем ход всем игрокам кроме отправителя
@@ -410,6 +603,13 @@ app.ws('/ws/room', {
           // Обновляем состояние игры
           room.gameState.gameEnded = true;
           room.gameState.gameResult = data.gameResult;
+          
+          // Очищаем таймер комнаты
+          const timer = roomTimers.get(roomId);
+          if (timer) {
+            clearInterval(timer);
+            roomTimers.delete(roomId);
+          }
 
           // Отправляем результат всем игрокам
           for (const [id, userData] of room.users) {
@@ -537,6 +737,13 @@ app.ws('/ws/room', {
               room.gameState.gameResult = {
                   resultType: "draw"
               };
+              
+              // Очищаем таймер комнаты
+              const timer = roomTimers.get(roomId);
+              if (timer) {
+                clearInterval(timer);
+                roomTimers.delete(roomId);
+              }
 
               // Отправляем результат всем игрокам
               for (const [id, userData] of room.users) {
@@ -618,6 +825,13 @@ app.ws('/ws/room', {
               resultType: "resignation",
               winColor: winnerColor
           };
+          
+          // Очищаем таймер комнаты
+          const timer = roomTimers.get(roomId);
+          if (timer) {
+            clearInterval(timer);
+            roomTimers.delete(roomId);
+          }
 
           // Отправляем результат всем игрокам
           for (const [id, userData] of room.users) {
@@ -651,13 +865,27 @@ app.ws('/ws/room', {
     const room = rooms.get(roomId);
     if (!room) return;
 
+    // Проверяем, остались ли подключенные игроки
+    let connectedUsers = 0;
     for (const [_, userData] of room.users) {
       const { userName } = userData;
 
       if (userName !== ws.data.query.userName) {
-        userData.ws.send({ system: true, message: `${ws.data.query.userName} отключился` });
+        if (userData.isConnected) {
+          connectedUsers++;
+          userData.ws.send({ system: true, message: `${ws.data.query.userName} отключился` });
+        }
       } else {
         userData.isConnected = false;
+      }
+    }
+
+    // Если остался только один игрок или никто, очищаем таймер
+    if (connectedUsers <= 1) {
+      const timer = roomTimers.get(roomId);
+      if (timer) {
+        clearInterval(timer);
+        roomTimers.delete(roomId);
       }
     }
   }
