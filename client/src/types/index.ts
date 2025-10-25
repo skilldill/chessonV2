@@ -40,6 +40,8 @@ export interface TimerState {
   blackTime: number; // время в секундах
   whiteIncrement?: number; // добавка времени за ход в секундах
   blackIncrement?: number; // добавка времени за ход в секундах
+  initialWhiteTime: number; // добавка времени за ход в секундах
+  initialBlackTime: number; // добавка времени за ход в секундах
 }
 
 // Типы для состояния игры

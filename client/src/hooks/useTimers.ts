@@ -16,13 +16,13 @@ export const useTimers = ({ playerColor, timer, gameState }: UseTimersProps) => 
     useEffect(() => {
         if (gameState && gameState.timer) {
             setInitialOpponentTime(playerColor === "white" ? 
-                    gameState.timer.blackTime : 
-                    gameState.timer.whiteTime
+                    gameState.timer.initialBlackTime : 
+                    gameState.timer.initialWhiteTime
             );
 
             setInitialPlayerTime(playerColor === "white" ? 
-                gameState.timer.whiteTime : 
-                gameState.timer.blackTime
+                gameState.timer.initialWhiteTime : 
+                gameState.timer.initialBlackTime
             );
         }
     }, [])

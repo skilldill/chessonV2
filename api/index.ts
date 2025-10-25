@@ -68,6 +68,8 @@ type TimerState = {
     blackTime: number; // время в секундах
     whiteIncrement?: number; // добавка времени за ход в секундах
     blackIncrement?: number; // добавка времени за ход в секундах
+    initialWhiteTime: number; // изначальное время белых в секундах
+    initialBlackTime: number; // изначальное время черных в секундах
 };
 
 type GameState = {
@@ -118,7 +120,7 @@ function createRoomTimer(roomId: string) {
     // Уменьшаем время текущего игрока
     if (currentPlayer === "white") {
       timerState.whiteTime--;
-      if (timerState.whiteTime <= 0) {
+      if (timerState.whiteTime < 0) {
         // Время белых истекло - черные выиграли
         room.gameState.gameEnded = true;
         room.gameState.gameResult = {
@@ -156,7 +158,7 @@ function createRoomTimer(roomId: string) {
       }
     } else {
       timerState.blackTime--;
-      if (timerState.blackTime <= 0) {
+      if (timerState.blackTime < 0) {
         // Время черных истекло - белые выиграли
         room.gameState.gameEnded = true;
         room.gameState.gameResult = {
@@ -243,7 +245,9 @@ app.post('/api/rooms', ({ body }) => {
         whiteTime: whiteTime,
         blackTime: blackTime,
         whiteIncrement: increment,
-        blackIncrement: increment
+        blackIncrement: increment,
+        initialWhiteTime: whiteTime,
+        initialBlackTime: blackTime
       }
     }
   };
@@ -349,7 +353,9 @@ app.ws('/ws/room', {
                 whiteTime: DEFAULT_TIME_SECONDS, // 10 минут по умолчанию
                 blackTime: DEFAULT_TIME_SECONDS, // 10 минут по умолчанию
                 whiteIncrement: 0, // без добавки времени
-                blackIncrement: 0  // без добавки времени
+                blackIncrement: 0, // без добавки времени
+                initialWhiteTime: DEFAULT_TIME_SECONDS, // 10 минут по умолчанию
+                initialBlackTime: DEFAULT_TIME_SECONDS // 10 минут по умолчанию
               }
             }
           };
@@ -391,6 +397,21 @@ app.ws('/ws/room', {
             userColor: existingUserData?.color
           });
 
+          // Отправляем текущее состояние таймера если игра идет
+          if (room.gameState.gameStarted && !room.gameState.gameEnded && room.gameState.timer) {
+            ws.send({
+              type: "timerTick",
+              timer: room.gameState.timer,
+              currentPlayer: room.gameState.currentPlayer,
+              time: Date.now()
+            });
+            
+            // Убеждаемся, что таймер комнаты работает
+            if (!roomTimers.has(roomId)) {
+              createRoomTimer(roomId);
+            }
+          }
+
           // Уведомляем других пользователей о возвращении
           for (const [id, userData] of room.users) {
               if (id !== existingUserId) {
@@ -431,6 +452,16 @@ app.ws('/ws/room', {
         userColor: assignedColor,
         gameState: room.gameState
       });
+
+      // Отправляем текущее состояние таймера если игра уже идет
+      if (room.gameState.gameStarted && !room.gameState.gameEnded && room.gameState.timer) {
+        ws.send({
+          type: "timerTick",
+          timer: room.gameState.timer,
+          currentPlayer: room.gameState.currentPlayer,
+          time: Date.now()
+        });
+      }
 
       // уведомляем других пользователей о подключении
       for (const [id, userData] of room.users) {
