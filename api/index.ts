@@ -8,7 +8,7 @@ if (process.env.WITHOUT_MONGO !== 'true') {
   connectDB();
 }
 
-const DEFAULT_TIME_SECONDS = 10;
+const DEFAULT_TIME_SECONDS = 600;
 
 const app = new Elysia();
 
@@ -217,9 +217,15 @@ app.get('/api/health', () => ({
 }));
 
 // Create room endpoint
-app.post('/api/rooms', () => {
+app.post('/api/rooms', ({ body }) => {
   // Generate unique room ID using short format
   const roomId = generateShortId();
+  
+  // Извлекаем конфигурацию таймеров или используем значения по умолчанию
+  const timerConfig = (body as any) || {};
+  const whiteTime = timerConfig.whiteTimer || DEFAULT_TIME_SECONDS;
+  const blackTime = timerConfig.blackTimer || DEFAULT_TIME_SECONDS;
+  const increment = timerConfig.increment || 0;
   
   // Create empty room with initial game state
   const room = { 
@@ -234,10 +240,10 @@ app.post('/api/rooms', () => {
       drawOffer: undefined,
       drawOfferCount: {},
       timer: {
-        whiteTime: DEFAULT_TIME_SECONDS, // 10 минут по умолчанию
-        blackTime: DEFAULT_TIME_SECONDS, // 10 минут по умолчанию
-        whiteIncrement: 0, // без добавки времени
-        blackIncrement: 0  // без добавки времени
+        whiteTime: whiteTime,
+        blackTime: blackTime,
+        whiteIncrement: increment,
+        blackIncrement: increment
       }
     }
   };
@@ -246,7 +252,12 @@ app.post('/api/rooms', () => {
   return {
     success: true,
     roomId,
-    message: 'Комната успешно создана'
+    message: 'Комната успешно создана',
+    timerConfig: {
+      whiteTimer: whiteTime,
+      blackTimer: blackTime,
+      increment: increment
+    }
   };
 });
 

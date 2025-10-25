@@ -7,6 +7,7 @@ import { CapturedPieces } from "../../components/CapturedPieces/CapturedPieces";
 import { ChessTimer } from "../../components/ChessTimer/ChessTimer";
 import { HistoryMoves } from "../../components/HistoryMoves/HistoryMoves";
 import { INITIAL_FEN } from "../../constants/chess";
+import { useTimers } from "../../hooks/useTimers";
 
 type GameScreenProps = {
     gameState: GameState;
@@ -23,22 +24,16 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
     currentMove,
     movesHistory,
     timer,
-    
-    onMove, 
+    onMove,
 }) => {
     const [initialFEN, setInitialFEN] = useState(INITIAL_FEN);
     const reversed = useMemo(() => playerColor === "black", [playerColor]);
-
-    // Определяем время для соперника и игрока
-    const opponentTime = useMemo(() => {
-        if (!timer) return 600; // значение по умолчанию
-        return playerColor === "white" ? timer.blackTime : timer.whiteTime;
-    }, [timer, playerColor]);
-
-    const playerTime = useMemo(() => {
-        if (!timer) return 600; // значение по умолчанию
-        return playerColor === "white" ? timer.whiteTime : timer.blackTime;
-    }, [timer, playerColor]);
+    const { 
+        opponentTime, 
+        playerTime,
+        initialOpponentTime,
+        initialPlayerTime, 
+    } = useTimers({ timer, playerColor, gameState });
 
     const externalChangeMove = useMemo(() => {
         if (!currentMove) return undefined;
@@ -110,12 +105,12 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                 <div className="flex flex-col gap-y-[8px]">
                     {/* Таймер соперника (верхний) */}
                     <ChessTimer
-                        initSeconds={10}
+                        initSeconds={initialOpponentTime}
                         seconds={opponentTime}
                     />
                     {/* Таймер игрока (нижний) */}
                     <ChessTimer
-                        initSeconds={10}
+                        initSeconds={initialPlayerTime}
                         seconds={playerTime}
                         timeLineBottom={true}
                     />
