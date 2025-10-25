@@ -1,33 +1,20 @@
-import { useState, useEffect } from "react";
-
-const USER_NAME_KEY = 'chess_user_name';
+import { useState } from "react";
 
 export const useUserData = () => {
     const [userName, setUserName] = useState<string>();
+    const [avatarSrc, setAvatatSrc] = useState<string>();
 
-    // // Загружаем сохраненное имя при инициализации
-    // useEffect(() => {
-    //     const savedUserName = localStorage.getItem(USER_NAME_KEY);
-    //     if (savedUserName) {
-    //         setUserName(savedUserName);
-    //     }
-    // }, []);
-
-    // Сохраняем имя в localStorage при изменении
-    const updateUserName = (newUserName: string) => {
-        setUserName(newUserName);
-        // localStorage.setItem(USER_NAME_KEY, newUserName);
-    };
-
-    // Очищаем сохраненное имя
-    const clearUserName = () => {
+    const clearUserData = () => {
         setUserName(undefined);
-        // localStorage.removeItem(USER_NAME_KEY);
+        setAvatatSrc(undefined);
     };
 
     return { 
         userName, 
-        setUserName: updateUserName,
-        clearUserName
+        avatarSrc,
+
+        setUserName,
+        setAvatatSrc,
+        clearUserData
     };
 }
