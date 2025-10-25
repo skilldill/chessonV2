@@ -25,18 +25,6 @@ const preview: Preview = {
       ],
     },
   },
-
-  decorators: [
-    (Story, context) => {
-      const background = context.globals.backgrounds?.value || '#000000';
-      const isDark = background === '#000000';
-      
-      document.body.className = isDark ? 'dark' : '';
-      document.body.style.backgroundColor = background;
-      
-      return Story();
-    },
-  ],
 };
 
 export default preview;
