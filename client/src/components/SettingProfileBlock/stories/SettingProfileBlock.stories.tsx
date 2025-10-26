@@ -15,5 +15,7 @@ export default meta;
 type Story = StoryObj<typeof SettingProfileBlock>;
 
 export const Default: Story = {
-    args: {}
+    args: {
+        onToPlay: console.log
+    }
 };
