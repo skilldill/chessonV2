@@ -25,7 +25,9 @@ const INITIAL_GAME_STATE = {
         whiteTime: 600, // 10 минут по умолчанию
         blackTime: 600, // 10 минут по умолчанию
         whiteIncrement: 0, // без добавки времени
-        blackIncrement: 0  // без добавки времени
+        blackIncrement: 0,  // без добавки времени
+        initialWhiteTime: 600,
+        initialBlackTime: 600
     }
 }
 
@@ -136,12 +138,12 @@ export const useRoomWS = (roomId: string) => {
         }
     };
 
-    const connectToRoom = (userName: string) => {
+    const connectToRoom = ({ userName, avatar }: { userName: string, avatar: string }) => {
         if (refWS.current?.readyState === WebSocket.OPEN) {
             refWS.current.close();
         }
 
-        refWS.current = new WebSocket(`${WS_URL}?roomId=${roomId}&userName=${userName}`);
+        refWS.current = new WebSocket(`${WS_URL}?roomId=${roomId}&userName=${userName}&avatar=${avatar}`);
         
         refWS.current.onopen = () => {
             setIsConnected(true);

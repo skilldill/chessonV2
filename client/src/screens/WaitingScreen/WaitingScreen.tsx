@@ -1,3 +1,5 @@
+import { ShareLinkBlock } from "../../components/ShareLinkBlock/ShareLinkBlock";
+
 type WaitingScreenProps = {
     roomId: string;
     isConnected: boolean;
@@ -7,7 +9,7 @@ type WaitingScreenProps = {
 export const WaitingScreen = ({ roomId, isConnected, userName }: WaitingScreenProps) => {
 return (
         <div className="container">
-            <div>AppScreen {roomId}</div>
+            <ShareLinkBlock link={window.location.toString()} />
             <div>Подключен: {isConnected ? 'Да' : 'Нет'}</div>
             <div>Имя пользователя: {userName}</div>
             <div>Ожидание начала игры...</div>

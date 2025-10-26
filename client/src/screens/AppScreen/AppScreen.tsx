@@ -21,9 +21,12 @@ export const AppScreen = () => {
     } = useRoomWS(roomId || "");
     const { userName, setUserName } = useUserData();
 
-    const handleSetUserName = (userName: string) => {
+    const handleSetUserName = (userName: string, avatarIndex: number) => {
         setUserName(userName);
-        connectToRoom(userName);
+        connectToRoom({
+            userName, 
+            avatar: `${avatarIndex}`,
+        });
     }
 
     // Если пользователь еще не ввел имя, показываем форму
