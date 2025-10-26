@@ -1,3 +1,5 @@
+import type { JSX } from "react";
+
 // Типы для шахматных фигур
 export type ChessColor = "white" | "black";
 export type ChessPieceType = "pawn" | "bishop" | "knight" | "rook" | "queen" | "king";
@@ -116,3 +118,9 @@ export interface ChatMessage {
   userId: string;
   time: number;
 };
+
+
+
+export type ChessPiecesMap = {
+  [key: string]: (size: number) => JSX.Element;
+}
