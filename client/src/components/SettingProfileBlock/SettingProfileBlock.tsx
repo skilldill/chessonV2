@@ -25,6 +25,11 @@ export const SettingProfileBlock: FC<SettingProfileBlockProps> = ({ onToPlay }) 
         }
     };
 
+    const handleSubmitForm = (event: React.FormEvent) => {
+        event.preventDefault();
+        handleNext();
+    }
+
     const handleSelectAvatar = (index: number) => {
         setSelectedAvatarIndex(index);
     };
@@ -37,8 +42,8 @@ export const SettingProfileBlock: FC<SettingProfileBlockProps> = ({ onToPlay }) 
         }, 400);
     };
 
-    const handleChangeNickname = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
+    const handleChangeNickname = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const value = event.target.value;
         if (value.length <= MAX_NICKNAME_LENGTH) {
             setNickname(value);
         }
@@ -67,7 +72,7 @@ export const SettingProfileBlock: FC<SettingProfileBlockProps> = ({ onToPlay }) 
                     Enter your name
                 </h3>
                 
-                <form>
+                <form onSubmit={handleSubmitForm}>
                     <input
                         type="text"
                         value={nickname}
