@@ -1,0 +1,17 @@
+import { ShareLinkBlock } from '../ShareLinkBlock';
+
+import type { Meta, StoryObj } from '@storybook/react';
+
+const meta: Meta<typeof ShareLinkBlock> = {
+    title: 'Components/ShareLinkBlock',
+    component: ShareLinkBlock,
+};
+
+export default meta;
+type Story = StoryObj<typeof ShareLinkBlock>;
+
+export const Default: Story = {
+    args: {
+        link: 'https://chesson.me/hs12akg33g'
+    }
+};
