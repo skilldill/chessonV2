@@ -10,6 +10,7 @@ import type {
     ChatMessage,
     TimerState
 } from "../types";
+import { getOpponentCursorPosition } from "../utils/getOpponentCursorPosition";
 
 const WS_URL = 'ws://localhost:4000/ws/room';
 const INITIAL_GAME_STATE = {
@@ -100,8 +101,12 @@ export const useRoomWS = (roomId: string) => {
                 break;
 
             case 'cursor':
-                if (data.position && data.from !== undefined) {
-                    setOpponentCursor(data.position);
+                if (data.position && data.screenSize && data.from !== undefined) {
+                    const { x, y } = getOpponentCursorPosition(
+                        data.position,
+                        data.screenSize,
+                    )
+                    setOpponentCursor({ x, y });
                 }
                 break;
 
@@ -194,7 +199,11 @@ export const useRoomWS = (roomId: string) => {
     };
 
     const sendCursorPosition = (position: CursorPosition) => {
-        sendMessage({ type: 'cursor', position });
+        sendMessage({ 
+            type: 'cursor',
+            position,
+            screenSize: { width: window.innerWidth, height: window.innerHeight }
+        });
     };
 
     const sendGameResult = (gameResult: GameResult) => {

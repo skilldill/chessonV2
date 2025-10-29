@@ -1,6 +1,6 @@
 import { ChessBoard, JSChessEngine } from "react-chessboard-ui";
-import type { ChessColor, GameState, MoveData, TimerState } from "../../types";
-import { memo, useEffect, useMemo, useState } from "react";
+import type { ChessColor, GameState, MoveData, TimerState, CursorPosition } from "../../types";
+import { memo, useEffect, useMemo, useState, useRef } from "react";
 import { ChessboardWrap } from "../../components/ChessboardWrap/ChessboardWrap";
 import { GameScreenControls } from "../../components/GameScreenControls/GameScreenControls";
 import { CapturedPieces } from "../../components/CapturedPieces/CapturedPieces";
@@ -8,6 +8,8 @@ import { ChessTimer } from "../../components/ChessTimer/ChessTimer";
 import { HistoryMoves } from "../../components/HistoryMoves/HistoryMoves";
 import { INITIAL_FEN } from "../../constants/chess";
 import { useTimers } from "../../hooks/useTimers";
+import { debounce } from "../../utils/debounce";
+import { CursorProfile } from "../../components/CursorProfile/CursorProfile";
 
 type GameScreenProps = {
     gameState: GameState;
@@ -15,7 +17,9 @@ type GameScreenProps = {
     movesHistory: MoveData[];
     currentMove?: MoveData;
     timer?: TimerState;
+    opponentCursor?: CursorPosition;
     onMove: (moveData: MoveData) => void;
+    onSendCursorPosition: (position: CursorPosition) => void;
 }
 
 export const GameScreen: React.FC<GameScreenProps> = memo(({ 
@@ -24,7 +28,9 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
     currentMove,
     movesHistory,
     timer,
+    opponentCursor,
     onMove,
+    onSendCursorPosition,
 }) => {
     const [initialFEN, setInitialFEN] = useState(INITIAL_FEN);
     const reversed = useMemo(() => playerColor === "black", [playerColor]);
@@ -34,6 +40,21 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
         initialOpponentTime,
         initialPlayerTime, 
     } = useTimers({ timer, playerColor, gameState });
+
+    // Отслеживаем позицию курсора
+    // useEffect(() => {
+    //     const sendPosition = debounce(onSendCursorPosition, 2000);
+
+    //     const handleMouseMove = (event: MouseEvent) => {
+    //         sendPosition({ x: event.clientX, y: event.clientY })
+    //     };
+
+    //     document.addEventListener('mousemove', handleMouseMove);
+
+    //     return () => {
+    //         document.removeEventListener('mousemove', handleMouseMove);
+    //     };
+    // }, []);
 
     const externalChangeMove = useMemo(() => {
         if (!currentMove) return undefined;
@@ -53,7 +74,12 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
     }, [])
 
     return (
-        <div className="bg-back-primary grid grid-cols-[1fr_720px_1fr] h-screen items-center">
+        <div className="bg-back-primary grid grid-cols-[1fr_720px_1fr] h-screen items-center relative">
+            {opponentCursor && (
+                <div style={{ position: 'fixed', top: `${opponentCursor.y}px`, left: `${opponentCursor.x}px` }}>
+                    <CursorProfile nickname="Игрок" />
+                </div>
+            )}
             <div className="flex justify-end p-[16px]">
                 <div className="flex flex-col gap-y-[8px]">
                     <CapturedPieces

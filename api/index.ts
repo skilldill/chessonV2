@@ -302,6 +302,10 @@ app.ws('/ws/room', {
       position: t.Object({
         x: t.Number(),
         y: t.Number()
+      }),
+      screenSize: t.Object({
+        width: t.Number(),
+        height: t.Number()
       })
     }),
     t.Object({
@@ -586,6 +590,7 @@ app.ws('/ws/room', {
                   userData.ws.send({
                       type: "cursor",
                       position: data.position,
+                      screenSize: data.screenSize,
                       from: senderUserData.userName,
                       userId: senderUserId,
                       time: Date.now()

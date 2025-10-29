@@ -11,6 +11,8 @@ export const SetProfileScreen: FC<SetProfileScreenProps> = ({ onSetUserName }) =
     };
 
     return (
-        <SettingProfileBlock onToPlay={handleToPlay} />
+        <div className="w-full h-[100vh] flex justify-center items-center">
+            <SettingProfileBlock onToPlay={handleToPlay} />
+        </div>
     );
 };

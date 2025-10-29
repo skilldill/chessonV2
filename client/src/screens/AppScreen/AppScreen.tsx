@@ -8,23 +8,25 @@ import { SetProfileScreen } from "../SetProfileScreen/SetProfileScreen";
 export const AppScreen = () => {
     const { roomId } = useParams<{ roomId: string }>();
 
-    const { 
-        isConnected, 
-        gameState, 
+    const {
+        isConnected,
+        gameState,
         userColor,
         lastMove,
         movesHistory,
         timer,
+        opponentCursor,
 
-        connectToRoom, 
+        connectToRoom,
         sendMove,
+        sendCursorPosition,
     } = useRoomWS(roomId || "");
     const { userName, setUserName } = useUserData();
 
     const handleSetUserName = (userName: string, avatarIndex: number) => {
         setUserName(userName);
         connectToRoom({
-            userName, 
+            userName,
             avatar: `${avatarIndex}`,
         });
     }
@@ -44,6 +46,8 @@ export const AppScreen = () => {
                 onMove={sendMove}
                 currentMove={lastMove}
                 timer={timer}
+                opponentCursor={opponentCursor}
+                onSendCursorPosition={sendCursorPosition}
             />
         );
     }

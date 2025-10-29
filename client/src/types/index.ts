@@ -59,11 +59,17 @@ export interface GameState {
   timer?: TimerState;
 }
 
+export type ScreenSize = {
+  width: number;
+  height: number;
+}
+
+
 // Типы для WebSocket сообщений от клиента
 export type WSClientMessage = 
   | { type: "message"; message: string }
   | { type: "move"; moveData: MoveData }
-  | { type: "cursor"; position: CursorPosition }
+  | { type: "cursor"; position: CursorPosition, screenSize: ScreenSize }
   | { type: "gameResult"; gameResult: GameResult }
   | { type: "drawOffer"; action: "offer" | "accept" | "decline" }
   | { type: "resign" };
@@ -78,6 +84,7 @@ export interface WSServerMessage {
   gameState?: GameState;
   moveData?: MoveData;
   position?: CursorPosition;
+  screenSize?: ScreenSize;
   gameResult?: GameResult;
   action?: "offer" | "accept" | "decline";
   from?: string;
