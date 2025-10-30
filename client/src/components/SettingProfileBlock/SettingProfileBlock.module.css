@@ -1,0 +1,23 @@
+@keyframes glowInAnimation {
+    0% {
+        background-color: #155DFC;
+        opacity: 1;
+        transform: translate(0px, 0px) scale(1);
+    }
+    
+    50% {
+        background-color: #155DFC;
+        opacity: 0.2;
+        transform: translate(0px, 0px) scale(2.5);
+    }
+
+    100% {
+        background-color: #155DFC;
+        opacity: 1;
+        transform: translate(0px, 0px) scale(1);
+    }
+}
+
+.glowIn {
+    /* animation: glowInAnimation 40s  infinite cubic-bezier(0.4, 0, 0.2, 1) forwards; */
+}

@@ -42,11 +42,11 @@ export const MemAvatarSelect: FC<MemAvatarSelectProps> = ({ onSelectAvatar }) =>
     }
 
     return (
-        <div className="grid grid-cols-4 grid-rows-2 gap-[24px] relative">
+        <div className="grid grid-cols-[repeat(4,_64px)] grid-rows-2 gap-[24px] relative">
             <div
-                className="absolute w-[112px] h-[112px] rounded-full"
+                className="absolute w-[80px] h-[80px] rounded-full"
                 style={{
-                    transform: selected !== undefined ? `translate(${(selected % 4) * (96 + 24) - 8}px, ${Math.floor(selected / 4) * (96 + 24) - 8}px)` : `translate(${(prevSelected % 4) * (96 + 24) - 8}px, ${Math.floor(prevSelected / 4) * (96 + 24) - 8}px)`,
+                    transform: selected !== undefined ? `translate(${(selected % 4) * (64 + 24) - 8}px, ${Math.floor(selected / 4) * (64 + 24) - 8}px)` : `translate(${(prevSelected % 4) * (64 + 24) - 8}px, ${Math.floor(prevSelected / 4) * (64 + 24) - 8}px)`,
                 }}
             >
                 <svg className="w-full h-full" viewBox="0 0 112 112">
@@ -57,7 +57,7 @@ export const MemAvatarSelect: FC<MemAvatarSelectProps> = ({ onSelectAvatar }) =>
                         fill="none"
                         stroke="url(#gradient)"
                         strokeLinecap="round"
-                        strokeWidth="2"
+                        strokeWidth="3"
                         strokeDasharray="339.29"
                         strokeDashoffset="0"
                         className="transition-all duration-400"
@@ -82,7 +82,7 @@ export const MemAvatarSelect: FC<MemAvatarSelectProps> = ({ onSelectAvatar }) =>
                     onClick={() => selectAvatar(index)}
                     src={src}
                     alt={`Avatar ${index + 1}`}
-                    className="w-[96px] h-[96px] rounded-full  cursor-pointer transition-all duration-200 active:scale-95"
+                    className="w-[64px] h-[64px] rounded-full  cursor-pointer transition-all duration-200 active:scale-95"
                 />
             ))}
         </div>
