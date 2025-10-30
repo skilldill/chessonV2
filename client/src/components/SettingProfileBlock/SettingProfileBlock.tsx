@@ -1,7 +1,5 @@
 import { useState, type FC } from "react";
 import { MemAvatarSelect } from "../MemAvatarSelect/MemAvatarSelect";
-import cn from 'classnames';
-import styles from './SettingProfileBlock.module.css';
 
 const MAX_NICKNAME_LENGTH = 10;
 
@@ -37,14 +35,10 @@ export const SettingProfileBlock: FC<SettingProfileBlockProps> = ({ onToPlay, on
     }
 
     return (
-        <div className="w-[432px] h-[580px] relative rounded-xl border-[1px] border-[#364153] rounded-3xl overflow-hidden">
-            <div 
-                className={cn("w-[348px] h-[348px] rounded-full absolute top-[-174px] left-[-104px] bg-[#155DFC] z-30 blur-[200px]", styles.glowIn)} 
-            />
-            
+        <div className="w-[432px] h-[580px] relative rounded-xl border-[1px] border-[#364153] rounded-3xl overflow-hidden select-none fadeIn">
+            <div className="w-[348px] h-[348px] rounded-full absolute top-[-174px] left-[-104px] bg-[#155DFC] z-30 blur-[200px]" />
             
             <div className="w-full h-full flex flex-col items-center absolute top-0 left-0 gap-[48px] z-40 py-[32px]">
-
                 <div className="w-full flex justify-end px-[32px]">
                     <button 
                         type="button"
