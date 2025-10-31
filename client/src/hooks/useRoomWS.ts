@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import type { 
     WSServerMessage, 
     WSClientMessage, 
@@ -10,12 +10,14 @@ import type {
     TimerState
 } from "../types";
 import { getOpponentCursorPosition } from "../utils/getOpponentCursorPosition";
+import type { FigureColor } from "react-chessboard-ui";
 
 const WS_URL = 'ws://localhost:4000/ws/room';
 const INITIAL_GAME_STATE = {
     currentFEN: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
     moveHistory: [],
     currentPlayer: "white" as ChessColor,
+    currentColor: "white" as ChessColor,
     gameStarted: false,
     gameEnded: false,
     gameResult: undefined,
@@ -35,6 +37,7 @@ export const useRoomWS = (roomId: string) => {
     const refWS = useRef<WebSocket | null>(null);
     
     const [gameState, setGameState] = useState<GameState>(INITIAL_GAME_STATE);
+    const [currentColorMove, setCurrentColorMove] = useState<FigureColor>();
     const [isConnected, setIsConnected] = useState<boolean>(false);
     const [userColor, setUserColor] = useState<ChessColor>();
     const [opponentColor, setOpponentColor] = useState<ChessColor>();
@@ -48,6 +51,13 @@ export const useRoomWS = (roomId: string) => {
     
     const [resultMessage, setResultMessage] = useState<string>();
     const [offeredDraw, setOfferedDraw] = useState(false);
+
+    // Синхронизируем currentColorMove с gameState.currentColor
+    useEffect(() => {
+        if (gameState.currentColor) {
+            setCurrentColorMove(gameState.currentColor as FigureColor);
+        }
+    }, [gameState.currentColor]);
 
     const handleMessage = (data: WSServerMessage) => {
         // Обработка системных сообщений
@@ -67,12 +77,16 @@ export const useRoomWS = (roomId: string) => {
                 if (data.gameState) {
                     setGameState(data.gameState);
                     setMovesHistory(data.gameState.moveHistory);
+                    // Обновляем currentColorMove на основе currentColor
+                    setCurrentColorMove(data.gameState.currentColor as FigureColor);
                 }
                 break;
 
             case 'gameStart':
                 if (data.gameState) {
                     setGameState(data.gameState);
+                    // Обновляем currentColorMove на основе currentColor
+                    setCurrentColorMove(data.gameState.currentColor as FigureColor);
                 }
                 break;
 
@@ -96,6 +110,8 @@ export const useRoomWS = (roomId: string) => {
                     setGameState(data.gameState);
                     setLastMove(data.moveData);
                     setMovesHistory(data.gameState.moveHistory);
+                    // Обновляем currentColorMove на основе currentColor
+                    setCurrentColorMove(data.gameState.currentColor as FigureColor);
                 }
                 break;
 
@@ -112,6 +128,8 @@ export const useRoomWS = (roomId: string) => {
             case 'gameResult':
                 if (data.gameState) {
                     setGameState(data.gameState);
+                    // Обновляем currentColorMove на основе currentColor
+                    setCurrentColorMove(data.gameState.currentColor as FigureColor);
                 }
                 break;
 
@@ -123,10 +141,17 @@ export const useRoomWS = (roomId: string) => {
                 if (data.timer) {
                     setTimer(data.timer);
                     // Обновляем таймер в gameState тоже
-                    setGameState(prev => ({
-                        ...prev,
-                        timer: data.timer
-                    }));
+                    setGameState(prev => {
+                        const updated = {
+                            ...prev,
+                            timer: data.timer
+                        };
+                        // Обновляем currentColorMove если изменился currentColor
+                        if (prev.currentColor !== updated.currentColor) {
+                            setCurrentColorMove(updated.currentColor as FigureColor);
+                        }
+                        return updated;
+                    });
                 }
                 break;
 
@@ -192,6 +217,17 @@ export const useRoomWS = (roomId: string) => {
 
     const sendMove =(moveData: MoveData) => {
         setMovesHistory((moves) => [...moves, moveData]); 
+        // Обновляем currentColorMove сразу после отправки хода
+        // Ход переходит к оппоненту, поэтому меняем цвет на противоположный текущему
+        setGameState((prev) => {
+            const nextColor = prev.currentColor === "white" ? "black" : "white";
+            setCurrentColorMove(nextColor as FigureColor);
+            return {
+                ...prev,
+                currentColor: nextColor,
+                currentPlayer: nextColor
+            };
+        });
         sendMessage({ type: 'move', moveData });
     };
 
@@ -222,6 +258,7 @@ export const useRoomWS = (roomId: string) => {
         // Состояние
         isConnected,
         gameState,
+        currentColorMove,
         userColor,
         opponentColor,
         opponentName,

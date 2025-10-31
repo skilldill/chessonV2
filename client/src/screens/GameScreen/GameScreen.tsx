@@ -9,7 +9,7 @@ import { HistoryMoves } from "../../components/HistoryMoves/HistoryMoves";
 import { INITIAL_FEN } from "../../constants/chess";
 import { useTimers } from "../../hooks/useTimers";
 import { debounce } from "../../utils/debounce";
-import { CursorProfile } from "../../components/CursorProfile/CursorProfile";
+import { GameCursorProfile } from "../../components/GameCursorProfile/GameCursorProfile";
 import { DrawOfferActions } from "../../components/DrawOfferActions/DrawOfferActions";
 import { ResultsActions } from "../../components/ResultsActions/ResultsActions";
 
@@ -56,19 +56,19 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
     } = useTimers({ timer, playerColor, gameState });
 
     // Отслеживаем позицию курсора
-    // useEffect(() => {
-    //     const sendPosition = debounce(onSendCursorPosition, 2000);
+    useEffect(() => {
+        const sendPosition = debounce(onSendCursorPosition, 500);
 
-    //     const handleMouseMove = (event: MouseEvent) => {
-    //         sendPosition({ x: event.clientX, y: event.clientY })
-    //     };
+        const handleMouseMove = (event: MouseEvent) => {
+            sendPosition({ x: event.clientX, y: event.clientY })
+        };
 
-    //     document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mousemove', handleMouseMove);
 
-    //     return () => {
-    //         document.removeEventListener('mousemove', handleMouseMove);
-    //     };
-    // }, []);
+        return () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+        };
+    }, []);
 
     const externalChangeMove = useMemo(() => {
         if (!currentMove) return undefined;
@@ -107,10 +107,12 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                 message={resultMessage}
                 onClose={handleCloseResults}
             />
-            {opponentCursor && (
-                <div style={{ position: 'fixed', top: `${opponentCursor.y}px`, left: `${opponentCursor.x}px` }}>
-                    <CursorProfile nickname="Игрок" />
-                </div>
+            {!resultMessage && (
+                <GameCursorProfile
+                    opponentCursor={opponentCursor}
+                    playerColor={playerColor}
+                    gameState={gameState}
+                />
             )}
             <div className="flex justify-end p-[16px]">
                 <div className="flex flex-col gap-y-[8px]">

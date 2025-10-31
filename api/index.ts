@@ -72,16 +72,26 @@ type TimerState = {
     initialBlackTime: number; // изначальное время черных в секундах
 };
 
+type PlayerInfo = {
+    userId: string;
+    userName: string;
+    avatar: string;
+    color: "white" | "black";
+};
+
 type GameState = {
     currentFEN: string;
     moveHistory: MoveData[];
     currentPlayer: "white" | "black";
+    currentColor: "white" | "black"; // чей ход
     gameStarted: boolean;
     gameEnded: boolean;
     gameResult?: GameResult;
     drawOffer?: DrawOffer;
     drawOfferCount: { [userId: string]: number };
     timer?: TimerState;
+    player?: PlayerInfo;
+    opponent?: PlayerInfo;
 };
 
 type UserData = {
@@ -100,6 +110,40 @@ type Room = {
 
 const rooms = new Map<string, Room>();
 const roomTimers = new Map<string, NodeJS.Timeout>();
+
+// Функция для синхронизации currentColor с currentPlayer
+function syncCurrentColor(room: Room) {
+    room.gameState.currentColor = room.gameState.currentPlayer;
+}
+
+// Функция для обновления данных игроков в gameState
+function updatePlayersInGameState(room: Room) {
+    const whitePlayer = Array.from(room.users.values()).find(user => user.color === "white");
+    const blackPlayer = Array.from(room.users.values()).find(user => user.color === "black");
+    
+    if (whitePlayer && blackPlayer) {
+        const whiteUserId = Array.from(room.users.entries()).find(([_, user]) => user === whitePlayer)?.[0];
+        const blackUserId = Array.from(room.users.entries()).find(([_, user]) => user === blackPlayer)?.[0];
+        
+        if (whiteUserId && blackUserId) {
+            room.gameState.player = {
+                userId: whiteUserId,
+                userName: whitePlayer.userName,
+                avatar: whitePlayer.avatar,
+                color: "white"
+            };
+            room.gameState.opponent = {
+                userId: blackUserId,
+                userName: blackPlayer.userName,
+                avatar: blackPlayer.avatar,
+                color: "black"
+            };
+        }
+    }
+    
+    // Обновляем currentColor на основе currentPlayer
+    syncCurrentColor(room);
+}
 
 // Функция для создания таймера комнаты
 function createRoomTimer(roomId: string) {
@@ -237,6 +281,7 @@ app.post('/api/rooms', ({ body }) => {
       currentFEN: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", // Starting position
       moveHistory: [],
       currentPlayer: "white" as "white" | "black",
+      currentColor: "white" as "white" | "black",
       gameStarted: false,
       gameEnded: false,
       gameResult: undefined,
@@ -275,6 +320,23 @@ app.ws('/ws/room', {
 
   body: t.Union([
     t.Object({
+      type: t.Literal("cursor"),
+      position: t.Union([
+        t.Object({
+          x: t.Number(),
+          y: t.Number()
+        }),
+        t.Array(t.Object({
+          x: t.Number(),
+          y: t.Number()
+        }))
+      ]),
+      screenSize: t.Object({
+        width: t.Number(),
+        height: t.Number()
+      })
+    }),
+    t.Object({
       type: t.Literal("message"),
       message: t.String()
     }),
@@ -295,17 +357,6 @@ app.ws('/ws/room', {
             t.Literal("king")
           ])
         })
-      })
-    }),
-    t.Object({
-      type: t.Literal("cursor"),
-      position: t.Object({
-        x: t.Number(),
-        y: t.Number()
-      }),
-      screenSize: t.Object({
-        width: t.Number(),
-        height: t.Number()
       })
     }),
     t.Object({
@@ -350,6 +401,7 @@ app.ws('/ws/room', {
               currentFEN: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
               moveHistory: [],
               currentPlayer: "white" as "white" | "black",
+              currentColor: "white" as "white" | "black",
               gameStarted: false,
               gameEnded: false,
               gameResult: undefined,
@@ -396,6 +448,11 @@ app.ws('/ws/room', {
           });
 
           // Приветствие для вернувшегося пользователя
+          // Обновляем данные игроков в gameState если игра началась
+          if (room.gameState.gameStarted && room.users.size === 2) {
+              updatePlayersInGameState(room);
+          }
+          
           ws.send({ 
             system: true, 
             message: `Добро пожаловать обратно в комнату ${roomId}, ${userName}! Ваш ID: ${existingUserId}`,
@@ -486,6 +543,9 @@ app.ws('/ws/room', {
       if (room.users.size === 2) {
           room.gameState.gameStarted = true;
           
+          // Обновляем данные игроков в gameState
+          updatePlayersInGameState(room);
+          
           // Запускаем таймер комнаты
           createRoomTimer(roomId);
           
@@ -565,7 +625,10 @@ app.ws('/ws/room', {
             }
           }
           
+          // Меняем ход
           room.gameState.currentPlayer = room.gameState.currentPlayer === "white" ? "black" : "white";
+          // Обновляем currentColor синхронно с currentPlayer
+          syncCurrentColor(room);
 
           // Отправляем ход всем игрокам кроме отправителя
           for (const [id, userData] of room.users) {
@@ -582,14 +645,20 @@ app.ws('/ws/room', {
           }
       } else if (data.type === "cursor") {
           // Позиция курсора
-          senderUserData.cursorPosition = data.position;
+          // Нормализуем position если он пришел как массив
+          let position = data.position;
+          if (Array.isArray(position)) {
+              position = position[0] || { x: 0, y: 0 };
+          }
+          
+          senderUserData.cursorPosition = position;
 
           // Отправляем позицию курсора другим игрокам
           for (const [id, userData] of room.users) {
               if (id !== senderUserId && userData.isConnected && userData.ws) {
                   userData.ws.send({
                       type: "cursor",
-                      position: data.position,
+                      position: position,
                       screenSize: data.screenSize,
                       from: senderUserData.userName,
                       userId: senderUserId,
