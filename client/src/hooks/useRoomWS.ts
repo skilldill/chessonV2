@@ -5,8 +5,7 @@ import type {
     GameState, 
     ChessColor, 
     MoveData, 
-    CursorPosition, 
-    GameResult, 
+    CursorPosition,
     ChatMessage,
     TimerState
 } from "../types";
@@ -45,8 +44,10 @@ export const useRoomWS = (roomId: string) => {
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
     const [lastMove, setLastMove] = useState<MoveData>();
     const [timer, setTimer] = useState<TimerState | undefined>(INITIAL_GAME_STATE.timer);
-
     const [movesHistory, setMovesHistory] = useState<MoveData[]>([]);
+    
+    const [resultMessage, setResultMessage] = useState<string>();
+    const [offeredDraw, setOfferedDraw] = useState(false);
 
     const handleMessage = (data: WSServerMessage) => {
         // Обработка системных сообщений
@@ -76,9 +77,7 @@ export const useRoomWS = (roomId: string) => {
                 break;
 
             case 'gameEnd':
-                if (data.gameState) {
-                    setGameState(data.gameState);
-                }
+                setResultMessage(data.message);
                 break;
 
             case 'message':
@@ -117,9 +116,7 @@ export const useRoomWS = (roomId: string) => {
                 break;
 
             case 'drawOffer':
-                if (data.gameState) {
-                    setGameState(data.gameState);
-                }
+                setOfferedDraw(true);
                 break;
 
             case 'timerTick':
@@ -206,7 +203,9 @@ export const useRoomWS = (roomId: string) => {
         });
     };
 
-    const sendGameResult = (gameResult: GameResult) => {
+    // TODO: fix type
+    const sendGameResult = (gameResult: any) => {
+        console.log('sendGameResult', gameResult);
         sendMessage({ type: 'gameResult', gameResult });
     };
 
@@ -229,7 +228,10 @@ export const useRoomWS = (roomId: string) => {
         chatMessages,
         opponentCursor,
         timer,
-        
+
+        offeredDraw,
+        resultMessage,
+
         // Функции подключения
         connectToRoom,
         disconnect,

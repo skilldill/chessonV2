@@ -16,10 +16,14 @@ export const AppScreen = () => {
         movesHistory,
         timer,
         opponentCursor,
-
+        resultMessage,
+        
         connectToRoom,
         sendMove,
+        sendDrawOffer,
         sendCursorPosition,
+        sendResignation,
+        sendGameResult,
     } = useRoomWS(roomId || "");
     const { userName, setUserName } = useUserData();
 
@@ -48,6 +52,10 @@ export const AppScreen = () => {
                 timer={timer}
                 opponentCursor={opponentCursor}
                 onSendCursorPosition={sendCursorPosition}
+                onSendResignation={sendResignation}
+                onSendGameResult={sendGameResult}
+                resultMessage={resultMessage}
+                onSendDrawOffer={sendDrawOffer}
             />
         );
     }

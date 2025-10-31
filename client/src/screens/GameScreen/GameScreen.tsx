@@ -1,6 +1,6 @@
-import { ChessBoard, JSChessEngine } from "react-chessboard-ui";
+import { ChessBoard, JSChessEngine, type GameResult } from "react-chessboard-ui";
 import type { ChessColor, GameState, MoveData, TimerState, CursorPosition } from "../../types";
-import { memo, useEffect, useMemo, useState, useRef } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import { ChessboardWrap } from "../../components/ChessboardWrap/ChessboardWrap";
 import { GameScreenControls } from "../../components/GameScreenControls/GameScreenControls";
 import { CapturedPieces } from "../../components/CapturedPieces/CapturedPieces";
@@ -20,6 +20,12 @@ type GameScreenProps = {
     opponentCursor?: CursorPosition;
     onMove: (moveData: MoveData) => void;
     onSendCursorPosition: (position: CursorPosition) => void;
+    onSendResignation: () => void;
+    onSendGameResult: (gameResult: GameResult) => void;
+    onSendDrawOffer: (action: 'offer' | 'accept' | 'decline') => void;
+    
+    resultMessage?: string;
+    offeredDraw?: boolean;
 }
 
 export const GameScreen: React.FC<GameScreenProps> = memo(({ 
@@ -31,6 +37,12 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
     opponentCursor,
     onMove,
     onSendCursorPosition,
+    onSendDrawOffer,
+    onSendResignation,
+    onSendGameResult,
+
+    resultMessage,
+    offeredDraw,
 }) => {
     const [initialFEN, setInitialFEN] = useState(INITIAL_FEN);
     const reversed = useMemo(() => playerColor === "black", [playerColor]);
@@ -106,7 +118,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                     <ChessBoard
                         FEN={initialFEN}
                         onChange={(moveData) => handleMove(moveData as MoveData)} 
-                        onEndGame={() => {}}
+                        onEndGame={onSendGameResult}
                         reversed={playerColor === "black"}
                         change={externalChangeMove}
                         playerColor={playerColor}
@@ -118,9 +130,10 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                         }}
                     />
                 </ChessboardWrap>
+
                 <GameScreenControls
-                    onDrawOffer={() => {}}
-                    onResignation={() => {}}
+                    onDrawOffer={() => onSendDrawOffer('offer')}
+                    onResignation={onSendResignation}
                     onQuitGame={() => {}}
                 />
             </div>
