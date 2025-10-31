@@ -9,7 +9,6 @@ export const AppScreen = () => {
     const { roomId } = useParams<{ roomId: string }>();
 
     const {
-        isConnected,
         gameState,
         userColor,
         lastMove,
