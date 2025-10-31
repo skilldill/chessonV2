@@ -46,17 +46,28 @@ export interface TimerState {
   initialBlackTime: number; // добавка времени за ход в секундах
 }
 
+// Типы для информации об игроке
+export interface PlayerInfo {
+  userId: string;
+  userName: string;
+  avatar: string;
+  color: ChessColor;
+}
+
 // Типы для состояния игры
 export interface GameState {
   currentFEN: string;
   moveHistory: MoveData[];
   currentPlayer: ChessColor;
+  currentColor: ChessColor; // чей ход
   gameStarted: boolean;
   gameEnded: boolean;
   gameResult?: GameResult;
   drawOffer?: DrawOffer;
   drawOfferCount: { [userId: string]: number };
   timer?: TimerState;
+  player?: PlayerInfo;
+  opponent?: PlayerInfo;
 }
 
 export type ScreenSize = {
