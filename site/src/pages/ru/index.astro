@@ -29,6 +29,7 @@ import { Chessboard3D } from "../../components/Chessboard3D";
 				Создай комнату за секунду и начни партию без регистрации
 			</h2>
 			<button
+				id="create-room-btn"
 				class="bg-white text-black font-bold py-3 px-6 rounded-md hover:bg-gray-200 transition duration-300 text-lg cursor-pointer"
 			>
 				Создать комнату
@@ -36,4 +37,32 @@ import { Chessboard3D } from "../../components/Chessboard3D";
 		</div>
 		<Chessboard3D client:only />
 	</div>
+	<script>
+		const API_URL = import.meta.env.DEV ? 'http://localhost:4000' : 'https://chesson.me/api';
+		
+		document.getElementById('create-room-btn')?.addEventListener('click', async () => {
+			try {
+				const response = await fetch(`${API_URL}/api/rooms`, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify({})
+				});
+				
+				if (!response.ok) {
+					throw new Error('Failed to create room');
+				}
+				
+				const data = await response.json();
+				
+				if (data.success && data.roomId) {
+					window.location.href = import.meta.env.DEV ? `http://localhost:5173/${data.roomId}` : `https://chesson.me/game/${data.roomId}`;
+				}
+			} catch (error) {
+				console.error('Error creating room:', error);
+				alert('Не удалось создать комнату. Попробуйте снова.');
+			}
+		});
+	</script>
 </Layout>

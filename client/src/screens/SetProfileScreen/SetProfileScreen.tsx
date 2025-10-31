@@ -11,7 +11,7 @@ export const SetProfileScreen: FC<SetProfileScreenProps> = ({ onSetUserName }) =
     };
 
     const handleClose = () => {
-        window.location.href = 'https://chesson.me/';
+        window.location.href = import.meta.env.VITE_MAIN_SITE;
     };
 
     return (

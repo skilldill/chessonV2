@@ -85,7 +85,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
 
     const handleQuitGame = () => {
         onSendResignation();
-        window.location.href = 'https://chesson.me/';
+        window.location.href = import.meta.env.VITE_MAIN_SITE;
     };
 
     useEffect(() => {
@@ -93,7 +93,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
     }, [])
 
     const handleCloseResults = () => {
-        window.location.href = 'https://chesson.me/';
+        window.location.href = import.meta.env.VITE_MAIN_SITE;
     };
 
     return (

@@ -62,5 +62,5 @@ export const AppScreen = () => {
         );
     }
 
-    return <WaitingScreen roomId={roomId} userName={userName} isConnected={isConnected} />;
+    return <WaitingScreen />;
 };

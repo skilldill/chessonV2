@@ -1,19 +1,14 @@
+import type { FC } from "react";
 import { ShareLinkBlock } from "../../components/ShareLinkBlock/ShareLinkBlock";
 
-type WaitingScreenProps = {
-    roomId: string;
-    isConnected: boolean;
-    userName: string;
-}
-
-export const WaitingScreen = ({ roomId, isConnected, userName }: WaitingScreenProps) => {
+export const WaitingScreen: FC = () => {
     const handleClose = () => {
-        window.location.href = 'https://chesson.me/';
+        window.location.href = import.meta.env.VITE_MAIN_SITE;
     };
 
-return (
-    <div className="w-full h-[100vh] flex justify-center items-center">
-        <ShareLinkBlock link={window.location.toString()} onClose={handleClose} />
-    </div>
+    return (
+        <div className="w-full h-[100vh] flex justify-center items-center">
+            <ShareLinkBlock link={window.location.toString()} onClose={handleClose} />
+        </div>
     );
 }

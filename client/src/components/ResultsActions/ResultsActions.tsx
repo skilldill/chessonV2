@@ -66,7 +66,7 @@ export const ResultsActions: FC<ResultsActionsProps> = ({
             onClick={handleOverlayClick}
         >
             <div 
-                className={`bg-black/80 backdrop-blur-xl rounded-2xl p-8 border border-[#364153] flex flex-col items-center gap-4 ${isClosing ? styles.modalClosing : styles.modal}`}
+                className={`w-[334px] bg-black/80 backdrop-blur-xl rounded-2xl p-8 border border-[#364153] flex flex-col items-center gap-4 ${isClosing ? styles.modalClosing : styles.modal}`}
                 onClick={handleModalClick}
             >
                 <h2 className="text-white text-xl font-semibold mb-2">

@@ -190,7 +190,7 @@ function createRoomTimer(roomId: string) {
           if (userData.isConnected && userData.ws) {
             userData.ws.send({
               system: true,
-              message: "Время белых истекло! Победили черные!",
+              message: "White's time expired! Black wins!",
               type: "gameEnd"
             });
           }
@@ -228,7 +228,7 @@ function createRoomTimer(roomId: string) {
           if (userData.isConnected && userData.ws) {
             userData.ws.send({
               system: true,
-              message: "Время черных истекло! Победили белые!",
+              message: "Black's time expired! White wins!",
               type: "gameEnd"
             });
           }
@@ -302,7 +302,7 @@ app.post('/api/rooms', ({ body }) => {
   return {
     success: true,
     roomId,
-    message: 'Комната успешно создана',
+    message: 'Room created successfully',
     timerConfig: {
       whiteTimer: whiteTime,
       blackTimer: blackTime,
@@ -455,7 +455,7 @@ app.ws('/ws/room', {
           
           ws.send({ 
             system: true, 
-            message: `Добро пожаловать обратно в комнату ${roomId}, ${userName}! Ваш ID: ${existingUserId}`,
+            message: `Welcome back to room ${roomId}, ${userName}! Your ID: ${existingUserId}`,
             type: "reconnection",
             gameState: room.gameState,
             userColor: existingUserData?.color
@@ -479,7 +479,7 @@ app.ws('/ws/room', {
           // Уведомляем других пользователей о возвращении
           for (const [id, userData] of room.users) {
               if (id !== existingUserId) {
-                  userData.ws.send({ system: true, message: `${userName} вернулся в комнату` });
+                  userData.ws.send({ system: true, message: `${userName} rejoined the room` });
               }
           }
           return;
@@ -487,7 +487,7 @@ app.ws('/ws/room', {
 
       // Если уже 2 участника → не пускаем
       if (room.users.size >= 2) {
-          ws.send({ system: true, message: 'Комната занята' });
+          ws.send({ system: true, message: 'Room is full' });
           ws.close();
           return;
       }
@@ -512,7 +512,7 @@ app.ws('/ws/room', {
       // приветствие для нового пользователя
       ws.send({ 
         system: true, 
-        message: `Добро пожаловать в комнату ${roomId}, ${userName}! Ваш ID: ${userId}`,
+        message: `Welcome to room ${roomId}, ${userName}! Your ID: ${userId}`,
         type: "connection",
         userColor: assignedColor,
         gameState: room.gameState
@@ -533,7 +533,7 @@ app.ws('/ws/room', {
           if (id !== userId) {
               userData.ws.send({ 
                 system: true, 
-                message: `${userName} подключился`,
+                message: `${userName} connected`,
                 opponentColor: assignedColor
               });
           }
@@ -553,7 +553,7 @@ app.ws('/ws/room', {
           for (const [id, userData] of room.users) {
               userData.ws.send({
                   system: true,
-                  message: "Игра началась! Белые ходят первыми.",
+                  message: "Game started! White moves first.",
                   type: "gameStart",
                   gameState: room.gameState
               });
@@ -597,18 +597,18 @@ app.ws('/ws/room', {
       } else if (data.type === "move") {
           // Шахматный ход
           if (!room.gameState.gameStarted) {
-              ws.send({ system: true, message: "Игра еще не началась" });
+              ws.send({ system: true, message: "Game has not started yet" });
               return;
           }
 
           if (room.gameState.gameEnded) {
-              ws.send({ system: true, message: "Игра уже завершена" });
+              ws.send({ system: true, message: "Game is already finished" });
               return;
           }
 
           // Проверяем, что ход делает правильный игрок
           if (senderUserData.color !== room.gameState.currentPlayer) {
-              ws.send({ system: true, message: "Не ваш ход!" });
+              ws.send({ system: true, message: "Not your turn!" });
               return;
           }
 
@@ -669,12 +669,12 @@ app.ws('/ws/room', {
       } else if (data.type === "gameResult") {
           // Результат игры
           if (!room.gameState.gameStarted) {
-              ws.send({ system: true, message: "Игра еще не началась" });
+              ws.send({ system: true, message: "Game has not started yet" });
               return;
           }
 
           if (room.gameState.gameEnded) {
-              ws.send({ system: true, message: "Игра уже завершена" });
+              ws.send({ system: true, message: "Game is already finished" });
               return;
           }
 
@@ -706,13 +706,13 @@ app.ws('/ws/room', {
           // Отправляем системное сообщение о результате
           let resultMessage = "";
           if (data.gameResult.resultType === "mat") {
-              resultMessage = `Мат! Победили ${data.gameResult.winColor === "white" ? "белые" : "черные"}!`;
+              resultMessage = `Checkmate! ${data.gameResult.winColor === "white" ? "White" : "Black"} wins!`;
           } else if (data.gameResult.resultType === "pat") {
-              resultMessage = "Пат! Ничья!";
+              resultMessage = "Stalemate! Draw!";
           } else if (data.gameResult.resultType === "draw") {
-              resultMessage = "Ничья!";
+              resultMessage = "Draw!";
           } else if (data.gameResult.resultType === "resignation") {
-              resultMessage = `Сдача! Победили ${data.gameResult.winColor === "white" ? "белые" : "черные"}!`;
+              resultMessage = `Resignation! ${data.gameResult.winColor === "white" ? "White" : "Black"} wins!`;
           }
 
           for (const [id, userData] of room.users) {
@@ -727,26 +727,26 @@ app.ws('/ws/room', {
       } else if (data.type === "drawOffer") {
           // Предложение ничьей
           if (!room.gameState.gameStarted) {
-              ws.send({ system: true, message: "Игра еще не началась" });
+              ws.send({ system: true, message: "Game has not started yet" });
               return;
           }
 
           if (room.gameState.gameEnded) {
-              ws.send({ system: true, message: "Игра уже завершена" });
+              ws.send({ system: true, message: "Game is already finished" });
               return;
           }
 
           if (data.action === "offer") {
               // Предложение ничьей
               if (room.gameState.drawOffer && room.gameState.drawOffer.status === "pending") {
-                  ws.send({ system: true, message: "Уже есть активное предложение ничьей" });
+                  ws.send({ system: true, message: "There is already an active draw offer" });
                   return;
               }
 
               // Проверяем лимит предложений ничьей (максимум 2 на игрока)
               const offerCount = room.gameState.drawOfferCount[senderUserId] || 0;
               if (offerCount >= 2) {
-                  ws.send({ system: true, message: "Вы исчерпали лимит предложений ничьей" });
+                  ws.send({ system: true, message: "You have exhausted the draw offer limit" });
                   return;
               }
 
@@ -762,7 +762,7 @@ app.ws('/ws/room', {
               }
 
               if (!opponentUserId || !opponentUserName) {
-                  ws.send({ system: true, message: "Оппонент не найден" });
+                  ws.send({ system: true, message: "Opponent not found" });
                   return;
               }
 
@@ -792,18 +792,18 @@ app.ws('/ws/room', {
               // Уведомляем отправителя
               ws.send({ 
                   system: true, 
-                  message: `Предложение ничьей отправлено ${opponentUserName}` 
+                  message: `Draw offer sent to ${opponentUserName}` 
               });
 
           } else if (data.action === "accept") {
               // Принятие предложения ничьей
               if (!room.gameState.drawOffer || room.gameState.drawOffer.status !== "pending") {
-                  ws.send({ system: true, message: "Нет активного предложения ничьей" });
+                  ws.send({ system: true, message: "No active draw offer" });
                   return;
               }
 
               if (room.gameState.drawOffer.to !== senderUserId) {
-                  ws.send({ system: true, message: "Это предложение не для вас" });
+                  ws.send({ system: true, message: "This offer is not for you" });
                   return;
               }
 
@@ -842,7 +842,7 @@ app.ws('/ws/room', {
                   if (userData.isConnected && userData.ws) {
                       userData.ws.send({
                           system: true,
-                          message: "Предложение ничьей принято! Игра завершена ничьей.",
+                          message: "Draw offer accepted! Game ended in a draw.",
                           type: "gameEnd"
                       });
                   }
@@ -851,12 +851,12 @@ app.ws('/ws/room', {
           } else if (data.action === "decline") {
               // Отклонение предложения ничьей
               if (!room.gameState.drawOffer || room.gameState.drawOffer.status !== "pending") {
-                  ws.send({ system: true, message: "Нет активного предложения ничьей" });
+                  ws.send({ system: true, message: "No active draw offer" });
                   return;
               }
 
               if (room.gameState.drawOffer.to !== senderUserId) {
-                  ws.send({ system: true, message: "Это предложение не для вас" });
+                  ws.send({ system: true, message: "This offer is not for you" });
                   return;
               }
 
@@ -868,14 +868,14 @@ app.ws('/ws/room', {
               if (offerSender && offerSender.ws) {
                   offerSender.ws.send({
                       system: true,
-                      message: `${senderUserData.userName} отклонил предложение ничьей`
+                      message: `${senderUserData.userName} declined the draw offer`
                   });
               }
 
               // Уведомляем отклоняющего
               ws.send({ 
                   system: true, 
-                  message: "Предложение ничьей отклонено" 
+                  message: "Draw offer declined" 
               });
 
               // Очищаем предложение
@@ -885,12 +885,12 @@ app.ws('/ws/room', {
       } else if (data.type === "resign") {
           // Сдача
           if (!room.gameState.gameStarted) {
-              ws.send({ system: true, message: "Игра еще не началась" });
+              ws.send({ system: true, message: "Game has not started yet" });
               return;
           }
 
           if (room.gameState.gameEnded) {
-              ws.send({ system: true, message: "Игра уже завершена" });
+              ws.send({ system: true, message: "Game is already finished" });
               return;
           }
 
@@ -930,7 +930,7 @@ app.ws('/ws/room', {
               if (userData.isConnected && userData.ws) {
                   userData.ws.send({
                       system: true,
-                      message: `Сдача! Победили ${winnerColor === "white" ? "белые" : "черные"}!`,
+                      message: `Resignation! ${winnerColor === "white" ? "White" : "Black"} wins!`,
                       type: "gameEnd"
                   });
               }
@@ -951,7 +951,7 @@ app.ws('/ws/room', {
       if (userName !== ws.data.query.userName) {
         if (userData.isConnected) {
           connectedUsers++;
-          userData.ws.send({ system: true, message: `${ws.data.query.userName} отключился` });
+          userData.ws.send({ system: true, message: `${ws.data.query.userName} disconnected` });
         }
       } else {
         userData.isConnected = false;
