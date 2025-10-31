@@ -28,36 +28,13 @@ import { Chessboard3D } from "../components/Chessboard3D";
 			<h2 class="mb-10 font-normal text-xl sm:text-2xl md:text-3xl lg:text-4xl">
 				Create a room in seconds and start a game without registration
 			</h2>
-			<button
-				id="create-room-btn"
+			<a
+				href="https://game.chesson.me/"
 				class="bg-white text-black font-bold py-3 px-6 rounded-md hover:bg-gray-200 transition duration-300 text-lg cursor-pointer"
 			>
 				Create Room
-			</button>
+			</a>
 		</div>
 		<Chessboard3D client:only />
 	</div>
-	<script>
-		const API_URL = import.meta.env.DEV ? 'http://localhost:4000' : 'https://game.chesson.me/api';
-		
-		document.getElementById('create-room-btn')?.addEventListener('click', async () => {
-			try {
-				const response = await fetch(`${API_URL}/api/rooms`, {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-					},
-					body: JSON.stringify({})
-				});
-				
-				const data = await response.json();
-				
-				if (data.success && data.roomId) {
-					window.location.href = import.meta.env.DEV ? `http://localhost:5173/${data.roomId}` : `https://game.chesson.me/${data.roomId}`;
-				}
-			} catch (error) {
-				console.error('Error creating room:', error);
-			}
-		});
-	</script>
 </Layout>
