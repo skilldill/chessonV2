@@ -83,6 +83,11 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
         onMove(move as MoveData);
     }
 
+    const handleQuitGame = () => {
+        onSendResignation();
+        window.location.href = 'https://chesson.me/';
+    };
+
     useEffect(() => {
         setInitialFEN(gameState.currentFEN);
     }, [])
@@ -147,9 +152,11 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                 </ChessboardWrap>
 
                 <GameScreenControls
+                    key={resultMessage}
+                    gameEnded={!!resultMessage} // Если есть сообщение об окончании игры, то игра закончилась
                     onDrawOffer={() => onSendDrawOffer('offer')}
                     onResignation={onSendResignation}
-                    onQuitGame={() => {}}
+                    onQuitGame={handleQuitGame}
                 />
             </div>
             <div className="flex justify-start p-[16px]">

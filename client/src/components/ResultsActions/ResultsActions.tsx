@@ -1,5 +1,4 @@
 import { type FC, useEffect, useState, useRef } from "react";
-import { PlasmaButton } from "../PlasmaButton/PlasmaButton";
 import styles from "./ResultsActions.module.css";
 
 type ResultsActionsProps = {
@@ -12,9 +11,9 @@ export const ResultsActions: FC<ResultsActionsProps> = ({
     onClose
 }) => {
     const [isClosing, setIsClosing] = useState(false);
-    const [shouldRender, setShouldRender] = useState(false);
-    const [isDismissed, setIsDismissed] = useState(false);
-    const previousMessageRef = useRef<string | undefined>();
+    const [shouldRender, setShouldRender] = useState<boolean>(false);
+    const [isDismissed, setIsDismissed] = useState<boolean>(false);
+    const previousMessageRef = useRef<string | undefined>(undefined);
 
     useEffect(() => {
         if (message && !isDismissed) {
@@ -71,15 +70,18 @@ export const ResultsActions: FC<ResultsActionsProps> = ({
                 onClick={handleModalClick}
             >
                 <h2 className="text-white text-xl font-semibold mb-2">
-                    Результат игры
+                    Game Result
                 </h2>
                 <p className="text-gray-300 text-sm mb-4 text-center">
                     {message || 'Игра завершена'}
                 </p>
                 <div className="flex gap-4">
-                    <PlasmaButton onClick={handleCloseButton}>
-                        Закрыть и вернуться на главный экран
-                    </PlasmaButton>
+                    <button 
+                        className="rounded-md text-sm font-semibold px-4 py-2 bg-[#4F39F6] text-white min-w-[126px] cursor-pointer transition-all duration-300 active:scale-95 focus:outline-none"
+                        onClick={handleCloseButton}
+                    >
+                        Return to the main
+                    </button>
                 </div>
             </div>
         </div>

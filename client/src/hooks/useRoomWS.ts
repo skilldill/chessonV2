@@ -210,6 +210,7 @@ export const useRoomWS = (roomId: string) => {
     };
 
     const sendDrawOffer = (action: 'offer' | 'accept' | 'decline') => {
+        if (action === 'accept' || action === 'decline') setOfferedDraw(false);
         sendMessage({ type: 'drawOffer', action });
     };
 

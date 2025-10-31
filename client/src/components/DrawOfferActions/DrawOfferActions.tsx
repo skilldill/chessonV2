@@ -1,5 +1,4 @@
 import { type FC, useEffect, useState } from "react";
-import { PlasmaButton } from "../PlasmaButton/PlasmaButton";
 import styles from "./DrawOfferActions.module.css";
 
 type DrawOfferActionsProps = {
@@ -29,42 +28,34 @@ export const DrawOfferActions: FC<DrawOfferActionsProps> = ({
         }
     }, [offeredDraw, shouldRender]);
 
-    const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
-        if (e.target === e.currentTarget) {
-            onDeclineDraw();
-        }
-    };
-
-    const handleModalClick = (e: React.MouseEvent<HTMLDivElement>) => {
-        e.stopPropagation();
-    };
-
     if (!shouldRender) {
         return null;
     }
 
     return (
-        <div 
-            className={`fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm ${isClosing ? styles.overlayClosing : styles.overlay}`}
-            onClick={handleOverlayClick}
-        >
+        <div className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-center pb-8 pointer-events-none">
             <div 
-                className={`bg-black/80 backdrop-blur-xl rounded-2xl p-8 border border-[#364153] flex flex-col items-center gap-4 ${isClosing ? styles.modalClosing : styles.modal}`}
-                onClick={handleModalClick}
+                className={`bg-black/80 backdrop-blur-xl rounded-2xl p-8 border border-[#364153] flex flex-col items-center gap-4 pointer-events-auto ${isClosing ? styles.modalClosing : styles.modal}`}
             >
                 <h2 className="text-white text-xl font-semibold mb-2">
-                    Предложение ничьей
+                    Draw Offer
                 </h2>
                 <p className="text-gray-300 text-sm mb-4">
-                    Соперник предлагает ничью
+                    Your opponent offers a draw
                 </p>
                 <div className="flex gap-4">
-                    <PlasmaButton onClick={onAcceptDraw}>
-                        Принять
-                    </PlasmaButton>
-                    <PlasmaButton onClick={onDeclineDraw}>
-                        Отклонить
-                    </PlasmaButton>
+                    <button 
+                        className="rounded-md text-sm font-semibold px-4 py-2 bg-[#4F39F6] text-white min-w-[126px] cursor-pointer transition-all duration-300 active:scale-95 focus:outline-none"
+                        onClick={onAcceptDraw}
+                    >
+                        Accept
+                    </button>
+                    <button 
+                        className="rounded-md text-sm font-semibold px-4 py-2 bg-gray-800 text-white min-w-[126px] cursor-pointer transition-all duration-300 active:scale-95 focus:outline-none"
+                        onClick={onDeclineDraw}
+                    >
+                        Decline
+                    </button>
                 </div>
             </div>
         </div>
