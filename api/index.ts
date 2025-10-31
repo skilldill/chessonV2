@@ -10,7 +10,21 @@ if (process.env.WITHOUT_MONGO !== 'true') {
 
 const DEFAULT_TIME_SECONDS = 600;
 
-const app = new Elysia();
+const app = new Elysia()
+  .onRequest(({ set }) => {
+    // CORS headers
+    set.headers['Access-Control-Allow-Origin'] = '*';
+    set.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
+    set.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization';
+    set.headers['Access-Control-Max-Age'] = '86400';
+  })
+  .onBeforeHandle(({ request, set }) => {
+    // Handle preflight requests
+    if (request.method === 'OPTIONS') {
+      set.status = 204;
+      return;
+    }
+  });
 
 // Функция для генерации коротких уникальных ID
 function generateShortId(): string {
