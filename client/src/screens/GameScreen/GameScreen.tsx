@@ -10,6 +10,8 @@ import { INITIAL_FEN } from "../../constants/chess";
 import { useTimers } from "../../hooks/useTimers";
 import { debounce } from "../../utils/debounce";
 import { CursorProfile } from "../../components/CursorProfile/CursorProfile";
+import { DrawOfferActions } from "../../components/DrawOfferActions/DrawOfferActions";
+import { ResultsActions } from "../../components/ResultsActions/ResultsActions";
 
 type GameScreenProps = {
     gameState: GameState;
@@ -81,12 +83,30 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
         onMove(move as MoveData);
     }
 
+    const handleQuitGame = () => {
+        onSendResignation();
+        window.location.href = 'https://chesson.me/';
+    };
+
     useEffect(() => {
         setInitialFEN(gameState.currentFEN);
     }, [])
 
+    const handleCloseResults = () => {
+        window.location.href = 'https://chesson.me/';
+    };
+
     return (
         <div className="bg-back-primary grid grid-cols-[1fr_720px_1fr] h-screen items-center relative">
+            <DrawOfferActions
+                offeredDraw={offeredDraw}
+                onAcceptDraw={() => onSendDrawOffer('accept')}
+                onDeclineDraw={() => onSendDrawOffer('decline')}
+            />
+            <ResultsActions
+                message={resultMessage}
+                onClose={handleCloseResults}
+            />
             {opponentCursor && (
                 <div style={{ position: 'fixed', top: `${opponentCursor.y}px`, left: `${opponentCursor.x}px` }}>
                     <CursorProfile nickname="Игрок" />
@@ -132,9 +152,11 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                 </ChessboardWrap>
 
                 <GameScreenControls
+                    key={resultMessage}
+                    gameEnded={!!resultMessage} // Если есть сообщение об окончании игры, то игра закончилась
                     onDrawOffer={() => onSendDrawOffer('offer')}
                     onResignation={onSendResignation}
-                    onQuitGame={() => {}}
+                    onQuitGame={handleQuitGame}
                 />
             </div>
             <div className="flex justify-start p-[16px]">

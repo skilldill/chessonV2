@@ -6,6 +6,7 @@ type PlasmaButtonProps = {
   disabled?: boolean;
   className?: string;
   title?: string;
+  active?: boolean;
 };
 
 const WIDTH = 96;
@@ -14,6 +15,7 @@ const RADIUS_PX = 9999;
 
 // Plasma colors
 const COLORS = ["#3b5bff", "#5b2dff", "#a855f7", "#60a5fa"] as const;
+const NOT_ACTIVE_COLORS = ["#bcbcbc", "#dddddd", "#bababa", "#f3f3f3"] as const;
 
 // Animation parameters
 const BLOB_COUNT = 5;
@@ -100,9 +102,12 @@ export const PlasmaButton: React.FC<PlasmaButtonProps> = ({
   onClick,
   disabled,
   className,
+  active = true,
   title,
 }) => {
   injectStylesOnce();
+
+  const colorsForRendering = active ? COLORS : NOT_ACTIVE_COLORS;
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLButtonElement | null>(null);
@@ -171,7 +176,7 @@ export const PlasmaButton: React.FC<PlasmaButtonProps> = ({
       phaseY: Math.random() * Math.PI * 2,
       speed: BASE_SPEED * (0.6 + Math.random() * 0.8),
       radius: 0.35 + Math.random() * 0.22, // relative to min(W,H)
-      color: COLORS[i % COLORS.length],
+      color: colorsForRendering[i % colorsForRendering.length],
     }))
   );
 

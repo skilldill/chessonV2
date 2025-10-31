@@ -33,12 +33,20 @@ const RoundedControlButton = ({ icon, active, onClick, onActiveClick }: RoundedC
 }
 
 type GameScreenControlsProps = {
+    gameEnded: boolean;
+
     onDrawOffer: () => void;
     onResignation: () => void;
     onQuitGame: () => void;
 }
 
-export const GameScreenControls: FC<GameScreenControlsProps> = ({ onDrawOffer, onResignation, onQuitGame }) => {
+export const GameScreenControls: FC<GameScreenControlsProps> = ({ 
+    gameEnded,
+
+    onDrawOffer, 
+    onResignation, 
+    onQuitGame, 
+}) => {
     const [showButtons, setShowButtons] = useState(false);
     const [activeActionIndex, setActiveActionIndex] = useState<number>();
 
@@ -91,19 +99,22 @@ export const GameScreenControls: FC<GameScreenControlsProps> = ({ onDrawOffer, o
                 "top-[-44px]": showButtons,
                 [styles.bounce]: showButtons,
             })}>
-                <RoundedControlButton
-                    icon={HandShakePNG} 
-                    onClick={() => handleNotActiveClick(0)}
-                    onActiveClick={handleDrawOffer}
-                    active={activeActionIndex === 0}
-                />
-                <RoundedControlButton
-                    icon={WhiteFlagPNG} 
-                    onClick={() => handleNotActiveClick(1)}
-                    onActiveClick={handleResignation}
-                    active={activeActionIndex === 1}
-
-                />
+                {!gameEnded && (
+                    <>
+                        <RoundedControlButton
+                            icon={HandShakePNG} 
+                            onClick={() => handleNotActiveClick(0)}
+                            onActiveClick={handleDrawOffer}
+                            active={activeActionIndex === 0}
+                        />
+                        <RoundedControlButton
+                            icon={WhiteFlagPNG} 
+                            onClick={() => handleNotActiveClick(1)}
+                            onActiveClick={handleResignation}
+                            active={activeActionIndex === 1}
+                        />
+                    </>
+                )}
                 <RoundedControlButton
                     icon={CrossMarkRedPNG} 
                     onClick={() => handleNotActiveClick(2)}
@@ -111,7 +122,7 @@ export const GameScreenControls: FC<GameScreenControlsProps> = ({ onDrawOffer, o
                     active={activeActionIndex === 2}
                 />
             </div>
-            <PlasmaButton onClick={handleClickPlasmaButton} />
+            <PlasmaButton active={!gameEnded} onClick={handleClickPlasmaButton} />
         </div>
     )
 }
