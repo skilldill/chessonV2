@@ -6,6 +6,20 @@ import tailwindcss from "@tailwindcss/vite";
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/ws': {
+        target: 'ws://localhost:4000',
+        ws: true,
+        changeOrigin: true,
+      },
+    },
+  },
   test: {
     projects: [{
       extends: true,

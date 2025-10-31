@@ -1,5 +1,6 @@
 
 import { AppScreen } from "./screens/AppScreen/AppScreen";
+import { CreateRoomScreen } from "./screens/CreateRoomScreen/CreateRoomScreen";
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 import 'react-chessboard-ui/dist/index.css';
 
@@ -50,6 +51,7 @@ function App() {
   return (
     <Router>
       <Switch>
+        <Route exact path="/" component={CreateRoomScreen} />
         <Route path="/:roomId" component={AppScreen} />
       </Switch>
     </Router>
