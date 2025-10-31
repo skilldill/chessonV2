@@ -38,7 +38,7 @@ import { Chessboard3D } from "../components/Chessboard3D";
 		<Chessboard3D client:only />
 	</div>
 	<script>
-		const API_URL = import.meta.env.DEV ? 'http://localhost:4000' : 'https://chesson.me/api';
+		const API_URL = import.meta.env.DEV ? 'http://localhost:4000' : 'https://game.chesson.me/api';
 		
 		document.getElementById('create-room-btn')?.addEventListener('click', async () => {
 			try {
@@ -50,18 +50,13 @@ import { Chessboard3D } from "../components/Chessboard3D";
 					body: JSON.stringify({})
 				});
 				
-				if (!response.ok) {
-					throw new Error('Failed to create room');
-				}
-				
 				const data = await response.json();
 				
 				if (data.success && data.roomId) {
-					window.location.href = import.meta.env.DEV ? `http://localhost:5173/${data.roomId}` : `https://chesson.me/game/${data.roomId}`;
+					window.location.href = import.meta.env.DEV ? `http://localhost:5173/${data.roomId}` : `https://game.chesson.me/${data.roomId}`;
 				}
 			} catch (error) {
 				console.error('Error creating room:', error);
-				alert('Failed to create room. Please try again.');
 			}
 		});
 	</script>
