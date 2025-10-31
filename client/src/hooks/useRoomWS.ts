@@ -5,11 +5,11 @@ import type {
     GameState, 
     ChessColor, 
     MoveData, 
-    CursorPosition, 
-    GameResult, 
+    CursorPosition,
     ChatMessage,
     TimerState
 } from "../types";
+import { getOpponentCursorPosition } from "../utils/getOpponentCursorPosition";
 
 const WS_URL = 'ws://localhost:4000/ws/room';
 const INITIAL_GAME_STATE = {
@@ -25,7 +25,9 @@ const INITIAL_GAME_STATE = {
         whiteTime: 600, // 10 минут по умолчанию
         blackTime: 600, // 10 минут по умолчанию
         whiteIncrement: 0, // без добавки времени
-        blackIncrement: 0  // без добавки времени
+        blackIncrement: 0,  // без добавки времени
+        initialWhiteTime: 600,
+        initialBlackTime: 600
     }
 }
 
@@ -42,8 +44,10 @@ export const useRoomWS = (roomId: string) => {
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
     const [lastMove, setLastMove] = useState<MoveData>();
     const [timer, setTimer] = useState<TimerState | undefined>(INITIAL_GAME_STATE.timer);
-
     const [movesHistory, setMovesHistory] = useState<MoveData[]>([]);
+    
+    const [resultMessage, setResultMessage] = useState<string>();
+    const [offeredDraw, setOfferedDraw] = useState(false);
 
     const handleMessage = (data: WSServerMessage) => {
         // Обработка системных сообщений
@@ -73,9 +77,7 @@ export const useRoomWS = (roomId: string) => {
                 break;
 
             case 'gameEnd':
-                if (data.gameState) {
-                    setGameState(data.gameState);
-                }
+                setResultMessage(data.message);
                 break;
 
             case 'message':
@@ -98,8 +100,12 @@ export const useRoomWS = (roomId: string) => {
                 break;
 
             case 'cursor':
-                if (data.position && data.from !== undefined) {
-                    setOpponentCursor(data.position);
+                if (data.position && data.screenSize && data.from !== undefined) {
+                    const { x, y } = getOpponentCursorPosition(
+                        data.position,
+                        data.screenSize,
+                    )
+                    setOpponentCursor({ x, y });
                 }
                 break;
 
@@ -110,9 +116,7 @@ export const useRoomWS = (roomId: string) => {
                 break;
 
             case 'drawOffer':
-                if (data.gameState) {
-                    setGameState(data.gameState);
-                }
+                setOfferedDraw(true);
                 break;
 
             case 'timerTick':
@@ -136,12 +140,12 @@ export const useRoomWS = (roomId: string) => {
         }
     };
 
-    const connectToRoom = (userName: string) => {
+    const connectToRoom = ({ userName, avatar }: { userName: string, avatar: string }) => {
         if (refWS.current?.readyState === WebSocket.OPEN) {
             refWS.current.close();
         }
 
-        refWS.current = new WebSocket(`${WS_URL}?roomId=${roomId}&userName=${userName}`);
+        refWS.current = new WebSocket(`${WS_URL}?roomId=${roomId}&userName=${userName}&avatar=${avatar}`);
         
         refWS.current.onopen = () => {
             setIsConnected(true);
@@ -192,10 +196,16 @@ export const useRoomWS = (roomId: string) => {
     };
 
     const sendCursorPosition = (position: CursorPosition) => {
-        sendMessage({ type: 'cursor', position });
+        sendMessage({ 
+            type: 'cursor',
+            position,
+            screenSize: { width: window.innerWidth, height: window.innerHeight }
+        });
     };
 
-    const sendGameResult = (gameResult: GameResult) => {
+    // TODO: fix type
+    const sendGameResult = (gameResult: any) => {
+        console.log('sendGameResult', gameResult);
         sendMessage({ type: 'gameResult', gameResult });
     };
 
@@ -218,7 +228,10 @@ export const useRoomWS = (roomId: string) => {
         chatMessages,
         opponentCursor,
         timer,
-        
+
+        offeredDraw,
+        resultMessage,
+
         // Функции подключения
         connectToRoom,
         disconnect,

@@ -8,22 +8,31 @@ import { SetProfileScreen } from "../SetProfileScreen/SetProfileScreen";
 export const AppScreen = () => {
     const { roomId } = useParams<{ roomId: string }>();
 
-    const { 
-        isConnected, 
-        gameState, 
+    const {
+        isConnected,
+        gameState,
         userColor,
         lastMove,
         movesHistory,
         timer,
-
-        connectToRoom, 
+        opponentCursor,
+        resultMessage,
+        
+        connectToRoom,
         sendMove,
+        sendDrawOffer,
+        sendCursorPosition,
+        sendResignation,
+        sendGameResult,
     } = useRoomWS(roomId || "");
     const { userName, setUserName } = useUserData();
 
-    const handleSetUserName = (userName: string) => {
+    const handleSetUserName = (userName: string, avatarIndex: number) => {
         setUserName(userName);
-        connectToRoom(userName);
+        connectToRoom({
+            userName,
+            avatar: `${avatarIndex}`,
+        });
     }
 
     // Если пользователь еще не ввел имя, показываем форму
@@ -41,6 +50,12 @@ export const AppScreen = () => {
                 onMove={sendMove}
                 currentMove={lastMove}
                 timer={timer}
+                opponentCursor={opponentCursor}
+                onSendCursorPosition={sendCursorPosition}
+                onSendResignation={sendResignation}
+                onSendGameResult={sendGameResult}
+                resultMessage={resultMessage}
+                onSendDrawOffer={sendDrawOffer}
             />
         );
     }

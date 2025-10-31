@@ -14,6 +14,6 @@ export const groupByTwoMoves = (moves: MoveData[]) => {
             groupedMoves[groupedMoves.length - 1].push(move);
         }
     });
-    console.log(groupedMoves);
+
     return groupedMoves;
 };

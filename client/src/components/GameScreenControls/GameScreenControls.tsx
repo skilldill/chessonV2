@@ -62,6 +62,21 @@ export const GameScreenControls: FC<GameScreenControlsProps> = ({ onDrawOffer, o
         // }, 5000)
     }
 
+    const handleResignation = () => {
+        onResignation();
+        hideButtons();
+    }
+
+    const handleQuitGame = () => {
+        onQuitGame();
+        hideButtons();
+    }
+
+    const handleDrawOffer = () => {
+        onDrawOffer();
+        hideButtons();
+    }
+
     useEffect(() => {
         window.addEventListener("click", hideButtons);
         return () => {
@@ -76,23 +91,23 @@ export const GameScreenControls: FC<GameScreenControlsProps> = ({ onDrawOffer, o
                 "top-[-44px]": showButtons,
                 [styles.bounce]: showButtons,
             })}>
-                <RoundedControlButton 
+                <RoundedControlButton
                     icon={HandShakePNG} 
                     onClick={() => handleNotActiveClick(0)}
-                    onActiveClick={onDrawOffer}
+                    onActiveClick={handleDrawOffer}
                     active={activeActionIndex === 0}
                 />
-                <RoundedControlButton 
+                <RoundedControlButton
                     icon={WhiteFlagPNG} 
                     onClick={() => handleNotActiveClick(1)}
-                    onActiveClick={onResignation}
+                    onActiveClick={handleResignation}
                     active={activeActionIndex === 1}
 
                 />
-                <RoundedControlButton 
+                <RoundedControlButton
                     icon={CrossMarkRedPNG} 
                     onClick={() => handleNotActiveClick(2)}
-                    onActiveClick={onQuitGame}
+                    onActiveClick={handleQuitGame}
                     active={activeActionIndex === 2}
                 />
             </div>

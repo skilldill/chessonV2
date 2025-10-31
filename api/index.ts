@@ -86,6 +86,7 @@ type GameState = {
 
 type UserData = {
     userName: string;
+    avatar: string;
     ws: ElysiaWS<any, any>;
     isConnected: boolean;
     color?: "white" | "black";
@@ -268,7 +269,8 @@ app.post('/api/rooms', ({ body }) => {
 app.ws('/ws/room', {
   query: t.Object({
       roomId: t.String(),
-      userName: t.String()
+      userName: t.String(),
+      avatar: t.String()
   }),
 
   body: t.Union([
@@ -300,6 +302,10 @@ app.ws('/ws/room', {
       position: t.Object({
         x: t.Number(),
         y: t.Number()
+      }),
+      screenSize: t.Object({
+        width: t.Number(),
+        height: t.Number()
       })
     }),
     t.Object({
@@ -334,7 +340,7 @@ app.ws('/ws/room', {
   ]),
 
   open(ws) {
-      const { roomId, userName } = ws.data.query;
+      const { roomId, userName, avatar } = ws.data.query;
 
       let room = rooms.get(roomId);
       if (!room) {
@@ -382,6 +388,7 @@ app.ws('/ws/room', {
           // Обновляем данные пользователя с новым WebSocket
           room.users.set(existingUserId, {
               userName: userName,
+              avatar: avatar,
               ws: ws,
               isConnected: true,
               color: existingUserData?.color,
@@ -438,6 +445,7 @@ app.ws('/ws/room', {
       // Сохраняем данные нового пользователя в комнате
       room.users.set(userId, {
           userName: userName,
+          avatar: avatar,
           ws: ws,
           isConnected: true,
           color: assignedColor,
@@ -582,6 +590,7 @@ app.ws('/ws/room', {
                   userData.ws.send({
                       type: "cursor",
                       position: data.position,
+                      screenSize: data.screenSize,
                       from: senderUserData.userName,
                       userId: senderUserId,
                       time: Date.now()

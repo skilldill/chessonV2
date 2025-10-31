@@ -95,13 +95,3 @@ export function getMaterialPercents(
     },
   };
 }
-
-// 🔹 Пример:
-const fenExample =
-  "r1bqkbnr/1ppp1ppp/p1n5/4p3/4P3/5N2/PPPP1PPP/RNBQ1RK1 b kq - 0 5";
-
-console.log(getMaterialPercents(fenExample));
-// {
-//   white: { pawns: 35, percentOfStart: 100, shareOfRemaining: 50 },
-//   black: { pawns: 34, percentOfStart: 97.1, shareOfRemaining: 50 }
-// }

@@ -1,3 +1,5 @@
+import { ShareLinkBlock } from "../../components/ShareLinkBlock/ShareLinkBlock";
+
 type WaitingScreenProps = {
     roomId: string;
     isConnected: boolean;
@@ -5,12 +7,13 @@ type WaitingScreenProps = {
 }
 
 export const WaitingScreen = ({ roomId, isConnected, userName }: WaitingScreenProps) => {
+    const handleClose = () => {
+        window.location.href = 'https://chesson.me/';
+    };
+
 return (
-        <div className="container">
-            <div>AppScreen {roomId}</div>
-            <div>Подключен: {isConnected ? 'Да' : 'Нет'}</div>
-            <div>Имя пользователя: {userName}</div>
-            <div>Ожидание начала игры...</div>
-        </div>
+    <div className="w-full h-[100vh] flex justify-center items-center">
+        <ShareLinkBlock link={window.location.toString()} onClose={handleClose} />
+    </div>
     );
 }
