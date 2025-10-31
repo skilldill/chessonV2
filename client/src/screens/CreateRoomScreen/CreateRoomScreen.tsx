@@ -12,7 +12,7 @@ export const CreateRoomScreen = () => {
                 setIsCreating(true);
                 setError(null);
 
-                const response = await fetch('/api/rooms', {
+                const response = await fetch('/api/api/rooms', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
