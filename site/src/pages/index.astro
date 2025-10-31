@@ -42,17 +42,13 @@ import { Chessboard3D } from "../components/Chessboard3D";
 		
 		document.getElementById('create-room-btn')?.addEventListener('click', async () => {
 			try {
-				const response = await fetch(`${API_URL}/rooms`, {
+				const response = await fetch(`${API_URL}/api/rooms`, {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json',
 					},
 					body: JSON.stringify({})
 				});
-				
-				if (!response.ok) {
-					throw new Error('Failed to create room');
-				}
 				
 				const data = await response.json();
 				
@@ -61,7 +57,6 @@ import { Chessboard3D } from "../components/Chessboard3D";
 				}
 			} catch (error) {
 				console.error('Error creating room:', error);
-				alert('Failed to create room. Please try again.');
 			}
 		});
 	</script>
