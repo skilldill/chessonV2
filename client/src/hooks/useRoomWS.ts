@@ -13,9 +13,7 @@ import { getOpponentCursorPosition } from "../utils/getOpponentCursorPosition";
 import type { FigureColor } from "react-chessboard-ui";
 
 // В режиме разработки используем прокси Vite, в production - прямой URL
-const WS_URL = import.meta.env.DEV 
-    ? `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws/room`
-    : 'ws://localhost:4000/ws/room';
+const WS_URL = 'ws://game.chesson.me/ws/room';
 const INITIAL_GAME_STATE = {
     currentFEN: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
     moveHistory: [],
