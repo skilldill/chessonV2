@@ -29,11 +29,10 @@ export const ShareLinkBlock: FC<ShareLinkBlockProps> = ({ link }) => {
                     </div>
                 </div>
                 <div className="w-[430px] h-[380px] relative rounded-xl border-[1px] border-[#364153] rounded-3xl overflow-hidden select-none">
-
                     <div className="w-[284px] h-[284px] rounded-full absolute top-[-142px] left-[-84px] bg-[#4F39F6] z-30 blur-[200px]" />
 
                     <div className="w-full h-full flex flex-col items-center absolute top-0 left-0 gap-[48px] z-40 px-[52px] py-[32px]">
-                        <h3 className="text-white text-center text-3xl font-semibold">
+                        <h3 className="text-white text-center text-3xl font-semibold mt-[64px]">
                             Copy and send invite <br /> to friend
                         </h3>
 
