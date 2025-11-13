@@ -7,7 +7,7 @@ type ShareLinkBlockProps = {
     onClose: () => void;
 }
 
-export const ShareLinkBlock: FC<ShareLinkBlockProps> = ({ link, onClose }) => {
+export const ShareLinkBlock: FC<ShareLinkBlockProps> = ({ link }) => {
     const [copied, setCopied] = useState(false);
 
     const handleCopy = async () => {
