@@ -20,10 +20,6 @@ export const ShareLinkBlock: FC<ShareLinkBlockProps> = ({ link, onClose }) => {
         }
     };
 
-    const handleClose = () => {
-        onClose();
-    }
-
     return (
         <>
             <div className="relative w-[430px] h-[380px] fadeIn">
@@ -37,37 +33,6 @@ export const ShareLinkBlock: FC<ShareLinkBlockProps> = ({ link, onClose }) => {
                     <div className="w-[284px] h-[284px] rounded-full absolute top-[-142px] left-[-84px] bg-[#4F39F6] z-30 blur-[200px]" />
 
                     <div className="w-full h-full flex flex-col items-center absolute top-0 left-0 gap-[48px] z-40 px-[52px] py-[32px]">
-                        <div className="w-full flex justify-end">
-                            <button
-                                type="button"
-                                aria-label="Close"
-                                className="w-[24px] h-[24px] flex items-center justify-center bg-transparent border-none p-0 m-0 cursor-pointer active:scale-95 active:opacity-80 transition-all duration-300"
-                                style={{ outline: "none" }}
-                                onClick={handleClose}
-                            >
-                                <svg
-                                    width="16"
-                                    height="16"
-                                    viewBox="0 0 13.5 13.5"
-                                    fill="none"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                >
-                                    <line
-                                        x1="2" y1="2" x2="11.5" y2="11.5"
-                                        stroke="white"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                    />
-                                    <line
-                                        x1="2" y1="11.5" x2="11.5" y2="2"
-                                        stroke="white"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                    />
-                                </svg>
-                            </button>
-                        </div>
-
                         <h3 className="text-white text-center text-3xl font-semibold">
                             Copy and send invite <br /> to friend
                         </h3>
