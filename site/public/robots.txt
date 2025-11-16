@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://chesson.me/sitemap-index.xml

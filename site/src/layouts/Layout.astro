@@ -31,6 +31,10 @@ const {
 		<!-- Open Graph -->
 		<meta property="og:title" content={title} />
 		<meta
+			property="og:image"
+			content="https://chesson.me/og.png"
+		/>
+		<meta
 			property="og:description"
 			content={description}
 		/>
@@ -54,7 +58,7 @@ const {
 			name="twitter:image"
 			content={ogImage}
 		/>
-
+		<link rel="sitemap" href="/sitemap-index.xml" />
 		<!-- JSON-LD: WebSite -->
 		<script type="application/ld+json">
 			{
@@ -64,6 +68,23 @@ const {
 				"url": "https://chesson.me/"
 			}
 		</script>
+
+		<!-- JSON-LD: BreadcrumbList (фиксированный пример) -->
+		<script type="application/ld+json">
+			{
+				"@context": "https://schema.org",
+				"@type": "BreadcrumbList",
+				"itemListElement": [
+					{
+						"@type": "ListItem",
+						"position": 1,
+						"name": "Main",
+						"item": "https://chesson.me/"
+					},
+				]
+			}
+		</script>
+
 		<!-- Yandex.Metrika counter -->
 		<script type="text/javascript">
 			(function(m,e,t,r,i,k,a){
