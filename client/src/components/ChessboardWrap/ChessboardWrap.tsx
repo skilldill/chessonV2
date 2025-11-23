@@ -19,7 +19,7 @@ export const ChessboardWrap: FC<PropsWithChildren<ChessboardWrapProps>> = (
 
     const lettersRow = useMemo(
         () => (
-            <div className="grid grid-cols-[24px_repeat(8,1fr)_24px] text-color-primary">
+            <div className="grid grid-cols-[24px_repeat(8,1fr)_24px] text-color-primary select-none">
                 <span></span>
                 {preparedLetters.map((letter) => (
                     <span key={letter} className="text-sm font-semibold text-color-primary flex justify-center items-center">
@@ -34,7 +34,7 @@ export const ChessboardWrap: FC<PropsWithChildren<ChessboardWrapProps>> = (
 
     const numbersRow = useMemo(
         () => (
-            <div className="grid grid-rows-[repeat(8,1fr)] text-gray-300">
+            <div className="grid grid-rows-[repeat(8,1fr)] text-gray-300 select-none">
                 {BOARD_LETERS.map((letter, i) => (
                     <span key={`${letter}_${i}`} className="text-sm font-semibold text-color-primary flex justify-center items-center">
                         {reverse ? i + 1 : BOARD_LETERS.length - i}

@@ -17,6 +17,7 @@ export const AppScreen = () => {
         opponentCursor,
         resultMessage,
         offeredDraw,
+        connectionLost,
         
         connectToRoom,
         sendMove,
@@ -57,6 +58,7 @@ export const AppScreen = () => {
                 resultMessage={resultMessage}
                 onSendDrawOffer={sendDrawOffer}
                 offeredDraw={offeredDraw}
+                connectionLost={connectionLost}
             />
         );
     }
