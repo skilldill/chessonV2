@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import styles from "./ConnectionNotification.module.css";
+import NonConnectionSVG from '../../assets/non-connection.svg';
 
 type ConnectionNotificationProps = {
     message: string;
@@ -32,14 +33,16 @@ export const ConnectionNotification: React.FC<ConnectionNotificationProps> = ({
 
     return (
         <div 
-            className={`fixed top-[40px] right-[40px] z-50 bg-black/80 backdrop-blur-xl rounded-lg px-4 py-3 border border-red-500/50 shadow-lg min-w-[200px] ${
+            className={`fixed top-[16px] right-[16px] z-50 bg-back-secondary backdrop-blur-xl rounded-lg px-[16px] py-[18px] border border-gray-200/20 shadow-lg min-w-[200px] ${
                 isAnimating ? styles.slideIn : styles.slideOut
             }`}
-            style={{ marginTop: '60px' }}
         >
-            <p className="text-red-400 text-sm font-medium">
-                {message}
-            </p>
+            <div className="flex gap-[12px]">
+                <img src={NonConnectionSVG} alt="non connection" />
+                <p className="text-sm font-medium">
+                    {message}
+                </p>
+            </div>
         </div>
     );
 };
