@@ -12,6 +12,7 @@ import { debounce } from "../../utils/debounce";
 import { GameCursorProfile } from "../../components/GameCursorProfile/GameCursorProfile";
 import { DrawOfferActions } from "../../components/DrawOfferActions/DrawOfferActions";
 import { ResultsActions } from "../../components/ResultsActions/ResultsActions";
+import { ConnectionNotification } from "../../components/ConnectionNotification/ConnectionNotification";
 import { useCellSize } from "../../hooks/useCellSize";
 import { useScreenSize } from "../../hooks/useScreenSize";
 
@@ -30,6 +31,7 @@ type GameScreenProps = {
     
     resultMessage?: string;
     offeredDraw?: boolean;
+    connectionLost?: boolean;
 }
 
 export const GameScreen: React.FC<GameScreenProps> = memo(({ 
@@ -47,6 +49,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
 
     resultMessage,
     offeredDraw,
+    connectionLost = false,
 }) => {
     const cellSize = useCellSize(110);
     const screenSize = useScreenSize();
@@ -117,6 +120,10 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
             <ResultsActions
                 message={resultMessage}
                 onClose={handleCloseResults}
+            />
+            <ConnectionNotification
+                message="Соединение прервано"
+                show={connectionLost}
             />
             {!resultMessage && (
                 <GameCursorProfile

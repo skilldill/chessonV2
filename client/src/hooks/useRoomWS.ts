@@ -11,9 +11,10 @@ import type {
 } from "../types";
 import { getOpponentCursorPosition } from "../utils/getOpponentCursorPosition";
 import type { FigureColor } from "react-chessboard-ui";
+import { WS_URL } from "../constants/api";
 
 // В режиме разработки используем прокси Vite, в production - прямой URL
-const WS_URL = 'wss://game.chesson.me/ws/room';
+
 const INITIAL_GAME_STATE = {
     currentFEN: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
     moveHistory: [],
@@ -36,6 +37,13 @@ const INITIAL_GAME_STATE = {
 
 export const useRoomWS = (roomId: string) => {
     const refWS = useRef<WebSocket | null>(null);
+    const reconnectAttemptsRef = useRef<number>(0);
+    const reconnectTimeoutRef = useRef<number | null>(null);
+    const pingIntervalRef = useRef<number | null>(null);
+    const lastPongTimeRef = useRef<number>(Date.now());
+    const userCredentialsRef = useRef<{ userName: string; avatar: string } | null>(null);
+    const connectionCheckIntervalRef = useRef<number | null>(null);
+    const isReconnectingRef = useRef<boolean>(false);
     
     const [gameState, setGameState] = useState<GameState>(INITIAL_GAME_STATE);
     const [currentColorMove, setCurrentColorMove] = useState<FigureColor>();
@@ -52,6 +60,7 @@ export const useRoomWS = (roomId: string) => {
     
     const [resultMessage, setResultMessage] = useState<string>();
     const [offeredDraw, setOfferedDraw] = useState(false);
+    const [connectionLost, setConnectionLost] = useState<boolean>(false);
 
     // Синхронизируем currentColorMove с gameState.currentColor
     useEffect(() => {
@@ -61,6 +70,9 @@ export const useRoomWS = (roomId: string) => {
     }, [gameState.currentColor]);
 
     const handleMessage = (data: WSServerMessage) => {
+        // Обновляем время последнего pong при получении любого сообщения
+        lastPongTimeRef.current = Date.now();
+        
         // Обработка системных сообщений
         if (data.system) {
             if (data.message) {
@@ -166,7 +178,84 @@ export const useRoomWS = (roomId: string) => {
         }
     };
 
-    const connectToRoom = ({ userName, avatar }: { userName: string, avatar: string }) => {
+    const clearConnectionCheck = () => {
+        if (pingIntervalRef.current) {
+            clearInterval(pingIntervalRef.current);
+            pingIntervalRef.current = null;
+        }
+        if (connectionCheckIntervalRef.current) {
+            clearInterval(connectionCheckIntervalRef.current);
+            connectionCheckIntervalRef.current = null;
+        }
+    };
+
+    const startConnectionCheck = () => {
+        clearConnectionCheck();
+        
+        // Проверяем соединение каждые 5 секунд
+        connectionCheckIntervalRef.current = setInterval(() => {
+            const ws = refWS.current;
+            const now = Date.now();
+            const timeSinceLastPong = now - lastPongTimeRef.current;
+            
+            // Если прошло больше 10 секунд с последнего сообщения и соединение открыто,
+            // считаем что соединение потеряно
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                if (timeSinceLastPong > 10000) {
+                    console.warn('Connection appears to be lost, attempting reconnection...');
+                    handleReconnection();
+                }
+            } else if (ws && ws.readyState !== WebSocket.CONNECTING && ws.readyState !== WebSocket.OPEN) {
+                // Если соединение закрыто или в состоянии ошибки, пытаемся переподключиться
+                handleReconnection();
+            }
+        }, 5000);
+    };
+
+    const handleReconnection = () => {
+        // Предотвращаем множественные одновременные попытки переподключения
+        if (isReconnectingRef.current) {
+            return;
+        }
+
+        if (!userCredentialsRef.current) {
+            console.error('Cannot reconnect: no user credentials stored');
+            return;
+        }
+
+        console.log(reconnectAttemptsRef.current)
+        if (reconnectAttemptsRef.current >= 4) {
+            console.error('Max reconnection attempts reached');
+            setConnectionLost(true);
+            setIsConnected(false);
+            clearConnectionCheck();
+            isReconnectingRef.current = false;
+            return;
+        }
+
+        isReconnectingRef.current = true;
+        reconnectAttemptsRef.current += 1;
+        console.log(`Reconnection attempt ${reconnectAttemptsRef.current}/5`);
+
+        // Закрываем текущее соединение если оно есть
+        if (refWS.current) {
+            refWS.current.onclose = null; // Отключаем обработчик чтобы избежать рекурсии
+            refWS.current.close();
+        }
+
+        // Пытаемся переподключиться через экспоненциальную задержку
+        const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current - 1), 10000);
+        
+        reconnectTimeoutRef.current = setTimeout(() => {
+            isReconnectingRef.current = false;
+            connectToRoom(userCredentialsRef.current!, true);
+        }, delay);
+    };
+
+    const connectToRoom = ({ userName, avatar }: { userName: string, avatar: string }, isReconnect = false) => {
+        // Сохраняем учетные данные для переподключения
+        userCredentialsRef.current = { userName, avatar };
+        
         if (refWS.current?.readyState === WebSocket.OPEN) {
             refWS.current.close();
         }
@@ -175,16 +264,28 @@ export const useRoomWS = (roomId: string) => {
         
         refWS.current.onopen = () => {
             setIsConnected(true);
-            console.log('Connected to room:', roomId);
+            setConnectionLost(false);
+            reconnectAttemptsRef.current = 0; // Сбрасываем счетчик попыток при успешном подключении
+            isReconnectingRef.current = false; // Сбрасываем флаг переподключения
+            lastPongTimeRef.current = Date.now(); // Обновляем время последнего pong
+            console.log(isReconnect ? 'Reconnected to room:' : 'Connected to room:', roomId);
+            startConnectionCheck();
         };
 
-        refWS.current.onclose = () => {
+        refWS.current.onclose = (event) => {
             setIsConnected(false);
-            console.log('Disconnected from room');
+            console.log('Disconnected from room', event.code, event.reason);
+            clearConnectionCheck();
+            
+            // Если это не было намеренное закрытие (код 1000), пытаемся переподключиться
+            if (event.code !== 1000 && userCredentialsRef.current && reconnectAttemptsRef.current < 5) {
+                handleReconnection();
+            }
         };
 
         refWS.current.onerror = (error) => {
             console.error('WebSocket error:', error);
+            clearConnectionCheck();
         };
 
         refWS.current.onmessage = (event) => {
@@ -198,10 +299,27 @@ export const useRoomWS = (roomId: string) => {
     };
 
     const disconnect = () => {
+        clearConnectionCheck();
+        if (reconnectTimeoutRef.current) {
+            clearTimeout(reconnectTimeoutRef.current);
+            reconnectTimeoutRef.current = null;
+        }
+        reconnectAttemptsRef.current = 0;
+        userCredentialsRef.current = null;
         if (refWS.current) {
-            refWS.current.close();
+            refWS.current.close(1000, 'User disconnect'); // 1000 = нормальное закрытие
         }
     };
+
+    // Очистка при размонтировании компонента
+    useEffect(() => {
+        return () => {
+            clearConnectionCheck();
+            if (reconnectTimeoutRef.current) {
+                clearTimeout(reconnectTimeoutRef.current);
+            }
+        };
+    }, []);
 
     const sendMessage = (message: WSClientMessage) => {
         if (refWS.current?.readyState === WebSocket.OPEN) {
@@ -258,6 +376,7 @@ export const useRoomWS = (roomId: string) => {
     return {
         // Состояние
         isConnected,
+        connectionLost,
         gameState,
         currentColorMove,
         userColor,
