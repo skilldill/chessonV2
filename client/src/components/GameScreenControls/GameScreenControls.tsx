@@ -23,7 +23,7 @@ const RoundedControlButton = ({ icon, active, onClick, onActiveClick }: RoundedC
     return (
         <button 
             className={cn(
-                'w-[52px] h-[52px] rounded-full bg-black/60 backdrop-blur-xl flex items-center justify-center cursor-pointer border border-[#364153] transition-all duration-300 hover:scale-105 active:scale-95',
+                'min-w-[52px] min-h-[52px] rounded-full bg-black/60 backdrop-blur-xl flex items-center justify-center cursor-pointer border border-[#364153] transition-all duration-300 hover:scale-105 active:scale-95',
                 { 'w-[56px] h-[56px] border-indigo-700': active }
             )} 
             onClick={handleClick}

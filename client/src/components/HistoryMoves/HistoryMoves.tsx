@@ -36,7 +36,7 @@ export const HistoryMoves: FC<HistoryMovesProps> = ({ moves }) => {
                     }));
                 }}
             >
-                <div className="relative w-full h-full p-[8px] bg-back-secondary rounded-xl overflow-hidden flex flex-col justify-end transition-transform duration-200 active:scale-95">
+                <div className="relative w-full h-full p-[8px] bg-back-secondary rounded-xl overflow-hidden flex flex-col justify-end transition-transform duration-200 active:scale-95 select-none">
                     <div className="absolute top-0 left-0 right-0 h-[98px] bg-gradient-to-t from-zink-950 to-[#0a0a0a]" />
                     {groupedMoves.map((moveItem, index) => (
                         <div className={styles.movesRow}>

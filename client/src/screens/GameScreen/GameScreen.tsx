@@ -153,7 +153,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                     />
                 </div>
             </div>
-            <div>
+            <div className="relative">
                 <ChessboardWrap reverse={playerColor === "black"}>
                     <ChessBoard
                         FEN={initialFEN}
@@ -171,13 +171,15 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                     />
                 </ChessboardWrap>
 
-                <GameScreenControls
-                    key={resultMessage}
-                    gameEnded={!!resultMessage} // Если есть сообщение об окончании игры, то игра закончилась
-                    onDrawOffer={() => onSendDrawOffer('offer')}
-                    onResignation={onSendResignation}
-                    onQuitGame={handleQuitGame}
-                />
+                <div className={`absolute ${screenSize === "L" ? "bottom-[-100px]" : "bottom-[-86px]"} left-0 right-0 flex justify-center`}>
+                    <GameScreenControls
+                        key={resultMessage}
+                        gameEnded={!!resultMessage} // Если есть сообщение об окончании игры, то игра закончилась
+                        onDrawOffer={() => onSendDrawOffer('offer')}
+                        onResignation={onSendResignation}
+                        onQuitGame={handleQuitGame}
+                    />
+                </div>
             </div>
             <div className={`flex justify-start ${screenSize === "L" ? "p-[28px]" : "p-[16px]"}`}>
                 <div className="fixed top-[40px] right-[40px] z-40">
