@@ -12,6 +12,8 @@ import { debounce } from "../../utils/debounce";
 import { GameCursorProfile } from "../../components/GameCursorProfile/GameCursorProfile";
 import { DrawOfferActions } from "../../components/DrawOfferActions/DrawOfferActions";
 import { ResultsActions } from "../../components/ResultsActions/ResultsActions";
+import { useCellSize } from "../../hooks/useCellSize";
+import { useScreenSize } from "../../hooks/useScreenSize";
 
 type GameScreenProps = {
     gameState: GameState;
@@ -46,6 +48,9 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
     resultMessage,
     offeredDraw,
 }) => {
+    const cellSize = useCellSize(100);
+    const screenSize = useScreenSize();
+
     const [initialFEN, setInitialFEN] = useState(INITIAL_FEN);
     const reversed = useMemo(() => playerColor === "black", [playerColor]);
     const { 
@@ -97,7 +102,13 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
     };
 
     return (
-        <div className="bg-back-primary grid grid-cols-[1fr_720px_1fr] h-screen items-center relative">
+        <div
+            className={`bg-back-primary grid h-screen items-center relative ${
+                screenSize === "L"
+                    ? 'grid-cols-[1fr_848px_1fr]'
+                    : 'grid-cols-[1fr_720px_1fr]'
+            }`}
+        >
             <DrawOfferActions
                 offeredDraw={offeredDraw}
                 onAcceptDraw={() => onSendDrawOffer('accept')}
@@ -114,7 +125,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                     gameState={gameState}
                 />
             )}
-            <div className="flex justify-end p-[16px]">
+            <div className={`flex justify-end ${screenSize === "L" ? "p-[28px]" : "p-[16px]"}`}>
                 <div className="flex flex-col gap-y-[8px]">
                     <CapturedPieces
                         FEN={movesHistory.length > 0 ? movesHistory[movesHistory.length - 1].FEN : initialFEN}
@@ -145,7 +156,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                         change={externalChangeMove}
                         playerColor={playerColor}
                         config={{ 
-                            cellSize: 84, 
+                            cellSize, 
                             whiteCellColor: "#E5E7EB",
 	                        blackCellColor: "#A5AEBD",
                             circleMarkColor: "#0069A8",
@@ -161,7 +172,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                     onQuitGame={handleQuitGame}
                 />
             </div>
-            <div className="flex justify-start p-[16px]">
+            <div className={`flex justify-start ${screenSize === "L" ? "p-[28px]" : "p-[16px]"}`}>
                 <div className="fixed top-[40px] right-[40px] z-40">
                     <HistoryMoves moves={movesHistory} />
                 </div>

@@ -1,0 +1,1 @@
+export const API_PREFIX = import.meta.env.VITE_TEST_MODE ? '/api' : '/api/api';
