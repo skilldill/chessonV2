@@ -122,7 +122,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                 onClose={handleCloseResults}
             />
             <ConnectionNotification
-                message="Соединение прервано"
+                message="Connection lost"
                 show={connectionLost}
             />
             {!resultMessage && (
