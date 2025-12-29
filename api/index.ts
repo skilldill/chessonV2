@@ -116,33 +116,56 @@ function syncCurrentColor(room: Room) {
     room.gameState.currentColor = room.gameState.currentPlayer;
 }
 
-// Функция для обновления данных игроков в gameState
-function updatePlayersInGameState(room: Room) {
-    const whitePlayer = Array.from(room.users.values()).find(user => user.color === "white");
-    const blackPlayer = Array.from(room.users.values()).find(user => user.color === "black");
-    
-    if (whitePlayer && blackPlayer) {
-        const whiteUserId = Array.from(room.users.entries()).find(([_, user]) => user === whitePlayer)?.[0];
-        const blackUserId = Array.from(room.users.entries()).find(([_, user]) => user === blackPlayer)?.[0];
-        
-        if (whiteUserId && blackUserId) {
-            room.gameState.player = {
-                userId: whiteUserId,
-                userName: whitePlayer.userName,
-                avatar: whitePlayer.avatar,
-                color: "white"
-            };
-            room.gameState.opponent = {
-                userId: blackUserId,
-                userName: blackPlayer.userName,
-                avatar: blackPlayer.avatar,
-                color: "black"
-            };
-        }
+// Функция для получения персонализированного gameState для конкретного игрока
+function getPersonalizedGameState(room: Room, userId: string): GameState {
+    const userData = room.users.get(userId);
+    if (!userData) {
+        // Если пользователь не найден, возвращаем базовый gameState без player/opponent
+        return { ...room.gameState };
     }
-    
-    // Обновляем currentColor на основе currentPlayer
-    syncCurrentColor(room);
+
+    const userColor = userData.color;
+    if (!userColor) {
+        // Если у пользователя нет цвета, возвращаем базовый gameState
+        return { ...room.gameState };
+    }
+
+    // Находим соперника
+    const opponent = Array.from(room.users.entries()).find(
+        ([id, user]) => id !== userId && user.color && user.color !== userColor
+    );
+
+    if (!opponent) {
+        // Если соперник не найден, возвращаем gameState только с player
+        return {
+            ...room.gameState,
+            player: {
+                userId: userId,
+                userName: userData.userName,
+                avatar: userData.avatar,
+                color: userColor
+            }
+        };
+    }
+
+    const [opponentUserId, opponentUserData] = opponent;
+
+    // Создаем персонализированный gameState
+    return {
+        ...room.gameState,
+        player: {
+            userId: userId,
+            userName: userData.userName,
+            avatar: userData.avatar,
+            color: userColor
+        },
+        opponent: {
+            userId: opponentUserId,
+            userName: opponentUserData.userName,
+            avatar: opponentUserData.avatar,
+            color: opponentUserData.color!
+        }
+    };
 }
 
 // Функция для создания таймера комнаты
@@ -179,7 +202,7 @@ function createRoomTimer(roomId: string) {
             userData.ws.send({
               type: "gameResult",
               gameResult: room.gameState.gameResult,
-              gameState: room.gameState,
+              gameState: getPersonalizedGameState(room, id),
               time: Date.now()
             });
           }
@@ -217,7 +240,7 @@ function createRoomTimer(roomId: string) {
             userData.ws.send({
               type: "gameResult",
               gameResult: room.gameState.gameResult,
-              gameState: room.gameState,
+              gameState: getPersonalizedGameState(room, id),
               time: Date.now()
             });
           }
@@ -475,16 +498,11 @@ app.ws('/ws/room', {
           });
 
           // Приветствие для вернувшегося пользователя
-          // Обновляем данные игроков в gameState если игра началась
-          if (room.gameState.gameStarted && room.users.size === 2) {
-              updatePlayersInGameState(room);
-          }
-          
           ws.send({ 
             system: true, 
             message: `Welcome back to room ${roomId}, ${userName}! Your ID: ${existingUserId}`,
             type: "reconnection",
-            gameState: room.gameState,
+            gameState: getPersonalizedGameState(room, existingUserId),
             userColor: existingUserData?.color
           });
 
@@ -542,7 +560,7 @@ app.ws('/ws/room', {
         message: `Welcome to room ${roomId}, ${userName}! Your ID: ${userId}`,
         type: "connection",
         userColor: assignedColor,
-        gameState: room.gameState
+        gameState: getPersonalizedGameState(room, userId)
       });
 
       // Отправляем текущее состояние таймера если игра уже идет
@@ -570,9 +588,6 @@ app.ws('/ws/room', {
       if (room.users.size === 2) {
           room.gameState.gameStarted = true;
           
-          // Обновляем данные игроков в gameState
-          updatePlayersInGameState(room);
-          
           // Запускаем таймер комнаты
           createRoomTimer(roomId);
           
@@ -582,7 +597,7 @@ app.ws('/ws/room', {
                   system: true,
                   message: "Game started! White moves first.",
                   type: "gameStart",
-                  gameState: room.gameState
+                  gameState: getPersonalizedGameState(room, id)
               });
           }
       }
@@ -665,7 +680,7 @@ app.ws('/ws/room', {
                       moveData: data.moveData,
                       from: senderUserData.userName,
                       userId: senderUserId,
-                      gameState: room.gameState,
+                      gameState: getPersonalizedGameState(room, id),
                       time: Date.now()
                   });
               }
@@ -724,7 +739,7 @@ app.ws('/ws/room', {
                       gameResult: data.gameResult,
                       from: senderUserData.userName,
                       userId: senderUserId,
-                      gameState: room.gameState,
+                      gameState: getPersonalizedGameState(room, id),
                       time: Date.now()
                   });
               }
@@ -811,7 +826,7 @@ app.ws('/ws/room', {
                       action: "offer",
                       from: senderUserData.userName,
                       userId: senderUserId,
-                      gameState: room.gameState,
+                      gameState: getPersonalizedGameState(room, opponentUserId),
                       time: Date.now()
                   });
               }
@@ -858,7 +873,7 @@ app.ws('/ws/room', {
                           gameResult: room.gameState.gameResult,
                           from: senderUserData.userName,
                           userId: senderUserId,
-                          gameState: room.gameState,
+                          gameState: getPersonalizedGameState(room, id),
                           time: Date.now()
                       });
                   }
