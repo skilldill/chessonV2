@@ -264,16 +264,33 @@ app.get('/api/health', () => ({
 }));
 
 // Create room endpoint
-app.post('/api/rooms', ({ body }) => {
+app.post('/api/rooms', async ({ body }) => {
   // Generate unique room ID using short format
   const roomId = generateShortId();
   
   // Извлекаем конфигурацию таймеров или используем значения по умолчанию
-  const timerConfig = (body as any) || {};
-  const whiteTime = timerConfig.whiteTimer || DEFAULT_TIME_SECONDS;
-  const blackTime = timerConfig.blackTimer || DEFAULT_TIME_SECONDS;
-  const increment = timerConfig.increment || 0;
+  // В Elysia body может быть строкой или объектом, поэтому парсим если нужно
+  let timerConfig: any = {};
+  if (typeof body === 'string') {
+    try {
+      timerConfig = JSON.parse(body);
+    } catch (e) {
+      timerConfig = {};
+    }
+  } else if (body && typeof body === 'object') {
+    timerConfig = body;
+  }
   
+  const whiteTimer = timerConfig.whiteTimer ?? DEFAULT_TIME_SECONDS;
+  const blackTimer = timerConfig.blackTimer ?? DEFAULT_TIME_SECONDS;
+  const increment = timerConfig.increment ?? 0;
+
+  // {"whiteTimer":60,"blackTimer":60,"increment":5}
+  console.log('TIMER CONFIG BODY', body);
+  console.log('TIMER CONFIG', timerConfig);
+
+  // console.log(body, whiteTime, blackTime, increment);
+
   // Create empty room with initial game state
   const room = { 
     users: new Map(),
@@ -288,25 +305,28 @@ app.post('/api/rooms', ({ body }) => {
       drawOffer: undefined,
       drawOfferCount: {},
       timer: {
-        whiteTime: whiteTime,
-        blackTime: blackTime,
+        whiteTime: whiteTimer,
+        blackTime: blackTimer,
         whiteIncrement: increment,
         blackIncrement: increment,
-        initialWhiteTime: whiteTime,
-        initialBlackTime: blackTime
+        initialWhiteTime: whiteTimer,
+        initialBlackTime: blackTimer,
       }
     }
   };
   rooms.set(roomId, room);
+  
+  console.log('ROOM CREATED WITH TIMER:', room.gameState.timer);
+  console.log('ROOM ID:', roomId);
   
   return {
     success: true,
     roomId,
     message: 'Room created successfully',
     timerConfig: {
-      whiteTimer: whiteTime,
-      blackTimer: blackTime,
-      increment: increment
+      whiteTimer: whiteTimer,
+      blackTimer: blackTimer,
+      increment: increment,
     }
   };
 });
@@ -394,7 +414,14 @@ app.ws('/ws/room', {
       const { roomId, userName, avatar } = ws.data.query;
 
       let room = rooms.get(roomId);
+
+      console.log('ROOM ID:', roomId);
+      console.log('ROOM FOUND:', !!room);
+      console.log('ROOM', room?.gameState);
+
       if (!room) {
+          console.log('ROOM NOT DEFINED - CREATING NEW ROOM WITH DEFAULT TIMERS');  
+
           room = {
             users: new Map(),
             gameState: {
