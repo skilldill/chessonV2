@@ -15,6 +15,7 @@ import { ResultsActions } from "../../components/ResultsActions/ResultsActions";
 import { ConnectionNotification } from "../../components/ConnectionNotification/ConnectionNotification";
 import { useCellSize } from "../../hooks/useCellSize";
 import { useScreenSize } from "../../hooks/useScreenSize";
+import { useGameStorage } from "../../hooks/useGameStorage";
 
 type GameScreenProps = {
     gameState: GameState;
@@ -53,6 +54,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
 }) => {
     const cellSize = useCellSize(110);
     const screenSize = useScreenSize();
+    const { removeGameData } = useGameStorage();
 
     const [initialFEN, setInitialFEN] = useState(INITIAL_FEN);
     const reversed = useMemo(() => playerColor === "black", [playerColor]);
@@ -93,6 +95,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
 
     const handleQuitGame = () => {
         onSendResignation();
+        removeGameData();
         window.location.href = import.meta.env.VITE_MAIN_SITE;
     };
 
@@ -101,6 +104,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
     }, [])
 
     const handleCloseResults = () => {
+        removeGameData();
         window.location.href = import.meta.env.VITE_MAIN_SITE;
     };
 

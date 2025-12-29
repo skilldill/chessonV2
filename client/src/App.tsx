@@ -23,6 +23,7 @@ import Cat5PNG from "./assets/avatars/cat_5.png";
 import Cat6PNG from "./assets/avatars/cat_6.png";
 import Cat7PNG from "./assets/avatars/cat_7.png";
 import Cat8PNG from "./assets/avatars/cat_8.png";
+import { useRestoreGame } from "./hooks/useRestoreGame";
 
 // Все изображения для предзагрузки (вынесено за пределы компонента)
 const ALL_IMAGES = [
@@ -47,6 +48,7 @@ const ALL_IMAGES = [
 function App() {
   // Используем хук для холодной прогрузки всех изображений
   useImagePreloader(ALL_IMAGES);
+  useRestoreGame();
 
   return (
     <Router>

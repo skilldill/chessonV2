@@ -4,6 +4,8 @@ import { useUserData } from "../../hooks/useUserData";
 import { WaitingScreen } from "../WaitingScreen/WaitingScreen";
 import { GameScreen } from "../GameScreen/GameScreen";
 import { SetProfileScreen } from "../SetProfileScreen/SetProfileScreen";
+import { useGameStorage } from "../../hooks/useGameStorage";
+import { useEffect } from "react";
 
 export const AppScreen = () => {
     const { roomId } = useParams<{ roomId: string }>();
@@ -18,7 +20,7 @@ export const AppScreen = () => {
         resultMessage,
         offeredDraw,
         connectionLost,
-        
+
         connectToRoom,
         sendMove,
         sendDrawOffer,
@@ -27,6 +29,7 @@ export const AppScreen = () => {
         sendGameResult,
     } = useRoomWS(roomId || "");
     const { userName, setUserName } = useUserData();
+    const { saveGameData, storageGameData, removeGameData } = useGameStorage();
 
     const handleSetUserName = (userName: string, avatarIndex: number) => {
         setUserName(userName);
@@ -34,7 +37,27 @@ export const AppScreen = () => {
             userName,
             avatar: `${avatarIndex}`,
         });
+
+        saveGameData({
+            playerName: userName,
+            avatar: `${avatarIndex}`,
+            gameId: roomId,
+        });
     }
+
+    useEffect(() => {
+        if (!storageGameData) return;
+
+        // Проверим, если игрок пытается открыть
+        // новую ссессию, то удалим старые данные
+        if (storageGameData.gameId !== roomId) {
+            removeGameData();
+            return;
+        }
+
+        handleSetUserName(storageGameData.playerName, parseInt(storageGameData.avatar));
+    }, [storageGameData]);
+
 
     // Если пользователь еще не ввел имя, показываем форму
     if (!userName) {

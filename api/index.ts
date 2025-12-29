@@ -354,6 +354,23 @@ app.post('/api/rooms', async ({ body }) => {
   };
 });
 
+// Get room state endpoint
+app.get('/api/rooms/:roomId', async ({ params }) => {
+  const { roomId } = params;
+  const room = rooms.get(roomId);
+  
+  if (!room) {
+    return {
+      success: false,
+      error: 'Room not found'
+    };
+  }
+  
+  return {
+    gameState: room.gameState
+  };
+});
+
 app.ws('/ws/room', {
   query: t.Object({
       roomId: t.String(),
