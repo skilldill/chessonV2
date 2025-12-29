@@ -1,7 +1,7 @@
 import type { FC } from 'react';
 import type { ChessColor, GameState, CursorPosition } from "../../types";
-import { CursorProfile } from "../CursorProfile/CursorProfile";
 import { MEM_AVATARS } from "../../constants/avatars";
+import { CursorProfile } from '../CursorProfile/CursorProfile';
 
 type GameCursorProfileProps = {
     opponentCursor?: CursorPosition;
