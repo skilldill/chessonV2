@@ -22,6 +22,15 @@ services:
     depends_on:
       - api
 
+  mobile:
+    build: ./mobile
+    container_name: chesson-mobile
+    restart: unless-stopped
+    networks:
+      - app-network
+    depends_on:
+      - api
+
   site:
     build: ./site
     container_name: chesson-site
