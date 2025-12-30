@@ -8,7 +8,7 @@ export const WaitingScreen: FC = () => {
 
     return (
         <div className="w-full h-[100vh] flex justify-center items-center">
-            <ShareLinkBlock link={window.location.toString()} onClose={handleClose} />
+            <ShareLinkBlock onClose={handleClose} />
         </div>
     );
 }

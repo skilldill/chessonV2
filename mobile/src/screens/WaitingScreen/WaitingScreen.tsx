@@ -7,6 +7,8 @@ import cn from 'classnames';
 import { useState } from 'react';
 import { Share } from '@capacitor/share';
 
+const SITE_BASE_URL = import.meta.env.VITE_TEST_MODE ? 'http://localhost:' + window.location.port : import.meta.env.VITE_MAIN_SITE;
+
 const WaitingScreen: React.FC = () => {
   const { roomId } = useParams<{ roomId: string }>();
 
@@ -14,7 +16,7 @@ const WaitingScreen: React.FC = () => {
 
   const handleCopy = async () => {
       try {
-          await navigator.clipboard.writeText(window.location.toString());
+          await navigator.clipboard.writeText(`${SITE_BASE_URL}/${roomId}`);
           setCopied(true);
           setTimeout(() => setCopied(false), 2000);
       } catch (err) {
@@ -23,7 +25,7 @@ const WaitingScreen: React.FC = () => {
   };
 
   const handleShare = async () => {
-      const url = window.location.toString();
+      const url =`${SITE_BASE_URL}/${roomId}`;
       
       try {
           await Share.share({

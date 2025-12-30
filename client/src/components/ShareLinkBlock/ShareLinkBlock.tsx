@@ -1,18 +1,21 @@
 import { useState, type FC } from "react";
 import SharedLinkSVG from "../../assets/shared-link.svg";
 import cn from "classnames";
+import { useParams } from "react-router";
 
 type ShareLinkBlockProps = {
-    link: string;
     onClose: () => void;
 }
 
-export const ShareLinkBlock: FC<ShareLinkBlockProps> = ({ link }) => {
+const SITE_BASE_URL = import.meta.env.VITE_TEST_MODE ? 'http://localhost:' + window.location.port : import.meta.env.VITE_MAIN_SITE;
+
+export const ShareLinkBlock: FC<ShareLinkBlockProps> = () => {
+    const { roomId } = useParams<{ roomId: string }>();
     const [copied, setCopied] = useState(false);
 
     const handleCopy = async () => {
         try {
-            await navigator.clipboard.writeText(link);
+            await navigator.clipboard.writeText(`${SITE_BASE_URL}/${roomId}`);
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
         } catch (err) {
@@ -38,7 +41,7 @@ export const ShareLinkBlock: FC<ShareLinkBlockProps> = ({ link }) => {
 
                         <input
                             type="text"
-                            value={link}
+                            value={`${SITE_BASE_URL}/${roomId}`}
                             disabled
                             placeholder="Link"
                             className="bg-white/4 w-full h-[40px] px-[12px] py-[10px] border border-white/10 border-solid rounded-md focus:border-indigo-700 focus:outline-none transition-all duration-200 pr-10 placeholder-[#99A1AF]"

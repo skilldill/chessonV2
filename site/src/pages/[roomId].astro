@@ -1,0 +1,12 @@
+---
+const { roomId } = Astro.params;
+
+const userAgent = Astro.request.headers.get("user-agent") ?? "";
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+
+const target = isMobile
+  ? `https://mobile.chesson.me/game/${roomId}`
+  : `https://client.chesson.me/${roomId}`;
+
+return Astro.redirect(target, 302);
+---
