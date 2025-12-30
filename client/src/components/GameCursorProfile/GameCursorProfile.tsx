@@ -25,7 +25,7 @@ export const GameCursorProfile: FC<GameCursorProfileProps> = ({
     const isOpponentTurn = gameState.currentColor === opponentColor;
     
     // Определяем оппонента: если текущий игрок белый, то оппонент - черный (opponent), иначе - белый (player)
-    const opponent = playerColor === "white" ? gameState.opponent : gameState.player;
+    const opponent = gameState.opponent;
     const avatarIndex = opponent?.avatar ? parseInt(opponent.avatar) : undefined;
     const avatarSrc = avatarIndex !== undefined && avatarIndex >= 0 && avatarIndex < MEM_AVATARS.length 
         ? MEM_AVATARS[avatarIndex] 

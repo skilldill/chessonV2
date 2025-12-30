@@ -6,10 +6,11 @@ interface ChessTimerProps {
     initSeconds: number;
     seconds: number;
     timeLineBottom?: boolean;
+    active?: boolean;
 }
 
 export const ChessTimer: FC<ChessTimerProps> = (props) => {
-    const { seconds, initSeconds, timeLineBottom = false } = props;
+    const { seconds, initSeconds, timeLineBottom = false, active } = props;
 
     const [minutesStr, secondsStr] = useMemo(
         () => getClockTime(seconds),
@@ -23,7 +24,7 @@ export const ChessTimer: FC<ChessTimerProps> = (props) => {
     // const isDangerTime = useMemo(() => timeInPercent < 20, [timeInPercent]);
 
     return (
-        <div className="w-[144px] h-[80px] bg-back-secondary flex items-center justify-center rounded-lg overflow-hidden relative transition-all duration-200 active:scale-95 cursor-pointer">
+        <div className={cn("w-[144px] h-[80px] bg-back-secondary flex items-center justify-center rounded-lg overflow-hidden relative transition-all duration-200 active:scale-95 cursor-pointer", { 'opacity-50': !active })}>
             <div className={cn('absolute right-0 left-0 h-[6px] bg-indigo-400/20', {
                 'bottom-0': timeLineBottom,
                 'top-0': !timeLineBottom,

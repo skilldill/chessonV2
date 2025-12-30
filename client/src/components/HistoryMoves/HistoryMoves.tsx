@@ -41,9 +41,9 @@ export const HistoryMoves: FC<HistoryMovesProps> = ({ moves }) => {
                     {groupedMoves.map((moveItem, index) => (
                         <div className={styles.movesRow}>
                             <div key={`${moveItem[0]}_${index}`} className="flex items-center gap-x-[8px] px-[4px] py-[6px] hover:bg-white/4 transition-all duration-200 cursor-pointer grid grid-cols-[40px_1fr_1fr]">
-                                <span className="text-sm text-gray-400">{index + 1}.</span>
-                                <span className="text-sm text-white">{moveItem[0]}</span>
-                                {moveItem[1] && <span className={cn('text-sm text-white', styles.movesCell)}>{moveItem[1]}</span>}
+                                <span className="text-[16px] text-gray-400">{index + 1}.</span>
+                                <span className="text-[16px] text-white">{moveItem[0]}</span>
+                                {moveItem[1] && <span className={cn('text-[16px] text-white', styles.movesCell)}>{moveItem[1]}</span>}
                             </div>
                         </div>
                     ))}

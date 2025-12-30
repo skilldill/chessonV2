@@ -194,12 +194,14 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                     <ChessTimer
                         initSeconds={initialOpponentTime}
                         seconds={opponentTime}
+                        active={gameState.currentColor === gameState.opponent?.color}
                     />
                     {/* Таймер игрока (нижний) */}
                     <ChessTimer
                         initSeconds={initialPlayerTime}
                         seconds={playerTime}
                         timeLineBottom={true}
+                        active={gameState.currentColor === gameState.player?.color}
                     />
                 </div>
             </div>

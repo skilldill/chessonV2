@@ -145,3 +145,15 @@ ion-picker {
   opacity: 0;
   animation: fadeIn 0.5s linear 1s 1 forwards;
 }
+
+.historyMovesContainer {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  padding-left: 16px;
+}
+
+.historyMovesContainer::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
