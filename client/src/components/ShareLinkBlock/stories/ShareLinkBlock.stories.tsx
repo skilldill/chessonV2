@@ -16,6 +16,5 @@ type Story = StoryObj<typeof ShareLinkBlock>;
 
 export const Default: Story = {
     args: {
-        link: 'https://chesson.me/hs12akg33g'
     }
 };
