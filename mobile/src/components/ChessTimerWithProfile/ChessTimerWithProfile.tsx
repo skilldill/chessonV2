@@ -43,8 +43,8 @@ export const ChessTimerWithProfile: FC<ChessTimerWithProfileProps> = (props) => 
                     <div 
                         className="rounded-full bg-black overflow-hidden flex justify-center items-center"
                         style={{
-                            width: screenSize === 'L' ? '32px' : '24px',
-                            height: screenSize === 'L' ? '32px' : '24px',
+                            width: screenSize === 'L' ? '32px' : '32px', // 24
+                            height: screenSize === 'L' ? '32px' : '32px', // 24
                         }}
                     >
                         {avatar && <IonImg src={avatar} className="h-full w-full object-cover" />}
@@ -59,8 +59,8 @@ export const ChessTimerWithProfile: FC<ChessTimerWithProfileProps> = (props) => 
                 <div 
                     className="font-semibold text-white fadeIn200ms"
                     style={{ 
-                            lineHeight: screenSize === 'L' ? '36px' : '32px',
-                            fontSize: screenSize === 'L' ? '30px' : '24px'
+                            lineHeight: screenSize === 'L' ? '36px' : '36px', // 32
+                            fontSize: screenSize === 'L' ? '30px' : '30px' // 24
                         }}
                     >
                     <span>{minutesStr}</span>
