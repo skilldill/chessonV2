@@ -1,0 +1,66 @@
+/* 'top-[88px] opacity-0 scale-10 translate-y-[-30px] origin-top-right': listInBottom,
+'bottom-[88px] opacity-0 scale-0 translate-y-[-30px] origin-bottom-right': !listInBottom,
+'opacity-100 scale-100 translate-y-[0px]': isVisible,
+transition-all duration-200"
+absolute right-0  */
+
+
+@keyframes piecesListTopAnimation {
+    0% {
+        opacity: 0;
+        transform: scale(0) translateY(20px);
+    }
+
+    70% {
+        opacity: 1;
+        transform: scale(1.02) translateY(-1px);
+    }
+    
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0px);
+    }
+}
+
+@keyframes piecesListBottomAnimation {
+    0% {
+        opacity: 0;
+        transform: scale(0) translateY(-20px);
+    }
+
+    70% {
+        opacity: 1;
+        transform: scale(1.02) translateY(1px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0px);
+    }
+}
+
+.piecesListTop {
+    position: absolute;
+    right: 0;
+    bottom: 88px;
+    opacity: 0;
+    transform: scale(0) translateY(20px);
+    transform-origin: bottom right;
+}
+
+.piecesListBottom {
+    position: absolute;
+    right: 0;
+    top: 88px;
+    opacity: 0;
+    transform: scale(0) translateY(20px);
+    transform-origin: top right;
+}
+
+.piecesListTopVisible {
+    animation: piecesListTopAnimation .5s ease-in-out forwards;
+}
+
+.piecesListBottomVisible {
+    animation: piecesListBottomAnimation .5s ease-in-out forwards;
+}

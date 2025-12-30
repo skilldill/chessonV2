@@ -1,0 +1,147 @@
+@import "tailwindcss";
+
+@theme {
+  --color-back-primary: #09090B;
+  --color-back-secondary: #18181B;
+  --color-color-primary: #999BAF;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+    Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  background-color: #000;
+  color: #ffffffcc;
+}
+
+.container {
+  width: 100vw;
+  height: 100vh;
+  flex-direction: column;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(150deg, #282828, #000, #2b1565);
+}
+
+@keyframes chessonAnimation {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.titleChesson {
+  font-size: 4rem;
+  font-weight: 600;
+  text-align: center;
+  opacity: 1;
+  animation: chessonAnimation 3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes containerTitleAnimation {
+  0% {
+    transform: translateY(0px);
+  }
+  100% {
+    transform: translateY(-20px);
+  }
+}
+
+.containerTitle {
+  /* transform: translateY(-100px); */
+  animation: containerTitleAnimation 2s .1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes comingSoonAnimation {
+  0% {
+    opacity: 0;
+    transform: translateY(-50px);
+  }
+  100% {
+    opacity: .8;
+    transform: translateY(-60px);
+  }
+}
+
+.containerComingSoon {
+  opacity: 0;
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  animation: comingSoonAnimation 3s 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.chessImage {
+  width: 30px;
+  height: 30px;
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.fadeIn {
+  animation: fadeIn 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+
+.bounceIn {
+  transform: translateY(-110px);
+  opacity: 1;
+}
+
+/* Safe area support for iOS devices */
+ion-content {
+  --padding-top: env(safe-area-inset-top);
+  --padding-bottom: env(safe-area-inset-bottom);
+  --padding-start: env(safe-area-inset-left);
+  --padding-end: env(safe-area-inset-right);
+  --background: #09090B;
+  --color: #ffffffcc;
+}
+
+ion-content.page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+ion-page {
+  --background: #09090B;
+}
+
+/* Additional safe area support if needed */
+.home-container {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+ion-picker {
+  --highlight-background: var(--ion-color-dark);
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 100;
+  }
+}
+
+.fadeIn200ms {
+  opacity: 0;
+  animation: fadeIn 0.5s linear 1s 1 forwards;
+}
