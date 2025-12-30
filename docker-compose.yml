@@ -61,6 +61,7 @@ services:
       - api
       - client
       - site
+      - mobile
     networks:
       - app-network
 
