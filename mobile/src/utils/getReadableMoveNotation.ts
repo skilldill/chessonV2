@@ -10,7 +10,7 @@ export const getReadableMoveNotation = (move: MoveData) => {
     const figureLetter = FIGURES_LATTERS_NOTATIONS[move.figure.color][move.figure.type] === 'p' ? '' 
         : FIGURES_LATTERS_NOTATIONS[move.figure.color][move.figure.type];
 
-    if (!castlingType) return `${figureLetter} ${LETTERS[move.to[0]]}${8 - move.to[1]}`;
+    if (!castlingType) return `${figureLetter}\u00A0${LETTERS[move.to[0]]}${8 - move.to[1]}`;
 
     return castlingType;
 };

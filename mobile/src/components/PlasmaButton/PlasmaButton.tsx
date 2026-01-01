@@ -7,10 +7,15 @@ type PlasmaButtonProps = {
   className?: string;
   title?: string;
   active?: boolean;
+  size?: 'S' | 'M' | 'L';
 };
 
-const WIDTH = 100;
-const HEIGHT = 32;
+const SIZES = {
+  S: { width: 88, height: 28 },
+  M: { width: 100, height: 32 },
+  L: { width: 100, height: 32 },
+} as const;
+
 const RADIUS_PX = 9999;
 
 // Plasma colors
@@ -32,8 +37,6 @@ function injectStylesOnce() {
   const css = `
   .plasma-btn {
     position: relative;
-    width: ${WIDTH}px;
-    height: ${HEIGHT}px;
     border: none;
     border-radius: ${RADIUS_PX}px;
     padding: 0;
@@ -104,9 +107,11 @@ export const PlasmaButton: React.FC<PlasmaButtonProps> = ({
   className,
   active = true,
   title,
+  size = 'L',
 }) => {
   injectStylesOnce();
 
+  const { width: WIDTH, height: HEIGHT } = SIZES[size];
   const colorsForRendering = active ? COLORS : NOT_ACTIVE_COLORS;
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -353,6 +358,7 @@ export const PlasmaButton: React.FC<PlasmaButtonProps> = ({
       role="button"
       tabIndex={0}
       aria-disabled={disabled ? true : undefined}
+      style={{ width: `${WIDTH}px`, height: `${HEIGHT}px` }}
     >
       <canvas ref={canvasRef} className="plasma-btn__canvas" />
       <span className="plasma-btn__label">{children}</span>

@@ -37,30 +37,35 @@ export const ChessTimerWithProfile: FC<ChessTimerWithProfileProps> = (props) => 
     // const isDangerTime = useMemo(() => timeInPercent < 20, [timeInPercent]);
 
     return (
-        <div className={cn("w-full grid grid-cols-[32px_1fr_32px] items-center", { 'opacity-55': !active })}>
-            <div className="relative">
-                <div className="absolute top-0 left-0 bottom-0 flex items-center gap-[12px]">
-                    <div 
-                        className="rounded-full bg-black overflow-hidden flex justify-center items-center"
-                        style={{
-                            width: screenSize === 'L' ? '32px' : '32px', // 24
-                            height: screenSize === 'L' ? '32px' : '32px', // 24
-                        }}
-                    >
-                        {avatar && <IonImg src={avatar} className="h-full w-full object-cover" />}
-                    </div>
-                    <span className="text-sm font-medium" style={{ fontWeight: 500 }}>
-                        {nickname}
-                    </span>
+        <div className={cn("w-full grid grid-cols-[minmax(32px,_1fr)_minmax(84px,_1fr)_minmax(32px,_1fr)] items-center", { 'opacity-55': !active })}>
+            <div className="w-full flex items-center gap-[12px] min-w-0 overflow-hidden">
+                <div 
+                    className="rounded-full bg-black overflow-hidden flex justify-center items-center flex-shrink-0"
+                    style={{
+                        width: '32px', // 24
+                        height: '32px', // 24
+                    }}
+                >
+                    {avatar && <IonImg src={avatar} className="h-full w-full object-cover" />}
                 </div>
+                <span 
+                    className="text-sm font-medium truncate min-w-0" 
+                    style={{ 
+                        fontWeight: 500, 
+                        maxWidth:  screenSize === 'S' ? '60px' : '76px', 
+                        fontSize: screenSize === 'S' ? '14px' : '16px'
+                    }}
+                >
+                    {nickname}
+                </span>
             </div>
 
             <div className="flex justify-center">
                 <div 
                     className="font-semibold text-white fadeIn200ms"
                     style={{ 
-                            lineHeight: screenSize === 'L' ? '36px' : '36px', // 32
-                            fontSize: screenSize === 'L' ? '30px' : '30px' // 24
+                            lineHeight: '36px', // 32
+                            fontSize: '30px' // 24
                         }}
                     >
                     <span>{minutesStr}</span>
@@ -69,8 +74,8 @@ export const ChessTimerWithProfile: FC<ChessTimerWithProfileProps> = (props) => 
                 </div>
             </div>
 
-            <div className="flex items-center">
-                <CircleProgress progress={timeInPercent} size={screenSize === 'L' ? 32 : 24} strokeWidth={screenSize === 'L' ? 4 : 3} />
+            <div className="flex justify-end items-center">
+                <CircleProgress progress={timeInPercent} size={32} strokeWidth={4} />
             </div>
         </div>
     )
