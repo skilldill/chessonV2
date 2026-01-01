@@ -29,7 +29,7 @@ export const CreateRoomScreen = () => {
 
                 if (data.success && data.roomId) {
                     // Редирект на созданную комнату
-                    history.push(`/${data.roomId}`);
+                    history.push(`/game/${data.roomId}`);
                 } else {
                     throw new Error('Invalid response from server');
                 }

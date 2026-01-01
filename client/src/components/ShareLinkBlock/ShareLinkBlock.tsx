@@ -15,7 +15,7 @@ export const ShareLinkBlock: FC<ShareLinkBlockProps> = () => {
 
     const handleCopy = async () => {
         try {
-            await navigator.clipboard.writeText(`${SITE_BASE_URL}/${roomId}`);
+            await navigator.clipboard.writeText(`${SITE_BASE_URL}/game/${roomId}`);
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
         } catch (err) {

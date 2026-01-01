@@ -54,7 +54,7 @@ function App() {
     <Router>
       <Switch>
         <Route exact path="/" component={CreateRoomScreen} />
-        <Route path="/:roomId" component={AppScreen} />
+        <Route path="/game/:roomId" component={AppScreen} />
       </Switch>
     </Router>
   );
