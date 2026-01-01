@@ -14,9 +14,11 @@ const WaitingScreen: React.FC = () => {
 
   const [copied, setCopied] = useState(false);
 
+  const linkForShare = `${SITE_BASE_URL}/game/${roomId}`;
+
   const handleCopy = async () => {
       try {
-          await navigator.clipboard.writeText(`${SITE_BASE_URL}/game/${roomId}`);
+          await navigator.clipboard.writeText(linkForShare);
           setCopied(true);
           setTimeout(() => setCopied(false), 2000);
       } catch (err) {
@@ -25,13 +27,11 @@ const WaitingScreen: React.FC = () => {
   };
 
   const handleShare = async () => {
-      const url =`${SITE_BASE_URL}/${roomId}`;
-      
       try {
           await Share.share({
               title: 'Chess Game Invite',
               text: `Join my chess game! Room ID: ${roomId}`,
-              url: url,
+              url: linkForShare,
               dialogTitle: 'Share with friends',
           });
       } catch (err) {

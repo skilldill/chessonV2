@@ -13,9 +13,11 @@ export const ShareLinkBlock: FC<ShareLinkBlockProps> = () => {
     const { roomId } = useParams<{ roomId: string }>();
     const [copied, setCopied] = useState(false);
 
+    const linkForShare = `${SITE_BASE_URL}/game/${roomId}`;
+
     const handleCopy = async () => {
         try {
-            await navigator.clipboard.writeText(`${SITE_BASE_URL}/game/${roomId}`);
+            await navigator.clipboard.writeText(linkForShare);
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
         } catch (err) {
@@ -41,7 +43,7 @@ export const ShareLinkBlock: FC<ShareLinkBlockProps> = () => {
 
                         <input
                             type="text"
-                            value={`${SITE_BASE_URL}/${roomId}`}
+                            value={linkForShare}
                             disabled
                             placeholder="Link"
                             className="bg-white/4 w-full h-[40px] px-[12px] py-[10px] border border-white/10 border-solid rounded-md focus:border-indigo-700 focus:outline-none transition-all duration-200 pr-10 placeholder-[#99A1AF]"
