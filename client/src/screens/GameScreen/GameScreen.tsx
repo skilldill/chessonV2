@@ -52,7 +52,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
     offeredDraw,
     connectionLost = false,
 }) => {
-    const cellSize = useCellSize(110);
+    const cellSize = useCellSize(100);
     const screenSize = useScreenSize();
     const { removeGameData } = useGameStorage();
 
@@ -112,7 +112,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
         <div
             className={`bg-back-primary grid h-screen items-center relative ${
                 screenSize === "L"
-                    ? 'grid-cols-[1fr_928px_1fr]'
+                    ? 'grid-cols-[1fr_1fr_1fr]'
                     : 'grid-cols-[1fr_720px_1fr]'
             }`}
         >

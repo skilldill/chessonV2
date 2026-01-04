@@ -53,7 +53,7 @@ export const ChessTimerWithProfile: FC<ChessTimerWithProfileProps> = (props) => 
                     style={{ 
                         fontWeight: 500, 
                         maxWidth:  screenSize === 'S' ? '60px' : '76px', 
-                        fontSize: screenSize === 'S' ? '14px' : '16px'
+                        fontSize: '16px',
                     }}
                 >
                     {nickname}

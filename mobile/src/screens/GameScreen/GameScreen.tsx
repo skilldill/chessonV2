@@ -165,6 +165,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
                   whiteCellColor: "#E5E7EB",
                   blackCellColor: "#A5AEBD",
                   circleMarkColor: "#0069A8",
+                  figureSizePercent: 85,
               }}
             />
             {screenSize === "L" && (
