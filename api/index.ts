@@ -110,6 +110,147 @@ type Room = {
 
 const rooms = new Map<string, Room>();
 const roomTimers = new Map<string, NodeJS.Timeout>();
+const roomLastActivity = new Map<string, number>(); // Время последней активности комнаты
+const userMessageCounts = new Map<string, { count: number, resetAt: number }>(); // Rate limiting для пользователей
+
+// Метрики для мониторинга
+const metrics = {
+  activeRooms: 0,
+  activeConnections: 0,
+  totalMessages: 0,
+  messagesPerSecond: 0,
+  roomsCreated: 0,
+  roomsCleaned: 0,
+  lastCleanup: Date.now()
+};
+
+// Константы для конфигурации
+const ROOM_TTL = 24 * 60 * 60 * 1000; // 24 часа без активности
+const CLEANUP_INTERVAL = 60 * 60 * 1000; // Проверка каждый час
+const RATE_LIMIT_WINDOW = 1000; // 1 секунда
+const RATE_LIMIT_MAX_MESSAGES = 100; // Максимум сообщений в секунду
+const METRICS_RESET_INTERVAL = 1000; // Сброс счетчика сообщений в секунду каждую секунду
+
+// Функция для проверки rate limit
+function checkRateLimit(userId: string): boolean {
+  const now = Date.now();
+  const limit = userMessageCounts.get(userId);
+  
+  if (!limit || now > limit.resetAt) {
+    userMessageCounts.set(userId, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
+    return true;
+  }
+  
+  if (limit.count > RATE_LIMIT_MAX_MESSAGES) {
+    return false;
+  }
+  
+  limit.count++;
+  return true;
+}
+
+// Функция для очистки неактивных комнат
+function cleanupInactiveRooms() {
+  const now = Date.now();
+  let cleanedCount = 0;
+  
+  for (const [roomId, lastActivity] of roomLastActivity) {
+    const room = rooms.get(roomId);
+    
+    // Проверяем TTL
+    if (now - lastActivity > ROOM_TTL) {
+      // Очищаем таймер если есть
+      clearRoomTimer(roomId);
+      
+      // Закрываем все WebSocket соединения
+      if (room) {
+        for (const [_, userData] of room.users) {
+          if (userData.isConnected && userData.ws) {
+            try {
+              userData.ws.send({
+                system: true,
+                message: "Room expired due to inactivity",
+                type: "roomExpired"
+              });
+              userData.ws.close();
+            } catch (e) {
+              // Игнорируем ошибки при закрытии
+            }
+          }
+        }
+      }
+      
+      // Удаляем комнату
+      rooms.delete(roomId);
+      roomLastActivity.delete(roomId);
+      cleanedCount++;
+    } else if (room) {
+      // Проверяем, есть ли активные соединения
+      let hasActiveConnections = false;
+      for (const [_, userData] of room.users) {
+        if (userData.isConnected) {
+          hasActiveConnections = true;
+          break;
+        }
+      }
+      
+      // Если нет активных соединений и игра завершена, можно удалить раньше
+      if (!hasActiveConnections && room.gameState.gameEnded) {
+        clearRoomTimer(roomId);
+        rooms.delete(roomId);
+        roomLastActivity.delete(roomId);
+        cleanedCount++;
+      }
+    }
+  }
+  
+  if (cleanedCount > 0) {
+    metrics.roomsCleaned += cleanedCount;
+    console.log(`Cleaned up ${cleanedCount} inactive rooms`);
+  }
+  
+  metrics.lastCleanup = now;
+  updateMetrics();
+}
+
+// Функция для обновления метрик
+function updateMetrics() {
+  let activeConnections = 0;
+  let activeRooms = 0;
+  
+  for (const [_, room] of rooms) {
+    let hasActiveUsers = false;
+    for (const [_, userData] of room.users) {
+      if (userData.isConnected) {
+        activeConnections++;
+        hasActiveUsers = true;
+      }
+    }
+    if (hasActiveUsers) {
+      activeRooms++;
+    }
+  }
+  
+  metrics.activeRooms = activeRooms;
+  metrics.activeConnections = activeConnections;
+}
+
+// Функция для обновления времени последней активности комнаты
+function updateRoomActivity(roomId: string) {
+  roomLastActivity.set(roomId, Date.now());
+}
+
+// Запускаем периодическую очистку неактивных комнат
+setInterval(() => {
+  cleanupInactiveRooms();
+}, CLEANUP_INTERVAL);
+
+// Сброс счетчика сообщений в секунду для метрик
+let messageCountInSecond = 0;
+setInterval(() => {
+  metrics.messagesPerSecond = messageCountInSecond;
+  messageCountInSecond = 0;
+}, METRICS_RESET_INTERVAL);
 
 // Функция для синхронизации currentColor с currentPlayer
 function syncCurrentColor(room: Room) {
@@ -159,11 +300,7 @@ function declareDrawByThreefoldRepetition(room: Room, roomId: string) {
     };
     
     // Очищаем таймер комнаты
-    const timer = roomTimers.get(roomId);
-    if (timer) {
-        clearInterval(timer);
-        roomTimers.delete(roomId);
-    }
+    clearRoomTimer(roomId);
     
     // Отправляем результат всем игрокам
     for (const [id, userData] of room.users) {
@@ -262,11 +399,7 @@ function declareDrawByInsufficientMaterial(room: Room, roomId: string) {
     };
     
     // Очищаем таймер комнаты
-    const timer = roomTimers.get(roomId);
-    if (timer) {
-        clearInterval(timer);
-        roomTimers.delete(roomId);
-    }
+    clearRoomTimer(roomId);
     
     // Отправляем результат всем игрокам
     for (const [id, userData] of room.users) {
@@ -344,13 +477,23 @@ function getPersonalizedGameState(room: Room, userId: string): GameState {
     };
 }
 
+// Функция для безопасной очистки таймера комнаты
+function clearRoomTimer(roomId: string) {
+  const timer = roomTimers.get(roomId);
+  if (timer) {
+    try {
+      clearInterval(timer);
+    } catch (e) {
+      console.error(`Error clearing timer for room ${roomId}:`, e);
+    }
+    roomTimers.delete(roomId);
+  }
+}
+
 // Функция для создания таймера комнаты
 function createRoomTimer(roomId: string) {
   // Очищаем существующий таймер если есть
-  const existingTimer = roomTimers.get(roomId);
-  if (existingTimer) {
-    clearInterval(existingTimer);
-  }
+  clearRoomTimer(roomId);
 
   // Создаем новый таймер
   const timer = setInterval(() => {
@@ -396,8 +539,7 @@ function createRoomTimer(roomId: string) {
         }
 
         // Очищаем таймер
-        clearInterval(timer);
-        roomTimers.delete(roomId);
+        clearRoomTimer(roomId);
         return;
       }
     } else {
@@ -434,8 +576,7 @@ function createRoomTimer(roomId: string) {
         }
 
         // Очищаем таймер
-        clearInterval(timer);
-        roomTimers.delete(roomId);
+        clearRoomTimer(roomId);
         return;
       }
     }
@@ -461,6 +602,16 @@ app.get('/api/health', () => ({
   status: 'ok',
   timestamp: new Date().toISOString()
 }));
+
+// Metrics endpoint
+app.get('/api/metrics', () => {
+  updateMetrics();
+  return {
+    ...metrics,
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  };
+});
 
 // Create room endpoint
 app.post('/api/rooms', async ({ body }) => {
@@ -514,6 +665,9 @@ app.post('/api/rooms', async ({ body }) => {
     }
   };
   rooms.set(roomId, room);
+  updateRoomActivity(roomId);
+  metrics.roomsCreated++;
+  updateMetrics();
   
   console.log('ROOM CREATED WITH TIMER:', room.gameState.timer);
   console.log('ROOM ID:', roomId);
@@ -541,6 +695,8 @@ app.get('/api/rooms/:roomId', async ({ params }) => {
       error: 'Room not found'
     };
   }
+  
+  updateRoomActivity(roomId);
   
   return {
     gameState: room.gameState
@@ -661,6 +817,8 @@ app.ws('/ws/room', {
             }
           };
           rooms.set(roomId, room);
+          updateRoomActivity(roomId);
+          metrics.roomsCreated++;
       }
 
       // Проверяем, есть ли уже пользователь с таким именем в комнате
@@ -689,6 +847,9 @@ app.ws('/ws/room', {
               color: existingUserData?.color,
               cursorPosition: existingUserData?.cursorPosition
           });
+
+          updateRoomActivity(roomId);
+          updateMetrics();
 
           // Приветствие для вернувшегося пользователя
           ws.send({ 
@@ -746,6 +907,9 @@ app.ws('/ws/room', {
           color: assignedColor,
           cursorPosition: { x: 0, y: 0 }
       });
+
+      updateRoomActivity(roomId);
+      updateMetrics();
 
       // приветствие для нового пользователя
       ws.send({ 
@@ -814,6 +978,21 @@ app.ws('/ws/room', {
       }
 
       if (!senderUserId || !senderUserData) return;
+
+      // Rate limiting - проверяем лимит сообщений
+      if (!checkRateLimit(senderUserId)) {
+          ws.send({ 
+              system: true, 
+              message: "Too many messages. Please slow down.",
+              type: "rateLimitExceeded"
+          });
+          return;
+      }
+
+      // Обновляем метрики и активность комнаты
+      metrics.totalMessages++;
+      messageCountInSecond++;
+      updateRoomActivity(roomId);
 
       // Обрабатываем различные типы сообщений
       if (data.type === "message") {
@@ -929,12 +1108,8 @@ app.ws('/ws/room', {
           room.gameState.gameEnded = true;
           room.gameState.gameResult = data.gameResult;
           
-          // Очищаем таймер комнаты
-          const timer = roomTimers.get(roomId);
-          if (timer) {
-            clearInterval(timer);
-            roomTimers.delete(roomId);
-          }
+    // Очищаем таймер комнаты
+    clearRoomTimer(roomId);
 
           // Отправляем результат всем игрокам
           for (const [id, userData] of room.users) {
@@ -1063,12 +1238,8 @@ app.ws('/ws/room', {
                   resultType: "draw"
               };
               
-              // Очищаем таймер комнаты
-              const timer = roomTimers.get(roomId);
-              if (timer) {
-                clearInterval(timer);
-                roomTimers.delete(roomId);
-              }
+    // Очищаем таймер комнаты
+    clearRoomTimer(roomId);
 
               // Отправляем результат всем игрокам
               for (const [id, userData] of room.users) {
@@ -1151,12 +1322,8 @@ app.ws('/ws/room', {
               winColor: winnerColor
           };
           
-          // Очищаем таймер комнаты
-          const timer = roomTimers.get(roomId);
-          if (timer) {
-            clearInterval(timer);
-            roomTimers.delete(roomId);
-          }
+    // Очищаем таймер комнаты
+    clearRoomTimer(roomId);
 
           // Отправляем результат всем игрокам
           for (const [id, userData] of room.users) {
@@ -1207,12 +1374,10 @@ app.ws('/ws/room', {
 
     // Если остался только один игрок или никто, очищаем таймер
     if (connectedUsers <= 1) {
-      const timer = roomTimers.get(roomId);
-      if (timer) {
-        clearInterval(timer);
-        roomTimers.delete(roomId);
-      }
+      clearRoomTimer(roomId);
     }
+
+    updateMetrics();
   }
 });
 
