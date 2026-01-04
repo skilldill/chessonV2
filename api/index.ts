@@ -189,6 +189,109 @@ function declareDrawByThreefoldRepetition(room: Room, roomId: string) {
     }
 }
 
+// Функция для подсчета фигур на доске из FEN позиции
+function countPieces(fenPosition: string): { white: { [piece: string]: number }, black: { [piece: string]: number } } {
+    const pieces = {
+        white: { K: 0, Q: 0, R: 0, B: 0, N: 0, P: 0 },
+        black: { k: 0, q: 0, r: 0, b: 0, n: 0, p: 0 }
+    };
+    
+    // Парсим FEN позицию (первая часть до пробела)
+    const positionPart = fenPosition.split(' ')[0];
+    
+    // Проходим по каждому символу позиции
+    for (const char of positionPart) {
+        if (char === '/') continue; // Пропускаем разделители рядов
+        
+        // Если это цифра, пропускаем пустые клетки
+        if (char >= '1' && char <= '8') continue;
+        
+        // Подсчитываем белые фигуры (заглавные)
+        if (char === 'K') pieces.white.K++;
+        else if (char === 'Q') pieces.white.Q++;
+        else if (char === 'R') pieces.white.R++;
+        else if (char === 'B') pieces.white.B++;
+        else if (char === 'N') pieces.white.N++;
+        else if (char === 'P') pieces.white.P++;
+        
+        // Подсчитываем черные фигуры (строчные)
+        else if (char === 'k') pieces.black.k++;
+        else if (char === 'q') pieces.black.q++;
+        else if (char === 'r') pieces.black.r++;
+        else if (char === 'b') pieces.black.b++;
+        else if (char === 'n') pieces.black.n++;
+        else if (char === 'p') pieces.black.p++;
+    }
+    
+    return pieces;
+}
+
+// Функция для проверки недостаточного материала (ничья)
+function checkInsufficientMaterial(room: Room): boolean {
+    const fen = room.gameState.currentFEN;
+    const pieces = countPieces(fen);
+    
+    // Подсчитываем общее количество фигур каждого цвета (исключая королей)
+    const whitePiecesCount = pieces.white.Q + pieces.white.R + pieces.white.B + pieces.white.N + pieces.white.P;
+    const blackPiecesCount = pieces.black.q + pieces.black.r + pieces.black.b + pieces.black.n + pieces.black.p;
+    
+    // Проверка 1: Только короли у обоих игроков
+    if (whitePiecesCount === 0 && blackPiecesCount === 0) {
+        return true;
+    }
+    
+    // Проверка 2: У одного только король, у другого король + конь
+    // Белые: только король, черные: король + конь
+    if (whitePiecesCount === 0 && blackPiecesCount === 1 && pieces.black.n === 1) {
+        return true;
+    }
+    
+    // Черные: только король, белые: король + конь
+    if (blackPiecesCount === 0 && whitePiecesCount === 1 && pieces.white.N === 1) {
+        return true;
+    }
+    
+    return false;
+}
+
+// Функция для объявления ничьей по недостаточному материалу
+function declareDrawByInsufficientMaterial(room: Room, roomId: string) {
+    room.gameState.gameEnded = true;
+    room.gameState.gameResult = {
+        resultType: "draw"
+    };
+    
+    // Очищаем таймер комнаты
+    const timer = roomTimers.get(roomId);
+    if (timer) {
+        clearInterval(timer);
+        roomTimers.delete(roomId);
+    }
+    
+    // Отправляем результат всем игрокам
+    for (const [id, userData] of room.users) {
+        if (userData.isConnected && userData.ws) {
+            userData.ws.send({
+                type: "gameResult",
+                gameResult: room.gameState.gameResult,
+                gameState: getPersonalizedGameState(room, id),
+                time: Date.now()
+            });
+        }
+    }
+    
+    // Отправляем системное сообщение
+    for (const [id, userData] of room.users) {
+        if (userData.isConnected && userData.ws) {
+            userData.ws.send({
+                system: true,
+                message: "Insufficient material! Draw by rule!",
+                type: "gameEnd"
+            });
+        }
+    }
+}
+
 // Функция для получения персонализированного gameState для конкретного игрока
 function getPersonalizedGameState(room: Room, userId: string): GameState {
     const userData = room.users.get(userId);
@@ -765,6 +868,12 @@ app.ws('/ws/room', {
           // Проверяем троекратное повторение позиции
           if (checkThreefoldRepetition(room)) {
               declareDrawByThreefoldRepetition(room, roomId);
+              return; // Прерываем обработку, игра завершена
+          }
+
+          // Проверяем недостаточный материал (ничья)
+          if (checkInsufficientMaterial(room)) {
+              declareDrawByInsufficientMaterial(room, roomId);
               return; // Прерываем обработку, игра завершена
           }
 
