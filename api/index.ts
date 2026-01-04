@@ -116,6 +116,79 @@ function syncCurrentColor(room: Room) {
     room.gameState.currentColor = room.gameState.currentPlayer;
 }
 
+// Функция для извлечения позиции из FEN (без счетчиков ходов и полуходов)
+// FEN формат: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+// Для троекратного повторения важны только первые 4 части: позиция, чей ход, права на рокировку, взятие на проходе
+function extractPositionFromFEN(fen: string): string {
+    const parts = fen.split(' ');
+    // Берем первые 4 части: позиция, чей ход, права на рокировку, взятие на проходе
+    return parts.slice(0, 4).join(' ');
+}
+
+// Функция для проверки троекратного повторения позиции
+function checkThreefoldRepetition(room: Room): boolean {
+    if (room.gameState.moveHistory.length < 2) {
+        // Нужно минимум 2 хода для троекратного повторения
+        return false;
+    }
+
+    // Извлекаем текущую позицию (без счетчиков)
+    const currentPosition = extractPositionFromFEN(room.gameState.currentFEN);
+    
+    // Подсчитываем, сколько раз встречалась эта позиция в истории
+    // Текущая позиция уже добавлена в moveHistory как последний элемент
+    let repetitionCount = 0;
+    
+    // Проверяем все позиции в истории ходов (включая только что добавленную)
+    for (const move of room.gameState.moveHistory) {
+        const movePosition = extractPositionFromFEN(move.FEN);
+        if (movePosition === currentPosition) {
+            repetitionCount++;
+        }
+    }
+    
+    // Если позиция встречается 3 или более раз - это троекратное повторение
+    return repetitionCount >= 3;
+}
+
+// Функция для объявления ничьей по троекратному повторению
+function declareDrawByThreefoldRepetition(room: Room, roomId: string) {
+    room.gameState.gameEnded = true;
+    room.gameState.gameResult = {
+        resultType: "draw"
+    };
+    
+    // Очищаем таймер комнаты
+    const timer = roomTimers.get(roomId);
+    if (timer) {
+        clearInterval(timer);
+        roomTimers.delete(roomId);
+    }
+    
+    // Отправляем результат всем игрокам
+    for (const [id, userData] of room.users) {
+        if (userData.isConnected && userData.ws) {
+            userData.ws.send({
+                type: "gameResult",
+                gameResult: room.gameState.gameResult,
+                gameState: getPersonalizedGameState(room, id),
+                time: Date.now()
+            });
+        }
+    }
+    
+    // Отправляем системное сообщение
+    for (const [id, userData] of room.users) {
+        if (userData.isConnected && userData.ws) {
+            userData.ws.send({
+                system: true,
+                message: "Threefold repetition! Draw by rule!",
+                type: "gameEnd"
+            });
+        }
+    }
+}
+
 // Функция для получения персонализированного gameState для конкретного игрока
 function getPersonalizedGameState(room: Room, userId: string): GameState {
     const userData = room.users.get(userId);
@@ -688,6 +761,12 @@ app.ws('/ws/room', {
           room.gameState.currentPlayer = room.gameState.currentPlayer === "white" ? "black" : "white";
           // Обновляем currentColor синхронно с currentPlayer
           syncCurrentColor(room);
+
+          // Проверяем троекратное повторение позиции
+          if (checkThreefoldRepetition(room)) {
+              declareDrawByThreefoldRepetition(room, roomId);
+              return; // Прерываем обработку, игра завершена
+          }
 
           // Отправляем ход всем игрокам кроме отправителя
           for (const [id, userData] of room.users) {
