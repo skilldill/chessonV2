@@ -1,15 +1,12 @@
 import { type FC, useEffect, useRef } from "react";
 import type { MoveData } from "react-chessboard-ui";
 import { getReadableMoveNotation } from "../../utils/getReadableMoveNotation";
-import { useScreenSize } from "../../hooks/useScreenSize";
-
 
 type HistoryMovesProps = {
     moves: MoveData[];
 }
 
 export const HistoryMoves: FC<HistoryMovesProps> = ({ moves }) => {
-    const screenSize = useScreenSize();
     const containerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -30,7 +27,7 @@ export const HistoryMoves: FC<HistoryMovesProps> = ({ moves }) => {
                         className="min-w-[32px] text-sm font-medium"
                         style={{
                             color: ((index + 1) % 2 === 0) ? '#99A1AF' : '#FFF',
-                            fontSize: screenSize === 'S' ? '14px' : '16px'
+                            fontSize: '16px'
                         }}
                         key={index}
                     >{getReadableMoveNotation(move)}</span>
