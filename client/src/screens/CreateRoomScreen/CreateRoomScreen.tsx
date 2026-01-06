@@ -47,17 +47,17 @@ export const CreateRoomScreen = () => {
         <div className="w-full h-[100vh] flex justify-center items-center">
             {isCreating ? (
                 <div className="text-center">
-                    <div className="text-lg mb-4">Создание комнаты...</div>
+                    <div className="text-lg mb-4">Creating room...</div>
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
                 </div>
             ) : error ? (
                 <div className="text-center">
-                    <div className="text-lg text-red-600 mb-4">Ошибка: {error}</div>
+                    <div className="text-lg text-red-600 mb-4">Error: {error}</div>
                     <button
                         onClick={() => window.location.reload()}
                         className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
                     >
-                        Попробовать снова
+                        Try again
                     </button>
                 </div>
             ) : null}
