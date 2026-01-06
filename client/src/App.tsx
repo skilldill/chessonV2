@@ -24,6 +24,7 @@ import Cat6PNG from "./assets/avatars/cat_6.png";
 import Cat7PNG from "./assets/avatars/cat_7.png";
 import Cat8PNG from "./assets/avatars/cat_8.png";
 import { useRestoreGame } from "./hooks/useRestoreGame";
+import { CreateCustomFenRoomScreen } from "./screens/CreateCustomFenRoomScreen/CreateCustomFenRoomScreen";
 
 // Все изображения для предзагрузки (вынесено за пределы компонента)
 const ALL_IMAGES = [
@@ -55,6 +56,7 @@ function App() {
       <Switch>
         <Route exact path="/" component={CreateRoomScreen} />
         <Route path="/game/:roomId" component={AppScreen} />
+        <Route exact path="/custom/room" component={CreateCustomFenRoomScreen} />
       </Switch>
     </Router>
   );
