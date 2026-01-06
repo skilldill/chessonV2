@@ -107,6 +107,7 @@ type UserData = {
 type Room = {
     users: Map<string, UserData>;
     gameState: GameState;
+    firstPlayerColor?: "white" | "black"; // Цвет для первого подключившегося игрока
 };
 
 const rooms = new Map<string, Room>();
@@ -651,8 +652,12 @@ app.post('/api/rooms', async ({ body }) => {
   const currentFEN = (timerConfig.currentFEN && timerConfig.currentFEN.trim()) 
     ? timerConfig.currentFEN 
     : INITIAL_FEN;
+  // Цвет для первого подключившегося игрока (необязательный)
+  const firstPlayerColor = (timerConfig.color === "white" || timerConfig.color === "black") 
+    ? timerConfig.color 
+    : undefined;
 
-  // {"whiteTimer":60,"blackTimer":60,"increment":5,"currentFEN":"..."}
+  // {"whiteTimer":60,"blackTimer":60,"increment":5,"currentFEN":"...","color":"white"}
   console.log('TIMER CONFIG BODY', body);
   console.log('TIMER CONFIG', timerConfig);
 
@@ -680,7 +685,8 @@ app.post('/api/rooms', async ({ body }) => {
         initialWhiteTime: whiteTimer,
         initialBlackTime: blackTimer,
       }
-    }
+    },
+    firstPlayerColor: firstPlayerColor
   };
   rooms.set(roomId, room);
   updateRoomActivity(roomId);
@@ -727,7 +733,8 @@ app.ws('/ws/room', {
       roomId: t.String(),
       userName: t.String(),
       avatar: t.String(),
-      currentFEN: t.Optional(t.String())
+      currentFEN: t.Optional(t.String()),
+      color: t.Optional(t.Union([t.Literal("white"), t.Literal("black")]))
   }),
 
   body: t.Union([
@@ -803,7 +810,7 @@ app.ws('/ws/room', {
   ]),
 
   open(ws) {
-      const { roomId, userName, avatar, currentFEN: queryFEN } = ws.data.query;
+      const { roomId, userName, avatar, currentFEN: queryFEN, color: queryColor } = ws.data.query;
 
       let room = rooms.get(roomId);
 
@@ -818,6 +825,11 @@ app.ws('/ws/room', {
           const currentFEN = (queryFEN && queryFEN.trim()) 
             ? queryFEN 
             : INITIAL_FEN;
+          
+          // Цвет для первого подключившегося игрока (необязательный)
+          const firstPlayerColor = (queryColor === "white" || queryColor === "black") 
+            ? queryColor 
+            : undefined;
           
           // Определяем текущего игрока из FEN
           const currentPlayer = getCurrentPlayerFromFEN(currentFEN);
@@ -842,7 +854,8 @@ app.ws('/ws/room', {
                 initialWhiteTime: DEFAULT_TIME_SECONDS, // 10 минут по умолчанию
                 initialBlackTime: DEFAULT_TIME_SECONDS // 10 минут по умолчанию
               }
-            }
+            },
+            firstPlayerColor: firstPlayerColor
           };
           rooms.set(roomId, room);
           updateRoomActivity(roomId);
@@ -922,9 +935,17 @@ app.ws('/ws/room', {
       // Генерируем новый ID для нового пользователя
       const userId = generateShortId();
 
-      // Назначаем цвет пользователю случайным образом
-      const assignedColor = room.users.size === 0 ? assignRandomColor() : 
-        room.users.get(Array.from(room.users.keys())[0] as string)?.color === "white" ? "black" : "white";
+      // Назначаем цвет пользователю
+      let assignedColor: "white" | "black";
+      if (room.users.size === 0) {
+        // Если это первый пользователь и указан цвет при создании комнаты, используем его
+        // Иначе назначаем случайный цвет
+        assignedColor = room.firstPlayerColor ?? assignRandomColor();
+      } else {
+        // Если уже есть пользователь, назначаем противоположный цвет
+        const existingUserColor = room.users.get(Array.from(room.users.keys())[0] as string)?.color;
+        assignedColor = existingUserColor === "white" ? "black" : "white";
+      }
 
       // Сохраняем данные нового пользователя в комнате
       room.users.set(userId, {

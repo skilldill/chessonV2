@@ -7,6 +7,7 @@ export const CreateCustomFenRoomScreen = () => {
     const history = useHistory();
 
     const [customFEN, setCustomFEN] = useState(INITIAL_FEN);
+    const [selectedColor, setSelectedColor] = useState<"white" | "black" | undefined>(undefined);
 
     const [isCreating, setIsCreating] = useState(false);
 
@@ -22,14 +23,20 @@ export const CreateCustomFenRoomScreen = () => {
         try {
             setIsCreating(true);
 
+            const requestBody: { currentFEN: string; color?: "white" | "black" } = {
+                currentFEN: customFEN,
+            };
+            
+            if (selectedColor) {
+                requestBody.color = selectedColor;
+            }
+
             const response = await fetch(API_PREFIX + '/rooms', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    currentFEN: customFEN,
-                })
+                body: JSON.stringify(requestBody)
             });
 
             if (!response.ok) {
@@ -59,10 +66,10 @@ export const CreateCustomFenRoomScreen = () => {
             {isCreating ? (
                 <p>Creating room...</p>
             ) : (
-                <div className="w-[432px] h-[380px] relative rounded-xl border-[1px] border-[#364153] rounded-3xl overflow-hidden select-none fadeIn">
+                <div className="w-[432px] h-[520px] relative rounded-xl border-[1px] border-[#364153] rounded-3xl overflow-hidden select-none fadeIn">
                     <div className="w-[348px] h-[348px] rounded-full absolute top-[-174px] left-[-104px] bg-[#155DFC] z-30 blur-[200px]" />
                     
-                    <div className="w-full h-full flex flex-col items-center absolute top-0 left-0 gap-[48px] z-40 py-[32px]">
+                    <div className="w-full h-full flex flex-col items-center absolute top-0 left-0 gap-[32px] z-40 py-[32px]">
                         <div className="w-full flex justify-end px-[32px]">
                             <button 
                                 type="button"
@@ -97,6 +104,59 @@ export const CreateCustomFenRoomScreen = () => {
                         <h3 className="text-white text-center text-3xl font-semibold">
                             Input custom FEN
                         </h3>
+                        
+                        <div className="flex flex-col gap-3">
+                            <label className="text-white/80 text-sm font-medium">
+                                Choose your color (or random)
+                            </label>
+                            <div className="flex gap-3">
+                                {/* White button */}
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectedColor("white")}
+                                    className={`flex-1 h-[48px] rounded-md border-2 transition-all duration-200 active:scale-95 focus:outline-none ${
+                                        selectedColor === "white"
+                                            ? "bg-white text-black border-white"
+                                            : "bg-white/10 text-white border-white/30 hover:border-white/50"
+                                    }`}
+                                >
+                                    <span className="font-semibold">White</span>
+                                </button>
+                                
+                                {/* Black button */}
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectedColor("black")}
+                                    className={`flex-1 h-[48px] rounded-md border-2 transition-all duration-200 active:scale-95 focus:outline-none ${
+                                        selectedColor === "black"
+                                            ? "bg-black text-white border-white"
+                                            : "bg-white/10 text-white border-white/30 hover:border-white/50"
+                                    }`}
+                                >
+                                    <span className="font-semibold">Black</span>
+                                </button>
+
+                                {/* Random button (black and white) */}
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectedColor(undefined)}
+                                    className={`h-[48px] rounded-md border-2 transition-all duration-200 active:scale-95 focus:outline-none relative overflow-hidden ${
+                                        selectedColor === undefined
+                                            ? "border-white"
+                                            : "border-white/30 hover:border-white/50"
+                                    }`}
+                                >
+                                    <span className={`relative z-10 font-semibold flex items-center justify-center h-full ${
+                                        selectedColor === undefined 
+                                            ? "text-black drop-shadow-[0_0_2px_rgba(255,255,255,0.8)]" 
+                                            : "text-white/90"
+                                    }`}>
+                                        Random
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
+                        
                         <form onSubmit={(event) => event.preventDefault()}>
                             <div className="relative w-[328px]">
                                 <input
