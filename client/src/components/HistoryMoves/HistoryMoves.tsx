@@ -1,4 +1,4 @@
-import { useState, type FC } from "react";
+import { useEffect, useState, type FC } from "react";
 import type { MoveData } from "react-chessboard-ui";
 import { groupByTwoMoves } from "../../utils/groupByTwoMoves";
 import { getReadableMoveNotation } from "../../utils/getReadableMoveNotation";
@@ -6,18 +6,36 @@ import { Resizable } from 're-resizable';
 import { DraggableWrap } from "../DraggableWrap/DraggableWrap";
 import styles from './HistoryMoves.module.css';
 import cn from 'classnames';
+import { useScreenSize } from "../../hooks/useScreenSize";
 
 type HistoryMovesProps = {
     moves: MoveData[];
 }
 
+// Из дизайна
 const DEFAULT_SIZE = {
-    width: 256,
-    height: 160,
+    widthM: 288,
+    heightM: 160,
+
+    widthL: 348,
+    heightL: 192,
 };
 
 export const HistoryMoves: FC<HistoryMovesProps> = ({ moves }) => {
-    const [size, setSize] = useState(DEFAULT_SIZE);
+    const [size, setSize] = useState({
+        width: DEFAULT_SIZE.widthM,
+        height: DEFAULT_SIZE.heightM,
+    });
+    const screenSize = useScreenSize();
+
+    useEffect(() => {
+        if (screenSize === 'L')
+            setSize({
+                width: DEFAULT_SIZE.widthL,
+                height: DEFAULT_SIZE.heightL,
+            })
+    }, [screenSize])
+
 
     const groupedMoves = groupByTwoMoves(moves)
         .map((moveItem) => moveItem.map((move) => getReadableMoveNotation(move)));
@@ -26,8 +44,8 @@ export const HistoryMoves: FC<HistoryMovesProps> = ({ moves }) => {
         <DraggableWrap>
             <Resizable
                 size={size}
-                maxWidth={DEFAULT_SIZE.width}
-                minWidth={DEFAULT_SIZE.width}
+                maxWidth={screenSize === 'L' ? DEFAULT_SIZE.widthL : DEFAULT_SIZE.widthM}
+                minWidth={screenSize === 'L' ? DEFAULT_SIZE.widthL : DEFAULT_SIZE.widthM}
                 minHeight={100}
                 onResizeStop={(...args) => {
                     setSize((prev) => ({

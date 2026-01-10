@@ -13,9 +13,9 @@ import { GameCursorProfile } from "../../components/GameCursorProfile/GameCursor
 import { DrawOfferActions } from "../../components/DrawOfferActions/DrawOfferActions";
 import { ResultsActions } from "../../components/ResultsActions/ResultsActions";
 import { ConnectionNotification } from "../../components/ConnectionNotification/ConnectionNotification";
-import { useCellSize } from "../../hooks/useCellSize";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { useGameStorage } from "../../hooks/useGameStorage";
+import { useScreenHeightForChessboard } from "../../hooks/useScreenHeightForChessboard";
 
 type GameScreenProps = {
     gameState: GameState;
@@ -52,11 +52,12 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
     offeredDraw,
     connectionLost = false,
 }) => {
-    const cellSize = useCellSize(100);
     const screenSize = useScreenSize();
     const { removeGameData } = useGameStorage();
+    const gridColsClass = useScreenHeightForChessboard();
 
     const [initialFEN, setInitialFEN] = useState(INITIAL_FEN);
+
     const reversed = useMemo(() => playerColor === "black", [playerColor]);
     const { 
         opponentTime, 
@@ -110,11 +111,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
 
     return (
         <div
-            className={`bg-back-primary grid h-screen items-center relative ${
-                screenSize === "L"
-                    ? 'grid-cols-[1fr_1fr_1fr]'
-                    : 'grid-cols-[1fr_720px_1fr]'
-            }`}
+            className={`bg-back-primary grid h-screen items-center relative ${gridColsClass}`}
         >
             <DrawOfferActions
                 offeredDraw={offeredDraw}
@@ -158,23 +155,25 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                 </div>
             </div>
             <div className="relative">
-                <ChessboardWrap reverse={playerColor === "black"}>
-                    <ChessBoard
-                        FEN={initialFEN}
-                        onChange={(moveData) => handleMove(moveData as MoveData)} 
-                        onEndGame={onSendGameResult}
-                        reversed={playerColor === "black"}
-                        change={externalChangeMove}
-                        playerColor={playerColor}
-                        config={{ 
-                            cellSize, 
-                            whiteCellColor: "#E5E7EB",
-	                        blackCellColor: "#A5AEBD",
-                            circleMarkColor: "#0069A8",
-                        }}
-                    />
-                </ChessboardWrap>
-
+                <ChessboardWrap
+                    reverse={playerColor === "black"}
+                    renderChessboard={(wrapWidth) => (
+                        <ChessBoard
+                            FEN={initialFEN}
+                            onChange={(moveData) => handleMove(moveData as MoveData)} 
+                            onEndGame={onSendGameResult}
+                            reversed={playerColor === "black"}
+                            change={externalChangeMove}
+                            playerColor={playerColor}
+                            config={{ 
+                                cellSize: wrapWidth / 8, 
+                                whiteCellColor: "#E5E7EB",
+                                blackCellColor: "#A5AEBD",
+                                circleMarkColor: "#0069A8",
+                            }}
+                        />
+                    )}
+                />
                 <div className={`absolute ${screenSize === "L" ? "bottom-[-100px]" : "bottom-[-86px]"} left-0 right-0 flex justify-center`}>
                     <GameScreenControls
                         key={resultMessage}

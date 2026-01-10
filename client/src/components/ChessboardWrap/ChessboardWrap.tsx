@@ -1,15 +1,17 @@
-import { type FC, type PropsWithChildren, useMemo } from 'react';
+import { type FC, useMemo, useRef } from 'react';
 
 export interface ChessboardWrapProps {
     reverse?: boolean;
+    renderChessboard: (containerWidth: number) => React.ReactElement;
 }
 
 const BOARD_LETERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 
-export const ChessboardWrap: FC<PropsWithChildren<ChessboardWrapProps>> = (
+export const ChessboardWrap: FC<ChessboardWrapProps> = (
     props
 ) => {
-    const { children, reverse = false } = props;
+    const { renderChessboard, reverse = false } = props;
+    const innerWrapRef = useRef<HTMLDivElement>(null);
 
     // Подготовка букв для отрисовки
     const preparedLetters = useMemo(
@@ -50,8 +52,8 @@ export const ChessboardWrap: FC<PropsWithChildren<ChessboardWrapProps>> = (
             {lettersRow}
             <div className="grid grid-cols-[24px_1fr_24px]">
                 {numbersRow}
-                <div className="overflow-hidden rounded-xl shadow-[0_0_20px_rgba(255,255,255,0.40)]">
-                    {children}
+                <div ref={innerWrapRef} className="overflow-hidden rounded-xl shadow-[0_0_20px_rgba(255,255,255,0.40)]">
+                    {innerWrapRef.current && renderChessboard(innerWrapRef.current.offsetWidth)}
                 </div>
                 {numbersRow}
             </div>
