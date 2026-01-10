@@ -41,7 +41,7 @@ const SetProfileScreen: React.FC<SetProfileScreenProps> = ({ onSetUserName }) =>
                 className="text-white text-center" 
                 style={{ fontSize: 30, margin: 0, fontWeight: 600 }}
               >
-                Input your name <br /> sand choice avatar
+                Input your name <br /> and choice avatar
               </h1>
             </IonText>
             <div className="w-full px-[36px] py-[20px]">
