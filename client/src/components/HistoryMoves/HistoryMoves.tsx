@@ -14,6 +14,9 @@ type HistoryMovesProps = {
 
 // Из дизайна
 const DEFAULT_SIZE = {
+    widthS: 200,
+    heightS: 120,
+
     widthM: 288,
     heightM: 160,
 
@@ -26,14 +29,27 @@ export const HistoryMoves: FC<HistoryMovesProps> = ({ moves }) => {
         width: DEFAULT_SIZE.widthM,
         height: DEFAULT_SIZE.heightM,
     });
+
+    const [fontSize, setFontSize] = useState(16);
+
     const screenSize = useScreenSize();
 
     useEffect(() => {
+        console.log(screenSize);
         if (screenSize === 'L')
             setSize({
                 width: DEFAULT_SIZE.widthL,
                 height: DEFAULT_SIZE.heightL,
-            })
+            });
+
+        if (screenSize === 'S') {
+            setSize({
+                width: DEFAULT_SIZE.widthS,
+                height: DEFAULT_SIZE.heightS,
+            });
+
+            setFontSize(14);
+        }
     }, [screenSize])
 
 
@@ -44,8 +60,8 @@ export const HistoryMoves: FC<HistoryMovesProps> = ({ moves }) => {
         <DraggableWrap>
             <Resizable
                 size={size}
-                maxWidth={screenSize === 'L' ? DEFAULT_SIZE.widthL : DEFAULT_SIZE.widthM}
-                minWidth={screenSize === 'L' ? DEFAULT_SIZE.widthL : DEFAULT_SIZE.widthM}
+                maxWidth={size.width}
+                minWidth={size.width}
                 minHeight={100}
                 onResizeStop={(...args) => {
                     setSize((prev) => ({
@@ -59,9 +75,9 @@ export const HistoryMoves: FC<HistoryMovesProps> = ({ moves }) => {
                     {groupedMoves.map((moveItem, index) => (
                         <div className={styles.movesRow}>
                             <div key={`${moveItem[0]}_${index}`} className="flex items-center gap-x-[8px] px-[4px] py-[6px] hover:bg-white/4 transition-all duration-200 cursor-pointer grid grid-cols-[40px_1fr_1fr]">
-                                <span className="text-[16px] text-gray-400">{index + 1}.</span>
-                                <span className="text-[16px] text-white">{moveItem[0]}</span>
-                                {moveItem[1] && <span className={cn('text-[16px] text-white', styles.movesCell)}>{moveItem[1]}</span>}
+                                <span className={`text-[${fontSize}px] text-gray-400`}>{index + 1}.</span>
+                                <span className={`text-[${fontSize}px] text-white`}>{moveItem[0]}</span>
+                                {moveItem[1] && <span className={cn(`text-[${fontSize}px] text-white`, styles.movesCell)}>{moveItem[1]}</span>}
                             </div>
                         </div>
                     ))}

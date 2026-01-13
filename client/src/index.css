@@ -6,6 +6,10 @@
   --color-color-primary: #999BAF;
 }
 
+html {
+  color-scheme: dark;
+}
+
 body {
   margin: 0;
   padding: 0;
@@ -13,6 +17,7 @@ body {
     Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   background-color: #000;
   color: #ffffffcc;
+  color-scheme: dark;
 }
 
 .container {
