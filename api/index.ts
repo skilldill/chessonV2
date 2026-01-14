@@ -3,6 +3,12 @@ import { connectDB } from './config/database';
 import { ElysiaWS } from 'elysia/ws';
 import { v4 as uuidv4 } from 'uuid';
 import { INITIAL_FEN } from './constants/chess';
+import { User } from './models/User';
+import { RegistrationAttempt } from './models/RegistrationAttempt';
+import { hashPassword, comparePassword } from './utils/password';
+import { createToken, verifyToken } from './utils/jwt';
+import { getClientIP } from './utils/ip';
+import mongoose from 'mongoose';
 
 // Connect to MongoDB
 if (process.env.WITHOUT_MONGO !== 'true') {
@@ -616,6 +622,238 @@ app.get('/api/health', () => ({
   status: 'ok',
   timestamp: new Date().toISOString()
 }));
+
+// Auth endpoints
+// Регистрация пользователя
+app.post('/api/auth/signup', async ({ body, request, set }) => {
+  try {
+    const { login, password } = body;
+
+    // Валидация входных данных
+    if (!login || !password) {
+      return {
+        success: false,
+        error: 'Login and password are required'
+      };
+    }
+
+    if (login.length < 3 || login.length > 20) {
+      return {
+        success: false,
+        error: 'Login must be between 3 and 20 characters'
+      };
+    }
+
+    if (password.length < 6) {
+      return {
+        success: false,
+        error: 'Password must be at least 6 characters'
+      };
+    }
+
+    // Проверка уникальности логина
+    const existingUser = await User.findOne({ login: login.toLowerCase() });
+    if (existingUser) {
+      return {
+        success: false,
+        error: 'Login already exists'
+      };
+    }
+
+    // Проверка IP - можно зарегистрироваться только один раз в день
+    const clientIP = getClientIP(request);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Начало дня
+
+    const lastRegistration = await RegistrationAttempt.findOne({
+      ip: clientIP,
+      lastRegistrationDate: { $gte: today }
+    });
+
+    if (lastRegistration) {
+      return {
+        success: false,
+        error: 'You can register only once per day from this IP address'
+      };
+    }
+
+    // Хешируем пароль
+    const hashedPassword = await hashPassword(password);
+
+    // Создаем пользователя
+    const user = new User({
+      login: login.toLowerCase(),
+      password: hashedPassword
+    });
+
+    await user.save();
+
+    // Сохраняем информацию о регистрации по IP
+    await RegistrationAttempt.findOneAndUpdate(
+      { ip: clientIP },
+      {
+        ip: clientIP,
+        lastRegistrationDate: new Date()
+      },
+      { upsert: true, new: true }
+    );
+
+    // Создаем токен
+    const userId = (user._id as mongoose.Types.ObjectId).toString();
+    const token = await createToken({
+      userId: userId,
+      login: user.login
+    });
+
+    // Сохраняем токен в cookie
+    set.headers['Set-Cookie'] = `authToken=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${7 * 24 * 60 * 60}${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`;
+
+    return {
+      success: true,
+      message: 'User registered successfully',
+      user: {
+        id: userId,
+        login: user.login
+      }
+    };
+  } catch (error: any) {
+    console.error('Registration error:', error);
+    return {
+      success: false,
+      error: error.message || 'Registration failed'
+    };
+  }
+}, {
+  body: t.Object({
+    login: t.String(),
+    password: t.String()
+  })
+});
+
+// Логин пользователя
+app.post('/api/auth/login', async ({ body, request, set }) => {
+  try {
+    const { login, password } = body;
+
+    // Валидация входных данных
+    if (!login || !password) {
+      return {
+        success: false,
+        error: 'Login and password are required'
+      };
+    }
+
+    // Ищем пользователя
+    const user = await User.findOne({ login: login.toLowerCase() });
+    if (!user) {
+      return {
+        success: false,
+        error: 'Invalid login or password'
+      };
+    }
+
+    // Проверяем пароль
+    const isPasswordValid = await comparePassword(password, user.password);
+    if (!isPasswordValid) {
+      return {
+        success: false,
+        error: 'Invalid login or password'
+      };
+    }
+
+    // Создаем токен
+    const userId = (user._id as mongoose.Types.ObjectId).toString();
+    const token = await createToken({
+      userId: userId,
+      login: user.login
+    });
+
+    // Сохраняем токен в cookie
+    set.headers['Set-Cookie'] = `authToken=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${7 * 24 * 60 * 60}${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`;
+
+    return {
+      success: true,
+      message: 'Login successful',
+      user: {
+        id: userId,
+        login: user.login
+      }
+    };
+  } catch (error: any) {
+    console.error('Login error:', error);
+    return {
+      success: false,
+      error: error.message || 'Login failed'
+    };
+  }
+}, {
+  body: t.Object({
+    login: t.String(),
+    password: t.String()
+  })
+});
+
+// Проверка текущего пользователя
+app.get('/api/auth/me', async ({ headers }) => {
+  try {
+    const cookieHeader = headers.cookie || '';
+    const cookies = cookieHeader.split(';').reduce((acc: Record<string, string>, cookie) => {
+      const [key, value] = cookie.trim().split('=');
+      if (key && value) {
+        acc[key] = value;
+      }
+      return acc;
+    }, {});
+
+    const authToken = cookies.authToken;
+    if (!authToken) {
+      return {
+        success: false,
+        error: 'Not authenticated'
+      };
+    }
+
+    const payload = await verifyToken(authToken);
+    if (!payload) {
+      return {
+        success: false,
+        error: 'Invalid token'
+      };
+    }
+
+    const user = await User.findById(payload.userId);
+    if (!user) {
+      return {
+        success: false,
+        error: 'User not found'
+      };
+    }
+
+    return {
+      success: true,
+      user: {
+        id: (user._id as mongoose.Types.ObjectId).toString(),
+        login: user.login
+      }
+    };
+  } catch (error: any) {
+    console.error('Auth check error:', error);
+    return {
+      success: false,
+      error: error.message || 'Authentication check failed'
+    };
+  }
+});
+
+// Выход из системы
+app.post('/api/auth/logout', ({ set }) => {
+  // Удаляем cookie, устанавливая его с истекшим сроком действия
+  set.headers['Set-Cookie'] = 'authToken=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0';
+  return {
+    success: true,
+    message: 'Logged out successfully'
+  };
+});
 
 // Metrics endpoint
 app.get('/api/metrics', () => {

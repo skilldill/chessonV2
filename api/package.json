@@ -5,9 +5,11 @@
   "scripts": {
     "start": "bun run index.ts",
     "dev": "WITHOUT_MONGO=true bun --watch run index.ts",
+    "dev:db": "bun --watch run index.ts",
     "test": "bun test"
   },
   "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
     "@types/bun": "latest",
     "@types/mongoose": "^5.11.97"
   },
@@ -16,7 +18,9 @@
   },
   "dependencies": {
     "@types/uuid": "^11.0.0",
+    "bcrypt": "^5.1.1",
     "elysia": "0.7.4",
+    "jose": "^5.9.6",
     "mongoose": "^8.16.0",
     "uuid": "^11.1.0"
   },
