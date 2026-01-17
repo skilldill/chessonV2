@@ -134,7 +134,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                 />
             )}
             <div className={`flex justify-end ${screenSize === "L" ? "p-[28px]" : "p-[16px]"}`}>
-                <div className="flex flex-col gap-y-[8px]">
+                <div className="flex flex-col gap-y-[8px] scale-on-small-height">
                     <CapturedPieces
                         FEN={movesHistory.length > 0 ? movesHistory[movesHistory.length - 1].FEN : initialFEN}
                         color={playerColor === "white" ? "black" : "white"}
@@ -185,10 +185,10 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                 </div>
             </div>
             <div className={`flex justify-start ${screenSize === "L" ? "p-[28px]" : "p-[16px]"}`}>
-                <div className="fixed top-[40px] right-[40px] z-40">
+                <div className="fixed top-[40px] right-[40px] z-40 scale-on-small-height">
                     <HistoryMoves moves={movesHistory} />
                 </div>
-                <div className="flex flex-col gap-y-[8px]">
+                <div className="flex flex-col gap-y-[8px] scale-on-small-height">
                     {/* Таймер соперника (верхний) */}
                     <ChessTimer
                         initSeconds={initialOpponentTime}
