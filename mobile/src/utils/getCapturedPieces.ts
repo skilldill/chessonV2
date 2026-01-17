@@ -3,20 +3,20 @@ import type { FigureColor } from "react-chessboard-ui";
 type PieceLetter = "P" | "N" | "B" | "R" | "Q" | "K";
 type PieceName = "pawn" | "knight" | "bishop" | "rook" | "queen";
 type CapturedPieceName =
-  | "white-pawn"
-  | "white-knight"
-  | "white-bishop"
-  | "white-rook"
-  | "white-queen"
-  | "black-pawn"
-  | "black-knight"
-  | "black-bishop"
-  | "black-rook"
-  | "black-queen";
+  | "pawn-white"
+  | "knight-white"
+  | "bishop-white"
+  | "rook-white"
+  | "queen-white"
+  | "pawn-black"
+  | "knight-black"
+  | "bishop-black"
+  | "rook-black"
+  | "queen-black";
 
 /**
  * Возвращает список съеденных фигур для указанного цвета по FEN.
- * Формат результата: ["white-pawn", "white-bishop", ...]
+ * Формат результата: ["pawn-white", "bishop-white", ...]
  */
 export function getCapturedPieces(
   fen: string,
