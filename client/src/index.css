@@ -103,3 +103,11 @@ body {
   transform: translateY(-80px);
   opacity: 1;
 }
+
+@layer utilities {
+  @media (max-height: 819px) {
+    .scale-on-small-height {
+      transform: scale(0.8);
+    }
+  }
+}

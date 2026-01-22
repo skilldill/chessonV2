@@ -8,9 +8,18 @@ export const useScreenHeightForChessboard = (): string => {
         const height = window.innerHeight;
 
         // Breakpoints по высоте имеют приоритет
+        if (height < 680) {
+            return "grid-cols-[1fr_480px_1fr]";
+        }
+
+        if (height < 700) {
+            return "grid-cols-[1fr_520px_1fr]";
+        }
+
         if (height < 720) {
             return "grid-cols-[1fr_560px_1fr]";
         }
+
         if (height < 820) {
             return "grid-cols-[1fr_600px_1fr]";
         }

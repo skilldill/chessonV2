@@ -3,20 +3,20 @@ import type { FigureColor } from "react-chessboard-ui";
 type PieceLetter = "P" | "N" | "B" | "R" | "Q" | "K";
 type PieceName = "pawn" | "knight" | "bishop" | "rook" | "queen";
 type CapturedPieceName =
-  | "white-pawn"
-  | "white-knight"
-  | "white-bishop"
-  | "white-rook"
-  | "white-queen"
-  | "black-pawn"
-  | "black-knight"
-  | "black-bishop"
-  | "black-rook"
-  | "black-queen";
+  | "pawn-white"
+  | "knight-white"
+  | "bishop-white"
+  | "rook-white"
+  | "queen-white"
+  | "pawn-black"
+  | "knight-black"
+  | "bishop-black"
+  | "rook-black"
+  | "queen-black";
 
 /**
  * Возвращает список съеденных фигур для указанного цвета по FEN.
- * Формат результата: ["white-pawn", "white-bishop", ...]
+ * Формат результата: ["pawn-white", "bishop-white", ...]
  */
 export function getCapturedPieces(
   fen: string,
@@ -93,7 +93,110 @@ export function getCapturedPieces(
       result.push(`${names[key]}-${color}` as CapturedPieceName);
     }
   }
-  console.log(result);
+
   return result;
 }
 
+/**
+ * Сравнивает две FEN нотации и возвращает фигуру, которая исчезла (была захвачена).
+ * Возвращает null, если фигура не была захвачена или если произошла промоция.
+ */
+export function getLastCapturedPieces(
+  initialFEN: string,
+  actualFEN: string
+): CapturedPieceName | null {
+  // Разбираем доски из FEN (берем первую часть до пробела)
+  const parseBoard = (fen: string): string[] => {
+    const board = fen.split(" ")[0];
+    const cells: string[] = [];
+    for (const ch of board) {
+      if (/[1-8]/.test(ch)) {
+        cells.push(...Array(Number(ch)).fill(""));
+      } else if (/[prnbqkPRNBQK]/.test(ch)) {
+        cells.push(ch);
+      }
+    }
+    return cells;
+  };
+
+  const initialCells = parseBoard(initialFEN);
+  const actualCells = parseBoard(actualFEN);
+
+  // Подсчитываем количество каждой фигуры в обеих досках
+  const countPieces = (cells: string[]): Record<string, number> => {
+    const counts: Record<string, number> = {};
+    for (const cell of cells) {
+      if (cell && /[prnbqkPRNBQK]/.test(cell)) {
+        counts[cell] = (counts[cell] || 0) + 1;
+      }
+    }
+    return counts;
+  };
+
+  const initialCounts = countPieces(initialCells);
+  const actualCounts = countPieces(actualCells);
+
+  // Подсчитываем общее количество фигур каждого цвета
+  const countByColor = (counts: Record<string, number>, isWhite: boolean): number => {
+    let total = 0;
+    for (const piece of Object.keys(counts)) {
+      const isUpper = piece === piece.toUpperCase();
+      if ((isWhite && isUpper) || (!isWhite && !isUpper)) {
+        total += counts[piece] || 0;
+      }
+    }
+    return total;
+  };
+
+  const initialWhiteCount = countByColor(initialCounts, true);
+  const actualWhiteCount = countByColor(actualCounts, true);
+  const initialBlackCount = countByColor(initialCounts, false);
+  const actualBlackCount = countByColor(actualCounts, false);
+
+  // Находим фигуру, которая исчезла
+  const pieceMap: Record<string, CapturedPieceName> = {
+    P: "pawn-white",
+    N: "knight-white",
+    B: "bishop-white",
+    R: "rook-white",
+    Q: "queen-white",
+    p: "pawn-black",
+    n: "knight-black",
+    b: "bishop-black",
+    r: "rook-black",
+    q: "queen-black",
+  };
+
+  // Сначала проверяем, есть ли изменения в количестве фигур
+  let disappearedPiece: string | null = null;
+  let disappearedColor: boolean | null = null;
+
+  // Находим все фигуры, количество которых уменьшилось
+  for (const piece of Object.keys(pieceMap)) {
+    const initialCount = initialCounts[piece] || 0;
+    const actualCount = actualCounts[piece] || 0;
+
+    if (initialCount > actualCount) {
+      disappearedPiece = piece;
+      disappearedColor = piece === piece.toUpperCase();
+      break; // Находим первую исчезнувшую фигуру
+    }
+  }
+
+  // Если фигура исчезла, проверяем, не произошла ли промоция
+  if (disappearedPiece !== null && disappearedColor !== null) {
+    const initialColorCount = disappearedColor ? initialWhiteCount : initialBlackCount;
+    const actualColorCount = disappearedColor ? actualWhiteCount : actualBlackCount;
+
+    // Если общее количество фигур этого цвета не изменилось, значит это промоция
+    if (initialColorCount === actualColorCount) {
+      return null;
+    }
+
+    // Иначе это захват
+    return pieceMap[disappearedPiece];
+  }
+
+  // Если ничего не найдено, возвращаем null
+  return null;
+}
