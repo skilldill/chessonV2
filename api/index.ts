@@ -3,6 +3,13 @@ import { connectDB } from './config/database';
 import { ElysiaWS } from 'elysia/ws';
 import { v4 as uuidv4 } from 'uuid';
 import { INITIAL_FEN } from './constants/chess';
+import { User } from './models/User';
+import { RegistrationAttempt } from './models/RegistrationAttempt';
+import { Game } from './models/Game';
+import { hashPassword, comparePassword } from './utils/password';
+import { createToken, verifyToken } from './utils/jwt';
+import { getClientIP } from './utils/ip';
+import mongoose from 'mongoose';
 
 // Connect to MongoDB
 if (process.env.WITHOUT_MONGO !== 'true') {
@@ -102,12 +109,16 @@ type UserData = {
     isConnected: boolean;
     color?: "white" | "black";
     cursorPosition?: CursorPosition;
+    registeredUserId?: mongoose.Types.ObjectId; // ID зарегистрированного пользователя из базы данных
+    gameStartedAt?: Date; // Время начала игры для этого пользователя
 };
 
 type Room = {
     users: Map<string, UserData>;
     gameState: GameState;
     firstPlayerColor?: "white" | "black"; // Цвет для первого подключившегося игрока
+    gameStartedAt?: Date; // Время начала игры
+    hasMobilePlayer?: boolean; // Есть ли мобильный игрок в комнате
 };
 
 const rooms = new Map<string, Room>();
@@ -242,6 +253,102 @@ function updateRoomActivity(roomId: string) {
   roomLastActivity.set(roomId, Date.now());
 }
 
+// Функция для сохранения игры в базу данных
+async function saveGameToDatabase(room: Room, roomId: string) {
+  try {
+    // Проверяем, что игра завершена и началась
+    if (!room.gameState.gameStarted || !room.gameState.gameEnded || !room.gameState.gameResult) {
+      return;
+    }
+
+    // Находим игроков
+    let whitePlayer: UserData | null = null;
+    let blackPlayer: UserData | null = null;
+
+    for (const [_, userData] of room.users) {
+      if (userData.color === "white") {
+        whitePlayer = userData;
+      } else if (userData.color === "black") {
+        blackPlayer = userData;
+      }
+    }
+
+    // Если нет обоих игроков, не сохраняем
+    if (!whitePlayer || !blackPlayer) {
+      return;
+    }
+
+    // Получаем начальную FEN
+    // Если есть история ходов, пытаемся определить начальную позицию
+    // Для стандартной игры это INITIAL_FEN, для кастомной - позиция до первого хода
+    let initialFEN: string;
+    if (room.gameState.moveHistory.length > 0) {
+      // Если есть история, предполагаем стандартную игру с INITIAL_FEN
+      // (в будущем можно добавить поле initialFEN в Room для точности)
+      initialFEN = INITIAL_FEN;
+    } else {
+      // Если нет истории ходов, начальная позиция = текущая (игра завершилась без ходов)
+      initialFEN = room.gameState.currentFEN;
+    }
+
+    // Фильтруем moveHistory, оставляя только нужные поля и убирая лишние из figure
+    const filteredMoveHistory = room.gameState.moveHistory.map(move => ({
+      FEN: move.FEN,
+      from: move.from,
+      to: move.to,
+      figure: {
+        color: move.figure.color,
+        type: move.figure.type
+      }
+    }));
+
+    console.log(`📝 Saving game: roomId=${roomId}, moveHistory length=${filteredMoveHistory.length}`);
+
+    // Проверяем, не сохранена ли уже игра с таким roomId
+    const existingGame = await Game.findOne({ roomId: roomId });
+    
+    if (existingGame) {
+      // Если игра уже существует, не обновляем её - данные уже сохранены
+      // Это предотвращает перезапись данных при реконнекте клиента
+      console.log(`⏭️ Game already exists in database: roomId=${roomId}, skipping save to prevent data overwrite`);
+      return;
+    }
+    
+      // Создаем новую запись игры только если её еще нет
+    // Создаем новую запись игры
+      const gameData = {
+        roomId: roomId,
+        whitePlayer: {
+          userId: whitePlayer.registeredUserId || undefined,
+          userName: whitePlayer.userName,
+          avatar: whitePlayer.avatar
+        },
+        blackPlayer: {
+          userId: blackPlayer.registeredUserId || undefined,
+          userName: blackPlayer.userName,
+          avatar: blackPlayer.avatar
+        },
+        initialFEN: initialFEN,
+        finalFEN: room.gameState.currentFEN,
+        moveHistory: filteredMoveHistory,
+        result: room.gameState.gameResult,
+        timer: room.gameState.timer,
+        startedAt: room.gameStartedAt || new Date(),
+        endedAt: new Date(),
+        hasMobilePlayer: room.hasMobilePlayer || false
+      };
+
+      // Сохраняем в базу данных
+      const game = new Game(gameData);
+      await game.save();
+      
+      console.log(`✅ Game saved to database: roomId=${roomId}, result=${gameData.result.resultType}, moveHistory length=${game.moveHistory?.length || 0}`);
+  } catch (error) {
+    console.error('❌ Failed to save game to database:', error);
+    // Не прерываем выполнение, если сохранение не удалось
+  }
+}
+
 // Запускаем периодическую очистку неактивных комнат
 setInterval(() => {
   cleanupInactiveRooms();
@@ -315,6 +422,9 @@ function declareDrawByThreefoldRepetition(room: Room, roomId: string) {
     
     // Очищаем таймер комнаты
     clearRoomTimer(roomId);
+    
+    // Сохраняем игру в базу данных
+    saveGameToDatabase(room, roomId);
     
     // Отправляем результат всем игрокам
     for (const [id, userData] of room.users) {
@@ -414,6 +524,9 @@ function declareDrawByInsufficientMaterial(room: Room, roomId: string) {
     
     // Очищаем таймер комнаты
     clearRoomTimer(roomId);
+    
+    // Сохраняем игру в базу данных
+    saveGameToDatabase(room, roomId);
     
     // Отправляем результат всем игрокам
     for (const [id, userData] of room.users) {
@@ -529,6 +642,12 @@ function createRoomTimer(roomId: string) {
           winColor: "black"
         };
 
+        // Очищаем таймер
+        clearRoomTimer(roomId);
+
+        // Сохраняем игру в базу данных
+        saveGameToDatabase(room, roomId);
+
         // Отправляем результат всем игрокам
         for (const [id, userData] of room.users) {
           if (userData.isConnected && userData.ws) {
@@ -552,8 +671,6 @@ function createRoomTimer(roomId: string) {
           }
         }
 
-        // Очищаем таймер
-        clearRoomTimer(roomId);
         return;
       }
     } else {
@@ -565,6 +682,12 @@ function createRoomTimer(roomId: string) {
           resultType: "resignation",
           winColor: "white"
         };
+
+        // Очищаем таймер
+        clearRoomTimer(roomId);
+
+        // Сохраняем игру в базу данных
+        saveGameToDatabase(room, roomId);
 
         // Отправляем результат всем игрокам
         for (const [id, userData] of room.users) {
@@ -589,8 +712,6 @@ function createRoomTimer(roomId: string) {
           }
         }
 
-        // Очищаем таймер
-        clearRoomTimer(roomId);
         return;
       }
     }
@@ -616,6 +737,238 @@ app.get('/api/health', () => ({
   status: 'ok',
   timestamp: new Date().toISOString()
 }));
+
+// Auth endpoints
+// Регистрация пользователя
+app.post('/api/auth/signup', async ({ body, request, set }) => {
+  try {
+    const { login, password } = body;
+
+    // Валидация входных данных
+    if (!login || !password) {
+      return {
+        success: false,
+        error: 'Login and password are required'
+      };
+    }
+
+    if (login.length < 3 || login.length > 20) {
+      return {
+        success: false,
+        error: 'Login must be between 3 and 20 characters'
+      };
+    }
+
+    if (password.length < 6) {
+      return {
+        success: false,
+        error: 'Password must be at least 6 characters'
+      };
+    }
+
+    // Проверка уникальности логина
+    const existingUser = await User.findOne({ login: login.toLowerCase() });
+    if (existingUser) {
+      return {
+        success: false,
+        error: 'Login already exists'
+      };
+    }
+
+    // Проверка IP - можно зарегистрироваться только один раз в день
+    const clientIP = getClientIP(request);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Начало дня
+
+    const lastRegistration = await RegistrationAttempt.findOne({
+      ip: clientIP,
+      lastRegistrationDate: { $gte: today }
+    });
+
+    if (lastRegistration) {
+      return {
+        success: false,
+        error: 'You can register only once per day from this IP address'
+      };
+    }
+
+    // Хешируем пароль
+    const hashedPassword = await hashPassword(password);
+
+    // Создаем пользователя
+    const user = new User({
+      login: login.toLowerCase(),
+      password: hashedPassword
+    });
+
+    await user.save();
+
+    // Сохраняем информацию о регистрации по IP
+    await RegistrationAttempt.findOneAndUpdate(
+      { ip: clientIP },
+      {
+        ip: clientIP,
+        lastRegistrationDate: new Date()
+      },
+      { upsert: true, new: true }
+    );
+
+    // Создаем токен
+    const userId = (user._id as mongoose.Types.ObjectId).toString();
+    const token = await createToken({
+      userId: userId,
+      login: user.login
+    });
+
+    // Сохраняем токен в cookie
+    set.headers['Set-Cookie'] = `authToken=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${7 * 24 * 60 * 60}${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`;
+
+    return {
+      success: true,
+      message: 'User registered successfully',
+      user: {
+        id: userId,
+        login: user.login
+      }
+    };
+  } catch (error: any) {
+    console.error('Registration error:', error);
+    return {
+      success: false,
+      error: error.message || 'Registration failed'
+    };
+  }
+}, {
+  body: t.Object({
+    login: t.String(),
+    password: t.String()
+  })
+});
+
+// Логин пользователя
+app.post('/api/auth/login', async ({ body, request, set }) => {
+  try {
+    const { login, password } = body;
+
+    // Валидация входных данных
+    if (!login || !password) {
+      return {
+        success: false,
+        error: 'Login and password are required'
+      };
+    }
+
+    // Ищем пользователя
+    const user = await User.findOne({ login: login.toLowerCase() });
+    if (!user) {
+      return {
+        success: false,
+        error: 'Invalid login or password'
+      };
+    }
+
+    // Проверяем пароль
+    const isPasswordValid = await comparePassword(password, user.password);
+    if (!isPasswordValid) {
+      return {
+        success: false,
+        error: 'Invalid login or password'
+      };
+    }
+
+    // Создаем токен
+    const userId = (user._id as mongoose.Types.ObjectId).toString();
+    const token = await createToken({
+      userId: userId,
+      login: user.login
+    });
+
+    // Сохраняем токен в cookie
+    set.headers['Set-Cookie'] = `authToken=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${7 * 24 * 60 * 60}${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`;
+
+    return {
+      success: true,
+      message: 'Login successful',
+      user: {
+        id: userId,
+        login: user.login
+      }
+    };
+  } catch (error: any) {
+    console.error('Login error:', error);
+    return {
+      success: false,
+      error: error.message || 'Login failed'
+    };
+  }
+}, {
+  body: t.Object({
+    login: t.String(),
+    password: t.String()
+  })
+});
+
+// Проверка текущего пользователя
+app.get('/api/auth/me', async ({ headers }) => {
+  try {
+    const cookieHeader = headers.cookie || '';
+    const cookies = cookieHeader.split(';').reduce((acc: Record<string, string>, cookie) => {
+      const [key, value] = cookie.trim().split('=');
+      if (key && value) {
+        acc[key] = value;
+      }
+      return acc;
+    }, {});
+
+    const authToken = cookies.authToken;
+    if (!authToken) {
+      return {
+        success: false,
+        error: 'Not authenticated'
+      };
+    }
+
+    const payload = await verifyToken(authToken);
+    if (!payload) {
+      return {
+        success: false,
+        error: 'Invalid token'
+      };
+    }
+
+    const user = await User.findById(payload.userId);
+    if (!user) {
+      return {
+        success: false,
+        error: 'User not found'
+      };
+    }
+
+    return {
+      success: true,
+      user: {
+        id: (user._id as mongoose.Types.ObjectId).toString(),
+        login: user.login
+      }
+    };
+  } catch (error: any) {
+    console.error('Auth check error:', error);
+    return {
+      success: false,
+      error: error.message || 'Authentication check failed'
+    };
+  }
+});
+
+// Выход из системы
+app.post('/api/auth/logout', ({ set }) => {
+  // Удаляем cookie, устанавливая его с истекшим сроком действия
+  set.headers['Set-Cookie'] = 'authToken=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0';
+  return {
+    success: true,
+    message: 'Logged out successfully'
+  };
+});
 
 // Metrics endpoint
 app.get('/api/metrics', () => {
@@ -686,7 +1039,8 @@ app.post('/api/rooms', async ({ body }) => {
         initialBlackTime: blackTimer,
       }
     },
-    firstPlayerColor: firstPlayerColor
+    firstPlayerColor: firstPlayerColor,
+    hasMobilePlayer: undefined // Будет установлено при подключении мобильного игрока
   };
   rooms.set(roomId, room);
   updateRoomActivity(roomId);
@@ -728,13 +1082,264 @@ app.get('/api/rooms/:roomId', async ({ params }) => {
   };
 });
 
+// Get games by player ID endpoint - игры конкретного пользователя
+// Важно: этот роут должен быть объявлен ПЕРЕД /api/games/:id
+app.get('/api/games/player/:id', async ({ params, query }) => {
+  try {
+    const { id } = params;
+
+    // Проверяем валидность ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return {
+        success: false,
+        error: 'Invalid user ID'
+      };
+    }
+
+    const userId = new mongoose.Types.ObjectId(id);
+
+    // Получаем параметры пагинации
+    const pageParam = typeof query === 'object' && query !== null && 'page' in query ? query.page : undefined;
+    const limitParam = typeof query === 'object' && query !== null && 'limit' in query ? query.limit : undefined;
+    const page = parseInt(String(pageParam || '1')) || 1;
+    const limit = Math.min(parseInt(String(limitParam || '20')) || 20, 100); // Максимум 100 игр за раз
+    const skip = (page - 1) * limit;
+
+    // Строим запрос для игр пользователя
+    const queryFilter = {
+      $or: [
+        { 'whitePlayer.userId': userId },
+        { 'blackPlayer.userId': userId }
+      ]
+    };
+
+    // Получаем игры с пагинацией
+    const games = await Game.find(queryFilter)
+      .sort({ endedAt: -1 }) // Новые игры сначала
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    // Получаем общее количество игр пользователя
+    const total = await Game.countDocuments(queryFilter);
+
+    // Преобразуем ObjectId в строки для ответа
+    const gamesResponse = games.map(game => {
+      // Проверяем moveHistory
+      const moveHistory = Array.isArray(game.moveHistory) ? game.moveHistory : [];
+      console.log(`📖 Reading game: roomId=${game.roomId}, moveHistory length=${moveHistory.length}`);
+      
+      return {
+        id: (game._id as mongoose.Types.ObjectId).toString(),
+        roomId: game.roomId,
+        whitePlayer: {
+          userId: game.whitePlayer?.userId ? (game.whitePlayer.userId as mongoose.Types.ObjectId).toString() : null,
+          userName: game.whitePlayer?.userName,
+          avatar: game.whitePlayer?.avatar
+        },
+        blackPlayer: {
+          userId: game.blackPlayer?.userId ? (game.blackPlayer.userId as mongoose.Types.ObjectId).toString() : null,
+          userName: game.blackPlayer?.userName,
+          avatar: game.blackPlayer?.avatar
+        },
+        initialFEN: game.initialFEN,
+        finalFEN: game.finalFEN,
+        moveHistory: moveHistory, // Пустой массив, если ходов не было
+        result: game.result,
+        timer: game.timer,
+        startedAt: game.startedAt,
+        endedAt: game.endedAt,
+        hasMobilePlayer: game.hasMobilePlayer,
+        createdAt: game.createdAt,
+        updatedAt: game.updatedAt
+      };
+    });
+
+    return {
+      success: true,
+      games: gamesResponse,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
+  } catch (error: any) {
+    console.error('Get player games error:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to get player games'
+    };
+  }
+}, {
+  query: t.Object({
+    page: t.Optional(t.String()),
+    limit: t.Optional(t.String())
+  })
+});
+
+// Get games endpoint - список всех игр
+app.get('/api/games', async ({ query }) => {
+  try {
+    // Получаем параметры пагинации
+    const pageParam = typeof query === 'object' && query !== null && 'page' in query ? query.page : undefined;
+    const limitParam = typeof query === 'object' && query !== null && 'limit' in query ? query.limit : undefined;
+    const page = parseInt(String(pageParam || '1')) || 1;
+    const limit = Math.min(parseInt(String(limitParam || '20')) || 20, 100); // Максимум 100 игр за раз
+    const skip = (page - 1) * limit;
+
+    // Получаем все игры с пагинацией
+    const games = await Game.find({})
+      .sort({ endedAt: -1 }) // Новые игры сначала
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    // Получаем общее количество игр
+    const total = await Game.countDocuments({});
+
+    // Преобразуем ObjectId в строки для ответа
+    const gamesResponse = games.map(game => ({
+      id: (game._id as mongoose.Types.ObjectId).toString(),
+      roomId: game.roomId,
+      whitePlayer: {
+        userId: game.whitePlayer?.userId ? (game.whitePlayer.userId as mongoose.Types.ObjectId).toString() : null,
+        userName: game.whitePlayer?.userName,
+        avatar: game.whitePlayer?.avatar
+      },
+      blackPlayer: {
+        userId: game.blackPlayer?.userId ? (game.blackPlayer.userId as mongoose.Types.ObjectId).toString() : null,
+        userName: game.blackPlayer?.userName,
+        avatar: game.blackPlayer?.avatar
+      },
+      initialFEN: game.initialFEN,
+      finalFEN: game.finalFEN,
+      moveHistory: Array.isArray(game.moveHistory) ? game.moveHistory : [],
+      result: game.result,
+      timer: game.timer,
+      startedAt: game.startedAt,
+      endedAt: game.endedAt,
+      hasMobilePlayer: game.hasMobilePlayer,
+      createdAt: game.createdAt,
+      updatedAt: game.updatedAt
+    }));
+
+    return {
+      success: true,
+      games: gamesResponse,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
+  } catch (error: any) {
+    console.error('Get games error:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to get games'
+    };
+  }
+}, {
+  query: t.Object({
+    page: t.Optional(t.String()),
+    limit: t.Optional(t.String())
+  })
+});
+
+// Delete all games endpoint - очистка всех игр (для тестирования)
+app.delete('/api/games', async () => {
+  try {
+    const result = await Game.deleteMany({});
+    
+    console.log(`🗑️ Deleted ${result.deletedCount} games from database`);
+    
+    return {
+      success: true,
+      message: `Successfully deleted ${result.deletedCount} games`,
+      deletedCount: result.deletedCount
+    };
+  } catch (error: any) {
+    console.error('Delete games error:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to delete games'
+    };
+  }
+});
+
+// Get game by ID endpoint - одна игра по ID
+app.get('/api/games/:id', async ({ params }) => {
+  try {
+    const { id } = params;
+
+    // Проверяем валидность ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return {
+        success: false,
+        error: 'Invalid game ID'
+      };
+    }
+
+    const game = await Game.findById(id).lean();
+
+    if (!game) {
+      return {
+        success: false,
+        error: 'Game not found'
+      };
+    }
+
+    // Преобразуем ObjectId в строки для ответа
+    const gameResponse = {
+      id: (game._id as mongoose.Types.ObjectId).toString(),
+      roomId: game.roomId,
+      whitePlayer: {
+        userId: game.whitePlayer?.userId ? (game.whitePlayer.userId as mongoose.Types.ObjectId).toString() : null,
+        userName: game.whitePlayer?.userName,
+        avatar: game.whitePlayer?.avatar
+      },
+      blackPlayer: {
+        userId: game.blackPlayer?.userId ? (game.blackPlayer.userId as mongoose.Types.ObjectId).toString() : null,
+        userName: game.blackPlayer?.userName,
+        avatar: game.blackPlayer?.avatar
+      },
+      initialFEN: game.initialFEN,
+      finalFEN: game.finalFEN,
+      moveHistory: game.moveHistory,
+      result: game.result,
+      timer: game.timer,
+      startedAt: game.startedAt,
+      endedAt: game.endedAt,
+      hasMobilePlayer: game.hasMobilePlayer,
+      createdAt: game.createdAt,
+      updatedAt: game.updatedAt
+    };
+
+    return {
+      success: true,
+      game: gameResponse
+    };
+  } catch (error: any) {
+    console.error('Get game error:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to get game'
+    };
+  }
+});
+
 app.ws('/ws/room', {
   query: t.Object({
       roomId: t.String(),
       userName: t.String(),
       avatar: t.String(),
       currentFEN: t.Optional(t.String()),
-      color: t.Optional(t.Union([t.Literal("white"), t.Literal("black")]))
+      color: t.Optional(t.Union([t.Literal("white"), t.Literal("black")])),
+      authToken: t.Optional(t.String()), // Опциональный токен аутентификации
+      hasMobilePlayer: t.Optional(t.String()) // Необязательный параметр для указания мобильного подключения (строка "true" или "1")
   }),
 
   body: t.Union([
@@ -810,7 +1415,31 @@ app.ws('/ws/room', {
   ]),
 
   open(ws) {
-      const { roomId, userName, avatar, currentFEN: queryFEN, color: queryColor } = ws.data.query;
+      const { roomId, userName, avatar, currentFEN: queryFEN, color: queryColor, authToken, hasMobilePlayer: queryHasMobilePlayer } = ws.data.query;
+
+      // Преобразуем строку "true" или "1" в boolean для hasMobilePlayer
+      const hasMobilePlayer: boolean = queryHasMobilePlayer === "true" || queryHasMobilePlayer === "1";
+
+      // Получаем registeredUserId из токена (асинхронно, но не блокируем подключение)
+      let registeredUserId: mongoose.Types.ObjectId | undefined;
+      if (authToken) {
+        verifyToken(authToken).then(payload => {
+          if (payload && payload.userId) {
+            registeredUserId = new mongoose.Types.ObjectId(payload.userId);
+            // Обновляем registeredUserId в данных пользователя, если он уже подключен
+            const room = rooms.get(roomId);
+            if (room) {
+              for (const [userId, userData] of room.users) {
+                if (userData.userName === userName && !userData.registeredUserId) {
+                  userData.registeredUserId = registeredUserId;
+                }
+              }
+            }
+          }
+        }).catch(() => {
+          // Игнорируем ошибки токена, пользователь может играть без регистрации
+        });
+      }
 
       let room = rooms.get(roomId);
 
@@ -855,7 +1484,8 @@ app.ws('/ws/room', {
                 initialBlackTime: DEFAULT_TIME_SECONDS // 10 минут по умолчанию
               }
             },
-            firstPlayerColor: firstPlayerColor
+            firstPlayerColor: firstPlayerColor,
+            hasMobilePlayer: hasMobilePlayer ? true : undefined
           };
           rooms.set(roomId, room);
           updateRoomActivity(roomId);
@@ -880,14 +1510,23 @@ app.ws('/ws/room', {
           }
           
           // Обновляем данные пользователя с новым WebSocket
+          // Сохраняем registeredUserId если он был установлен ранее или получаем новый
+          const currentRegisteredUserId = existingUserData?.registeredUserId || registeredUserId;
           room.users.set(existingUserId, {
               userName: userName,
               avatar: avatar,
               ws: ws,
               isConnected: true,
               color: existingUserData?.color,
-              cursorPosition: existingUserData?.cursorPosition
+              cursorPosition: existingUserData?.cursorPosition,
+              registeredUserId: currentRegisteredUserId,
+              gameStartedAt: existingUserData?.gameStartedAt
           });
+
+          // Устанавливаем hasMobilePlayer если пользователь переподключился с мобильного приложения
+          if (hasMobilePlayer) {
+              room.hasMobilePlayer = true;
+          }
 
           updateRoomActivity(roomId);
           updateMetrics();
@@ -954,8 +1593,14 @@ app.ws('/ws/room', {
           ws: ws,
           isConnected: true,
           color: assignedColor,
-          cursorPosition: { x: 0, y: 0 }
+          cursorPosition: { x: 0, y: 0 },
+          registeredUserId: registeredUserId
       });
+
+      // Устанавливаем hasMobilePlayer если пользователь подключился с мобильного приложения
+      if (hasMobilePlayer) {
+          room.hasMobilePlayer = true;
+      }
 
       updateRoomActivity(roomId);
       updateMetrics();
@@ -993,6 +1638,7 @@ app.ws('/ws/room', {
       // Если теперь 2 игрока, начинаем игру
       if (room.users.size === 2) {
           room.gameState.gameStarted = true;
+          room.gameStartedAt = new Date(); // Сохраняем время начала игры
           
           // Запускаем таймер комнаты
           createRoomTimer(roomId);
@@ -1160,6 +1806,9 @@ app.ws('/ws/room', {
     // Очищаем таймер комнаты
     clearRoomTimer(roomId);
 
+          // Сохраняем игру в базу данных
+          saveGameToDatabase(room, roomId);
+
           // Отправляем результат всем игрокам
           for (const [id, userData] of room.users) {
               if (userData.isConnected && userData.ws) {
@@ -1290,6 +1939,9 @@ app.ws('/ws/room', {
     // Очищаем таймер комнаты
     clearRoomTimer(roomId);
 
+              // Сохраняем игру в базу данных
+              saveGameToDatabase(room, roomId);
+
               // Отправляем результат всем игрокам
               for (const [id, userData] of room.users) {
                   if (userData.isConnected && userData.ws) {
@@ -1373,6 +2025,9 @@ app.ws('/ws/room', {
           
     // Очищаем таймер комнаты
     clearRoomTimer(roomId);
+
+          // Сохраняем игру в базу данных
+          saveGameToDatabase(room, roomId);
 
           // Отправляем результат всем игрокам
           for (const [id, userData] of room.users) {
