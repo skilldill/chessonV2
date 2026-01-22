@@ -118,6 +118,7 @@ type Room = {
     gameState: GameState;
     firstPlayerColor?: "white" | "black"; // Цвет для первого подключившегося игрока
     gameStartedAt?: Date; // Время начала игры
+    hasMobilePlayer?: boolean; // Есть ли мобильный игрок в комнате
 };
 
 const rooms = new Map<string, Room>();
@@ -313,7 +314,7 @@ async function saveGameToDatabase(room: Room, roomId: string) {
       return;
     }
     
-    // Создаем новую запись игры только если её еще нет
+      // Создаем новую запись игры только если её еще нет
     // Создаем новую запись игры
       const gameData = {
         roomId: roomId,
@@ -333,7 +334,8 @@ async function saveGameToDatabase(room: Room, roomId: string) {
         result: room.gameState.gameResult,
         timer: room.gameState.timer,
         startedAt: room.gameStartedAt || new Date(),
-        endedAt: new Date()
+        endedAt: new Date(),
+        hasMobilePlayer: room.hasMobilePlayer || false
       };
 
       // Сохраняем в базу данных
@@ -1037,7 +1039,8 @@ app.post('/api/rooms', async ({ body }) => {
         initialBlackTime: blackTimer,
       }
     },
-    firstPlayerColor: firstPlayerColor
+    firstPlayerColor: firstPlayerColor,
+    hasMobilePlayer: undefined // Будет установлено при подключении мобильного игрока
   };
   rooms.set(roomId, room);
   updateRoomActivity(roomId);
@@ -1146,6 +1149,7 @@ app.get('/api/games/player/:id', async ({ params, query }) => {
         timer: game.timer,
         startedAt: game.startedAt,
         endedAt: game.endedAt,
+        hasMobilePlayer: game.hasMobilePlayer,
         createdAt: game.createdAt,
         updatedAt: game.updatedAt
       };
@@ -1216,6 +1220,7 @@ app.get('/api/games', async ({ query }) => {
       timer: game.timer,
       startedAt: game.startedAt,
       endedAt: game.endedAt,
+      hasMobilePlayer: game.hasMobilePlayer,
       createdAt: game.createdAt,
       updatedAt: game.updatedAt
     }));
@@ -1308,6 +1313,7 @@ app.get('/api/games/:id', async ({ params }) => {
       timer: game.timer,
       startedAt: game.startedAt,
       endedAt: game.endedAt,
+      hasMobilePlayer: game.hasMobilePlayer,
       createdAt: game.createdAt,
       updatedAt: game.updatedAt
     };
@@ -1332,7 +1338,8 @@ app.ws('/ws/room', {
       avatar: t.String(),
       currentFEN: t.Optional(t.String()),
       color: t.Optional(t.Union([t.Literal("white"), t.Literal("black")])),
-      authToken: t.Optional(t.String()) // Опциональный токен аутентификации
+      authToken: t.Optional(t.String()), // Опциональный токен аутентификации
+      hasMobilePlayer: t.Optional(t.String()) // Необязательный параметр для указания мобильного подключения (строка "true" или "1")
   }),
 
   body: t.Union([
@@ -1408,7 +1415,10 @@ app.ws('/ws/room', {
   ]),
 
   open(ws) {
-      const { roomId, userName, avatar, currentFEN: queryFEN, color: queryColor, authToken } = ws.data.query;
+      const { roomId, userName, avatar, currentFEN: queryFEN, color: queryColor, authToken, hasMobilePlayer: queryHasMobilePlayer } = ws.data.query;
+
+      // Преобразуем строку "true" или "1" в boolean для hasMobilePlayer
+      const hasMobilePlayer: boolean = queryHasMobilePlayer === "true" || queryHasMobilePlayer === "1";
 
       // Получаем registeredUserId из токена (асинхронно, но не блокируем подключение)
       let registeredUserId: mongoose.Types.ObjectId | undefined;
@@ -1474,7 +1484,8 @@ app.ws('/ws/room', {
                 initialBlackTime: DEFAULT_TIME_SECONDS // 10 минут по умолчанию
               }
             },
-            firstPlayerColor: firstPlayerColor
+            firstPlayerColor: firstPlayerColor,
+            hasMobilePlayer: hasMobilePlayer ? true : undefined
           };
           rooms.set(roomId, room);
           updateRoomActivity(roomId);
@@ -1511,6 +1522,11 @@ app.ws('/ws/room', {
               registeredUserId: currentRegisteredUserId,
               gameStartedAt: existingUserData?.gameStartedAt
           });
+
+          // Устанавливаем hasMobilePlayer если пользователь переподключился с мобильного приложения
+          if (hasMobilePlayer) {
+              room.hasMobilePlayer = true;
+          }
 
           updateRoomActivity(roomId);
           updateMetrics();
@@ -1580,6 +1596,11 @@ app.ws('/ws/room', {
           cursorPosition: { x: 0, y: 0 },
           registeredUserId: registeredUserId
       });
+
+      // Устанавливаем hasMobilePlayer если пользователь подключился с мобильного приложения
+      if (hasMobilePlayer) {
+          room.hasMobilePlayer = true;
+      }
 
       updateRoomActivity(roomId);
       updateMetrics();

@@ -37,6 +37,7 @@ export interface IGame extends Document {
   };
   startedAt: Date;
   endedAt: Date;
+  hasMobilePlayer?: boolean; // Есть ли мобильный игрок в игре
   createdAt: Date;
   updatedAt: Date;
 }
@@ -143,6 +144,10 @@ const GameSchema = new Schema<IGame>(
     endedAt: {
       type: Date,
       required: true
+    },
+    hasMobilePlayer: {
+      type: Boolean,
+      required: false
     }
   },
   {
