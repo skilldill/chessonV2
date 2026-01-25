@@ -1,5 +1,4 @@
 import { useEffect, useState, type FC } from "react";
-import type { MoveData } from "react-chessboard-ui";
 import { groupByTwoMoves } from "../../utils/groupByTwoMoves";
 import { getReadableMoveNotation } from "../../utils/getReadableMoveNotation";
 import { Resizable } from 're-resizable';
@@ -7,9 +6,11 @@ import { DraggableWrap } from "../DraggableWrap/DraggableWrap";
 import styles from './HistoryMoves.module.css';
 import cn from 'classnames';
 import { useScreenSize } from "../../hooks/useScreenSize";
+import type { MoveData } from "../../types";
 
 type HistoryMovesProps = {
     moves: MoveData[];
+    onSelectMove?: (data: { moveData: MoveData, isLastMove: boolean }) => void;
 }
 
 // Из дизайна
@@ -24,13 +25,14 @@ const DEFAULT_SIZE = {
     heightL: 192,
 };
 
-export const HistoryMoves: FC<HistoryMovesProps> = ({ moves }) => {
+export const HistoryMoves: FC<HistoryMovesProps> = ({ moves, onSelectMove }) => {
     const [size, setSize] = useState({
         width: DEFAULT_SIZE.widthM,
         height: DEFAULT_SIZE.heightM,
     });
 
     const [fontSize, setFontSize] = useState(16);
+    const [selectedMoveIndex, setSelectedMoveIndex] = useState<number>();
 
     const screenSize = useScreenSize();
 
@@ -56,6 +58,15 @@ export const HistoryMoves: FC<HistoryMovesProps> = ({ moves }) => {
     const groupedMoves = groupByTwoMoves(moves)
         .map((moveItem) => moveItem.map((move) => getReadableMoveNotation(move)));
 
+    const handleSelectMove = (moveIndex: number) => {
+        const selectedMove = moves[moveIndex];
+        setSelectedMoveIndex(moveIndex);
+        onSelectMove?.({
+            moveData: selectedMove,
+            isLastMove: moveIndex === (moves.length - 1),
+        });
+    }
+
     return (
         <DraggableWrap>
             <Resizable
@@ -76,8 +87,20 @@ export const HistoryMoves: FC<HistoryMovesProps> = ({ moves }) => {
                         <div className={styles.movesRow}>
                             <div key={`${moveItem[0]}_${index}`} className="flex items-center gap-x-[8px] px-[4px] py-[6px] hover:bg-white/4 transition-all duration-200 cursor-pointer grid grid-cols-[40px_1fr_1fr]">
                                 <span className={`text-[${fontSize}px] text-gray-400`}>{index + 1}.</span>
-                                <span className={`text-[${fontSize}px] text-white`}>{moveItem[0]}</span>
-                                {moveItem[1] && <span className={cn(`text-[${fontSize}px] text-white`, styles.movesCell)}>{moveItem[1]}</span>}
+                                <div onClick={() => handleSelectMove(index * 2)}>
+                                    <span className={cn(`text-[${fontSize}px] text-white`, { 'px-[2px] py-[2px] bg-gray-600 rounded-[4px]': (index * 2) === selectedMoveIndex })}>
+                                        {moveItem[0]}
+                                    </span>
+                                </div>
+                                {moveItem[1] && (
+                                    <div onClick={() => handleSelectMove((index * 2) + 1)}>
+                                        <span className={cn(`text-[${fontSize}px] text-white`, styles.movesCell, { 
+                                            'px-[2px] py-[2px] bg-gray-700 rounded-[4px]': ((index * 2) + 1) === selectedMoveIndex && ((index * 2) + 1) < (moves.length - 1)
+                                        })}>
+                                            {moveItem[1]}
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ))}
