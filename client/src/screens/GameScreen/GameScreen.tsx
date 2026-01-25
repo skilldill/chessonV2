@@ -57,6 +57,8 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
     const gridColsClass = useScreenHeightForChessboard();
 
     const [initialFEN, setInitialFEN] = useState(INITIAL_FEN);
+    const [isHistoryMode, setIsHistoryMode] = useState(false);
+    const [selectedHistroyMode, setSelectedHistoryMove] = useState<MoveData>();
 
     const reversed = useMemo(() => playerColor === "black", [playerColor]);
     const { 
@@ -109,6 +111,11 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
         window.location.href = import.meta.env.VITE_MAIN_SITE;
     };
 
+    const handleSelectHistoryMove = (historyMoveData: { moveData: MoveData, isLastMove: boolean }) => {
+        setIsHistoryMode(!historyMoveData.isLastMove);
+        setSelectedHistoryMove(historyMoveData.moveData);
+    }
+
     return (
         <div
             className={`bg-back-primary grid h-screen items-center relative ${gridColsClass}`}
@@ -158,20 +165,44 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                 <ChessboardWrap
                     reverse={playerColor === "black"}
                     renderChessboard={(wrapWidth) => (
-                        <ChessBoard
-                            FEN={initialFEN}
-                            onChange={(moveData) => handleMove(moveData as MoveData)} 
-                            onEndGame={onSendGameResult}
-                            reversed={playerColor === "black"}
-                            change={externalChangeMove}
-                            playerColor={playerColor}
-                            config={{ 
-                                cellSize: wrapWidth / 8, 
-                                whiteCellColor: "#E5E7EB",
-                                blackCellColor: "#A5AEBD",
-                                circleMarkColor: "#0069A8",
-                            }}
-                        />
+                        <div style={{ position: 'relative' }}>
+                            {isHistoryMode && (
+                                <div style={{ position: 'absolute', top: 0, left: 0, zIndex: 1 }}>
+                                    <ChessBoard
+                                        key="historyBoard"
+                                        FEN={selectedHistroyMode?.FEN || initialFEN}
+                                        onChange={() => {}} 
+                                        onEndGame={() => {}}
+                                        reversed={playerColor === "black"}
+                                        viewOnly={true}
+                                        config={{ 
+                                            cellSize: wrapWidth / 8, 
+                                            whiteCellColor: "#E5E7EB",
+                                            blackCellColor: "#A5AEBD",
+                                            circleMarkColor: "#0069A8",
+                                        }}
+                                        moveHighlight={selectedHistroyMode ? [selectedHistroyMode?.from, selectedHistroyMode?.to] : undefined}
+                                    />
+                                </div>
+                            )}
+                            <div style={{ opacity: isHistoryMode ? 0 : 1 }}>
+                                <ChessBoard
+                                    key="gameBoard"
+                                    FEN={initialFEN}
+                                    onChange={(moveData) => handleMove(moveData as MoveData)} 
+                                    onEndGame={onSendGameResult}
+                                    reversed={playerColor === "black"}
+                                    change={externalChangeMove}
+                                    playerColor={playerColor}
+                                    config={{ 
+                                        cellSize: wrapWidth / 8, 
+                                        whiteCellColor: "#E5E7EB",
+                                        blackCellColor: "#A5AEBD",
+                                        circleMarkColor: "#0069A8",
+                                    }}
+                                />
+                            </div>
+                        </div>
                     )}
                 />
                 <div className={`absolute ${screenSize === "L" ? "bottom-[-100px]" : "bottom-[-86px]"} left-0 right-0 flex justify-center`}>
@@ -186,7 +217,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
             </div>
             <div className={`flex justify-start ${screenSize === "L" ? "p-[28px]" : "p-[16px]"}`}>
                 <div className="fixed top-[40px] right-[40px] z-40 scale-on-small-height">
-                    <HistoryMoves moves={movesHistory} />
+                    <HistoryMoves moves={movesHistory} onSelectMove={handleSelectHistoryMove} />
                 </div>
                 <div className="flex flex-col gap-y-[8px] scale-on-small-height">
                     {/* Таймер соперника (верхний) */}
