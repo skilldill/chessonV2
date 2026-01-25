@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { HistoryMoves } from '../HistoryMoves';
-import type { MoveData } from 'react-chessboard-ui';
 import { useState } from 'react';
+import type { MoveData } from '../../../types';
 
 const TRANSFORM_TO_QUEEN = [
     {
@@ -134,7 +134,7 @@ const meta: Meta<typeof HistoryMoves> = {
 
         const addMove = () => {
             if (count >= TRANSFORM_TO_QUEEN.length) return;
-            setMoves((prevMoves) => [...prevMoves, TRANSFORM_TO_QUEEN[count] as MoveData]);
+            setMoves((prevMoves) => [...prevMoves, TRANSFORM_TO_QUEEN[count] as any]);
             setCount((prev) => prev + 1);
         }
 
@@ -158,6 +158,6 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
     args: {
-        moves: TRANSFORM_TO_QUEEN as MoveData[],
+        moves: TRANSFORM_TO_QUEEN as any[],
     },
 };
