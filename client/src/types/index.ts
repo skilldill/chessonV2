@@ -1,4 +1,5 @@
 import type { JSX } from "react";
+import type { Piece } from "react-chessboard-ui";
 
 // Типы для шахматных фигур
 export type ChessColor = "white" | "black";
@@ -137,7 +138,28 @@ export interface ChatMessage {
   time: number;
 };
 
+type ChessBoardConfig = {
+  squareSize: number;
+  pieceSizePercent: number;
+  lightSquareClassName: string;
+  darkSquareClassName: string;
+  pickedSquareClassName: string;
+  checkedSquareClassName: string;
+  hidePieceEffectClassName: string;
+  squareHighlightClassName: string;
+  selectedSquareClassName: string;
+  holdedPieceClassName: string;
+  possibleMoveMarkClassName: string;
+  factorForSizeCircleMark: number;
 
+  circleMarkColor: string;
+  arrowColor: string;
+  piecesMap: ChessPiecesMap;
+  showMovesTrail: boolean;
+  onHidePieces: (piece: Piece) => void;
+}
+
+export type ChessboardConfig = Partial<ChessBoardConfig>;
 
 export type ChessPiecesMap = {
   [key: string]: (size: number) => JSX.Element;

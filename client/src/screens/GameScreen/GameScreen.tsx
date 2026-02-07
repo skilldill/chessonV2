@@ -16,6 +16,7 @@ import { ConnectionNotification } from "../../components/ConnectionNotification/
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { useGameStorage } from "../../hooks/useGameStorage";
 import { useScreenHeightForChessboard } from "../../hooks/useScreenHeightForChessboard";
+import { DEFAULT_CHESSBOARD_CONFIG } from "../../components/ChessBoardConfigs/ChessBoardConfigs";
 
 type GameScreenProps = {
     gameState: GameState;
@@ -176,10 +177,8 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                                         reversed={playerColor === "black"}
                                         viewOnly={true}
                                         config={{ 
-                                            cellSize: wrapWidth / 8, 
-                                            whiteCellColor: "#E5E7EB",
-                                            blackCellColor: "#A5AEBD",
-                                            circleMarkColor: "#0069A8",
+                                            squareSize: wrapWidth / 8,
+                                            ...DEFAULT_CHESSBOARD_CONFIG,
                                         }}
                                         moveHighlight={selectedHistroyMode ? [selectedHistroyMode?.from, selectedHistroyMode?.to] : undefined}
                                     />
@@ -195,10 +194,8 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                                     change={externalChangeMove}
                                     playerColor={playerColor}
                                     config={{ 
-                                        cellSize: wrapWidth / 8, 
-                                        whiteCellColor: "#E5E7EB",
-                                        blackCellColor: "#A5AEBD",
-                                        circleMarkColor: "#0069A8",
+                                        squareSize: wrapWidth / 8,
+                                        ...DEFAULT_CHESSBOARD_CONFIG,
                                     }}
                                 />
                             </div>
