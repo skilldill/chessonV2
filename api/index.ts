@@ -1185,19 +1185,27 @@ app.get('/api/games', async ({ query }) => {
     // Получаем параметры пагинации
     const pageParam = typeof query === 'object' && query !== null && 'page' in query ? query.page : undefined;
     const limitParam = typeof query === 'object' && query !== null && 'limit' in query ? query.limit : undefined;
+    const hasMobilePlayerParam = typeof query === 'object' && query !== null && 'hasMobilePlayer' in query ? query.hasMobilePlayer : undefined;
     const page = parseInt(String(pageParam || '1')) || 1;
     const limit = Math.min(parseInt(String(limitParam || '20')) || 20, 100); // Максимум 100 игр за раз
     const skip = (page - 1) * limit;
 
+    // Формируем фильтр запроса
+    const filter: any = {};
+    if (hasMobilePlayerParam !== undefined) {
+      const hasMobilePlayerValue = String(hasMobilePlayerParam).toLowerCase() === 'true';
+      filter.hasMobilePlayer = hasMobilePlayerValue;
+    }
+
     // Получаем все игры с пагинацией
-    const games = await Game.find({})
+    const games = await Game.find(filter)
       .sort({ endedAt: -1 }) // Новые игры сначала
       .skip(skip)
       .limit(limit)
       .lean();
 
     // Получаем общее количество игр
-    const total = await Game.countDocuments({});
+    const total = await Game.countDocuments(filter);
 
     // Преобразуем ObjectId в строки для ответа
     const gamesResponse = games.map(game => ({
@@ -1245,30 +1253,33 @@ app.get('/api/games', async ({ query }) => {
 }, {
   query: t.Object({
     page: t.Optional(t.String()),
-    limit: t.Optional(t.String())
+    limit: t.Optional(t.String()),
+    hasMobilePlayer: t.Optional(t.String())
   })
 });
 
 // Delete all games endpoint - очистка всех игр (для тестирования)
-app.delete('/api/games', async () => {
-  try {
-    const result = await Game.deleteMany({});
+// app.delete('/api/games', async () => {
+//   try {
+//     const result = await Game.deleteMany({});
     
-    console.log(`🗑️ Deleted ${result.deletedCount} games from database`);
+//     console.log(`🗑️ Deleted ${result.deletedCount} games from database`);
     
-    return {
-      success: true,
-      message: `Successfully deleted ${result.deletedCount} games`,
-      deletedCount: result.deletedCount
-    };
-  } catch (error: any) {
-    console.error('Delete games error:', error);
-    return {
-      success: false,
-      error: error.message || 'Failed to delete games'
-    };
-  }
-});
+//     return {
+//       success: true,
+//       message: `Successfully deleted ${result.deletedCount} games`,
+//       deletedCount: result.deletedCount
+//     };
+//   } catch (error: any) {
+//     console.error('Delete games error:', error);
+//     return {
+//       success: false,
+//       error: error.message || 'Failed to delete games'
+//     };
+//   }
+// });
+
+
 
 // Get game by ID endpoint - одна игра по ID
 app.get('/api/games/:id', async ({ params }) => {
