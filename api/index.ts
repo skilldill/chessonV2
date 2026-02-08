@@ -4,12 +4,12 @@ import { ElysiaWS } from 'elysia/ws';
 import { v4 as uuidv4 } from 'uuid';
 import { INITIAL_FEN } from './constants/chess';
 import { User } from './models/User';
-import { RegistrationAttempt } from './models/RegistrationAttempt';
 import { Game } from './models/Game';
 import { hashPassword, comparePassword } from './utils/password';
 import { createToken, verifyToken } from './utils/jwt';
-import { getClientIP } from './utils/ip';
+import { sendVerificationEmail, sendPasswordResetEmail, sendTestEmail } from './utils/email';
 import mongoose from 'mongoose';
+import crypto from 'crypto';
 
 // Connect to MongoDB
 if (process.env.WITHOUT_MONGO !== 'true') {
@@ -742,13 +742,13 @@ app.get('/api/health', () => ({
 // Регистрация пользователя
 app.post('/api/auth/signup', async ({ body, request, set }) => {
   try {
-    const { login, password } = body;
+    const { login, password, email } = body;
 
     // Валидация входных данных
-    if (!login || !password) {
+    if (!login || !password || !email) {
       return {
         success: false,
-        error: 'Login and password are required'
+        error: 'Login, password and email are required'
       };
     }
 
@@ -766,69 +766,66 @@ app.post('/api/auth/signup', async ({ body, request, set }) => {
       };
     }
 
+    // Валидация email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return {
+        success: false,
+        error: 'Invalid email format'
+      };
+    }
+
     // Проверка уникальности логина
-    const existingUser = await User.findOne({ login: login.toLowerCase() });
-    if (existingUser) {
+    const existingUserByLogin = await User.findOne({ login: login.toLowerCase() });
+    if (existingUserByLogin) {
       return {
         success: false,
         error: 'Login already exists'
       };
     }
 
-    // Проверка IP - можно зарегистрироваться только один раз в день
-    const clientIP = getClientIP(request);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Начало дня
-
-    const lastRegistration = await RegistrationAttempt.findOne({
-      ip: clientIP,
-      lastRegistrationDate: { $gte: today }
-    });
-
-    if (lastRegistration) {
+    // Проверка уникальности email
+    const existingUserByEmail = await User.findOne({ email: email.toLowerCase() });
+    if (existingUserByEmail) {
       return {
         success: false,
-        error: 'You can register only once per day from this IP address'
+        error: 'Email already exists'
       };
     }
 
     // Хешируем пароль
     const hashedPassword = await hashPassword(password);
 
+    // Генерируем токен для подтверждения email
+    const emailVerificationToken = crypto.randomBytes(32).toString('hex');
+
     // Создаем пользователя
     const user = new User({
       login: login.toLowerCase(),
-      password: hashedPassword
+      password: hashedPassword,
+      email: email.toLowerCase(),
+      emailVerified: false,
+      emailVerificationToken: emailVerificationToken
     });
 
     await user.save();
 
-    // Сохраняем информацию о регистрации по IP
-    await RegistrationAttempt.findOneAndUpdate(
-      { ip: clientIP },
-      {
-        ip: clientIP,
-        lastRegistrationDate: new Date()
-      },
-      { upsert: true, new: true }
-    );
-
-    // Создаем токен
-    const userId = (user._id as mongoose.Types.ObjectId).toString();
-    const token = await createToken({
-      userId: userId,
-      login: user.login
-    });
-
-    // Сохраняем токен в cookie
-    set.headers['Set-Cookie'] = `authToken=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${7 * 24 * 60 * 60}${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`;
+    // Отправляем email с подтверждением
+    try {
+      await sendVerificationEmail(email.toLowerCase(), login, emailVerificationToken);
+    } catch (emailError) {
+      console.error('Failed to send verification email:', emailError);
+      // Не блокируем регистрацию, если email не отправился
+    }
 
     return {
       success: true,
-      message: 'User registered successfully',
+      message: 'User registered successfully. Please check your email to verify your account.',
       user: {
-        id: userId,
-        login: user.login
+        id: (user._id as mongoose.Types.ObjectId).toString(),
+        login: user.login,
+        email: user.email,
+        emailVerified: user.emailVerified
       }
     };
   } catch (error: any) {
@@ -841,7 +838,8 @@ app.post('/api/auth/signup', async ({ body, request, set }) => {
 }, {
   body: t.Object({
     login: t.String(),
-    password: t.String()
+    password: t.String(),
+    email: t.String()
   })
 });
 
@@ -876,6 +874,15 @@ app.post('/api/auth/login', async ({ body, request, set }) => {
       };
     }
 
+    // Проверяем, подтвержден ли email
+    if (!user.emailVerified) {
+      return {
+        success: false,
+        error: 'Please verify your email before logging in',
+        requiresEmailVerification: true
+      };
+    }
+
     // Создаем токен
     const userId = (user._id as mongoose.Types.ObjectId).toString();
     const token = await createToken({
@@ -891,7 +898,9 @@ app.post('/api/auth/login', async ({ body, request, set }) => {
       message: 'Login successful',
       user: {
         id: userId,
-        login: user.login
+        login: user.login,
+        email: user.email,
+        emailVerified: user.emailVerified
       }
     };
   } catch (error: any) {
@@ -968,6 +977,233 @@ app.post('/api/auth/logout', ({ set }) => {
     success: true,
     message: 'Logged out successfully'
   };
+});
+
+// Подтверждение email
+app.post('/api/auth/verify-email', async ({ body }) => {
+  try {
+    const { token } = body;
+
+    if (!token) {
+      return {
+        success: false,
+        error: 'Verification token is required'
+      };
+    }
+
+    // Ищем пользователя с данным токеном подтверждения
+    const user = await User.findOne({ emailVerificationToken: token });
+
+    if (!user) {
+      return {
+        success: false,
+        error: 'Invalid verification token'
+      };
+    }
+
+    // Если email уже подтвержден
+    if (user.emailVerified) {
+      return {
+        success: true,
+        message: 'Email already verified'
+      };
+    }
+
+    // Подтверждаем email
+    user.emailVerified = true;
+    user.emailVerificationToken = undefined;
+    await user.save();
+
+    return {
+      success: true,
+      message: 'Email verified successfully'
+    };
+  } catch (error: any) {
+    console.error('Email verification error:', error);
+    return {
+      success: false,
+      error: error.message || 'Email verification failed'
+    };
+  }
+}, {
+  body: t.Object({
+    token: t.String()
+  })
+});
+
+// Запрос на восстановление пароля
+app.post('/api/auth/forgot-password', async ({ body }) => {
+  try {
+    const { email } = body;
+
+    // Валидация входных данных
+    if (!email) {
+      return {
+        success: false,
+        error: 'Email is required'
+      };
+    }
+
+    // Ищем пользователя по email
+    const user = await User.findOne({ email: email.toLowerCase() });
+    
+    // Для безопасности не сообщаем, существует ли пользователь
+    if (!user) {
+      return {
+        success: true,
+        message: 'If a user with this email exists, a password reset link has been sent'
+      };
+    }
+
+    // Генерируем токен восстановления пароля
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenExpires = new Date(Date.now() + 3600000); // 1 час
+
+    // Сохраняем токен в базе данных
+    user.resetPasswordToken = resetToken;
+    user.resetPasswordExpires = resetTokenExpires;
+    await user.save();
+
+    // Отправляем email с токеном восстановления
+    try {
+      await sendPasswordResetEmail(user.email, user.login, resetToken);
+    } catch (emailError) {
+      console.error('Failed to send password reset email:', emailError);
+      // Очищаем токен, если email не отправился
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpires = undefined;
+      await user.save();
+      
+      return {
+        success: false,
+        error: 'Failed to send password reset email'
+      };
+    }
+
+    return {
+      success: true,
+      message: 'If a user with this email exists, a password reset link has been sent'
+    };
+  } catch (error: any) {
+    console.error('Forgot password error:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to process password reset request'
+    };
+  }
+}, {
+  body: t.Object({
+    email: t.String()
+  })
+});
+
+// Сброс пароля с использованием токена
+app.post('/api/auth/reset-password', async ({ body }) => {
+  try {
+    const { token, newPassword } = body;
+
+    // Валидация входных данных
+    if (!token || !newPassword) {
+      return {
+        success: false,
+        error: 'Token and new password are required'
+      };
+    }
+
+    if (newPassword.length < 6) {
+      return {
+        success: false,
+        error: 'Password must be at least 6 characters'
+      };
+    }
+
+    // Ищем пользователя с валидным токеном
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: new Date() }
+    });
+
+    if (!user) {
+      return {
+        success: false,
+        error: 'Invalid or expired reset token'
+      };
+    }
+
+    // Хешируем новый пароль
+    const hashedPassword = await hashPassword(newPassword);
+
+    // Обновляем пароль и очищаем токен восстановления
+    user.password = hashedPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    return {
+      success: true,
+      message: 'Password has been reset successfully'
+    };
+  } catch (error: any) {
+    console.error('Reset password error:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to reset password'
+    };
+  }
+}, {
+  body: t.Object({
+    token: t.String(),
+    newPassword: t.String()
+  })
+});
+
+// Отправка тестового сообщения на email
+app.post('/api/auth/test-email', async ({ body }) => {
+  try {
+    const { email } = body;
+
+    // Валидация входных данных
+    if (!email) {
+      return {
+        success: false,
+        error: 'Email is required'
+      };
+    }
+
+    // Валидация формата email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return {
+        success: false,
+        error: 'Invalid email format'
+      };
+    }
+
+    // Отправляем тестовое сообщение
+    try {
+      await sendTestEmail(email.toLowerCase());
+      return {
+        success: true,
+        message: `Test email sent successfully to ${email}`
+      };
+    } catch (emailError: any) {
+      console.error('Failed to send test email:', emailError);
+      return {
+        success: false,
+        error: emailError.message || 'Failed to send test email'
+      };
+    }
+  } catch (error: any) {
+    console.error('Test email error:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to process test email request'
+    };
+  }
+}, {
+  body: t.Object({
+    email: t.String()
+  })
 });
 
 // Metrics endpoint
