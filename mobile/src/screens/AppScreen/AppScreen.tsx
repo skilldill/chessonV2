@@ -5,7 +5,8 @@ import SetProfileScreen from '../SetProfileScreen/SetProfileScreen';
 import GameScreen from '../GameScreen/GameScreen';
 import WaitingScreen from '../WaitingScreen/WaitingScreen';
 import { useGameStorage } from '../../hooks/useGameStorage';
-import { useEffect } from 'react';
+import { useAutoConnect } from '../../hooks/useAutoConnect';
+import { IonPage, IonContent, IonSpinner } from '@ionic/react';
 
 const AppScreen: React.FC = () => {
   const { roomId } = useParams<{ roomId: string }>();
@@ -29,38 +30,29 @@ const AppScreen: React.FC = () => {
   } = useRoomWS(roomId || "");
   const { userName, setUserName } = useUserData();
   const { saveGameData, storageGameData, removeGameData } = useGameStorage();
-  
 
-  const handleSetUserName = (userName: string, avatarIndex: number) => {
-    console.log(userName, avatarIndex);
+  const { checkingAuth, handleSetUserName } = useAutoConnect({
+    roomId: roomId || "",
+    userName,
+    storageGameData,
+    connectToRoom,
+    setUserName,
+    saveGameData,
+    removeGameData,
+  });
 
-    setUserName(userName);
-    connectToRoom({
-      userName,
-      avatar: `${avatarIndex}`,
-    });
-
-    saveGameData({
-      playerName: userName,
-      avatar: `${avatarIndex}`,
-      gameId: roomId,
-    })
+  // Показываем загрузку пока проверяем авторизацию
+  if (checkingAuth) {
+    return (
+      <IonPage>
+        <IonContent className="ion-padding">
+          <div className="flex justify-center items-center h-full">
+            <IonSpinner name="crescent" />
+          </div>
+        </IonContent>
+      </IonPage>
+    );
   }
-
-  // Тут еще одна проверка для localStorage
-
-  useEffect(() => {
-    if (!storageGameData) return;
-
-    // Проверим, если игрок пытается открыть
-    // новую ссессию, то удалим старые данные
-    if (storageGameData.gameId !== roomId) {
-      removeGameData();
-      return;
-    }
-
-    handleSetUserName(storageGameData.playerName, parseInt(storageGameData.avatar));
-  }, [storageGameData]);
 
   // Если пользователь еще не ввел имя, показываем форму
   if (!userName) {

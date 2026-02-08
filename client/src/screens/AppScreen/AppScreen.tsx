@@ -5,7 +5,7 @@ import { WaitingScreen } from "../WaitingScreen/WaitingScreen";
 import { GameScreen } from "../GameScreen/GameScreen";
 import { SetProfileScreen } from "../SetProfileScreen/SetProfileScreen";
 import { useGameStorage } from "../../hooks/useGameStorage";
-import { useEffect } from "react";
+import { useAutoConnect } from "../../hooks/useAutoConnect";
 
 export const AppScreen = () => {
     const { roomId } = useParams<{ roomId: string }>();
@@ -31,33 +31,24 @@ export const AppScreen = () => {
     const { userName, setUserName } = useUserData();
     const { saveGameData, storageGameData, removeGameData } = useGameStorage();
 
-    const handleSetUserName = (userName: string, avatarIndex: number) => {
-        setUserName(userName);
-        connectToRoom({
-            userName,
-            avatar: `${avatarIndex}`,
-        });
+    const { checkingAuth, handleSetUserName } = useAutoConnect({
+        roomId: roomId || "",
+        userName,
+        storageGameData,
+        connectToRoom,
+        setUserName,
+        saveGameData,
+        removeGameData,
+    });
 
-        saveGameData({
-            playerName: userName,
-            avatar: `${avatarIndex}`,
-            gameId: roomId,
-        });
+    // Показываем загрузку пока проверяем авторизацию
+    if (checkingAuth) {
+        return (
+            <div className="w-full h-[100vh] flex justify-center items-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#4F39F6] border-t-transparent"></div>
+            </div>
+        );
     }
-
-    useEffect(() => {
-        if (!storageGameData) return;
-
-        // Проверим, если игрок пытается открыть
-        // новую ссессию, то удалим старые данные
-        if (storageGameData.gameId !== roomId) {
-            removeGameData();
-            return;
-        }
-
-        handleSetUserName(storageGameData.playerName, parseInt(storageGameData.avatar));
-    }, [storageGameData]);
-
 
     // Если пользователь еще не ввел имя, показываем форму
     if (!userName) {

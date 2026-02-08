@@ -4,6 +4,8 @@ export interface IUser extends Document {
   login: string;
   password: string;
   email: string;
+  name?: string;
+  avatar?: string;
   emailVerified: boolean;
   emailVerificationToken?: string;
   resetPasswordToken?: string;
@@ -33,6 +35,15 @@ const UserSchema = new Schema<IUser>(
       trim: true,
       lowercase: true,
       index: true
+    },
+    name: {
+      type: String,
+      default: undefined,
+      trim: true
+    },
+    avatar: {
+      type: String,
+      default: '0'
     },
     emailVerified: {
       type: Boolean,

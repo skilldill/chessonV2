@@ -20,7 +20,7 @@ export async function sendVerificationEmail(
   login: string,
   verificationToken: string
 ): Promise<void> {
-  const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${verificationToken}`;
+  const verificationUrl = `https://chesson.me/verify-email?token=${verificationToken}`;
 
   const mailOptions = {
     from: `"Chesson" <${process.env.SMTP_USER}>`,

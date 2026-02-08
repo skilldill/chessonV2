@@ -1,6 +1,13 @@
 
 import { AppScreen } from "./screens/AppScreen/AppScreen";
-import { CreateRoomScreen } from "./screens/CreateRoomScreen/CreateRoomScreen";
+import { VerifyEmailScreen } from "./screens/VerifyEmailScreen/VerifyEmailScreen";
+import { LoginScreen } from "./screens/LoginScreen/LoginScreen";
+import { SignupScreen } from "./screens/SignupScreen/SignupScreen";
+import { SignupSuccessScreen } from "./screens/SignupSuccessScreen/SignupSuccessScreen";
+import { ProfileScreen } from "./screens/ProfileScreen/ProfileScreen";
+import { ForgotPasswordScreen } from "./screens/ForgotPasswordScreen/ForgotPasswordScreen";
+import { ResetPasswordScreen } from "./screens/ResetPasswordScreen/ResetPasswordScreen";
+import { HomeRedirect } from "./components/HomeRedirect/HomeRedirect";
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 import 'react-chessboard-ui/dist/index.css';
 
@@ -54,9 +61,16 @@ function App() {
   return (
     <Router>
       <Switch>
-        <Route exact path="/" component={CreateRoomScreen} />
+        <Route exact path="/" component={HomeRedirect} />
         <Route path="/game/:roomId" component={AppScreen} />
         <Route exact path="/custom/room" component={CreateCustomFenRoomScreen} />
+        <Route exact path="/verify-email" component={VerifyEmailScreen} />
+        <Route exact path="/login" component={LoginScreen} />
+        <Route exact path="/signup" component={SignupScreen} />
+        <Route exact path="/signup-success" component={SignupSuccessScreen} />
+        <Route exact path="/forgot-password" component={ForgotPasswordScreen} />
+        <Route exact path="/reset-password" component={ResetPasswordScreen} />
+        <Route exact path="/profile" component={ProfileScreen} />
       </Switch>
     </Router>
   );

@@ -900,6 +900,8 @@ app.post('/api/auth/login', async ({ body, request, set }) => {
         id: userId,
         login: user.login,
         email: user.email,
+        name: user.name || user.login,
+        avatar: user.avatar || '0',
         emailVerified: user.emailVerified
       }
     };
@@ -957,7 +959,11 @@ app.get('/api/auth/me', async ({ headers }) => {
       success: true,
       user: {
         id: (user._id as mongoose.Types.ObjectId).toString(),
-        login: user.login
+        login: user.login,
+        email: user.email,
+        name: user.name || user.login,
+        avatar: user.avatar || '0',
+        emailVerified: user.emailVerified
       }
     };
   } catch (error: any) {
@@ -977,6 +983,212 @@ app.post('/api/auth/logout', ({ set }) => {
     success: true,
     message: 'Logged out successfully'
   };
+});
+
+// Обновление профиля пользователя
+app.put('/api/auth/profile', async ({ body, headers }) => {
+  try {
+    const { name, avatar } = body;
+
+    // Получаем токен из cookie
+    const cookieHeader = headers.cookie || '';
+    const cookies = cookieHeader.split(';').reduce((acc: Record<string, string>, cookie) => {
+      const [key, value] = cookie.trim().split('=');
+      if (key && value) {
+        acc[key] = value;
+      }
+      return acc;
+    }, {});
+
+    const authToken = cookies.authToken;
+    if (!authToken) {
+      return {
+        success: false,
+        error: 'Not authenticated'
+      };
+    }
+
+    const payload = await verifyToken(authToken);
+    if (!payload) {
+      return {
+        success: false,
+        error: 'Invalid token'
+      };
+    }
+
+    const user = await User.findById(payload.userId);
+    if (!user) {
+      return {
+        success: false,
+        error: 'User not found'
+      };
+    }
+
+    // Обновляем поля профиля
+    if (name !== undefined) {
+      if (name.length > 50) {
+        return {
+          success: false,
+          error: 'Name must be less than 50 characters'
+        };
+      }
+      user.name = name.trim() || undefined;
+    }
+
+    if (avatar !== undefined) {
+      // Проверяем, что avatar - это валидный ID (0-7)
+      const avatarId = parseInt(avatar);
+      if (isNaN(avatarId) || avatarId < 0 || avatarId > 7) {
+        return {
+          success: false,
+          error: 'Invalid avatar ID. Must be between 0 and 7'
+        };
+      }
+      user.avatar = avatar.toString();
+    }
+
+    await user.save();
+
+    return {
+      success: true,
+      message: 'Profile updated successfully',
+      user: {
+        id: (user._id as mongoose.Types.ObjectId).toString(),
+        login: user.login,
+        email: user.email,
+        name: user.name || user.login,
+        avatar: user.avatar || '0',
+        emailVerified: user.emailVerified
+      }
+    };
+  } catch (error: any) {
+    console.error('Profile update error:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to update profile'
+    };
+  }
+}, {
+  body: t.Object({
+    name: t.Optional(t.String()),
+    avatar: t.Optional(t.String())
+  })
+});
+
+// Получение списка игр текущего пользователя
+app.get('/api/auth/my-games', async ({ headers, query }) => {
+  try {
+    // Получаем токен из cookie
+    const cookieHeader = headers.cookie || '';
+    const cookies = cookieHeader.split(';').reduce((acc: Record<string, string>, cookie) => {
+      const [key, value] = cookie.trim().split('=');
+      if (key && value) {
+        acc[key] = value;
+      }
+      return acc;
+    }, {});
+
+    const authToken = cookies.authToken;
+    if (!authToken) {
+      return {
+        success: false,
+        error: 'Not authenticated'
+      };
+    }
+
+    const payload = await verifyToken(authToken);
+    if (!payload) {
+      return {
+        success: false,
+        error: 'Invalid token'
+      };
+    }
+
+    const userId = new mongoose.Types.ObjectId(payload.userId);
+
+    // Получаем параметры пагинации
+    const pageParam = typeof query === 'object' && query !== null && 'page' in query ? query.page : undefined;
+    const limitParam = typeof query === 'object' && query !== null && 'limit' in query ? query.limit : undefined;
+    const page = parseInt(String(pageParam || '1')) || 1;
+    const limit = Math.min(parseInt(String(limitParam || '10')) || 10, 50); // Максимум 50 игр за раз
+    const skip = (page - 1) * limit;
+
+    // Строим запрос для игр пользователя
+    const queryFilter = {
+      $or: [
+        { 'whitePlayer.userId': userId },
+        { 'blackPlayer.userId': userId }
+      ]
+    };
+
+    // Получаем игры с пагинацией
+    const games = await Game.find(queryFilter)
+      .sort({ endedAt: -1 }) // Новые игры сначала
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    // Получаем общее количество игр пользователя
+    const total = await Game.countDocuments(queryFilter);
+
+    // Преобразуем ObjectId в строки для ответа
+    const gamesResponse = games.map(game => {
+      const moveHistory = Array.isArray(game.moveHistory) ? game.moveHistory : [];
+      
+      // Определяем цвет пользователя в игре
+      const userColor = game.whitePlayer?.userId?.toString() === payload.userId ? 'white' : 'black';
+      const opponent = userColor === 'white' ? game.blackPlayer : game.whitePlayer;
+      
+      // Определяем результат для пользователя
+      let userResult: 'win' | 'loss' | 'draw' = 'draw';
+      if (game.result.winColor) {
+        if (game.result.winColor === userColor) {
+          userResult = 'win';
+        } else {
+          userResult = 'loss';
+        }
+      }
+
+      return {
+        id: (game._id as mongoose.Types.ObjectId).toString(),
+        roomId: game.roomId,
+        userColor,
+        opponent: {
+          userName: opponent?.userName || 'Unknown',
+          avatar: opponent?.avatar || '0'
+        },
+        result: {
+          ...game.result,
+          userResult
+        },
+        moveCount: moveHistory.length,
+        startedAt: game.startedAt,
+        endedAt: game.endedAt
+      };
+    });
+
+    return {
+      success: true,
+      games: gamesResponse,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
+  } catch (error: any) {
+    console.error('Get my games error:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to get games'
+    };
+  }
+}, {
+  query: t.Object({
+    page: t.Optional(t.String()),
+    limit: t.Optional(t.String())
+  })
 });
 
 // Подтверждение email
