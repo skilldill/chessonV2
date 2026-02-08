@@ -975,6 +975,50 @@ app.get('/api/auth/me', async ({ headers }) => {
   }
 });
 
+// Получение токена для WebSocket подключения
+app.get('/api/auth/ws-token', async ({ headers }) => {
+  try {
+    const cookieHeader = headers.cookie || '';
+    const cookies = cookieHeader.split(';').reduce((acc: Record<string, string>, cookie) => {
+      const [key, value] = cookie.trim().split('=');
+      if (key && value) {
+        acc[key] = value;
+      }
+      return acc;
+    }, {});
+
+    const authToken = cookies.authToken;
+    if (!authToken) {
+      return {
+        success: false,
+        error: 'Not authenticated'
+      };
+    }
+
+    // Проверяем валидность токена
+    const payload = await verifyToken(authToken);
+    if (!payload) {
+      return {
+        success: false,
+        error: 'Invalid token'
+      };
+    }
+
+    // Возвращаем токен для использования в WebSocket
+    return {
+      success: true,
+      token: authToken,
+      userId: payload.userId
+    };
+  } catch (error: any) {
+    console.error('WS token error:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to get WS token'
+    };
+  }
+});
+
 // Выход из системы
 app.post('/api/auth/logout', ({ set }) => {
   // Удаляем cookie, устанавливая его с истекшим сроком действия
@@ -1873,31 +1917,27 @@ app.ws('/ws/room', {
     })
   ]),
 
-  open(ws) {
+  async open(ws) {
       const { roomId, userName, avatar, currentFEN: queryFEN, color: queryColor, authToken, hasMobilePlayer: queryHasMobilePlayer } = ws.data.query;
 
       // Преобразуем строку "true" или "1" в boolean для hasMobilePlayer
       const hasMobilePlayer: boolean = queryHasMobilePlayer === "true" || queryHasMobilePlayer === "1";
 
-      // Получаем registeredUserId из токена (асинхронно, но не блокируем подключение)
+      // Получаем registeredUserId из токена синхронно перед сохранением пользователя
       let registeredUserId: mongoose.Types.ObjectId | undefined;
       if (authToken) {
-        verifyToken(authToken).then(payload => {
+        try {
+          const payload = await verifyToken(authToken);
           if (payload && payload.userId) {
             registeredUserId = new mongoose.Types.ObjectId(payload.userId);
-            // Обновляем registeredUserId в данных пользователя, если он уже подключен
-            const room = rooms.get(roomId);
-            if (room) {
-              for (const [userId, userData] of room.users) {
-                if (userData.userName === userName && !userData.registeredUserId) {
-                  userData.registeredUserId = registeredUserId;
-                }
-              }
-            }
+            console.log(`✅ User authenticated: ${userName}, userId: ${registeredUserId.toString()}`);
           }
-        }).catch(() => {
+        } catch (error) {
           // Игнорируем ошибки токена, пользователь может играть без регистрации
-        });
+          console.log('Token verification failed, user will play without registration:', error);
+        }
+      } else {
+        console.log(`ℹ️ User connecting without auth: ${userName}`);
       }
 
       let room = rooms.get(roomId);
@@ -1970,7 +2010,8 @@ app.ws('/ws/room', {
           
           // Обновляем данные пользователя с новым WebSocket
           // Сохраняем registeredUserId если он был установлен ранее или получаем новый
-          const currentRegisteredUserId = existingUserData?.registeredUserId || registeredUserId;
+          // Приоритет: новый registeredUserId > существующий registeredUserId
+          const currentRegisteredUserId = registeredUserId || existingUserData?.registeredUserId;
           room.users.set(existingUserId, {
               userName: userName,
               avatar: avatar,
@@ -2055,6 +2096,10 @@ app.ws('/ws/room', {
           cursorPosition: { x: 0, y: 0 },
           registeredUserId: registeredUserId
       });
+      
+      if (registeredUserId) {
+        console.log(`✅ User ${userName} connected with registeredUserId: ${registeredUserId.toString()}`);
+      }
 
       // Устанавливаем hasMobilePlayer если пользователь подключился с мобильного приложения
       if (hasMobilePlayer) {

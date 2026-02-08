@@ -22,9 +22,9 @@ export const useAutoConnect = ({
 }: UseAutoConnectParams) => {
     const [checkingAuth, setCheckingAuth] = useState(true);
 
-    const handleSetUserName = (userName: string, avatarIndex: number) => {
+    const handleSetUserName = async (userName: string, avatarIndex: number) => {
         setUserName(userName);
-        connectToRoom({
+        await connectToRoom({
             userName,
             avatar: `${avatarIndex}`,
         });

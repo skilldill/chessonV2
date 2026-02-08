@@ -1,4 +1,5 @@
 import { useHistory } from "react-router-dom";
+import { useEffect } from "react";
 import { MemAvatarSelect } from "../../components/MemAvatarSelect/MemAvatarSelect";
 import { MEM_AVATARS } from "../../constants/avatars";
 import { useProfile } from "../../hooks/useProfile";
@@ -26,10 +27,18 @@ export const ProfileScreen = () => {
     showGames,
     setShowGames,
     loadGames,
+    loadTotalGames,
+    totalGames,
     formatDate,
     getResultText,
     getResultColor,
   } = useUserGames();
+
+  // Загружаем общее количество игр при монтировании компонента
+  useEffect(() => {
+    loadTotalGames();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (loading) {
     return (
@@ -57,6 +66,14 @@ export const ProfileScreen = () => {
             <h3 className="text-white text-center text-3xl font-semibold">
               {name}
             </h3>
+
+            {/* Статистика */}
+            <div className="w-full flex justify-center">
+              <div className="bg-white/5 border border-white/10 rounded-lg px-6 py-3">
+                <div className="text-white/60 text-sm text-center mb-1">Сыграно игр</div>
+                <div className="text-white text-2xl font-bold text-center">{totalGames}</div>
+              </div>
+            </div>
 
             {error && (
               <div className="bg-red-500/20 border border-red-500 text-red-300 px-4 py-3 rounded-lg text-sm w-full">

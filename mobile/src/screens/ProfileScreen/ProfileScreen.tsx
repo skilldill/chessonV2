@@ -1,5 +1,6 @@
 import { IonPage, IonContent, IonInput, IonButton, IonText, IonItem, IonLabel, IonSpinner } from '@ionic/react';
 import { useHistory } from 'react-router-dom';
+import { useEffect } from 'react';
 import { MemAvatarSelect } from '../../components/MemAvatarSelect/MemAvatarSelect';
 import { MEM_AVATARS } from '../../constants/avatars';
 import { useProfile } from '../../hooks/useProfile';
@@ -27,10 +28,18 @@ const ProfileScreen: React.FC = () => {
     showGames,
     setShowGames,
     loadGames,
+    loadTotalGames,
+    totalGames,
     formatDate,
     getResultText,
     getResultColor,
   } = useUserGames();
+
+  // Загружаем общее количество игр при монтировании компонента
+  useEffect(() => {
+    loadTotalGames();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (loading) {
     return (
@@ -63,6 +72,14 @@ const ProfileScreen: React.FC = () => {
                 />
               </div>
               <MemAvatarSelect onSelectAvatar={setAvatarIndex} />
+            </div>
+
+            {/* Статистика */}
+            <div className="w-full flex justify-center">
+              <div className="bg-white/5 border border-white/10 rounded-lg px-6 py-3 w-full max-w-xs">
+                <div className="text-white/60 text-sm text-center mb-1">Сыграно игр</div>
+                <div className="text-white text-2xl font-bold text-center">{totalGames}</div>
+              </div>
             </div>
 
             {/* Имя */}

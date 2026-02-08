@@ -22,6 +22,7 @@ export const useUserGames = () => {
   const [games, setGames] = useState<UserGame[]>([]);
   const [loading, setLoading] = useState(false);
   const [showGames, setShowGames] = useState(false);
+  const [totalGames, setTotalGames] = useState<number>(0);
 
   const loadGames = async (limit: number = 10) => {
     setLoading(true);
@@ -34,12 +35,30 @@ export const useUserGames = () => {
 
       if (data.success && data.games) {
         setGames(data.games);
+        setTotalGames(data.pagination?.total || 0);
         setShowGames(true);
       }
     } catch (err) {
       console.error("Error loading games:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Загружаем общее количество игр при первой загрузке
+  const loadTotalGames = async () => {
+    try {
+      const response = await fetch(`${API_PREFIX}/auth/my-games?limit=1`, {
+        credentials: "include",
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.pagination) {
+        setTotalGames(data.pagination.total || 0);
+      }
+    } catch (err) {
+      console.error("Error loading total games:", err);
     }
   };
 
@@ -70,6 +89,8 @@ export const useUserGames = () => {
     showGames,
     setShowGames,
     loadGames,
+    loadTotalGames,
+    totalGames,
     formatDate,
     getResultText,
     getResultColor,
