@@ -18,7 +18,7 @@ export const LoginScreen = () => {
         });
         const data = await response.json();
         if (data.success) {
-          history.push("/");
+          history.push("/main");
         }
       } catch (err) {
         // Не авторизован, продолжаем показывать форму
@@ -46,7 +46,7 @@ export const LoginScreen = () => {
 
       if (data.success) {
         // Редирект на главную страницу
-        history.push("/");
+        history.push("/main");
       } else {
         setError(data.error || "Ошибка при входе");
       }

@@ -41,6 +41,7 @@ import './theme/variables.css';
 
 // Custom screens
 import CreateRoomScreen from './screens/CreateRoomScreen/CreateRoomScreen';
+import HomeScreen from './screens/HomeScreen/HomeScreen';
 import AppScreen from './screens/AppScreen/AppScreen';
 import GameScreen from './screens/GameScreen/GameScreen';
 import VerifyEmailScreen from './screens/VerifyEmailScreen/VerifyEmailScreen';
@@ -67,6 +68,12 @@ const App: React.FC = () => {
           </Route>
           <Route exact path="/">
             <HomeRedirect />
+          </Route>
+          <Route exact path="/main">
+            <HomeScreen />
+          </Route>
+          <Route exact path="/create-room">
+            <CreateRoomScreen />
           </Route>
           <Route exact path="/verify-email">
             <VerifyEmailScreen />

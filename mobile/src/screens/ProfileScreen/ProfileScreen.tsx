@@ -57,13 +57,6 @@ const ProfileScreen: React.FC = () => {
     <IonPage>
       <IonContent className="ion-padding" style={{ '--background': '#0a0a0f' } as any}>
         <div className="flex flex-col items-center min-h-full px-4 py-6">
-          {/* Заголовок */}
-          <div className="w-full mb-6">
-            <IonText>
-              <h1 className="text-3xl font-bold text-white text-center mb-2">Профиль</h1>
-            </IonText>
-          </div>
-
           <div className="w-full max-w-md space-y-5">
             {/* Аватар с градиентным фоном */}
             <div className="flex flex-col items-center relative">

@@ -19,7 +19,7 @@ const LoginScreen: React.FC = () => {
         });
         const data = await response.json();
         if (data.success) {
-          history.push("/");
+          history.push("/main");
         }
       } catch (err) {
         // Не авторизован, продолжаем показывать форму
@@ -46,7 +46,7 @@ const LoginScreen: React.FC = () => {
       const data = await response.json();
 
       if (data.success) {
-        history.push("/");
+        history.push("/main");
       } else {
         setError(data.error || "Ошибка при входе");
       }

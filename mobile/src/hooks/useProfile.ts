@@ -60,7 +60,7 @@ export const useProfile = () => {
       if (data.success) {
         setSuccess("Профиль успешно обновлен!");
         setTimeout(() => {
-          history.push("/");
+          history.push("/main");
         }, 1500);
       } else {
         setError(data.error || "Ошибка при сохранении профиля");

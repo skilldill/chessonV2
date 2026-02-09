@@ -38,7 +38,7 @@ export const useProfile = () => {
     loadProfile();
   }, [history]);
 
-  const saveProfile = async () => {
+  const saveProfile = async (newAvatar: number, redirect = false) => {
     setError("");
     setSuccess("");
     setSaving(true);
@@ -52,7 +52,7 @@ export const useProfile = () => {
         credentials: "include",
         body: JSON.stringify({
           name: name.trim(),
-          avatar: avatarIndex.toString(),
+          avatar: newAvatar.toString(),
         }),
       });
 
@@ -60,9 +60,11 @@ export const useProfile = () => {
 
       if (data.success) {
         setSuccess("Профиль успешно обновлен!");
-        setTimeout(() => {
-          history.push("/");
-        }, 1500);
+        if (redirect) {
+          setTimeout(() => {
+            history.push("/main");
+          }, 1500);
+        }
       } else {
         setError(data.error || "Ошибка при сохранении профиля");
       }

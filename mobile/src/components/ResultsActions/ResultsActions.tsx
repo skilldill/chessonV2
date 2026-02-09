@@ -1,4 +1,6 @@
 import { type FC, useEffect, useState, useRef } from "react";
+import { useHistory } from "react-router-dom";
+import { API_PREFIX } from "../../constants/api";
 import styles from "./ResultsActions.module.css";
 import { ChessButton } from "../ChessButton/ChessButton";
 
@@ -11,10 +13,30 @@ export const ResultsActions: FC<ResultsActionsProps> = ({
     message,
     onClose
 }) => {
+    const history = useHistory();
     const [isClosing, setIsClosing] = useState(false);
     const [shouldRender, setShouldRender] = useState<boolean>(false);
     const [isDismissed, setIsDismissed] = useState<boolean>(false);
+    const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
     const previousMessageRef = useRef<string | undefined>(undefined);
+
+    // Проверяем авторизацию при показе модального окна
+    useEffect(() => {
+        if (message && !isDismissed) {
+            const checkAuth = async () => {
+                try {
+                    const response = await fetch(`${API_PREFIX}/auth/me`, {
+                        credentials: "include",
+                    });
+                    const data = await response.json();
+                    setIsAuthenticated(data.success && data.user);
+                } catch (err) {
+                    setIsAuthenticated(false);
+                }
+            };
+            checkAuth();
+        }
+    }, [message, isDismissed]);
 
     useEffect(() => {
         if (message && !isDismissed) {
@@ -57,6 +79,16 @@ export const ResultsActions: FC<ResultsActionsProps> = ({
         onClose();
     };
 
+    const handleSignup = () => {
+        onClose();
+        history.push("/signup");
+    };
+
+    const handleLogin = () => {
+        onClose();
+        history.push("/login");
+    };
+
     if (!shouldRender) {
         return null;
     }
@@ -76,12 +108,36 @@ export const ResultsActions: FC<ResultsActionsProps> = ({
                 <p className="text-gray-300 text-[16px] mb-4 text-center">
                     {message || 'Игра завершена'}
                 </p>
+
+                {/* Предложение регистрации для неавторизованных */}
+                {isAuthenticated === false && (
+                    <div className="w-full bg-gradient-to-r from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 rounded-lg p-4 mb-2">
+                        <p className="text-white text-sm text-center mb-3">
+                            Зарегистрируйтесь, чтобы сохранять историю игр и отслеживать статистику!
+                        </p>
+                        <div className="flex flex-col gap-2 w-full">
+                            <ChessButton 
+                                className="rounded-md text-sm font-semibold px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white cursor-pointer transition-all duration-300 active:scale-95 focus:outline-none hover:from-indigo-700 hover:to-purple-700"
+                                onClick={handleSignup}
+                            >
+                                Зарегистрироваться
+                            </ChessButton>
+                            <ChessButton 
+                                className="rounded-md text-sm font-semibold px-4 py-2 bg-white/10 text-white border border-white/20 cursor-pointer transition-all duration-300 active:scale-95 focus:outline-none hover:bg-white/20"
+                                onClick={handleLogin}
+                            >
+                                Войти
+                            </ChessButton>
+                        </div>
+                    </div>
+                )}
+
                 <div className="w-full flex gap-4">
                     <ChessButton 
-                        className="rounded-md text-sm font-semibold px-4 py-2 bg-[#4F39F6] text-white min-w-[126px] cursor-pointer transition-all duration-300 active:scale-95 focus:outline-none"
+                        className="flex-1 rounded-md text-sm font-semibold px-4 py-2 bg-[#4F39F6] text-white cursor-pointer transition-all duration-300 active:scale-95 focus:outline-none"
                         onClick={handleCloseButton}
                     >
-                        Return to the main
+                        {isAuthenticated === false ? "Продолжить без регистрации" : "Return to the main"}
                     </ChessButton>
                 </div>
             </div>
