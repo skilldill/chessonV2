@@ -131,6 +131,50 @@ ${frontendUrl}
 
 © ${new Date().getFullYear()} Chesson
 `,
+//     html: `
+// <!doctype html>
+// <html lang="ru">
+//   <head>
+//     <meta charset="utf-8" />
+//     <meta name="viewport" content="width=device-width, initial-scale=1" />
+//     <title>Chesson Update</title>
+//   </head>
+//   <body style="margin:0;padding:0;background:#0B0F1A;color:#E5E7EB;font-family:Arial,Helvetica,sans-serif;">
+//     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0B0F1A;padding:24px 0;">
+//       <tr>
+//         <td align="center">
+//           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:20px;overflow:hidden;">
+//             <tr>
+//               <td style="padding:28px 28px 8px 28px;">
+//                 <div style="font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,255,255,0.5);">Chesson</div>
+//                 <h1 style="margin:12px 0 0 0;font-size:22px;line-height:1.3;color:#F3F4F6;">У нас обновление!</h1>
+//                 <p style="margin:12px 0 0 0;font-size:15px;line-height:1.6;color:rgba(255,255,255,0.8);">
+//                   Отличной игры! Мы подготовили свежие улучшения для вашего опыта.
+//                 </p>
+//               </td>
+//             </tr>
+//             <tr>
+//               <td style="padding:16px 28px 28px 28px;">
+//                 <a href="${frontendUrl}" style="display:inline-block;background:#4F39F6;color:#FFFFFF;text-decoration:none;padding:10px 16px;border-radius:10px;font-weight:600;font-size:14px;">
+//                   Открыть Chesson
+//                 </a>
+//                 <div style="margin-top:16px;font-size:12px;color:rgba(255,255,255,0.5);">
+//                   Или перейдите по ссылке: <a href="${frontendUrl}" style="color:#9AA3B2;text-decoration:none;">${frontendUrl}</a>
+//                 </div>
+//               </td>
+//             </tr>
+//             <tr>
+//               <td style="padding:16px 28px 24px 28px;border-top:1px solid rgba(255,255,255,0.08);font-size:12px;color:rgba(255,255,255,0.5);">
+//                 © ${new Date().getFullYear()} Chesson. Все права защищены.
+//               </td>
+//             </tr>
+//           </table>
+//         </td>
+//       </tr>
+//     </table>
+//   </body>
+// </html>
+// `,
   };
 
   try {

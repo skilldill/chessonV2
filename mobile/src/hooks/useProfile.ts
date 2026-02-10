@@ -37,10 +37,11 @@ export const useProfile = () => {
     loadProfile();
   }, [history]);
 
-  const saveProfile = async () => {
+  const saveProfile = async (newAvatar?: number) => {
     setError("");
     setSuccess("");
     setSaving(true);
+    const avatarToSave = newAvatar !== undefined ? newAvatar : avatarIndex;
 
     try {
       const response = await fetch(`${API_PREFIX}/auth/profile`, {
@@ -51,7 +52,7 @@ export const useProfile = () => {
         credentials: "include",
         body: JSON.stringify({
           name: name.trim(),
-          avatar: avatarIndex.toString(),
+          avatar: avatarToSave.toString(),
         }),
       });
 

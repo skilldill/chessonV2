@@ -1,4 +1,4 @@
-import { IonPage, IonContent, IonInput, IonButton, IonText, IonItem, IonLabel } from '@ionic/react';
+import { IonPage, IonContent } from '@ionic/react';
 import { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import { API_PREFIX } from '../../constants/api';
@@ -10,7 +10,6 @@ const LoginScreen: React.FC = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Проверка авторизации при загрузке
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -21,7 +20,7 @@ const LoginScreen: React.FC = () => {
         if (data.success) {
           history.push("/main");
         }
-      } catch (err) {
+      } catch {
         // Не авторизован, продолжаем показывать форму
       }
     };
@@ -36,13 +35,10 @@ const LoginScreen: React.FC = () => {
     try {
       const response = await fetch(`${API_PREFIX}/auth/login`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({ login, password }),
       });
-
       const data = await response.json();
 
       if (data.success) {
@@ -60,67 +56,71 @@ const LoginScreen: React.FC = () => {
 
   return (
     <IonPage>
-      <IonContent className="ion-padding">
-        <div className="flex flex-col justify-center items-center h-full px-4">
-          <IonText>
-            <h1 className="text-3xl font-bold text-white mb-8 text-center">Вход</h1>
-          </IonText>
+      <IonContent className="ion-padding auth-screen-bg" fullscreen>
+        <div className="w-full min-h-full flex flex-col justify-center items-center py-6 px-4">
+          <div className="auth-card relative flex flex-col items-center fadeIn" style={{ minHeight: 320 }}>
+            <div className="auth-card-blur" />
+            <div className="w-full flex flex-col items-center relative z-10 gap-6 py-8 px-5">
+              <h3 className="text-white text-center text-2xl font-semibold">
+                Вход
+              </h3>
 
-          <form onSubmit={handleSubmit} className="w-full max-w-md space-y-4">
-            <IonItem>
-              <IonLabel position="stacked">Логин</IonLabel>
-              <IonInput
-                type="text"
-                value={login}
-                onIonInput={(e) => setLogin(e.detail.value!)}
-                required
-                placeholder="Введите логин"
-              />
-            </IonItem>
+              <form onSubmit={handleSubmit} className="w-full flex flex-col items-center gap-4">
+                <div className="relative w-full">
+                  <input
+                    type="text"
+                    value={login}
+                    onChange={(e) => setLogin(e.target.value)}
+                    required
+                    placeholder="Логин"
+                    className="auth-input"
+                    autoComplete="username"
+                  />
+                </div>
+                <div className="relative w-full">
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    placeholder="Пароль"
+                    className="auth-input"
+                    autoComplete="current-password"
+                  />
+                </div>
 
-            <IonItem>
-              <IonLabel position="stacked">Пароль</IonLabel>
-              <IonInput
-                type="password"
-                value={password}
-                onIonInput={(e) => setPassword(e.detail.value!)}
-                required
-                placeholder="Введите пароль"
-              />
-            </IonItem>
+                {error && (
+                  <div className="bg-red-500/20 border border-red-500 text-red-300 px-4 py-3 rounded-lg text-sm w-full">
+                    {error}
+                  </div>
+                )}
 
-            {error && (
-              <div className="bg-red-500/20 border border-red-500 text-red-300 px-4 py-3 rounded-lg">
-                {error}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="auth-btn-primary w-full"
+                >
+                  {loading ? "Вход..." : "Войти"}
+                </button>
+              </form>
+
+              <div className="flex flex-col items-center gap-1 text-sm">
+                <button
+                  type="button"
+                  onClick={() => history.push("/signup")}
+                  className="text-white/70 active:text-white py-2 touch-manipulation"
+                >
+                  Нет аккаунта? Зарегистрироваться
+                </button>
+                <button
+                  type="button"
+                  onClick={() => history.push("/forgot-password")}
+                  className="text-white/50 active:text-white/70 py-2 touch-manipulation"
+                >
+                  Забыли пароль?
+                </button>
               </div>
-            )}
-
-            <IonButton
-              type="submit"
-              expand="block"
-              disabled={loading}
-              className="mt-4"
-            >
-              {loading ? "Вход..." : "Войти"}
-            </IonButton>
-          </form>
-
-          <div className="mt-6 text-center space-y-2 w-full max-w-md">
-            <IonButton
-              fill="clear"
-              onClick={() => history.push("/signup")}
-              className="text-indigo-400"
-            >
-              Нет аккаунта? Зарегистрироваться
-            </IonButton>
-            <br />
-            <IonButton
-              fill="clear"
-              onClick={() => history.push("/forgot-password")}
-              className="text-gray-400"
-            >
-              Забыли пароль?
-            </IonButton>
+            </div>
           </div>
         </div>
       </IonContent>

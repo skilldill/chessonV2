@@ -1,4 +1,4 @@
-import { IonPage, IonContent, IonInput, IonButton, IonText, IonItem, IonLabel } from '@ionic/react';
+import { IonPage, IonContent } from '@ionic/react';
 import { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import { API_PREFIX } from '../../constants/api';
@@ -12,7 +12,6 @@ const SignupScreen: React.FC = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Проверка авторизации при загрузке
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -23,8 +22,8 @@ const SignupScreen: React.FC = () => {
         if (data.success) {
           history.push("/");
         }
-      } catch (err) {
-        // Не авторизован, продолжаем показывать форму
+      } catch {
+        // Не авторизован
       }
     };
     checkAuth();
@@ -38,24 +37,19 @@ const SignupScreen: React.FC = () => {
       setError("Пароли не совпадают");
       return;
     }
-
     if (password.length < 6) {
       setError("Пароль должен быть не менее 6 символов");
       return;
     }
 
     setLoading(true);
-
     try {
       const response = await fetch(`${API_PREFIX}/auth/signup`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({ login, email, password }),
       });
-
       const data = await response.json();
 
       if (data.success) {
@@ -73,84 +67,79 @@ const SignupScreen: React.FC = () => {
 
   return (
     <IonPage>
-      <IonContent className="ion-padding">
-        <div className="flex flex-col justify-center items-center h-full px-4">
-          <IonText>
-            <h1 className="text-3xl font-bold text-white mb-8 text-center">Регистрация</h1>
-          </IonText>
+      <IonContent className="ion-padding auth-screen-bg" fullscreen>
+        <div className="w-full min-h-full flex flex-col justify-center items-center py-6 px-4 overflow-y-auto">
+          <div className="auth-card relative flex flex-col items-center fadeIn" style={{ minHeight: 400 }}>
+            <div className="auth-card-blur" />
+            <div className="w-full flex flex-col items-center relative z-10 gap-5 py-8 px-5">
+              <h3 className="text-white text-center text-2xl font-semibold">
+                Регистрация
+              </h3>
 
-          <form onSubmit={handleSubmit} className="w-full max-w-md space-y-4">
-            <IonItem>
-              <IonLabel position="stacked">Логин</IonLabel>
-              <IonInput
-                type="text"
-                value={login}
-                onIonInput={(e) => setLogin(e.detail.value!)}
-                required
-                minlength={3}
-                maxlength={20}
-                placeholder="Введите логин (3-20 символов)"
-              />
-            </IonItem>
+              <form onSubmit={handleSubmit} className="w-full flex flex-col items-center gap-4">
+                <input
+                  type="text"
+                  value={login}
+                  onChange={(e) => setLogin(e.target.value)}
+                  required
+                  minLength={3}
+                  maxLength={20}
+                  placeholder="Логин (3-20 символов)"
+                  className="auth-input"
+                  autoComplete="username"
+                />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  placeholder="Email"
+                  className="auth-input"
+                  autoComplete="email"
+                />
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  placeholder="Пароль (минимум 6 символов)"
+                  className="auth-input"
+                  autoComplete="new-password"
+                />
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  placeholder="Подтвердите пароль"
+                  className="auth-input"
+                  autoComplete="new-password"
+                />
 
-            <IonItem>
-              <IonLabel position="stacked">Email</IonLabel>
-              <IonInput
-                type="email"
-                value={email}
-                onIonInput={(e) => setEmail(e.detail.value!)}
-                required
-                placeholder="Введите email"
-              />
-            </IonItem>
+                {error && (
+                  <div className="bg-red-500/20 border border-red-500 text-red-300 px-4 py-3 rounded-lg text-sm w-full">
+                    {error}
+                  </div>
+                )}
 
-            <IonItem>
-              <IonLabel position="stacked">Пароль</IonLabel>
-              <IonInput
-                type="password"
-                value={password}
-                onIonInput={(e) => setPassword(e.detail.value!)}
-                required
-                minlength={6}
-                placeholder="Введите пароль (минимум 6 символов)"
-              />
-            </IonItem>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="auth-btn-primary w-full"
+                >
+                  {loading ? "Регистрация..." : "Зарегистрироваться"}
+                </button>
+              </form>
 
-            <IonItem>
-              <IonLabel position="stacked">Подтвердите пароль</IonLabel>
-              <IonInput
-                type="password"
-                value={confirmPassword}
-                onIonInput={(e) => setConfirmPassword(e.detail.value!)}
-                required
-                placeholder="Повторите пароль"
-              />
-            </IonItem>
-
-            {error && (
-              <div className="bg-red-500/20 border border-red-500 text-red-300 px-4 py-3 rounded-lg">
-                {error}
-              </div>
-            )}
-
-            <IonButton
-              type="submit"
-              expand="block"
-              disabled={loading}
-              className="mt-4"
-            >
-              {loading ? "Регистрация..." : "Зарегистрироваться"}
-            </IonButton>
-          </form>
-
-          <div className="mt-6 text-center w-full max-w-md">
-            <IonButton
-              fill="clear"
-              onClick={() => history.push("/login")}
-              className="text-indigo-400"
-            >
-              Уже есть аккаунт? Войти
-            </IonButton>
+              <button
+                type="button"
+                onClick={() => history.push("/login")}
+                className="text-white/70 active:text-white text-sm py-2 touch-manipulation"
+              >
+                Уже есть аккаунт? Войти
+              </button>
+            </div>
           </div>
         </div>
       </IonContent>
