@@ -955,6 +955,7 @@ app.get('/api/auth/me', async ({ headers }) => {
       };
     }
 
+    const appearance = (user as any).appearance || {};
     return {
       success: true,
       user: {
@@ -963,7 +964,10 @@ app.get('/api/auth/me', async ({ headers }) => {
         email: user.email,
         name: user.name || user.login,
         avatar: user.avatar || '0',
-        emailVerified: user.emailVerified
+        emailVerified: user.emailVerified,
+        appearance: {
+          chessboardTheme: appearance.chessboardTheme || 'default'
+        }
       }
     };
   } catch (error: any) {
@@ -1032,7 +1036,7 @@ app.post('/api/auth/logout', ({ set }) => {
 // Обновление профиля пользователя
 app.put('/api/auth/profile', async ({ body, headers }) => {
   try {
-    const { name, avatar } = body;
+    const { name, avatar, appearance } = body;
 
     // Получаем токен из cookie
     const cookieHeader = headers.cookie || '';
@@ -1091,8 +1095,24 @@ app.put('/api/auth/profile', async ({ body, headers }) => {
       user.avatar = avatar.toString();
     }
 
+    if (appearance !== undefined && typeof appearance === 'object') {
+      const userAppearance = (user as any).appearance || {};
+      if (appearance.chessboardTheme !== undefined) {
+        const theme = String(appearance.chessboardTheme).trim();
+        if (theme.length <= 50) {
+          const nextAppearance = {
+            ...userAppearance,
+            chessboardTheme: theme || 'default'
+          };
+          (user as any).appearance = nextAppearance;
+          user.markModified('appearance');
+        }
+      }
+    }
+
     await user.save();
 
+    const savedAppearance = (user as any).appearance || {};
     return {
       success: true,
       message: 'Profile updated successfully',
@@ -1102,7 +1122,10 @@ app.put('/api/auth/profile', async ({ body, headers }) => {
         email: user.email,
         name: user.name || user.login,
         avatar: user.avatar || '0',
-        emailVerified: user.emailVerified
+        emailVerified: user.emailVerified,
+        appearance: {
+          chessboardTheme: savedAppearance.chessboardTheme || 'default'
+        }
       }
     };
   } catch (error: any) {
@@ -1115,7 +1138,10 @@ app.put('/api/auth/profile', async ({ body, headers }) => {
 }, {
   body: t.Object({
     name: t.Optional(t.String()),
-    avatar: t.Optional(t.String())
+    avatar: t.Optional(t.String()),
+    appearance: t.Optional(t.Object({
+      chessboardTheme: t.Optional(t.String())
+    }))
   })
 });
 

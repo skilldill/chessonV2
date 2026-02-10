@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { API_PREFIX } from "../constants/api";
+import { setChessboardThemeToStorage } from "../utils/appearanceStorage";
 
 type UseAutoConnectParams = {
     roomId: string;
@@ -73,7 +74,8 @@ export const useAutoConnect = ({
                     // Пользователь авторизован - используем данные из профиля
                     const profileName = data.user.name || data.user.login;
                     const profileAvatar = parseInt(data.user.avatar || "0");
-                    
+                    const theme = data.user.appearance?.chessboardTheme;
+                    if (theme) setChessboardThemeToStorage(theme);
                     handleSetUserName(profileName, profileAvatar);
                 }
             } catch (err) {

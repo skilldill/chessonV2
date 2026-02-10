@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { API_PREFIX } from "../constants/api";
+import { setChessboardThemeToStorage } from "../utils/appearanceStorage";
 
 export const useProfileData = () => {
   const [name, setName] = useState("");
@@ -18,6 +19,8 @@ export const useProfileData = () => {
         if (data.success && data.user) {
           setName(data.user.name || data.user.login);
           setAvatarIndex(parseInt(data.user.avatar || "0"));
+          const theme = data.user.appearance?.chessboardTheme;
+          if (theme) setChessboardThemeToStorage(theme);
         }
       } catch (err) {
         console.error("Error loading profile:", err);

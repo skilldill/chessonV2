@@ -4,17 +4,21 @@ import { BackButton } from "../../components/BackButton/BackButton";
 import { MEM_AVATARS } from "../../constants/avatars";
 import { useProfile } from "../../hooks/useProfile";
 import { useUserGames } from "../../hooks/useUserGames";
+import { CHESSBOARD_THEMES } from "../../components/ChessBoardConfigs/ChessBoardConfigs";
 
 export const ProfileScreen = () => {
   const {
     name,
     avatarIndex,
     setAvatarIndex,
+    chessboardTheme,
+    setChessboardTheme,
     loading,
     saving,
     error,
     success,
     saveProfile,
+    saveAppearance,
     logout,
   } = useProfile();
 
@@ -90,6 +94,31 @@ export const ProfileScreen = () => {
               <div className="text-white/80 text-sm font-medium mt-1">
                 Активен
               </div>
+            </div>
+          </div>
+
+          {/* Тема доски */}
+          <div className="rounded-xl border border-white/10 bg-white/4 px-4 py-4 mb-6">
+            <div className="text-white/70 text-sm mb-3">Тема шахматной доски</div>
+            <div className="flex flex-wrap gap-2">
+              {Object.keys(CHESSBOARD_THEMES).map((themeKey) => (
+                <button
+                  key={themeKey}
+                  type="button"
+                  onClick={() => {
+                    setChessboardTheme(themeKey);
+                    saveAppearance(themeKey);
+                  }}
+                  disabled={saving}
+                  className={`rounded-lg px-3 py-2 text-sm font-medium transition-all focus:outline-none cursor-pointer disabled:opacity-60 ${
+                    chessboardTheme === themeKey
+                      ? "bg-[#4F39F6]/20 text-white border border-[#4F39F6]/60"
+                      : "bg-white/5 text-white/80 border border-white/10 hover:bg-white/8"
+                  }`}
+                >
+                  {themeKey === "default" ? "Стандарт" : themeKey === "green" ? "Зелёная" : themeKey === "brown" ? "Дерево" : themeKey === "blue" ? "Синяя" : themeKey}
+                </button>
+              ))}
             </div>
           </div>
 

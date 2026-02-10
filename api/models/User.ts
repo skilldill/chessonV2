@@ -1,11 +1,16 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
+export interface IAppearance {
+  chessboardTheme?: string;
+}
+
 export interface IUser extends Document {
   login: string;
   password: string;
   email: string;
   name?: string;
   avatar?: string;
+  appearance?: IAppearance;
   emailVerified: boolean;
   emailVerificationToken?: string;
   resetPasswordToken?: string;
@@ -44,6 +49,10 @@ const UserSchema = new Schema<IUser>(
     avatar: {
       type: String,
       default: '0'
+    },
+    appearance: {
+      type: Schema.Types.Mixed,
+      default: () => ({ chessboardTheme: 'default' })
     },
     emailVerified: {
       type: Boolean,

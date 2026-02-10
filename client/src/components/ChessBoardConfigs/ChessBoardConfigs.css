@@ -1,3 +1,4 @@
+/* default theme */
 .defaultLightSquare {
     background-color: #E5E7EB;
 }
@@ -8,4 +9,43 @@
 
 .defaultPossibleMoveMark {
     background-color: #0069A8;
+}
+
+/* green theme */
+.greenLightSquare {
+    background-color: #E8F5E9;
+}
+
+.greenDarkSquare {
+    background-color: #81C784;
+}
+
+.greenPossibleMoveMark {
+    background-color: #2E7D32;
+}
+
+/* brown/wood theme */
+.brownLightSquare {
+    background-color: #D7C4A5;
+}
+
+.brownDarkSquare {
+    background-color: #8B7355;
+}
+
+.brownPossibleMoveMark {
+    background-color: #5D4037;
+}
+
+/* blue theme */
+.blueLightSquare {
+    background-color: #E3F2FD;
+}
+
+.blueDarkSquare {
+    background-color: #64B5F6;
+}
+
+.bluePossibleMoveMark {
+    background-color: #1565C0;
 }

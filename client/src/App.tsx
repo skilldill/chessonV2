@@ -33,6 +33,7 @@ import Cat6PNG from "./assets/avatars/cat_6.png";
 import Cat7PNG from "./assets/avatars/cat_7.png";
 import Cat8PNG from "./assets/avatars/cat_8.png";
 import { useRestoreGame } from "./hooks/useRestoreGame";
+import { useUserAppearancePreload } from "./hooks/useUserAppearancePreload";
 import { CreateCustomFenRoomScreen } from "./screens/CreateCustomFenRoomScreen/CreateCustomFenRoomScreen";
 
 // Все изображения для предзагрузки (вынесено за пределы компонента)
@@ -59,6 +60,8 @@ function App() {
   // Используем хук для холодной прогрузки всех изображений
   useImagePreloader(ALL_IMAGES);
   useRestoreGame();
+  // Предзагрузка темы доски в localStorage при заходе в приложение
+  useUserAppearancePreload();
 
   return (
     <Router>

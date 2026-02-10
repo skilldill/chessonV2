@@ -53,11 +53,13 @@ import ResetPasswordScreen from './screens/ResetPasswordScreen/ResetPasswordScre
 import ProfileScreen from './screens/ProfileScreen/ProfileScreen';
 import { HomeRedirect } from './components/HomeRedirect/HomeRedirect';
 import { useRestoreGame } from './hooks/useRestoreGame';
+import { useUserAppearancePreload } from './hooks/useUserAppearancePreload';
 
 setupIonicReact();
 
 const App: React.FC = () => {
   useRestoreGame();
+  useUserAppearancePreload();
 
   return (
     <IonApp>
