@@ -112,7 +112,6 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
 
     const handleCloseResults = () => {
         removeGameData();
-        window.location.href = import.meta.env.VITE_MAIN_SITE;
     };
 
     const handleSelectHistoryMove = (historyMoveData: { moveData: MoveData, isLastMove: boolean }) => {
