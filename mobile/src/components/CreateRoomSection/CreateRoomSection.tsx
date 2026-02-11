@@ -10,7 +10,7 @@ export const CreateRoomSection: React.FC = () => {
       {/* Заголовок */}
       <div className="w-full text-center">
         <h3 className="text-left text-[24px] text-white/90 font-semibold">
-          Create room
+          Create a Room
         </h3>
       </div>
 
