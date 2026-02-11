@@ -8,6 +8,10 @@ services:
     environment:
       - PORT=4000
       - MONGODB_URI=mongodb://mongodb:27017/chesson
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - FRONTEND_URL=${FRONTEND_URL}
     depends_on:
       - mongodb
     networks:
