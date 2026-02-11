@@ -25,19 +25,19 @@ export async function sendVerificationEmail(
   const mailOptions = {
     from: `"Chesson" <${process.env.SMTP_USER}>`,
     to: email,
-    subject: 'Подтверждение регистрации на Chesson',
+    subject: 'Confirm your Chesson account registration',
     text: `
-      Добро пожаловать на Chesson!
+      Welcome to Chesson!
       
-      Привет, ${login}!
+      Hi, ${login}!
       
-      Спасибо за регистрацию на Chesson. Для завершения регистрации, пожалуйста, подтвердите ваш email адрес, перейдя по ссылке:
+      Thanks for signing up for Chesson. To complete your registration, please confirm your email address using the link below:
       
       ${verificationUrl}
       
-      Если вы не регистрировались на Chesson, просто проигнорируйте это письмо.
+      If you did not sign up for Chesson, you can safely ignore this email.
       
-      © ${new Date().getFullYear()} Chesson. Все права защищены.
+      © ${new Date().getFullYear()} Chesson. All rights reserved.
     `
   };
 
@@ -63,21 +63,21 @@ export async function sendPasswordResetEmail(
   const mailOptions = {
     from: `"Chesson" <${process.env.SMTP_USER}>`,
     to: email,
-    subject: 'Восстановление пароля на Chesson',
+    subject: 'Chesson password reset',
     text: `
-      Восстановление пароля
+      Password reset
       
-      Привет, ${login}!
+      Hi, ${login}!
       
-      Вы запросили восстановление пароля для вашего аккаунта на Chesson.
+      You requested a password reset for your Chesson account.
       
-      Для сброса пароля перейдите по ссылке:
+      Use this link to reset your password:
       
       ${resetUrl}
       
-      Важно: Эта ссылка действительна в течение 1 часа. Если вы не запрашивали восстановление пароля, просто проигнорируйте это письмо.
+      Important: This link is valid for 1 hour. If you did not request a password reset, please ignore this email.
       
-      © ${new Date().getFullYear()} Chesson. Все права защищены.
+      © ${new Date().getFullYear()} Chesson. All rights reserved.
     `
   };
 
@@ -121,11 +121,11 @@ export async function sendTestEmail(email: string): Promise<void> {
       "X-Mailer": "Chesson Mailer",
     },
 
-    subject: "У нас обновление! Заходите чтобы проверить",
+    subject: "We have an update. Check it out",
     text: `
-У нас обновление!
+We have an update.
 
-Отличной игры!
+Have a great game.
 
 ${frontendUrl}
 
