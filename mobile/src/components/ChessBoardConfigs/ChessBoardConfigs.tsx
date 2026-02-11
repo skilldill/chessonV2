@@ -39,12 +39,12 @@ export const CHESSBOARD_THEMES: Record<string, ChessboardConfig> = {
         pieceSizePercent: 95,
         lightSquareClassName: "magicLightSquare",
         darkSquareClassName: "magicDarkSquare",
-        hidePieceEffectClassName: 'hideFigureEffectWithBurn',
-        onHidePieces: (piece) => {
-            setTimeout(() => {
-                piece.position = [8, piece.position![1]]
-            }, 1000)
-        },
+        // hidePieceEffectClassName: 'hideFigureEffectWithBurn',
+        // onHidePieces: (piece) => {
+        //     setTimeout(() => {
+        //         piece.position = [8, piece.position![1]]
+        //     }, 1000)
+        // },
         piecesMap: {
             "pawn-white": (size) => <img width={size} src={PawnWhitePNG} />,
             "pawn-black": (size) => <img width={size} src={PawnBlackPNG} />,
