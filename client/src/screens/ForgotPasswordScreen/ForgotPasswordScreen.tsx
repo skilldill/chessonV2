@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { useHistory, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { API_PREFIX } from "../../constants/api";
 
 export const ForgotPasswordScreen = () => {
-  const history = useHistory();
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
