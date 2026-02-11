@@ -8,7 +8,7 @@ type MemAvatarSelectProps = {
 
 export const MemAvatarSelect: FC<MemAvatarSelectProps> = ({ onSelectAvatar, initialSelected = 0 }) => {
     const [selected, setSelected] = useState<number>(initialSelected);
-    const [prevSelected, setPrevSelected] = useState<number>(initialSelected);
+    const [_, setPrevSelected] = useState<number>(initialSelected);
     const [isAnimating, setIsAnimating] = useState(false);
 
     useEffect(() => {
