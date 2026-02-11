@@ -26,7 +26,7 @@ export const HomeRedirect = () => {
           setIsAuthenticated(false);
         }
       } catch (err) {
-        // Ошибка или не авторизован - показываем CreateRoomScreen
+        // Error или не авторизован - показываем CreateRoomScreen
         setIsAuthenticated(false);
       } finally {
         setChecking(false);

@@ -17,7 +17,7 @@ const ResetPasswordScreen: React.FC = () => {
     const params = new URLSearchParams(location.search);
     const tokenParam = params.get("token");
     if (!tokenParam) {
-      setError("Токен восстановления не найден");
+      setError("Reset token not found");
     } else {
       setToken(tokenParam);
     }
@@ -28,15 +28,15 @@ const ResetPasswordScreen: React.FC = () => {
     setError("");
 
     if (!token) {
-      setError("Токен восстановления не найден");
+      setError("Reset token not found");
       return;
     }
     if (password !== confirmPassword) {
-      setError("Пароли не совпадают");
+      setError("Passwords do not match");
       return;
     }
     if (password.length < 6) {
-      setError("Пароль должен быть не менее 6 символов");
+      setError("Password must be at least 6 characters");
       return;
     }
 
@@ -54,11 +54,11 @@ const ResetPasswordScreen: React.FC = () => {
         setSuccess(true);
         setTimeout(() => history.push("/login"), 2000);
       } else {
-        setError(data.error || "Ошибка при сбросе пароля");
+        setError(data.error || "Error resetting password");
       }
     } catch (err) {
       console.error("Reset password error:", err);
-      setError("Произошла ошибка при сбросе пароля");
+      setError("An error occurred while resetting password");
     } finally {
       setLoading(false);
     }
@@ -72,13 +72,13 @@ const ResetPasswordScreen: React.FC = () => {
             <div className="auth-card-blur" />
             <div className="w-full flex flex-col items-center relative z-10 gap-6 py-8 px-5">
               <h3 className="text-white text-center text-2xl font-semibold">
-                Сброс пароля
+                Password reset
               </h3>
 
               {success ? (
                 <div className="w-full flex flex-col items-center gap-4">
                   <div className="bg-green-500/20 border border-green-500 text-green-300 px-4 py-3 rounded-lg text-sm w-full text-center">
-                    Пароль успешно изменен. Перенаправление на страницу входа...
+                    Password changed successfully. Redirecting to sign-in page...
                   </div>
                 </div>
               ) : (
@@ -90,7 +90,7 @@ const ResetPasswordScreen: React.FC = () => {
                       onChange={(e) => setPassword(e.target.value)}
                       required
                       minLength={6}
-                      placeholder="Новый пароль (минимум 6 символов)"
+                      placeholder="New password (minimum 6 characters)"
                       className="auth-input"
                       autoComplete="new-password"
                     />
@@ -99,7 +99,7 @@ const ResetPasswordScreen: React.FC = () => {
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       required
-                      placeholder="Подтвердите пароль"
+                      placeholder="Confirm password"
                       className="auth-input"
                       autoComplete="new-password"
                     />
@@ -115,7 +115,7 @@ const ResetPasswordScreen: React.FC = () => {
                       disabled={loading || !token}
                       className="auth-btn-primary w-full"
                     >
-                      {loading ? "Сброс..." : "Сбросить пароль"}
+                      {loading ? "Resetting..." : "Reset password"}
                     </button>
                   </form>
 
@@ -124,7 +124,7 @@ const ResetPasswordScreen: React.FC = () => {
                     onClick={() => history.push("/login")}
                     className="text-white/70 active:text-white text-sm py-2 touch-manipulation"
                   >
-                    Вернуться к входу
+                    Back to sign in
                   </button>
                 </>
               )}

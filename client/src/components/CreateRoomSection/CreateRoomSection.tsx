@@ -15,7 +15,7 @@ export const CreateRoomSection = () => {
       {/* Заголовок */}
       <div className="w-full text-center">
         <h3 className="text-left text-[24px] text-white/90 font-semibold">
-          Создать комнату
+          Create room
         </h3>
       </div>
 
@@ -27,7 +27,7 @@ export const CreateRoomSection = () => {
           className="rounded-xl px-4 py-4 bg-white/5 border border-white/10 text-white/90 font-semibold hover:bg-white/8 hover:border-[#4F39F6]/50 transition-all duration-200 active:scale-[0.98] focus:outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <div className="flex flex-col items-center gap-1">
-            <span className="text-lg font-bold">3 мин</span>
+            <span className="text-lg font-bold">3 min</span>
           </div>
         </button>
 
@@ -37,7 +37,7 @@ export const CreateRoomSection = () => {
           className="rounded-xl px-4 py-4 bg-white/5 border border-white/10 text-white/90 font-semibold hover:bg-white/8 hover:border-[#4F39F6]/50 transition-all duration-200 active:scale-[0.98] focus:outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <div className="flex flex-col items-center gap-1">
-            <span className="text-lg font-bold">3 мин + 2 сек</span>
+            <span className="text-lg font-bold">3 min + 2 sec</span>
           </div>
         </button>
 
@@ -47,7 +47,7 @@ export const CreateRoomSection = () => {
           className="rounded-xl px-4 py-4 bg-white/5 border border-white/10 text-white/90 font-semibold hover:bg-white/8 hover:border-[#4F39F6]/50 transition-all duration-200 active:scale-[0.98] focus:outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <div className="flex flex-col items-center gap-1">
-            <span className="text-lg font-bold">5 мин</span>
+            <span className="text-lg font-bold">5 min</span>
           </div>
         </button>
 
@@ -57,7 +57,7 @@ export const CreateRoomSection = () => {
           className="rounded-xl px-4 py-4 bg-white/5 border border-white/10 text-white/90 font-semibold hover:bg-white/8 hover:border-[#4F39F6]/50 transition-all duration-200 active:scale-[0.98] focus:outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <div className="flex flex-col items-center gap-1">
-            <span className="text-lg font-bold">5 мин + 2 сек</span>
+            <span className="text-lg font-bold">5 min + 2 sec</span>
           </div>
         </button>
 
@@ -67,7 +67,7 @@ export const CreateRoomSection = () => {
           className="rounded-xl px-4 py-4 bg-white/5 border border-white/10 text-white/90 font-semibold hover:bg-white/8 hover:border-[#4F39F6]/50 transition-all duration-200 active:scale-[0.98] focus:outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <div className="flex flex-col items-center gap-1">
-            <span className="text-lg font-bold">10 мин</span>
+            <span className="text-lg font-bold">10 min</span>
           </div>
         </button>
 
@@ -77,7 +77,7 @@ export const CreateRoomSection = () => {
           className="rounded-xl px-4 py-4 bg-white/5 border border-white/10 text-white/90 font-semibold hover:bg-white/8 hover:border-[#4F39F6]/50 transition-all duration-200 active:scale-[0.98] focus:outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <div className="flex flex-col items-center gap-1">
-            <span className="text-lg font-bold">10 мин + 5 сек</span>
+            <span className="text-lg font-bold">10 min + 5 sec</span>
           </div>
         </button>
       </div>
@@ -96,17 +96,17 @@ export const CreateRoomSection = () => {
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
-          {showTimeSettings ? "Скрыть настройки" : "Настроить время"}
+          {showTimeSettings ? "Hide settings" : "Set time"}
         </div>
       </button>
 
-      {/* Настройки времени - раскрывающийся блок */}
+      {/* Time settings - раскрывающийся блок */}
       {showTimeSettings && (
         <div className="w-full bg-white/5 border border-white/10 rounded-xl p-6 space-y-6 animate-in fade-in slide-in-from-top-2 duration-300">
           {/* Время на игрока */}
           <div className="flex flex-col gap-3">
             <label className="text-white/70 text-sm font-medium">
-              Время на игрока (минуты)
+              Time per player (minutes)
             </label>
             <div className="grid grid-cols-4 gap-2">
               {MINUTES_FOR_PLAYER.map((value) => (
@@ -130,7 +130,7 @@ export const CreateRoomSection = () => {
           {/* Добавка времени */}
           <div className="flex flex-col gap-3">
             <label className="text-white/70 text-sm font-medium">
-              Добавка времени (секунды)
+              Increment (seconds)
             </label>
             <div className="grid grid-cols-4 gap-2">
               {SECONDS_FOR_MOVE.map((value) => (
@@ -160,12 +160,12 @@ export const CreateRoomSection = () => {
             {isCreating ? (
               <div className="flex items-center justify-center gap-2">
                 <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                Создание...
+                Creating...
               </div>
             ) : (
               <div className="flex flex-col items-center gap-1">
-                <span className="text-lg font-bold">Создать комнату</span>
-                <span className="text-sm opacity-90">{timeMinutes} мин + {incrementSeconds} сек</span>
+                <span className="text-lg font-bold">Create room</span>
+                <span className="text-sm opacity-90">{timeMinutes} min + {incrementSeconds} sec</span>
               </div>
             )}
           </button>

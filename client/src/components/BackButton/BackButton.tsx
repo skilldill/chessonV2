@@ -5,7 +5,7 @@ type BackButtonProps = {
   label?: string;
 };
 
-export const BackButton = ({ to = "/main", label = "Назад" }: BackButtonProps) => {
+export const BackButton = ({ to = "/main", label = "Back" }: BackButtonProps) => {
   const history = useHistory();
 
   const handleClick = () => {

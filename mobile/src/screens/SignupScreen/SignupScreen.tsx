@@ -34,11 +34,11 @@ const SignupScreen: React.FC = () => {
     setError("");
 
     if (password !== confirmPassword) {
-      setError("Пароли не совпадают");
+      setError("Passwords do not match");
       return;
     }
     if (password.length < 6) {
-      setError("Пароль должен быть не менее 6 символов");
+      setError("Password must be at least 6 characters");
       return;
     }
 
@@ -55,11 +55,11 @@ const SignupScreen: React.FC = () => {
       if (data.success) {
         history.push("/signup-success");
       } else {
-        setError(data.error || "Ошибка при регистрации");
+        setError(data.error || "Sign-up error");
       }
     } catch (err) {
       console.error("Signup error:", err);
-      setError("Произошла ошибка при регистрации");
+      setError("An error occurred during sign-up");
     } finally {
       setLoading(false);
     }
@@ -73,7 +73,7 @@ const SignupScreen: React.FC = () => {
             <div className="auth-card-blur" />
             <div className="w-full flex flex-col items-center relative z-10 gap-5 py-8 px-5">
               <h3 className="text-white text-center text-2xl font-semibold">
-                Регистрация
+                Sign up
               </h3>
 
               <form onSubmit={handleSubmit} className="w-full flex flex-col items-center gap-4">
@@ -84,7 +84,7 @@ const SignupScreen: React.FC = () => {
                   required
                   minLength={3}
                   maxLength={20}
-                  placeholder="Логин (3-20 символов)"
+                  placeholder="Username (3-20 characters)"
                   className="auth-input"
                   autoComplete="username"
                 />
@@ -103,7 +103,7 @@ const SignupScreen: React.FC = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   minLength={6}
-                  placeholder="Пароль (минимум 6 символов)"
+                  placeholder="Password (minimum 6 characters)"
                   className="auth-input"
                   autoComplete="new-password"
                 />
@@ -112,7 +112,7 @@ const SignupScreen: React.FC = () => {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
-                  placeholder="Подтвердите пароль"
+                  placeholder="Confirm password"
                   className="auth-input"
                   autoComplete="new-password"
                 />
@@ -128,7 +128,7 @@ const SignupScreen: React.FC = () => {
                   disabled={loading}
                   className="auth-btn-primary w-full"
                 >
-                  {loading ? "Регистрация..." : "Зарегистрироваться"}
+                  {loading ? "Signing up..." : "Sign up"}
                 </button>
               </form>
 
@@ -137,7 +137,7 @@ const SignupScreen: React.FC = () => {
                 onClick={() => history.push("/login")}
                 className="text-white/70 active:text-white text-sm py-2 touch-manipulation"
               >
-                Уже есть аккаунт? Войти
+                Already have an account? Sign in
               </button>
             </div>
           </div>

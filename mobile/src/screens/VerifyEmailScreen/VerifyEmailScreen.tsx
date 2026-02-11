@@ -12,8 +12,8 @@ const VerifyEmailScreen: React.FC = () => {
             <>
               <IonSpinner name="crescent" className="mb-4" style={{ width: '48px', height: '48px' }} />
               <IonText>
-                <h1 className="text-2xl font-bold text-white mb-2 text-center">Подтверждение email</h1>
-                <p className="text-gray-400 text-center">Пожалуйста, подождите...</p>
+                <h1 className="text-2xl font-bold text-white mb-2 text-center">Email verification</h1>
+                <p className="text-gray-400 text-center">Please wait...</p>
               </IonText>
             </>
           )}
@@ -28,9 +28,9 @@ const VerifyEmailScreen: React.FC = () => {
                 </div>
               </div>
               <IonText>
-                <h1 className="text-2xl font-bold text-white mb-2 text-center">Успешно!</h1>
+                <h1 className="text-2xl font-bold text-white mb-2 text-center">Success!</h1>
                 <p className="text-gray-300 mb-4 text-center">{message}</p>
-                <p className="text-sm text-gray-400 text-center">Вы будете перенаправлены на страницу профиля...</p>
+                <p className="text-sm text-gray-400 text-center">You will be redirected to your profile page...</p>
               </IonText>
             </>
           )}
@@ -45,14 +45,14 @@ const VerifyEmailScreen: React.FC = () => {
                 </div>
               </div>
               <IonText>
-                <h1 className="text-2xl font-bold text-white mb-2 text-center">Ошибка</h1>
+                <h1 className="text-2xl font-bold text-white mb-2 text-center">Error</h1>
                 <p className="text-gray-300 mb-4 text-center">{message}</p>
               </IonText>
               <button
                 onClick={goToProfile}
                 className="mt-4 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
               >
-                Перейти в профиль
+                Go to profile
               </button>
             </>
           )}

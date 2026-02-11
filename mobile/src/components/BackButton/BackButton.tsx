@@ -5,7 +5,7 @@ type BackButtonProps = {
   label?: string;
 };
 
-export const BackButton: React.FC<BackButtonProps> = ({ to = "/main", label = "Назад" }) => {
+export const BackButton: React.FC<BackButtonProps> = ({ to = "/main", label = "Back" }) => {
   const history = useHistory();
 
   const handleClick = () => {

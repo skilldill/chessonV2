@@ -11,15 +11,15 @@ export const SignupSuccessScreen = () => {
             </svg>
           </div>
         </div>
-        <h1 className="text-2xl font-bold text-gray-800 mb-4">Регистрация успешна!</h1>
+        <h1 className="text-2xl font-bold text-gray-800 mb-4">Registration successful!</h1>
         <p className="text-gray-600 mb-6">
-          Мы отправили письмо с подтверждением на ваш email. Пожалуйста, проверьте почту и перейдите по ссылке для активации аккаунта.
+          We sent a confirmation email to your address. Please check your inbox and follow the link to activate your account.
         </p>
         <Link
           to="/login"
           className="inline-block bg-green-500 text-white py-2 px-6 rounded-lg hover:bg-green-600 transition-colors"
         >
-          Перейти к входу
+          Go to sign in
         </Link>
       </div>
     </div>

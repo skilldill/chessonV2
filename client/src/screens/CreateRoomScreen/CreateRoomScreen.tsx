@@ -56,14 +56,14 @@ export const CreateRoomScreen = () => {
                 
                 <div className="w-full h-full flex flex-col items-center absolute top-0 left-0 gap-[32px] z-40 py-[32px]">
                     <h3 className="text-white text-center text-3xl font-semibold">
-                        Настройки времени
+                        Time settings
                     </h3>
 
                     <div className="w-full flex flex-col gap-6 px-8">
                         {/* Время на игрока */}
                         <div className="flex flex-col gap-3">
                             <label className="text-white/80 text-sm font-medium">
-                                Время на игрока (минуты)
+                                Time per player (minutes)
                             </label>
                             <div className="grid grid-cols-4 gap-2">
                                 {MINUTES_FOR_PLAYER.map((value) => (
@@ -86,7 +86,7 @@ export const CreateRoomScreen = () => {
                         {/* Добавка времени */}
                         <div className="flex flex-col gap-3">
                             <label className="text-white/80 text-sm font-medium">
-                                Добавка времени (секунды)
+                                Increment (seconds)
                             </label>
                             <div className="grid grid-cols-4 gap-2">
                                 {SECONDS_FOR_MOVE.map((value) => (
@@ -117,14 +117,14 @@ export const CreateRoomScreen = () => {
                             disabled={isCreating}
                             className="rounded-md text-sm font-semibold px-4 py-2 bg-[#4F39F6] text-white min-w-[126px] cursor-pointer transition-all duration-300 active:scale-95 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed w-full"
                         >
-                            {isCreating ? "Создание..." : "Создать комнату"}
+                            {isCreating ? "Creating..." : "Create room"}
                         </button>
 
                         <button
                             onClick={() => history.push("/")}
                             className="rounded-md text-sm font-semibold px-4 py-2 bg-white/10 text-white min-w-[126px] cursor-pointer transition-all duration-300 active:scale-95 focus:outline-none w-full border border-white/20"
                         >
-                            Назад
+                            Back
                         </button>
                     </div>
                 </div>

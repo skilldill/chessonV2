@@ -48,11 +48,11 @@ export const LoginScreen = () => {
         // Редирект на главную страницу
         history.push("/main");
       } else {
-        setError(data.error || "Ошибка при входе");
+        setError(data.error || "Login error");
       }
     } catch (err) {
       console.error("Login error:", err);
-      setError("Произошла ошибка при входе");
+      setError("An error occurred while signing in");
     } finally {
       setLoading(false);
     }
@@ -65,7 +65,7 @@ export const LoginScreen = () => {
         
         <div className="w-full flex flex-col items-center relative gap-[32px] z-40 py-[32px]">
           <h3 className="text-white text-center text-3xl font-semibold">
-            Вход
+            Login
           </h3>
 
           <form onSubmit={handleSubmit} className="w-full flex flex-col items-center gap-[24px] px-[32px]">
@@ -75,7 +75,7 @@ export const LoginScreen = () => {
                 value={login}
                 onChange={(e) => setLogin(e.target.value)}
                 required
-                placeholder="Логин"
+                placeholder="Username"
                 className="bg-white/4 w-full h-[40px] px-[12px] py-[10px] border border-white/10 border-solid rounded-md focus:border-indigo-700 focus:outline-none transition-all duration-200 placeholder-[#99A1AF] text-white"
               />
             </div>
@@ -86,7 +86,7 @@ export const LoginScreen = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                placeholder="Пароль"
+                placeholder="Password"
                 className="bg-white/4 w-full h-[40px] px-[12px] py-[10px] border border-white/10 border-solid rounded-md focus:border-indigo-700 focus:outline-none transition-all duration-200 placeholder-[#99A1AF] text-white"
               />
             </div>
@@ -102,7 +102,7 @@ export const LoginScreen = () => {
               disabled={loading}
               className="rounded-md text-sm font-semibold px-4 py-2 bg-[#4F39F6] text-white min-w-[126px] cursor-pointer transition-all duration-300 active:scale-95 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? "Вход..." : "Войти"}
+              {loading ? "Signing in..." : "Sign in"}
             </button>
           </form>
 
@@ -111,13 +111,13 @@ export const LoginScreen = () => {
               to="/signup"
               className="text-white/70 hover:text-white transition-colors"
             >
-              Нет аккаунта? Зарегистрироваться
+              Don't have an account? Sign up
             </Link>
             <Link
               to="/forgot-password"
               className="text-white/50 hover:text-white/70 transition-colors"
             >
-              Забыли пароль?
+              Forgot password?
             </Link>
           </div>
         </div>

@@ -105,27 +105,27 @@ export const ResultsActions: FC<ResultsActionsProps> = ({
                     Game Result
                 </h2>
                 <p className="text-gray-300 text-sm mb-4 text-center">
-                    {message || 'Игра завершена'}
+                    {message || 'Game over'}
                 </p>
 
                 {/* Предложение регистрации для неавторизованных */}
                 {isAuthenticated === false && (
                     <div className="w-full bg-gradient-to-r from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 rounded-lg p-4 mb-2">
                         <p className="text-white text-sm text-center mb-3">
-                            Зарегистрируйтесь, чтобы сохранять историю игр и отслеживать статистику!
+                            Sign up to save game history and track your stats!
                         </p>
                         <div className="flex flex-col gap-2">
                             <button 
                                 className="rounded-md text-sm font-semibold px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white cursor-pointer transition-all duration-300 active:scale-95 focus:outline-none hover:from-indigo-700 hover:to-purple-700"
                                 onClick={handleSignup}
                             >
-                                Зарегистрироваться
+                                Sign up
                             </button>
                             <button 
                                 className="rounded-md text-sm font-semibold px-4 py-2 bg-white/10 text-white border border-white/20 cursor-pointer transition-all duration-300 active:scale-95 focus:outline-none hover:bg-white/20"
                                 onClick={handleLogin}
                             >
-                                Войти
+                                Sign in
                             </button>
                         </div>
                     </div>
@@ -136,7 +136,7 @@ export const ResultsActions: FC<ResultsActionsProps> = ({
                         className="flex-1 rounded-md text-sm font-semibold px-4 py-2 bg-[#4F39F6] text-white cursor-pointer transition-all duration-300 active:scale-95 focus:outline-none"
                         onClick={handleCloseButton}
                     >
-                        {isAuthenticated === false ? "Продолжить без регистрации" : "Return to the main"}
+                        {isAuthenticated === false ? "Continue without registration" : "Return to the main"}
                     </button>
                 </div>
             </div>

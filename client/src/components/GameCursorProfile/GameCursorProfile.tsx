@@ -37,7 +37,7 @@ export const GameCursorProfile: FC<GameCursorProfileProps> = ({
             style={{ top: `${opponentCursor.y}px`, left: `${opponentCursor.x}px`, opacity: isOpponentTurn ? 1 : 0 }}
         >
             <CursorProfile 
-                nickname={opponent?.userName || "Игрок"}
+                nickname={opponent?.userName || "Player"}
                 avatar={avatarSrc}
             />
         </div>

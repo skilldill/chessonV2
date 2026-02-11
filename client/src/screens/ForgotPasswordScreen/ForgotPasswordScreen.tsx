@@ -30,11 +30,11 @@ export const ForgotPasswordScreen = () => {
       if (data.success) {
         setSuccess(true);
       } else {
-        setError(data.error || "Ошибка при отправке запроса");
+        setError(data.error || "Error sending request");
       }
     } catch (err) {
       console.error("Forgot password error:", err);
-      setError("Произошла ошибка при отправке запроса");
+      setError("An error occurred while sending request");
     } finally {
       setLoading(false);
     }
@@ -47,19 +47,19 @@ export const ForgotPasswordScreen = () => {
         
         <div className="w-full h-full flex flex-col items-center absolute top-0 left-0 gap-[32px] z-40 py-[32px]">
           <h3 className="text-white text-center text-3xl font-semibold">
-            Восстановление пароля
+            Password recovery
           </h3>
 
           {success ? (
             <div className="w-full flex flex-col items-center gap-[24px] px-[32px]">
               <div className="bg-green-500/20 border border-green-500 text-green-300 px-4 py-3 rounded-lg text-sm w-full text-center">
-                Если пользователь с таким email существует, ссылка для восстановления пароля была отправлена на указанный адрес.
+                If a user with this email exists, a password recovery link has been sent.
               </div>
               <Link
                 to="/login"
                 className="text-white/70 hover:text-white transition-colors text-sm"
               >
-                Вернуться к входу
+                Back to sign in
               </Link>
             </div>
           ) : (
@@ -87,7 +87,7 @@ export const ForgotPasswordScreen = () => {
                   disabled={loading}
                   className="rounded-md text-sm font-semibold px-4 py-2 bg-[#4F39F6] text-white min-w-[126px] cursor-pointer transition-all duration-300 active:scale-95 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {loading ? "Отправка..." : "Отправить"}
+                  {loading ? "Sending..." : "Send"}
                 </button>
               </form>
 
@@ -96,7 +96,7 @@ export const ForgotPasswordScreen = () => {
                   to="/login"
                   className="text-white/70 hover:text-white transition-colors"
                 >
-                  Вернуться к входу
+                  Back to sign in
                 </Link>
               </div>
             </>

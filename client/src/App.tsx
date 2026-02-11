@@ -23,7 +23,7 @@ import CursorSVG from "./assets/cursor.svg";
 import FemaleTechnologistPNG from "./assets/female-technologist.png";
 import ShrugPNG from "./assets/shrug.png";
 
-// Импорт аватаров
+// Import avatars
 import Cat1PNG from "./assets/avatars/cat_1.png";
 import Cat2PNG from "./assets/avatars/cat_2.png";
 import Cat3PNG from "./assets/avatars/cat_3.png";
@@ -45,7 +45,7 @@ const ALL_IMAGES = [
   CursorSVG,
   FemaleTechnologistPNG,
   ShrugPNG,
-  // Аватары
+  // Avatars
   Cat1PNG,
   Cat2PNG,
   Cat3PNG,

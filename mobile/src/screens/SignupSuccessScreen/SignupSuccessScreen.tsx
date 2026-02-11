@@ -17,17 +17,17 @@ const SignupSuccessScreen: React.FC = () => {
                 </svg>
               </div>
               <h1 className="text-2xl font-bold text-white text-center">
-                Регистрация успешна!
+                Registration successful!
               </h1>
               <p className="text-white/70 text-center text-sm leading-relaxed">
-                Мы отправили письмо с подтверждением на ваш email. Пожалуйста, проверьте почту и перейдите по ссылке для активации аккаунта.
+                We sent a confirmation email to your address. Please check your inbox and follow the link to activate your account.
               </p>
               <button
                 type="button"
                 onClick={() => history.push("/login")}
                 className="auth-btn-primary w-full"
               >
-                Перейти к входу
+                Go to sign in
               </button>
             </div>
           </div>

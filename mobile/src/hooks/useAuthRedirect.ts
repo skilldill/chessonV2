@@ -23,7 +23,7 @@ export const useAuthRedirect = () => {
           setChecking(false);
         }
       } catch (err) {
-        // Ошибка или не авторизован - остаемся на текущей странице
+        // Error или не авторизован - остаемся на текущей странице
         console.error("Auth check error:", err);
         setChecking(false);
       }

@@ -18,7 +18,7 @@ export const ResetPasswordScreen = () => {
     const tokenParam = params.get("token");
     
     if (!tokenParam) {
-      setError("Токен восстановления не найден");
+      setError("Reset token not found");
     } else {
       setToken(tokenParam);
     }
@@ -29,17 +29,17 @@ export const ResetPasswordScreen = () => {
     setError("");
 
     if (!token) {
-      setError("Токен восстановления не найден");
+      setError("Reset token not found");
       return;
     }
 
     if (password !== confirmPassword) {
-      setError("Пароли не совпадают");
+      setError("Passwords do not match");
       return;
     }
 
     if (password.length < 6) {
-      setError("Пароль должен быть не менее 6 символов");
+      setError("Password must be at least 6 characters");
       return;
     }
 
@@ -59,16 +59,16 @@ export const ResetPasswordScreen = () => {
 
       if (data.success) {
         setSuccess(true);
-        // Перенаправляем на страницу входа через 2 секунды
+        // Перенаправляем на страницу входа через 2 secунды
         setTimeout(() => {
           history.push("/login");
         }, 2000);
       } else {
-        setError(data.error || "Ошибка при сбросе пароля");
+        setError(data.error || "Error resetting password");
       }
     } catch (err) {
       console.error("Reset password error:", err);
-      setError("Произошла ошибка при сбросе пароля");
+      setError("An error occurred while resetting password");
     } finally {
       setLoading(false);
     }
@@ -81,13 +81,13 @@ export const ResetPasswordScreen = () => {
         
         <div className="w-full h-full flex flex-col items-center absolute top-0 left-0 gap-[32px] z-40 py-[32px]">
           <h3 className="text-white text-center text-3xl font-semibold">
-            Сброс пароля
+            Password reset
           </h3>
 
           {success ? (
             <div className="w-full flex flex-col items-center gap-[24px] px-[32px]">
               <div className="bg-green-500/20 border border-green-500 text-green-300 px-4 py-3 rounded-lg text-sm w-full text-center">
-                Пароль успешно изменен. Перенаправление на страницу входа...
+                Password changed successfully. Redirecting to sign-in page...
               </div>
             </div>
           ) : (
@@ -100,7 +100,7 @@ export const ResetPasswordScreen = () => {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     minLength={6}
-                    placeholder="Новый пароль (минимум 6 символов)"
+                    placeholder="New password (minimum 6 characters)"
                     className="bg-white/4 w-full h-[40px] px-[12px] py-[10px] border border-white/10 border-solid rounded-md focus:border-indigo-700 focus:outline-none transition-all duration-200 placeholder-[#99A1AF] text-white"
                   />
                 </div>
@@ -111,7 +111,7 @@ export const ResetPasswordScreen = () => {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
-                    placeholder="Подтвердите пароль"
+                    placeholder="Confirm password"
                     className="bg-white/4 w-full h-[40px] px-[12px] py-[10px] border border-white/10 border-solid rounded-md focus:border-indigo-700 focus:outline-none transition-all duration-200 placeholder-[#99A1AF] text-white"
                   />
                 </div>
@@ -127,7 +127,7 @@ export const ResetPasswordScreen = () => {
                   disabled={loading || !token}
                   className="rounded-md text-sm font-semibold px-4 py-2 bg-[#4F39F6] text-white min-w-[126px] cursor-pointer transition-all duration-300 active:scale-95 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {loading ? "Сброс..." : "Сбросить пароль"}
+                  {loading ? "Resetting..." : "Reset password"}
                 </button>
               </form>
 
@@ -136,7 +136,7 @@ export const ResetPasswordScreen = () => {
                   to="/login"
                   className="text-white/70 hover:text-white transition-colors"
                 >
-                  Вернуться к входу
+                  Back to sign in
                 </Link>
               </div>
             </>

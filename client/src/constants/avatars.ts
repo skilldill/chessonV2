@@ -1,4 +1,4 @@
-// Импорт аватаров
+// Import avatars
 import Cat1PNG from "../assets/avatars/cat_1.png";
 import Cat2PNG from "../assets/avatars/cat_2.png";
 import Cat3PNG from "../assets/avatars/cat_3.png";
@@ -10,7 +10,7 @@ import Cat8PNG from "../assets/avatars/cat_8.png";
 
 // Все изображения для предзагрузки (вынесено за пределы компонента)
 export const MEM_AVATARS = [
-    // Аватары
+    // Avatars
     Cat1PNG,
     Cat2PNG,
     Cat3PNG,

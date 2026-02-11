@@ -18,7 +18,7 @@ export const useVerifyEmail = () => {
 
       if (!token) {
         setStatus('error');
-        setMessage('Токен подтверждения не найден');
+        setMessage('Verification token not found');
         return;
       }
 
@@ -35,7 +35,7 @@ export const useVerifyEmail = () => {
 
         if (data.success) {
           setStatus('success');
-          setMessage(data.message || 'Email успешно подтвержден!');
+          setMessage(data.message || 'Email verified successfully!');
           
           // Редирект на экран профиля через 3 секунды
           setTimeout(() => {
@@ -43,12 +43,12 @@ export const useVerifyEmail = () => {
           }, 3000);
         } else {
           setStatus('error');
-          setMessage(data.error || 'Ошибка при подтверждении email');
+          setMessage(data.error || 'Error verifying email');
         }
       } catch (error) {
         console.error('Error verifying email:', error);
         setStatus('error');
-        setMessage('Произошла ошибка при подтверждении email');
+        setMessage('An error occurred while verifying email');
       }
     };
 

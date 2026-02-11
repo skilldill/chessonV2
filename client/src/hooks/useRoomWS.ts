@@ -26,8 +26,8 @@ const INITIAL_GAME_STATE = {
     drawOffer: undefined,
     drawOfferCount: {},
     timer: {
-        whiteTime: 600, // 10 минут по умолчанию
-        blackTime: 600, // 10 минут по умолчанию
+        whiteTime: 600, // 10 minут по умолчанию
+        blackTime: 600, // 10 minут по умолчанию
         whiteIncrement: 0, // без добавки времени
         blackIncrement: 0,  // без добавки времени
         initialWhiteTime: 600,
@@ -193,7 +193,7 @@ export const useRoomWS = (roomId: string) => {
     const startConnectionCheck = () => {
         clearConnectionCheck();
         
-        // Проверяем соединение каждые 5 секунд
+        // Проверяем соединение каждые 5 secунд
         connectionCheckIntervalRef.current = setInterval(() => {
             const ws = refWS.current;
             const now = Date.now();

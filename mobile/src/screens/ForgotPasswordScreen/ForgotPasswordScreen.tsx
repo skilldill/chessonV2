@@ -28,11 +28,11 @@ const ForgotPasswordScreen: React.FC = () => {
       if (data.success) {
         setSuccess(true);
       } else {
-        setError(data.error || "Ошибка при отправке запроса");
+        setError(data.error || "Error sending request");
       }
     } catch (err) {
       console.error("Forgot password error:", err);
-      setError("Произошла ошибка при отправке запроса");
+      setError("An error occurred while sending request");
     } finally {
       setLoading(false);
     }
@@ -46,20 +46,20 @@ const ForgotPasswordScreen: React.FC = () => {
             <div className="auth-card-blur" />
             <div className="w-full flex flex-col items-center relative z-10 gap-6 py-8 px-5">
               <h3 className="text-white text-center text-2xl font-semibold">
-                Восстановление пароля
+                Password recovery
               </h3>
 
               {success ? (
                 <div className="w-full flex flex-col items-center gap-4">
                   <div className="bg-green-500/20 border border-green-500 text-green-300 px-4 py-3 rounded-lg text-sm w-full text-center">
-                    Если пользователь с таким email существует, ссылка для восстановления пароля была отправлена на указанный адрес.
+                    If a user with this email exists, a password recovery link has been sent.
                   </div>
                   <button
                     type="button"
                     onClick={() => history.push("/login")}
                     className="text-white/70 active:text-white text-sm py-3 touch-manipulation"
                   >
-                    Вернуться к входу
+                    Back to sign in
                   </button>
                 </div>
               ) : (
@@ -86,7 +86,7 @@ const ForgotPasswordScreen: React.FC = () => {
                       disabled={loading}
                       className="auth-btn-primary w-full"
                     >
-                      {loading ? "Отправка..." : "Отправить"}
+                      {loading ? "Sending..." : "Send"}
                     </button>
                   </form>
 
@@ -95,7 +95,7 @@ const ForgotPasswordScreen: React.FC = () => {
                     onClick={() => history.push("/login")}
                     className="text-white/70 active:text-white text-sm py-2 touch-manipulation"
                   >
-                    Вернуться к входу
+                    Back to sign in
                   </button>
                 </>
               )}

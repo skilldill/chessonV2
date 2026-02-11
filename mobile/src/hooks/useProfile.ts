@@ -65,16 +65,16 @@ export const useProfile = () => {
       const data = await response.json();
 
       if (data.success) {
-        setSuccess("Профиль успешно обновлен!");
+        setSuccess("Profile updated successfully!");
         setTimeout(() => {
           setSuccess('');
         }, 3000);
       } else {
-        setError(data.error || "Ошибка при сохранении профиля");
+        setError(data.error || "Error saving profile");
       }
     } catch (err) {
       console.error("Error saving profile:", err);
-      setError("Произошла ошибка при сохранении");
+      setError("An error occurred while saving");
     } finally {
       setSaving(false);
     }
@@ -105,16 +105,16 @@ export const useProfile = () => {
 
 
         // TODO: подумать нужно ли показывать сохранение доски
-        // setSuccess("Настройки сохранены!");
+        // setSuccess("Settings saved!");
         // setTimeout(() => {
         //   setSuccess('');
         // }, 3000);
       } else {
-        setError(data.error || "Ошибка при сохранении");
+        setError(data.error || "Error saving");
       }
     } catch (err) {
       console.error("Error saving appearance:", err);
-      setError("Произошла ошибка при сохранении");
+      setError("An error occurred while saving");
     } finally {
       setSaving(false);
     }

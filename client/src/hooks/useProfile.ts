@@ -65,18 +65,18 @@ export const useProfile = () => {
       const data = await response.json();
 
       if (data.success) {
-        setSuccess("Профиль успешно обновлен!");
+        setSuccess("Profile updated successfully!");
         if (redirect) {
           setTimeout(() => {
             history.push("/main");
           }, 1500);
         }
       } else {
-        setError(data.error || "Ошибка при сохранении профиля");
+        setError(data.error || "Error saving profile");
       }
     } catch (err) {
       console.error("Error saving profile:", err);
-      setError("Произошла ошибка при сохранении");
+      setError("An error occurred while saving");
     } finally {
       setSaving(false);
     }
@@ -106,13 +106,13 @@ export const useProfile = () => {
       if (data.success) {
         setChessboardTheme(newChessboardTheme);
         setChessboardThemeToStorage(newChessboardTheme);
-        setSuccess("Настройки сохранены!");
+        setSuccess("Settings saved!");
       } else {
-        setError(data.error || "Ошибка при сохранении");
+        setError(data.error || "Error saving");
       }
     } catch (err) {
       console.error("Error saving appearance:", err);
-      setError("Произошла ошибка при сохранении");
+      setError("An error occurred while saving");
     } finally {
       setSaving(false);
     }

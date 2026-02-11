@@ -44,11 +44,11 @@ const LoginScreen: React.FC = () => {
       if (data.success) {
         history.push("/main");
       } else {
-        setError(data.error || "Ошибка при входе");
+        setError(data.error || "Login error");
       }
     } catch (err) {
       console.error("Login error:", err);
-      setError("Произошла ошибка при входе");
+      setError("An error occurred while signing in");
     } finally {
       setLoading(false);
     }
@@ -62,7 +62,7 @@ const LoginScreen: React.FC = () => {
             <div className="auth-card-blur" />
             <div className="w-full flex flex-col items-center relative z-10 gap-6 py-8 px-5">
               <h3 className="text-white text-center text-2xl font-semibold">
-                Вход
+                Login
               </h3>
 
               <form onSubmit={handleSubmit} className="w-full flex flex-col items-center gap-4">
@@ -72,7 +72,7 @@ const LoginScreen: React.FC = () => {
                     value={login}
                     onChange={(e) => setLogin(e.target.value)}
                     required
-                    placeholder="Логин"
+                    placeholder="Username"
                     className="auth-input"
                     autoComplete="username"
                   />
@@ -83,7 +83,7 @@ const LoginScreen: React.FC = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    placeholder="Пароль"
+                    placeholder="Password"
                     className="auth-input"
                     autoComplete="current-password"
                   />
@@ -100,7 +100,7 @@ const LoginScreen: React.FC = () => {
                   disabled={loading}
                   className="auth-btn-primary w-full"
                 >
-                  {loading ? "Вход..." : "Войти"}
+                  {loading ? "Signing in..." : "Sign in"}
                 </button>
               </form>
 
@@ -110,14 +110,14 @@ const LoginScreen: React.FC = () => {
                   onClick={() => history.push("/signup")}
                   className="text-white/70 active:text-white py-2 touch-manipulation"
                 >
-                  Нет аккаунта? Зарегистрироваться
+                  Don't have an account? Sign up
                 </button>
                 <button
                   type="button"
                   onClick={() => history.push("/forgot-password")}
                   className="text-white/50 active:text-white/70 py-2 touch-manipulation"
                 >
-                  Забыли пароль?
+                  Forgot password?
                 </button>
               </div>
             </div>

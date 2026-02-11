@@ -25,16 +25,16 @@ const meta: Meta<typeof DrawOfferActions> = {
         return (
             <div className="w-full h-screen bg-back-primary relative">
                 <div className="p-8 text-white z-10 relative">
-                    <h3 className="text-lg mb-4">Игровой экран (задний план)</h3>
+                    <h3 className="text-lg mb-4">Game screen (background)</h3>
                     <p className="text-sm text-gray-400 mb-4">
-                        Компонент DrawOfferActions появляется поверх этого содержимого когда offeredDraw === true
+                        The DrawOfferActions component appears over this content when offeredDraw === true
                     </p>
                     <div className="flex gap-4 items-center">
                         <PlasmaButton onClick={toggleDrawOffer}>
-                            {offeredDraw ? 'Скрыть' : 'Показать'} предложение ничьей
+                            {offeredDraw ? 'Hide' : 'Show'} draw offer
                         </PlasmaButton>
                         <span className="text-sm text-gray-400">
-                            Статус: {offeredDraw ? 'Видим' : 'Скрыт'}
+                            Status: {offeredDraw ? 'Visible' : 'Hidden'}
                         </span>
                     </div>
                 </div>

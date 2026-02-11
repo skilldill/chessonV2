@@ -34,12 +34,12 @@ export const SignupScreen = () => {
     setError("");
 
     if (password !== confirmPassword) {
-      setError("Пароли не совпадают");
+      setError("Passwords do not match");
       return;
     }
 
     if (password.length < 6) {
-      setError("Пароль должен быть не менее 6 символов");
+      setError("Password must be at least 6 characters");
       return;
     }
 
@@ -61,11 +61,11 @@ export const SignupScreen = () => {
         // Редирект на страницу с сообщением о подтверждении email
         history.push("/signup-success");
       } else {
-        setError(data.error || "Ошибка при регистрации");
+        setError(data.error || "Sign-up error");
       }
     } catch (err) {
       console.error("Signup error:", err);
-      setError("Произошла ошибка при регистрации");
+      setError("An error occurred during sign-up");
     } finally {
       setLoading(false);
     }
@@ -78,7 +78,7 @@ export const SignupScreen = () => {
         
         <div className="w-full flex flex-col items-center relative gap-[24px] z-40 py-[32px]">
           <h3 className="text-white text-center text-3xl font-semibold">
-            Регистрация
+            Sign up
           </h3>
 
           <form onSubmit={handleSubmit} className="w-full flex flex-col items-center gap-[20px] px-[32px]">
@@ -90,7 +90,7 @@ export const SignupScreen = () => {
                 required
                 minLength={3}
                 maxLength={20}
-                placeholder="Логин (3-20 символов)"
+                placeholder="Username (3-20 characters)"
                 className="bg-white/4 w-full h-[40px] px-[12px] py-[10px] border border-white/10 border-solid rounded-md focus:border-indigo-700 focus:outline-none transition-all duration-200 placeholder-[#99A1AF] text-white"
               />
             </div>
@@ -113,7 +113,7 @@ export const SignupScreen = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
-                placeholder="Пароль (минимум 6 символов)"
+                placeholder="Password (minimum 6 characters)"
                 className="bg-white/4 w-full h-[40px] px-[12px] py-[10px] border border-white/10 border-solid rounded-md focus:border-indigo-700 focus:outline-none transition-all duration-200 placeholder-[#99A1AF] text-white"
               />
             </div>
@@ -124,7 +124,7 @@ export const SignupScreen = () => {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                placeholder="Подтвердите пароль"
+                placeholder="Confirm password"
                 className="bg-white/4 w-full h-[40px] px-[12px] py-[10px] border border-white/10 border-solid rounded-md focus:border-indigo-700 focus:outline-none transition-all duration-200 placeholder-[#99A1AF] text-white"
               />
             </div>
@@ -140,7 +140,7 @@ export const SignupScreen = () => {
               disabled={loading}
               className="rounded-md text-sm font-semibold px-4 py-2 bg-[#4F39F6] text-white min-w-[126px] cursor-pointer transition-all duration-300 active:scale-95 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? "Регистрация..." : "Зарегистрироваться"}
+              {loading ? "Signing up..." : "Sign up"}
             </button>
           </form>
 
@@ -149,7 +149,7 @@ export const SignupScreen = () => {
               to="/login"
               className="text-white/70 hover:text-white transition-colors text-sm"
             >
-              Уже есть аккаунт? Войти
+              Already have an account? Sign in
             </Link>
           </div>
         </div>

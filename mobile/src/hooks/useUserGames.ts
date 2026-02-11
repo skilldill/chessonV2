@@ -72,9 +72,9 @@ export const useUserGames = () => {
   };
 
   const getResultText = (result: UserGame['result']): string => {
-    if (result.userResult === 'win') return 'Победа';
-    if (result.userResult === 'loss') return 'Поражение';
-    return 'Ничья';
+    if (result.userResult === 'win') return 'Win';
+    if (result.userResult === 'loss') return 'Loss';
+    return 'Draw';
   };
 
   const getResultColor = (result: UserGame['result']): string => {
