@@ -1,4 +1,4 @@
-import { IonPage, IonContent } from '@ionic/react';
+import { IonPage, IonContent, IonButton } from '@ionic/react';
 import { useEffect, useState } from 'react';
 import { MemAvatarSelect } from '../../components/MemAvatarSelect/MemAvatarSelect';
 import { BackButton } from '../../components/BackButton/BackButton';
@@ -108,22 +108,23 @@ const ProfileScreen: React.FC = () => {
                 <div className="text-white/70 text-sm mb-3">Тема шахматной доски</div>
                 <div className="flex flex-wrap gap-2">
                   {Object.keys(CHESSBOARD_THEMES).map((themeKey) => (
-                    <button
+                    <IonButton
                       key={themeKey}
                       type="button"
+                      fill="clear"
                       onClick={() => {
                         setChessboardTheme(themeKey);
                         saveAppearance(themeKey);
                       }}
                       disabled={saving}
-                      className={`rounded-lg px-3 py-2 text-sm font-medium transition-all focus:outline-none touch-manipulation disabled:opacity-60 min-h-[44px] ${
+                      className={`rounded-lg  text-sm font-medium transition-all focus:outline-none touch-manipulation disabled:opacity-60 min-h-[44px] ${
                         chessboardTheme === themeKey
                           ? "bg-[#4F39F6]/20 text-white border border-[#4F39F6]/60"
                           : "bg-white/5 text-white/80 border border-white/10"
                       }`}
                     >
                       {themeKey === "default" ? "Стандарт" : themeKey === "green" ? "Зелёная" : themeKey === "brown" ? "Дерево" : themeKey === "blue" ? "Синяя" : themeKey}
-                    </button>
+                    </IonButton>
                   ))}
                 </div>
               </div>
@@ -138,18 +139,20 @@ const ProfileScreen: React.FC = () => {
                     onSelectAvatar={(index) => setSelectedAvatarIndex(index)}
                   />
                   <div className="flex gap-3 mt-4">
-                    <button
+                    <IonButton
                       type="button"
+                      fill="clear"
                       onClick={() => {
                         setShowAvatarSelect(false);
                         setSelectedAvatarIndex(avatarIndex);
                       }}
-                      className="flex-1 rounded-lg text-sm font-semibold px-4 py-3 bg-white/5 text-white/80 cursor-pointer transition-all duration-200 active:scale-[0.98] focus:outline-none border border-white/10 touch-manipulation min-h-[44px]"
+                      className="flex-1 rounded-lg text-sm font-semibold bg-white/5 text-white/80 cursor-pointer transition-all duration-200 active:scale-[0.98] focus:outline-none border border-white/10 touch-manipulation min-h-[44px]"
                     >
                       Отмена
-                    </button>
-                    <button
+                    </IonButton>
+                    <IonButton
                       type="button"
+                      fill="clear"
                       onClick={async () => {
                         if (selectedAvatarIndex === avatarIndex) {
                           setShowAvatarSelect(false);
@@ -159,11 +162,10 @@ const ProfileScreen: React.FC = () => {
                         await saveProfile(selectedAvatarIndex);
                         setShowAvatarSelect(false);
                       }}
-                      disabled={saving || selectedAvatarIndex === avatarIndex}
-                      className="flex-1 rounded-lg text-sm font-semibold px-4 py-3 bg-[#4F39F6] text-white cursor-pointer transition-all duration-200 active:scale-[0.98] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[44px]"
+                      className="flex-1 rounded-lg text-sm font-semibold bg-[#4F39F6] text-white cursor-pointer transition-all duration-200 active:scale-[0.98] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[44px]"
                     >
                       {saving ? "Сохранение..." : "Сохранить"}
-                    </button>
+                    </IonButton>
                   </div>
                 </div>
               )}
@@ -181,13 +183,15 @@ const ProfileScreen: React.FC = () => {
               )}
 
               <div className="flex flex-col gap-3 w-full">
-                <button
+                <IonButton
                   type="button"
                   onClick={logout}
-                  className="rounded-lg text-sm font-semibold px-4 py-3 bg-white/5 text-white/80 cursor-pointer transition-all duration-200 active:scale-[0.98] focus:outline-none border border-white/10 active:border-red-500/40 active:text-red-300 touch-manipulation min-h-[44px]"
+                  fill="clear"
+                  color="danger"
+                  className="flex-1 rounded-lg text-sm font-semibold bg-white/5 text-white/80 cursor-pointer transition-all duration-200 active:scale-[0.98] focus:outline-none border border-white/10 touch-manipulation min-h-[44px]"
                 >
                   Выйти из аккаунта
-                </button>
+                </IonButton>
               </div>
             </div>
           </div>

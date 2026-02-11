@@ -67,8 +67,8 @@ export const useProfile = () => {
       if (data.success) {
         setSuccess("Профиль успешно обновлен!");
         setTimeout(() => {
-          history.push("/main");
-        }, 1500);
+          setSuccess('');
+        }, 3000);
       } else {
         setError(data.error || "Ошибка при сохранении профиля");
       }
@@ -102,7 +102,13 @@ export const useProfile = () => {
       if (data.success) {
         setChessboardTheme(newChessboardTheme);
         setChessboardThemeToStorage(newChessboardTheme);
-        setSuccess("Настройки сохранены!");
+
+
+        // TODO: подумать нужно ли показывать сохранение доски
+        // setSuccess("Настройки сохранены!");
+        // setTimeout(() => {
+        //   setSuccess('');
+        // }, 3000);
       } else {
         setError(data.error || "Ошибка при сохранении");
       }

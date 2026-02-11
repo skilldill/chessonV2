@@ -34,7 +34,7 @@
     "classnames": "^2.5.1",
     "ionicons": "^7.4.0",
     "react": "19.0.0",
-    "react-chessboard-ui": "1.5.1",
+    "react-chessboard-ui": "2.0.0",
     "react-dom": "19.0.0",
     "react-router": "^5.3.4",
     "react-router-dom": "^5.3.4",
