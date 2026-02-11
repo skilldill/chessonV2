@@ -1,0 +1,110 @@
+import { IonPage, IonContent } from '@ionic/react';
+import { useState } from 'react';
+import { useHistory } from 'react-router-dom';
+import { API_PREFIX } from '../../constants/api';
+
+const ForgotPasswordScreen: React.FC = () => {
+  const history = useHistory();
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setSuccess(false);
+    setLoading(true);
+
+    try {
+      const response = await fetch(`${API_PREFIX}/auth/forgot-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email }),
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        setSuccess(true);
+      } else {
+        setError(data.error || "Error sending request");
+      }
+    } catch (err) {
+      console.error("Forgot password error:", err);
+      setError("An error occurred while sending request");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <IonPage>
+      <IonContent className="ion-padding auth-screen-bg" fullscreen>
+        <div className="w-full min-h-full flex flex-col justify-center items-center py-6 px-4">
+          <div className="auth-card relative flex flex-col items-center fadeIn" style={{ minHeight: 320 }}>
+            <div className="auth-card-blur" />
+            <div className="w-full flex flex-col items-center relative z-10 gap-6 py-8 px-5">
+              <h3 className="text-white text-center text-2xl font-semibold">
+                Password recovery
+              </h3>
+
+              {success ? (
+                <div className="w-full flex flex-col items-center gap-4">
+                  <div className="bg-green-500/20 border border-green-500 text-green-300 px-4 py-3 rounded-lg text-sm w-full text-center">
+                    If a user with this email exists, a password recovery link has been sent.
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => history.push("/login")}
+                    className="text-white/70 active:text-white text-sm py-3 touch-manipulation"
+                  >
+                    Back to sign in
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <form onSubmit={handleSubmit} className="w-full flex flex-col items-center gap-4">
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      placeholder="Email"
+                      className="auth-input"
+                      autoComplete="email"
+                    />
+
+                    {error && (
+                      <div className="bg-red-500/20 border border-red-500 text-red-300 px-4 py-3 rounded-lg text-sm w-full">
+                        {error}
+                      </div>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="auth-btn-primary w-full"
+                    >
+                      {loading ? "Sending..." : "Send"}
+                    </button>
+                  </form>
+
+                  <button
+                    type="button"
+                    onClick={() => history.push("/login")}
+                    className="text-white/70 active:text-white text-sm py-2 touch-manipulation"
+                  >
+                    Back to sign in
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </IonContent>
+    </IonPage>
+  );
+};
+
+export default ForgotPasswordScreen;

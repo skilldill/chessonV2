@@ -1,20 +1,32 @@
-import { useState, type FC } from "react";
+import { useState, useEffect, type FC } from "react";
 import { MEM_AVATARS } from "../../constants/avatars";
 
 type MemAvatarSelectProps = {
     onSelectAvatar: (index: number) => void;
+    initialSelected?: number;
 }
 
-export const MemAvatarSelect: FC<MemAvatarSelectProps> = ({ onSelectAvatar }) => {
-    const [selected, setSelected] = useState<number | undefined>(0);
-    const [prevSelected, setPrevSelected] = useState<number>(0);
+export const MemAvatarSelect: FC<MemAvatarSelectProps> = ({ onSelectAvatar, initialSelected = 0 }) => {
+    const [selected, setSelected] = useState<number>(initialSelected);
+    const [prevSelected, setPrevSelected] = useState<number>(initialSelected);
+    const [isAnimating, setIsAnimating] = useState(false);
+
+    useEffect(() => {
+        setSelected(initialSelected);
+        setPrevSelected(initialSelected);
+        setIsAnimating(false);
+    }, [initialSelected]);
 
     const selectAvatar = (index: number) => {
-        setPrevSelected(selected!);
-        setSelected(undefined);
+        if (index === selected) return;
+        
+        const currentSelected = selected;
+        setPrevSelected(currentSelected);
+        setIsAnimating(true);
+        setSelected(index);
 
         setTimeout(() => {
-            setSelected(index);
+            setIsAnimating(false);
         }, 400);
 
         onSelectAvatar(index);
@@ -23,9 +35,9 @@ export const MemAvatarSelect: FC<MemAvatarSelectProps> = ({ onSelectAvatar }) =>
     return (
         <div className="grid grid-cols-[repeat(4,_64px)] grid-rows-2 gap-[24px] relative">
             <div
-                className="absolute w-[80px] h-[80px] rounded-full"
+                className="absolute w-[80px] h-[80px] rounded-full transition-transform duration-400"
                 style={{
-                    transform: selected !== undefined ? `translate(${(selected % 4) * (64 + 24) - 8}px, ${Math.floor(selected / 4) * (64 + 24) - 8}px)` : `translate(${(prevSelected % 4) * (64 + 24) - 8}px, ${Math.floor(prevSelected / 4) * (64 + 24) - 8}px)`,
+                    transform: `translate(${(selected % 4) * (64 + 24) - 8}px, ${Math.floor(selected / 4) * (64 + 24) - 8}px)`,
                 }}
             >
                 <svg className="w-full h-full" viewBox="0 0 112 112">
@@ -43,7 +55,7 @@ export const MemAvatarSelect: FC<MemAvatarSelectProps> = ({ onSelectAvatar }) =>
                         style={{
                             transform: 'rotate(-90deg)',
                             transformOrigin: 'center',
-                            strokeDashoffset: selected !== undefined ? "0" : "339.29"
+                            strokeDashoffset: isAnimating ? "339.29" : "0"
                         }}
                     />
                     <defs>

@@ -9,7 +9,7 @@ type CreateRoomData = {
 }
 
 export const useCreateRoom = () => {
-    const [isCreating, setIsCreating] = useState(true);
+    const [isCreating, setIsCreating] = useState(false);
     const [roomCreatingError, setRoomCreatingError] = useState<string | null>(null);
     const history = useHistory();
 

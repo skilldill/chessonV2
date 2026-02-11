@@ -1,14 +1,20 @@
-import { useState, type FC } from "react";
+import { useState, useEffect, type FC } from "react";
 import { MEM_AVATARS_GRID } from "../../constants/avatars";
 import cn from 'classnames';
 
 type MemAvatarSelectProps = {
     onSelectAvatar: (index: number) => void;
+    initialSelected?: number;
 }
 
-export const MemAvatarSelect: FC<MemAvatarSelectProps> = ({ onSelectAvatar }) => {
-    const [selected, setSelected] = useState<number | undefined>(0);
-    const [prevSelected, setPrevSelected] = useState<number>(0);
+export const MemAvatarSelect: FC<MemAvatarSelectProps> = ({ onSelectAvatar, initialSelected = 0 }) => {
+    const [selected, setSelected] = useState<number | undefined>(initialSelected);
+    const [prevSelected, setPrevSelected] = useState<number>(initialSelected);
+
+    useEffect(() => {
+        setSelected(initialSelected);
+        setPrevSelected(initialSelected);
+    }, [initialSelected]);
 
     const selectAvatar = (index: number) => {
         setPrevSelected(selected!);

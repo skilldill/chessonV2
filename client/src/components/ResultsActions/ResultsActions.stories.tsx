@@ -20,22 +20,22 @@ const meta: Meta<typeof ResultsActions> = {
         return (
             <div className="w-full h-screen bg-back-primary relative">
                 <div className="p-8 text-white z-10 relative">
-                    <h3 className="text-lg mb-4">Игровой экран (задний план)</h3>
+                    <h3 className="text-lg mb-4">Game screen (background)</h3>
                     <p className="text-sm text-gray-400 mb-4">
-                        Компонент ResultsActions появляется поверх этого содержимого когда есть message
+                        The ResultsActions component appears over this content when message exists
                     </p>
                     <div className="flex gap-4 items-center flex-wrap">
-                        <PlasmaButton onClick={() => showResult('Вы выиграли!')}>
-                            Показать победу
+                        <PlasmaButton onClick={() => showResult('You won!')}>
+                            Show victory
                         </PlasmaButton>
-                        <PlasmaButton onClick={() => showResult('Вы проиграли!')}>
-                            Показать поражение
+                        <PlasmaButton onClick={() => showResult('You lost!')}>
+                            Show defeat
                         </PlasmaButton>
-                        <PlasmaButton onClick={() => showResult('Ничья!')}>
-                            Показать ничью
+                        <PlasmaButton onClick={() => showResult('Draw!')}>
+                            Show draw
                         </PlasmaButton>
                         <span className="text-sm text-gray-400">
-                            Статус: {message ? 'Видим' : 'Скрыт'}
+                            Status: {message ? 'Visible' : 'Hidden'}
                         </span>
                     </div>
                 </div>
@@ -60,21 +60,21 @@ export const Hidden: Story = {
 
 export const Victory: Story = {
     args: {
-        message: 'Вы выиграли!',
+        message: 'You won!',
         onClose: () => console.log('Close'),
     },
 };
 
 export const Defeat: Story = {
     args: {
-        message: 'Вы проиграли!',
+        message: 'You lost!',
         onClose: () => console.log('Close'),
     },
 };
 
 export const Draw: Story = {
     args: {
-        message: 'Ничья!',
+        message: 'Draw!',
         onClose: () => console.log('Close'),
     },
 };

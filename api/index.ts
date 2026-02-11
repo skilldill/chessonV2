@@ -4,12 +4,12 @@ import { ElysiaWS } from 'elysia/ws';
 import { v4 as uuidv4 } from 'uuid';
 import { INITIAL_FEN } from './constants/chess';
 import { User } from './models/User';
-import { RegistrationAttempt } from './models/RegistrationAttempt';
 import { Game } from './models/Game';
 import { hashPassword, comparePassword } from './utils/password';
 import { createToken, verifyToken } from './utils/jwt';
-import { getClientIP } from './utils/ip';
+import { sendVerificationEmail, sendPasswordResetEmail, sendTestEmail } from './utils/email';
 import mongoose from 'mongoose';
+import crypto from 'crypto';
 
 // Connect to MongoDB
 if (process.env.WITHOUT_MONGO !== 'true') {
@@ -742,13 +742,13 @@ app.get('/api/health', () => ({
 // Регистрация пользователя
 app.post('/api/auth/signup', async ({ body, request, set }) => {
   try {
-    const { login, password } = body;
+    const { login, password, email } = body;
 
     // Валидация входных данных
-    if (!login || !password) {
+    if (!login || !password || !email) {
       return {
         success: false,
-        error: 'Login and password are required'
+        error: 'Login, password and email are required'
       };
     }
 
@@ -766,69 +766,66 @@ app.post('/api/auth/signup', async ({ body, request, set }) => {
       };
     }
 
+    // Валидация email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return {
+        success: false,
+        error: 'Invalid email format'
+      };
+    }
+
     // Проверка уникальности логина
-    const existingUser = await User.findOne({ login: login.toLowerCase() });
-    if (existingUser) {
+    const existingUserByLogin = await User.findOne({ login: login.toLowerCase() });
+    if (existingUserByLogin) {
       return {
         success: false,
         error: 'Login already exists'
       };
     }
 
-    // Проверка IP - можно зарегистрироваться только один раз в день
-    const clientIP = getClientIP(request);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Начало дня
-
-    const lastRegistration = await RegistrationAttempt.findOne({
-      ip: clientIP,
-      lastRegistrationDate: { $gte: today }
-    });
-
-    if (lastRegistration) {
+    // Проверка уникальности email
+    const existingUserByEmail = await User.findOne({ email: email.toLowerCase() });
+    if (existingUserByEmail) {
       return {
         success: false,
-        error: 'You can register only once per day from this IP address'
+        error: 'Email already exists'
       };
     }
 
     // Хешируем пароль
     const hashedPassword = await hashPassword(password);
 
+    // Генерируем токен для подтверждения email
+    const emailVerificationToken = crypto.randomBytes(32).toString('hex');
+
     // Создаем пользователя
     const user = new User({
       login: login.toLowerCase(),
-      password: hashedPassword
+      password: hashedPassword,
+      email: email.toLowerCase(),
+      emailVerified: false,
+      emailVerificationToken: emailVerificationToken
     });
 
     await user.save();
 
-    // Сохраняем информацию о регистрации по IP
-    await RegistrationAttempt.findOneAndUpdate(
-      { ip: clientIP },
-      {
-        ip: clientIP,
-        lastRegistrationDate: new Date()
-      },
-      { upsert: true, new: true }
-    );
-
-    // Создаем токен
-    const userId = (user._id as mongoose.Types.ObjectId).toString();
-    const token = await createToken({
-      userId: userId,
-      login: user.login
-    });
-
-    // Сохраняем токен в cookie
-    set.headers['Set-Cookie'] = `authToken=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${7 * 24 * 60 * 60}${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`;
+    // Отправляем email с подтверждением
+    try {
+      await sendVerificationEmail(email.toLowerCase(), login, emailVerificationToken);
+    } catch (emailError) {
+      console.error('Failed to send verification email:', emailError);
+      // Не блокируем регистрацию, если email не отправился
+    }
 
     return {
       success: true,
-      message: 'User registered successfully',
+      message: 'User registered successfully. Please check your email to verify your account.',
       user: {
-        id: userId,
-        login: user.login
+        id: (user._id as mongoose.Types.ObjectId).toString(),
+        login: user.login,
+        email: user.email,
+        emailVerified: user.emailVerified
       }
     };
   } catch (error: any) {
@@ -841,7 +838,8 @@ app.post('/api/auth/signup', async ({ body, request, set }) => {
 }, {
   body: t.Object({
     login: t.String(),
-    password: t.String()
+    password: t.String(),
+    email: t.String()
   })
 });
 
@@ -876,6 +874,15 @@ app.post('/api/auth/login', async ({ body, request, set }) => {
       };
     }
 
+    // Проверяем, подтвержден ли email
+    if (!user.emailVerified) {
+      return {
+        success: false,
+        error: 'Please verify your email before logging in',
+        requiresEmailVerification: true
+      };
+    }
+
     // Создаем токен
     const userId = (user._id as mongoose.Types.ObjectId).toString();
     const token = await createToken({
@@ -891,7 +898,11 @@ app.post('/api/auth/login', async ({ body, request, set }) => {
       message: 'Login successful',
       user: {
         id: userId,
-        login: user.login
+        login: user.login,
+        email: user.email,
+        name: user.name || user.login,
+        avatar: user.avatar || '0',
+        emailVerified: user.emailVerified
       }
     };
   } catch (error: any) {
@@ -944,11 +955,19 @@ app.get('/api/auth/me', async ({ headers }) => {
       };
     }
 
+    const appearance = (user as any).appearance || {};
     return {
       success: true,
       user: {
         id: (user._id as mongoose.Types.ObjectId).toString(),
-        login: user.login
+        login: user.login,
+        email: user.email,
+        name: user.name || user.login,
+        avatar: user.avatar || '0',
+        emailVerified: user.emailVerified,
+        appearance: {
+          chessboardTheme: appearance.chessboardTheme || 'default'
+        }
       }
     };
   } catch (error: any) {
@@ -956,6 +975,50 @@ app.get('/api/auth/me', async ({ headers }) => {
     return {
       success: false,
       error: error.message || 'Authentication check failed'
+    };
+  }
+});
+
+// Получение токена для WebSocket подключения
+app.get('/api/auth/ws-token', async ({ headers }) => {
+  try {
+    const cookieHeader = headers.cookie || '';
+    const cookies = cookieHeader.split(';').reduce((acc: Record<string, string>, cookie) => {
+      const [key, value] = cookie.trim().split('=');
+      if (key && value) {
+        acc[key] = value;
+      }
+      return acc;
+    }, {});
+
+    const authToken = cookies.authToken;
+    if (!authToken) {
+      return {
+        success: false,
+        error: 'Not authenticated'
+      };
+    }
+
+    // Проверяем валидность токена
+    const payload = await verifyToken(authToken);
+    if (!payload) {
+      return {
+        success: false,
+        error: 'Invalid token'
+      };
+    }
+
+    // Возвращаем токен для использования в WebSocket
+    return {
+      success: true,
+      token: authToken,
+      userId: payload.userId
+    };
+  } catch (error: any) {
+    console.error('WS token error:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to get WS token'
     };
   }
 });
@@ -968,6 +1031,461 @@ app.post('/api/auth/logout', ({ set }) => {
     success: true,
     message: 'Logged out successfully'
   };
+});
+
+// Обновление профиля пользователя
+app.put('/api/auth/profile', async ({ body, headers }) => {
+  try {
+    const { name, avatar, appearance } = body;
+
+    // Получаем токен из cookie
+    const cookieHeader = headers.cookie || '';
+    const cookies = cookieHeader.split(';').reduce((acc: Record<string, string>, cookie) => {
+      const [key, value] = cookie.trim().split('=');
+      if (key && value) {
+        acc[key] = value;
+      }
+      return acc;
+    }, {});
+
+    const authToken = cookies.authToken;
+    if (!authToken) {
+      return {
+        success: false,
+        error: 'Not authenticated'
+      };
+    }
+
+    const payload = await verifyToken(authToken);
+    if (!payload) {
+      return {
+        success: false,
+        error: 'Invalid token'
+      };
+    }
+
+    const user = await User.findById(payload.userId);
+    if (!user) {
+      return {
+        success: false,
+        error: 'User not found'
+      };
+    }
+
+    // Обновляем поля профиля
+    if (name !== undefined) {
+      if (name.length > 50) {
+        return {
+          success: false,
+          error: 'Name must be less than 50 characters'
+        };
+      }
+      user.name = name.trim() || undefined;
+    }
+
+    if (avatar !== undefined) {
+      // Проверяем, что avatar - это валидный ID (0-7)
+      const avatarId = parseInt(avatar);
+      if (isNaN(avatarId) || avatarId < 0 || avatarId > 7) {
+        return {
+          success: false,
+          error: 'Invalid avatar ID. Must be between 0 and 7'
+        };
+      }
+      user.avatar = avatar.toString();
+    }
+
+    if (appearance !== undefined && typeof appearance === 'object') {
+      const userAppearance = (user as any).appearance || {};
+      if (appearance.chessboardTheme !== undefined) {
+        const theme = String(appearance.chessboardTheme).trim();
+        if (theme.length <= 50) {
+          const nextAppearance = {
+            ...userAppearance,
+            chessboardTheme: theme || 'default'
+          };
+          (user as any).appearance = nextAppearance;
+          user.markModified('appearance');
+        }
+      }
+    }
+
+    await user.save();
+
+    const savedAppearance = (user as any).appearance || {};
+    return {
+      success: true,
+      message: 'Profile updated successfully',
+      user: {
+        id: (user._id as mongoose.Types.ObjectId).toString(),
+        login: user.login,
+        email: user.email,
+        name: user.name || user.login,
+        avatar: user.avatar || '0',
+        emailVerified: user.emailVerified,
+        appearance: {
+          chessboardTheme: savedAppearance.chessboardTheme || 'default'
+        }
+      }
+    };
+  } catch (error: any) {
+    console.error('Profile update error:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to update profile'
+    };
+  }
+}, {
+  body: t.Object({
+    name: t.Optional(t.String()),
+    avatar: t.Optional(t.String()),
+    appearance: t.Optional(t.Object({
+      chessboardTheme: t.Optional(t.String())
+    }))
+  })
+});
+
+// Получение списка игр текущего пользователя
+app.get('/api/auth/my-games', async ({ headers, query }) => {
+  try {
+    // Получаем токен из cookie
+    const cookieHeader = headers.cookie || '';
+    const cookies = cookieHeader.split(';').reduce((acc: Record<string, string>, cookie) => {
+      const [key, value] = cookie.trim().split('=');
+      if (key && value) {
+        acc[key] = value;
+      }
+      return acc;
+    }, {});
+
+    const authToken = cookies.authToken;
+    if (!authToken) {
+      return {
+        success: false,
+        error: 'Not authenticated'
+      };
+    }
+
+    const payload = await verifyToken(authToken);
+    if (!payload) {
+      return {
+        success: false,
+        error: 'Invalid token'
+      };
+    }
+
+    const userId = new mongoose.Types.ObjectId(payload.userId);
+
+    // Получаем параметры пагинации
+    const pageParam = typeof query === 'object' && query !== null && 'page' in query ? query.page : undefined;
+    const limitParam = typeof query === 'object' && query !== null && 'limit' in query ? query.limit : undefined;
+    const page = parseInt(String(pageParam || '1')) || 1;
+    const limit = Math.min(parseInt(String(limitParam || '10')) || 10, 50); // Максимум 50 игр за раз
+    const skip = (page - 1) * limit;
+
+    // Строим запрос для игр пользователя
+    const queryFilter = {
+      $or: [
+        { 'whitePlayer.userId': userId },
+        { 'blackPlayer.userId': userId }
+      ]
+    };
+
+    // Получаем игры с пагинацией
+    const games = await Game.find(queryFilter)
+      .sort({ endedAt: -1 }) // Новые игры сначала
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    // Получаем общее количество игр пользователя
+    const total = await Game.countDocuments(queryFilter);
+
+    // Преобразуем ObjectId в строки для ответа
+    const gamesResponse = games.map(game => {
+      const moveHistory = Array.isArray(game.moveHistory) ? game.moveHistory : [];
+      
+      // Определяем цвет пользователя в игре
+      const userColor = game.whitePlayer?.userId?.toString() === payload.userId ? 'white' : 'black';
+      const opponent = userColor === 'white' ? game.blackPlayer : game.whitePlayer;
+      
+      // Определяем результат для пользователя
+      let userResult: 'win' | 'loss' | 'draw' = 'draw';
+      if (game.result.winColor) {
+        if (game.result.winColor === userColor) {
+          userResult = 'win';
+        } else {
+          userResult = 'loss';
+        }
+      }
+
+      return {
+        id: (game._id as mongoose.Types.ObjectId).toString(),
+        roomId: game.roomId,
+        userColor,
+        opponent: {
+          userName: opponent?.userName || 'Unknown',
+          avatar: opponent?.avatar || '0'
+        },
+        result: {
+          ...game.result,
+          userResult
+        },
+        moveCount: moveHistory.length,
+        startedAt: game.startedAt,
+        endedAt: game.endedAt
+      };
+    });
+
+    return {
+      success: true,
+      games: gamesResponse,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
+  } catch (error: any) {
+    console.error('Get my games error:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to get games'
+    };
+  }
+}, {
+  query: t.Object({
+    page: t.Optional(t.String()),
+    limit: t.Optional(t.String())
+  })
+});
+
+// Подтверждение email
+app.post('/api/auth/verify-email', async ({ body }) => {
+  try {
+    const { token } = body;
+
+    if (!token) {
+      return {
+        success: false,
+        error: 'Verification token is required'
+      };
+    }
+
+    // Ищем пользователя с данным токеном подтверждения
+    const user = await User.findOne({ emailVerificationToken: token });
+
+    if (!user) {
+      return {
+        success: false,
+        error: 'Invalid verification token'
+      };
+    }
+
+    // Если email уже подтвержден
+    if (user.emailVerified) {
+      return {
+        success: true,
+        message: 'Email already verified'
+      };
+    }
+
+    // Подтверждаем email
+    user.emailVerified = true;
+    user.emailVerificationToken = undefined;
+    await user.save();
+
+    return {
+      success: true,
+      message: 'Email verified successfully'
+    };
+  } catch (error: any) {
+    console.error('Email verification error:', error);
+    return {
+      success: false,
+      error: error.message || 'Email verification failed'
+    };
+  }
+}, {
+  body: t.Object({
+    token: t.String()
+  })
+});
+
+// Запрос на восстановление пароля
+app.post('/api/auth/forgot-password', async ({ body }) => {
+  try {
+    const { email } = body;
+
+    // Валидация входных данных
+    if (!email) {
+      return {
+        success: false,
+        error: 'Email is required'
+      };
+    }
+
+    // Ищем пользователя по email
+    const user = await User.findOne({ email: email.toLowerCase() });
+    
+    // Для безопасности не сообщаем, существует ли пользователь
+    if (!user) {
+      return {
+        success: true,
+        message: 'If a user with this email exists, a password reset link has been sent'
+      };
+    }
+
+    // Генерируем токен восстановления пароля
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenExpires = new Date(Date.now() + 3600000); // 1 час
+
+    // Сохраняем токен в базе данных
+    user.resetPasswordToken = resetToken;
+    user.resetPasswordExpires = resetTokenExpires;
+    await user.save();
+
+    // Отправляем email с токеном восстановления
+    try {
+      await sendPasswordResetEmail(user.email, user.login, resetToken);
+    } catch (emailError) {
+      console.error('Failed to send password reset email:', emailError);
+      // Очищаем токен, если email не отправился
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpires = undefined;
+      await user.save();
+      
+      return {
+        success: false,
+        error: 'Failed to send password reset email'
+      };
+    }
+
+    return {
+      success: true,
+      message: 'If a user with this email exists, a password reset link has been sent'
+    };
+  } catch (error: any) {
+    console.error('Forgot password error:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to process password reset request'
+    };
+  }
+}, {
+  body: t.Object({
+    email: t.String()
+  })
+});
+
+// Сброс пароля с использованием токена
+app.post('/api/auth/reset-password', async ({ body }) => {
+  try {
+    const { token, newPassword } = body;
+
+    // Валидация входных данных
+    if (!token || !newPassword) {
+      return {
+        success: false,
+        error: 'Token and new password are required'
+      };
+    }
+
+    if (newPassword.length < 6) {
+      return {
+        success: false,
+        error: 'Password must be at least 6 characters'
+      };
+    }
+
+    // Ищем пользователя с валидным токеном
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: new Date() }
+    });
+
+    if (!user) {
+      return {
+        success: false,
+        error: 'Invalid or expired reset token'
+      };
+    }
+
+    // Хешируем новый пароль
+    const hashedPassword = await hashPassword(newPassword);
+
+    // Обновляем пароль и очищаем токен восстановления
+    user.password = hashedPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    return {
+      success: true,
+      message: 'Password has been reset successfully'
+    };
+  } catch (error: any) {
+    console.error('Reset password error:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to reset password'
+    };
+  }
+}, {
+  body: t.Object({
+    token: t.String(),
+    newPassword: t.String()
+  })
+});
+
+// Отправка тестового сообщения на email
+app.post('/api/auth/test-email', async ({ body }) => {
+  try {
+    const { email } = body;
+
+    // Валидация входных данных
+    if (!email) {
+      return {
+        success: false,
+        error: 'Email is required'
+      };
+    }
+
+    // Валидация формата email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return {
+        success: false,
+        error: 'Invalid email format'
+      };
+    }
+
+    // Отправляем тестовое сообщение
+    try {
+      await sendTestEmail(email.toLowerCase());
+      return {
+        success: true,
+        message: `Test email sent successfully to ${email}`
+      };
+    } catch (emailError: any) {
+      console.error('Failed to send test email:', emailError);
+      return {
+        success: false,
+        error: emailError.message || 'Failed to send test email'
+      };
+    }
+  } catch (error: any) {
+    console.error('Test email error:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to process test email request'
+    };
+  }
+}, {
+  body: t.Object({
+    email: t.String()
+  })
 });
 
 // Metrics endpoint
@@ -1425,31 +1943,27 @@ app.ws('/ws/room', {
     })
   ]),
 
-  open(ws) {
+  async open(ws) {
       const { roomId, userName, avatar, currentFEN: queryFEN, color: queryColor, authToken, hasMobilePlayer: queryHasMobilePlayer } = ws.data.query;
 
       // Преобразуем строку "true" или "1" в boolean для hasMobilePlayer
       const hasMobilePlayer: boolean = queryHasMobilePlayer === "true" || queryHasMobilePlayer === "1";
 
-      // Получаем registeredUserId из токена (асинхронно, но не блокируем подключение)
+      // Получаем registeredUserId из токена синхронно перед сохранением пользователя
       let registeredUserId: mongoose.Types.ObjectId | undefined;
       if (authToken) {
-        verifyToken(authToken).then(payload => {
+        try {
+          const payload = await verifyToken(authToken);
           if (payload && payload.userId) {
             registeredUserId = new mongoose.Types.ObjectId(payload.userId);
-            // Обновляем registeredUserId в данных пользователя, если он уже подключен
-            const room = rooms.get(roomId);
-            if (room) {
-              for (const [userId, userData] of room.users) {
-                if (userData.userName === userName && !userData.registeredUserId) {
-                  userData.registeredUserId = registeredUserId;
-                }
-              }
-            }
+            console.log(`✅ User authenticated: ${userName}, userId: ${registeredUserId.toString()}`);
           }
-        }).catch(() => {
+        } catch (error) {
           // Игнорируем ошибки токена, пользователь может играть без регистрации
-        });
+          console.log('Token verification failed, user will play without registration:', error);
+        }
+      } else {
+        console.log(`ℹ️ User connecting without auth: ${userName}`);
       }
 
       let room = rooms.get(roomId);
@@ -1522,7 +2036,8 @@ app.ws('/ws/room', {
           
           // Обновляем данные пользователя с новым WebSocket
           // Сохраняем registeredUserId если он был установлен ранее или получаем новый
-          const currentRegisteredUserId = existingUserData?.registeredUserId || registeredUserId;
+          // Приоритет: новый registeredUserId > существующий registeredUserId
+          const currentRegisteredUserId = registeredUserId || existingUserData?.registeredUserId;
           room.users.set(existingUserId, {
               userName: userName,
               avatar: avatar,
@@ -1607,6 +2122,10 @@ app.ws('/ws/room', {
           cursorPosition: { x: 0, y: 0 },
           registeredUserId: registeredUserId
       });
+      
+      if (registeredUserId) {
+        console.log(`✅ User ${userName} connected with registeredUserId: ${registeredUserId.toString()}`);
+      }
 
       // Устанавливаем hasMobilePlayer если пользователь подключился с мобильного приложения
       if (hasMobilePlayer) {

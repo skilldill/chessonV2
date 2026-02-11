@@ -12,13 +12,13 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Устанавливаем serve глобально
+# Install serve globally
 RUN npm install -g serve
 
-# Копируем собранные файлы
+# Copy build artifacts
 COPY --from=builder /app/dist ./dist
 
 EXPOSE 3000
 
-# Запускаем serve для раздачи статики
+# Run serve to host static files
 CMD ["serve", "-s", "dist", "-l", "3000"]

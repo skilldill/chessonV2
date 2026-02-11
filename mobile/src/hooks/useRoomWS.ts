@@ -11,7 +11,7 @@ import type {
 } from "../types";
 import { getOpponentCursorPosition } from "../utils/getOpponentCursorPosition";
 import type { FigureColor } from "react-chessboard-ui";
-import { WS_URL } from "../constants/api";
+import { WS_URL, API_PREFIX } from "../constants/api";
 
 // В режиме разработки используем прокси Vite, в production - прямой URL
 
@@ -26,8 +26,8 @@ const INITIAL_GAME_STATE = {
     drawOffer: undefined,
     drawOfferCount: {},
     timer: {
-        whiteTime: 600, // 10 минут по умолчанию
-        blackTime: 600, // 10 минут по умолчанию
+        whiteTime: 600, // 10 minут по умолчанию
+        blackTime: 600, // 10 minут по умолчанию
         whiteIncrement: 0, // без добавки времени
         blackIncrement: 0,  // без добавки времени
         initialWhiteTime: 600,
@@ -44,6 +44,7 @@ export const useRoomWS = (roomId: string) => {
     const userCredentialsRef = useRef<{ userName: string; avatar: string } | null>(null);
     const connectionCheckIntervalRef = useRef<number | null>(null);
     const isReconnectingRef = useRef<boolean>(false);
+    const authTokenRef = useRef<string | null>(null);
     
     const [gameState, setGameState] = useState<GameState>(INITIAL_GAME_STATE);
     const [currentColorMove, setCurrentColorMove] = useState<FigureColor>();
@@ -192,7 +193,7 @@ export const useRoomWS = (roomId: string) => {
     const startConnectionCheck = () => {
         clearConnectionCheck();
         
-        // Проверяем соединение каждые 5 секунд
+        // Проверяем соединение каждые 5 secунд
         // @ts-ignore
         connectionCheckIntervalRef.current = setInterval(() => {
             const ws = refWS.current;
@@ -248,13 +249,13 @@ export const useRoomWS = (roomId: string) => {
         const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current - 1), 10000);
         
         // @ts-ignore
-        reconnectTimeoutRef.current = setTimeout(() => {
+        reconnectTimeoutRef.current = setTimeout(async () => {
             isReconnectingRef.current = false;
-            connectToRoom(userCredentialsRef.current!, true);
+            await connectToRoom(userCredentialsRef.current!, true);
         }, delay);
     };
 
-    const connectToRoom = ({ userName, avatar }: { userName: string, avatar: string }, isReconnect = false) => {
+    const connectToRoom = async ({ userName, avatar }: { userName: string, avatar: string }, isReconnect = false) => {
         // Сохраняем учетные данные для переподключения
         userCredentialsRef.current = { userName, avatar };
         
@@ -262,7 +263,31 @@ export const useRoomWS = (roomId: string) => {
             refWS.current.close();
         }
 
-        refWS.current = new WebSocket(`${WS_URL}?roomId=${roomId}&userName=${userName}&avatar=${avatar}`);
+        // Получаем токен для авторизованных пользователей
+        let wsUrl = `${WS_URL}?roomId=${roomId}&userName=${encodeURIComponent(userName)}&avatar=${encodeURIComponent(avatar)}`;
+        
+        // Если токен еще не получен или это не переподключение, пытаемся получить токен
+        if (!authTokenRef.current && !isReconnect) {
+            try {
+                const response = await fetch(`${API_PREFIX}/auth/ws-token`, {
+                    credentials: "include",
+                });
+                const data = await response.json();
+                if (data.success && data.token) {
+                    authTokenRef.current = data.token;
+                }
+            } catch (err) {
+                // Игнорируем ошибки, пользователь может играть без авторизации
+                console.log('Failed to get WS token, playing without auth:', err);
+            }
+        }
+
+        // Добавляем токен в URL если он есть
+        if (authTokenRef.current) {
+            wsUrl += `&authToken=${encodeURIComponent(authTokenRef.current)}`;
+        }
+
+        refWS.current = new WebSocket(wsUrl);
         
         refWS.current.onopen = () => {
             setIsConnected(true);

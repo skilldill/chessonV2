@@ -14,9 +14,11 @@ import { debounce } from '../../utils/debounce';
 import { MEM_AVATARS } from '../../constants/avatars';
 import { useHistory } from 'react-router-dom';
 import { useGameStorage } from '../../hooks/useGameStorage';
+import { useAppearance } from '../../hooks/useAppearance';
 import { ConnectionNotification } from '../../components/ConnectionNotification/ConnectionNotification';
 import { DrawOfferActions } from '../../components/DrawOfferActions/DrawOfferActions';
 import { ResultsActions } from '../../components/ResultsActions/ResultsActions';
+import { CHESSBOARD_THEMES } from '../../components/ChessBoardConfigs/ChessBoardConfigs';
 
 type GameScreenProps = {
   gameState: GameState;
@@ -55,6 +57,8 @@ const GameScreen: React.FC<GameScreenProps> = ({
   const cellSize = useCellSize();
   const history = useHistory();
   const { removeGameData } = useGameStorage();
+  const { chessboardTheme } = useAppearance();
+  const themeConfig = CHESSBOARD_THEMES[chessboardTheme];
 
   const [initialFEN, setInitialFEN] = useState(INITIAL_FEN);
   const reversed = useMemo(() => playerColor === "black", [playerColor]);
@@ -160,12 +164,9 @@ const GameScreen: React.FC<GameScreenProps> = ({
               reversed={playerColor === "black"}
               change={externalChangeMove}
               playerColor={playerColor}
-              config={{ 
-                  cellSize, 
-                  whiteCellColor: "#E5E7EB",
-                  blackCellColor: "#A5AEBD",
-                  circleMarkColor: "#0069A8",
-                  figureSizePercent: 85,
+              config={{
+                squareSize: cellSize,
+                ...themeConfig
               }}
             />
             {screenSize === "L" && (

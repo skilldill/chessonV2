@@ -16,7 +16,8 @@ import { ConnectionNotification } from "../../components/ConnectionNotification/
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { useGameStorage } from "../../hooks/useGameStorage";
 import { useScreenHeightForChessboard } from "../../hooks/useScreenHeightForChessboard";
-import { DEFAULT_CHESSBOARD_CONFIG } from "../../components/ChessBoardConfigs/ChessBoardConfigs";
+import { getChessboardConfig } from "../../components/ChessBoardConfigs/ChessBoardConfigs";
+import { useAppearance } from "../../hooks/useAppearance";
 
 type GameScreenProps = {
     gameState: GameState;
@@ -55,6 +56,8 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
 }) => {
     const screenSize = useScreenSize();
     const { removeGameData } = useGameStorage();
+    const { chessboardTheme } = useAppearance();
+    const chessboardConfig = getChessboardConfig(chessboardTheme);
     const gridColsClass = useScreenHeightForChessboard();
 
     const [initialFEN, setInitialFEN] = useState(INITIAL_FEN);
@@ -109,7 +112,6 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
 
     const handleCloseResults = () => {
         removeGameData();
-        window.location.href = import.meta.env.VITE_MAIN_SITE;
     };
 
     const handleSelectHistoryMove = (historyMoveData: { moveData: MoveData, isLastMove: boolean }) => {
@@ -178,7 +180,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                                         viewOnly={true}
                                         config={{ 
                                             squareSize: wrapWidth / 8,
-                                            ...DEFAULT_CHESSBOARD_CONFIG,
+                                            ...chessboardConfig,
                                         }}
                                         moveHighlight={selectedHistroyMode ? [selectedHistroyMode?.from, selectedHistroyMode?.to] : undefined}
                                     />
@@ -195,7 +197,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                                     playerColor={playerColor}
                                     config={{ 
                                         squareSize: wrapWidth / 8,
-                                        ...DEFAULT_CHESSBOARD_CONFIG,
+                                        ...chessboardConfig,
                                     }}
                                 />
                             </div>
