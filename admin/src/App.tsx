@@ -33,7 +33,8 @@ type ApiFailure = {
   error: string;
 };
 
-const API_BASE_URL = '/api';
+// const API_BASE_URL = '/api'; // локально
+const API_BASE_URL = '/api/api'; // прод
 const ADMIN_HEADER_NAME = 'x-admin-secret';
 const ADMIN_HEADER_VALUE = import.meta.env.VITE_ADMIN_API_KEY || 'local-chesson-admin-secret';
 
