@@ -12,6 +12,9 @@ export interface IUser extends Document {
   avatar?: string;
   appearance?: IAppearance;
   emailVerified: boolean;
+  isBlocked: boolean;
+  blockedReason?: string;
+  blockedAt?: Date;
   emailVerificationToken?: string;
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
@@ -57,6 +60,19 @@ const UserSchema = new Schema<IUser>(
     emailVerified: {
       type: Boolean,
       default: false
+    },
+    isBlocked: {
+      type: Boolean,
+      default: false,
+      index: true
+    },
+    blockedReason: {
+      type: String,
+      default: null
+    },
+    blockedAt: {
+      type: Date,
+      default: null
     },
     emailVerificationToken: {
       type: String,

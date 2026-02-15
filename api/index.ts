@@ -143,6 +143,103 @@ const CLEANUP_INTERVAL = 60 * 60 * 1000; // Проверка каждый час
 const RATE_LIMIT_WINDOW = 1000; // 1 секунда
 const RATE_LIMIT_MAX_MESSAGES = 100; // Максимум сообщений в секунду
 const METRICS_RESET_INTERVAL = 1000; // Сброс счетчика сообщений в секунду каждую секунду
+const DEFAULT_ALLOWED_ORIGINS = [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://localhost:5175',
+  'http://127.0.0.1:5175'
+];
+const CORS_ALLOWED_ORIGINS = (process.env.CORS_ALLOWED_ORIGINS || '')
+  .split(',')
+  .map(origin => origin.trim())
+  .filter(Boolean);
+const ALLOWED_ORIGINS = CORS_ALLOWED_ORIGINS.length > 0 ? CORS_ALLOWED_ORIGINS : DEFAULT_ALLOWED_ORIGINS;
+const CORS_ALLOWED_METHODS = 'GET,POST,PUT,PATCH,DELETE,OPTIONS';
+const CORS_ALLOWED_HEADERS = 'Content-Type, Authorization, x-admin-secret';
+const ADMIN_SECRET_HEADER = 'x-admin-secret';
+const ADMIN_SECRET_VALUE = process.env.ADMIN_SECRET_VALUE || 'local-chesson-admin-secret';
+
+function getHeaderValue(headers: unknown, headerName: string): string | undefined {
+  if (!headers || typeof headers !== 'object') {
+    return undefined;
+  }
+
+  const typedHeaders = headers as Record<string, string | undefined>;
+  return typedHeaders[headerName] ?? typedHeaders[headerName.toLowerCase()];
+}
+
+function hasAdminAccess(headers: unknown): boolean {
+  const receivedSecret = getHeaderValue(headers, ADMIN_SECRET_HEADER);
+  return receivedSecret === ADMIN_SECRET_VALUE;
+}
+
+function clearAuthCookie(set: { headers: Record<string, string> }) {
+  set.headers['Set-Cookie'] = 'authToken=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0';
+}
+
+function formatAdminUser(user: any) {
+  return {
+    id: (user._id as mongoose.Types.ObjectId).toString(),
+    login: user.login,
+    email: user.email,
+    name: user.name || null,
+    avatar: user.avatar || '0',
+    emailVerified: user.emailVerified,
+    isBlocked: Boolean(user.isBlocked),
+    blockedReason: user.blockedReason || null,
+    blockedAt: user.blockedAt || null,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt
+  };
+}
+
+function buildCorsHeaders(origin?: string): Record<string, string> {
+  const headers: Record<string, string> = {
+    'Access-Control-Allow-Methods': CORS_ALLOWED_METHODS,
+    'Access-Control-Allow-Headers': CORS_ALLOWED_HEADERS,
+    Vary: 'Origin'
+  };
+
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    headers['Access-Control-Allow-Origin'] = origin;
+    headers['Access-Control-Allow-Credentials'] = 'true';
+  }
+
+  return headers;
+}
+
+app.onRequest(({ request, headers }) => {
+  if (request.method !== 'OPTIONS') {
+    return;
+  }
+
+  const origin = getHeaderValue(headers, 'origin');
+  return new Response(null, {
+    status: 204,
+    headers: buildCorsHeaders(origin)
+  });
+});
+
+app.onAfterHandle(({ headers, set }) => {
+  const origin = getHeaderValue(headers, 'origin');
+  const corsHeaders = buildCorsHeaders(origin);
+
+  for (const [key, value] of Object.entries(corsHeaders)) {
+    set.headers[key] = value;
+  }
+});
+
+function getOngoingGamesCount(): number {
+  let count = 0;
+
+  for (const [, room] of rooms) {
+    if (room.gameState.gameStarted && !room.gameState.gameEnded) {
+      count++;
+    }
+  }
+
+  return count;
+}
 
 // Функция для проверки rate limit
 function checkRateLimit(userId: string): boolean {
@@ -874,6 +971,13 @@ app.post('/api/auth/login', async ({ body, request, set }) => {
       };
     }
 
+    if ((user as any).isBlocked) {
+      return {
+        success: false,
+        error: 'Your account is blocked'
+      };
+    }
+
     // Проверяем, подтвержден ли email
     if (!user.emailVerified) {
       try {
@@ -933,7 +1037,7 @@ app.post('/api/auth/login', async ({ body, request, set }) => {
 });
 
 // Проверка текущего пользователя
-app.get('/api/auth/me', async ({ headers }) => {
+app.get('/api/auth/me', async ({ headers, set }) => {
   try {
     const cookieHeader = headers.cookie || '';
     const cookies = cookieHeader.split(';').reduce((acc: Record<string, string>, cookie) => {
@@ -968,6 +1072,14 @@ app.get('/api/auth/me', async ({ headers }) => {
       };
     }
 
+    if ((user as any).isBlocked) {
+      clearAuthCookie(set);
+      return {
+        success: false,
+        error: 'User is blocked'
+      };
+    }
+
     const appearance = (user as any).appearance || {};
     return {
       success: true,
@@ -993,7 +1105,7 @@ app.get('/api/auth/me', async ({ headers }) => {
 });
 
 // Получение токена для WebSocket подключения
-app.get('/api/auth/ws-token', async ({ headers }) => {
+app.get('/api/auth/ws-token', async ({ headers, set }) => {
   try {
     const cookieHeader = headers.cookie || '';
     const cookies = cookieHeader.split(';').reduce((acc: Record<string, string>, cookie) => {
@@ -1018,6 +1130,23 @@ app.get('/api/auth/ws-token', async ({ headers }) => {
       return {
         success: false,
         error: 'Invalid token'
+      };
+    }
+
+    const user = await User.findById(payload.userId);
+    if (!user) {
+      clearAuthCookie(set);
+      return {
+        success: false,
+        error: 'User not found'
+      };
+    }
+
+    if ((user as any).isBlocked) {
+      clearAuthCookie(set);
+      return {
+        success: false,
+        error: 'User is blocked'
       };
     }
 
@@ -1047,7 +1176,7 @@ app.post('/api/auth/logout', ({ set }) => {
 });
 
 // Обновление профиля пользователя
-app.put('/api/auth/profile', async ({ body, headers }) => {
+app.put('/api/auth/profile', async ({ body, headers, set }) => {
   try {
     const { name, avatar, appearance } = body;
 
@@ -1082,6 +1211,14 @@ app.put('/api/auth/profile', async ({ body, headers }) => {
       return {
         success: false,
         error: 'User not found'
+      };
+    }
+
+    if ((user as any).isBlocked) {
+      clearAuthCookie(set);
+      return {
+        success: false,
+        error: 'User is blocked'
       };
     }
 
@@ -1509,6 +1646,469 @@ app.get('/api/metrics', () => {
     timestamp: new Date().toISOString(),
     uptime: process.uptime()
   };
+});
+
+app.get('/api/admin/stats/games', async ({ headers, set }) => {
+  if (!hasAdminAccess(headers)) {
+    set.status = 401;
+    return {
+      success: false,
+      error: 'Unauthorized'
+    };
+  }
+
+  try {
+    const gamesWithResult = await Game.countDocuments({ 'result.resultType': { $exists: true } });
+    const gamesWithoutResult = getOngoingGamesCount();
+
+    return {
+      success: true,
+      stats: {
+        totalGames: gamesWithResult + gamesWithoutResult,
+        gamesWithResult,
+        gamesWithoutResult
+      }
+    };
+  } catch (error: any) {
+    console.error('Admin games stats error:', error);
+    set.status = 500;
+    return {
+      success: false,
+      error: error.message || 'Failed to get admin games stats'
+    };
+  }
+});
+
+app.get('/api/admin/stats/users', async ({ headers, set }) => {
+  if (!hasAdminAccess(headers)) {
+    set.status = 401;
+    return {
+      success: false,
+      error: 'Unauthorized'
+    };
+  }
+
+  try {
+    const totalRegisteredUsers = await User.countDocuments({});
+    return {
+      success: true,
+      stats: {
+        totalRegisteredUsers
+      }
+    };
+  } catch (error: any) {
+    console.error('Admin users stats error:', error);
+    set.status = 500;
+    return {
+      success: false,
+      error: error.message || 'Failed to get admin users stats'
+    };
+  }
+});
+
+app.get('/api/admin/stats/overview', async ({ headers, set }) => {
+  if (!hasAdminAccess(headers)) {
+    set.status = 401;
+    return {
+      success: false,
+      error: 'Unauthorized'
+    };
+  }
+
+  try {
+    const [gamesWithResult, totalRegisteredUsers] = await Promise.all([
+      Game.countDocuments({ 'result.resultType': { $exists: true } }),
+      User.countDocuments({})
+    ]);
+    const gamesWithoutResult = getOngoingGamesCount();
+
+    return {
+      success: true,
+      stats: {
+        totalGames: gamesWithResult + gamesWithoutResult,
+        gamesWithResult,
+        gamesWithoutResult,
+        totalRegisteredUsers
+      }
+    };
+  } catch (error: any) {
+    console.error('Admin overview stats error:', error);
+    set.status = 500;
+    return {
+      success: false,
+      error: error.message || 'Failed to get admin overview stats'
+    };
+  }
+});
+
+app.get('/api/admin/users', async ({ headers, query, set }) => {
+  if (!hasAdminAccess(headers)) {
+    set.status = 401;
+    return {
+      success: false,
+      error: 'Unauthorized'
+    };
+  }
+
+  try {
+    const pageParam = typeof query === 'object' && query !== null && 'page' in query ? query.page : undefined;
+    const limitParam = typeof query === 'object' && query !== null && 'limit' in query ? query.limit : undefined;
+    const searchParam = typeof query === 'object' && query !== null && 'search' in query ? query.search : undefined;
+    const blockedParam = typeof query === 'object' && query !== null && 'blocked' in query ? query.blocked : undefined;
+    const verifiedParam = typeof query === 'object' && query !== null && 'verified' in query ? query.verified : undefined;
+
+    const page = Math.max(parseInt(String(pageParam || '1')) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(String(limitParam || '20')) || 20, 1), 100);
+    const skip = (page - 1) * limit;
+    const search = String(searchParam || '').trim();
+    const blocked = String(blockedParam || 'all').toLowerCase();
+    const verified = String(verifiedParam || 'all').toLowerCase();
+
+    const filter: any = {};
+
+    if (blocked === 'blocked') {
+      filter.isBlocked = true;
+    } else if (blocked === 'active') {
+      filter.isBlocked = { $ne: true };
+    }
+
+    if (verified === 'verified') {
+      filter.emailVerified = true;
+    } else if (verified === 'unverified') {
+      filter.emailVerified = false;
+    }
+
+    if (search) {
+      const regex = new RegExp(search, 'i');
+      filter.$or = [
+        { login: regex },
+        { email: regex },
+        { name: regex }
+      ];
+    }
+
+    const [users, total] = await Promise.all([
+      User.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      User.countDocuments(filter)
+    ]);
+
+    return {
+      success: true,
+      users: users.map(formatAdminUser),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
+  } catch (error: any) {
+    console.error('Admin users list error:', error);
+    set.status = 500;
+    return {
+      success: false,
+      error: error.message || 'Failed to get users'
+    };
+  }
+}, {
+  query: t.Object({
+    page: t.Optional(t.String()),
+    limit: t.Optional(t.String()),
+    search: t.Optional(t.String()),
+    blocked: t.Optional(t.String()),
+    verified: t.Optional(t.String())
+  })
+});
+
+app.get('/api/admin/users/:id', async ({ headers, params, set }) => {
+  if (!hasAdminAccess(headers)) {
+    set.status = 401;
+    return {
+      success: false,
+      error: 'Unauthorized'
+    };
+  }
+
+  try {
+    const user = await User.findById(params.id);
+    if (!user) {
+      set.status = 404;
+      return {
+        success: false,
+        error: 'User not found'
+      };
+    }
+
+    return {
+      success: true,
+      user: formatAdminUser(user)
+    };
+  } catch (error: any) {
+    console.error('Admin user details error:', error);
+    set.status = 500;
+    return {
+      success: false,
+      error: error.message || 'Failed to get user'
+    };
+  }
+}, {
+  params: t.Object({
+    id: t.String()
+  })
+});
+
+app.patch('/api/admin/users/:id', async ({ headers, params, body, set }) => {
+  if (!hasAdminAccess(headers)) {
+    set.status = 401;
+    return {
+      success: false,
+      error: 'Unauthorized'
+    };
+  }
+
+  try {
+    const user = await User.findById(params.id);
+    if (!user) {
+      set.status = 404;
+      return {
+        success: false,
+        error: 'User not found'
+      };
+    }
+
+    const updateData: Record<string, any> = {};
+
+    if (body.name !== undefined) {
+      const normalizedName = body.name.trim();
+      updateData.name = normalizedName || undefined;
+    }
+
+    if (body.avatar !== undefined) {
+      updateData.avatar = body.avatar.trim() || '0';
+    }
+
+    if (body.emailVerified !== undefined) {
+      updateData.emailVerified = body.emailVerified;
+      if (body.emailVerified) {
+        updateData.emailVerificationToken = undefined;
+      }
+    }
+
+    Object.assign(user, updateData);
+    await user.save();
+
+    return {
+      success: true,
+      message: 'User updated',
+      user: formatAdminUser(user)
+    };
+  } catch (error: any) {
+    console.error('Admin update user error:', error);
+    set.status = 500;
+    return {
+      success: false,
+      error: error.message || 'Failed to update user'
+    };
+  }
+}, {
+  params: t.Object({
+    id: t.String()
+  }),
+  body: t.Object({
+    name: t.Optional(t.String()),
+    avatar: t.Optional(t.String()),
+    emailVerified: t.Optional(t.Boolean())
+  })
+});
+
+app.patch('/api/admin/users/:id/resend-verification', async ({ headers, params, set }) => {
+  if (!hasAdminAccess(headers)) {
+    set.status = 401;
+    return {
+      success: false,
+      error: 'Unauthorized'
+    };
+  }
+
+  try {
+    const user = await User.findById(params.id);
+    if (!user) {
+      set.status = 404;
+      return {
+        success: false,
+        error: 'User not found'
+      };
+    }
+
+    if (user.emailVerified) {
+      set.status = 400;
+      return {
+        success: false,
+        error: 'Email already verified'
+      };
+    }
+
+    const verificationToken = user.emailVerificationToken || crypto.randomBytes(32).toString('hex');
+    if (!user.emailVerificationToken) {
+      user.emailVerificationToken = verificationToken;
+      await user.save();
+    }
+
+    await sendVerificationEmail(user.email, user.login, verificationToken);
+
+    return {
+      success: true,
+      message: 'Verification email sent',
+      user: formatAdminUser(user)
+    };
+  } catch (error: any) {
+    console.error('Admin resend verification error:', error);
+    set.status = 500;
+    return {
+      success: false,
+      error: error.message || 'Failed to resend verification email'
+    };
+  }
+}, {
+  params: t.Object({
+    id: t.String()
+  })
+});
+
+app.patch('/api/admin/users/:id/block', async ({ headers, params, body, set }) => {
+  if (!hasAdminAccess(headers)) {
+    set.status = 401;
+    return {
+      success: false,
+      error: 'Unauthorized'
+    };
+  }
+
+  try {
+    const user = await User.findById(params.id);
+    if (!user) {
+      set.status = 404;
+      return {
+        success: false,
+        error: 'User not found'
+      };
+    }
+
+    user.set({
+      isBlocked: true,
+      blockedReason: body.reason?.trim() || null,
+      blockedAt: new Date()
+    });
+    await user.save();
+
+    return {
+      success: true,
+      message: 'User blocked',
+      user: formatAdminUser(user)
+    };
+  } catch (error: any) {
+    console.error('Admin block user error:', error);
+    set.status = 500;
+    return {
+      success: false,
+      error: error.message || 'Failed to block user'
+    };
+  }
+}, {
+  params: t.Object({
+    id: t.String()
+  }),
+  body: t.Object({
+    reason: t.Optional(t.String())
+  })
+});
+
+app.patch('/api/admin/users/:id/unblock', async ({ headers, params, set }) => {
+  if (!hasAdminAccess(headers)) {
+    set.status = 401;
+    return {
+      success: false,
+      error: 'Unauthorized'
+    };
+  }
+
+  try {
+    const user = await User.findById(params.id);
+    if (!user) {
+      set.status = 404;
+      return {
+        success: false,
+        error: 'User not found'
+      };
+    }
+
+    user.set({
+      isBlocked: false,
+      blockedReason: null,
+      blockedAt: null
+    });
+    await user.save();
+
+    return {
+      success: true,
+      message: 'User unblocked',
+      user: formatAdminUser(user)
+    };
+  } catch (error: any) {
+    console.error('Admin unblock user error:', error);
+    set.status = 500;
+    return {
+      success: false,
+      error: error.message || 'Failed to unblock user'
+    };
+  }
+}, {
+  params: t.Object({
+    id: t.String()
+  })
+});
+
+app.delete('/api/admin/users/:id', async ({ headers, params, set }) => {
+  if (!hasAdminAccess(headers)) {
+    set.status = 401;
+    return {
+      success: false,
+      error: 'Unauthorized'
+    };
+  }
+
+  try {
+    const user = await User.findById(params.id);
+    if (!user) {
+      set.status = 404;
+      return {
+        success: false,
+        error: 'User not found'
+      };
+    }
+
+    await User.deleteOne({ _id: params.id });
+
+    return {
+      success: true,
+      message: 'User deleted',
+      deletedUserId: params.id
+    };
+  } catch (error: any) {
+    console.error('Admin delete user error:', error);
+    set.status = 500;
+    return {
+      success: false,
+      error: error.message || 'Failed to delete user'
+    };
+  }
+}, {
+  params: t.Object({
+    id: t.String()
+  })
 });
 
 // Create room endpoint
