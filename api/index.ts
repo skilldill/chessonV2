@@ -876,6 +876,19 @@ app.post('/api/auth/login', async ({ body, request, set }) => {
 
     // Проверяем, подтвержден ли email
     if (!user.emailVerified) {
+      try {
+        const verificationToken = user.emailVerificationToken || crypto.randomBytes(32).toString('hex');
+
+        if (!user.emailVerificationToken) {
+          user.emailVerificationToken = verificationToken;
+          await user.save();
+        }
+
+        await sendVerificationEmail(user.email, user.login, verificationToken);
+      } catch (emailError) {
+        console.error('Failed to resend verification email on login:', emailError);
+      }
+
       return {
         success: false,
         error: 'Please verify your email before logging in',
