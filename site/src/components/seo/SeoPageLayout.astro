@@ -1,0 +1,79 @@
+---
+import Hero from './Hero.astro';
+import ValueProps from './ValueProps.astro';
+import HowItWorks from './HowItWorks.astro';
+import UseCases from './UseCases.astro';
+import FAQAccordion from './FAQAccordion.astro';
+import InternalLinks from './InternalLinks.astro';
+import type { HeroData, ValueProp, StepItem, UseCase, FaqItem, InternalLink, ActionLink } from './types';
+
+const {
+  hero,
+  valueTitle,
+  valueProps,
+  quickCallout,
+  trustTitle,
+  trustPoints,
+  howTitle,
+  steps,
+  useCasesTitle,
+  useCases,
+  faqTitle,
+  faq,
+  linksTitle,
+  links,
+  stickyTitle,
+  stickyText,
+  stickyCta,
+} = Astro.props as {
+  hero: HeroData;
+  valueTitle: string;
+  valueProps: ValueProp[];
+  quickCallout: string;
+  trustTitle: string;
+  trustPoints: string[];
+  howTitle: string;
+  steps: StepItem[];
+  useCasesTitle: string;
+  useCases: UseCase[];
+  faqTitle: string;
+  faq: FaqItem[];
+  linksTitle: string;
+  links: InternalLink[];
+  stickyTitle: string;
+  stickyText: string;
+  stickyCta: ActionLink;
+};
+---
+
+<main class="seo-wrap">
+  <Hero hero={hero} />
+
+  <section class="seo-section">
+    <div class="seo-highlight" role="note">{quickCallout}</div>
+  </section>
+
+  <section class="seo-section" aria-labelledby="trust-title">
+    <h2 id="trust-title">{trustTitle}</h2>
+    <ul class="trust-list">
+      {trustPoints.map((item) => (
+        <li>{item}</li>
+      ))}
+    </ul>
+  </section>
+
+  <ValueProps title={valueTitle} items={valueProps} />
+  <HowItWorks title={howTitle} steps={steps} />
+  <UseCases title={useCasesTitle} items={useCases} />
+
+  <slot />
+
+  <FAQAccordion title={faqTitle} faq={faq} />
+  <InternalLinks title={linksTitle} items={links} />
+
+  <!-- <aside class="sticky-mini-cta" aria-label="Quick game action">
+    <p class="sticky-mini-kicker">{stickyTitle}</p>
+    <p class="sticky-mini-text">{stickyText}</p>
+    <a class="btn btn-primary" href={stickyCta.href}>{stickyCta.label}</a>
+  </aside> -->
+</main>

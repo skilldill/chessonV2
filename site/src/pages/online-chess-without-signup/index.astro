@@ -1,0 +1,136 @@
+---
+import SeoLayout from '../../layouts/SeoLayout.astro';
+import SeoPageLayout from '../../components/seo/SeoPageLayout.astro';
+
+const title = 'Online Chess Without Sign-Up | Chesson';
+const description = 'Play online chess without sign-up. Start free browser games quickly, share a link with friends, and join matches without installs.';
+const canonicalUrl = 'https://chesson.me/en/online-chess-without-signup/';
+
+const breadcrumbs = [
+  { name: 'Home', url: 'https://chesson.me/' },
+  { name: 'Online chess without sign-up', url: canonicalUrl },
+];
+
+const faq = [
+  {
+    question: 'Can I play without creating an account?',
+    answer: 'Yes. You can start a game without mandatory sign-up and begin playing right away.',
+  },
+  {
+    question: 'Is sign-up available later if I want it?',
+    answer: 'Yes. Sign-up can remain optional and used later for extra account features if needed.',
+  },
+  {
+    question: 'Do I need any app download?',
+    answer: 'No download is required. Games run directly in your browser.',
+  },
+  {
+    question: 'Can I invite friends without sign-up?',
+    answer: 'Yes. Create a game and share the invite link with your friend to start.',
+  },
+  {
+    question: 'Is this good for quick matches?',
+    answer: 'Yes. A no-sign-up flow is designed for fast starts and low friction.',
+  },
+  {
+    question: 'Can I play on mobile browser?',
+    answer: 'Yes, if your device has a compatible browser and internet access.',
+  },
+];
+
+const hero = {
+  h1: 'Online chess without sign-up',
+  kicker: 'ChessOn • Frictionless entry',
+  summary:
+    'Start playing first, decide about accounts later. Browser chess with optional sign-up and instant friend invites by link.',
+  primaryCta: { label: 'Create game', href: 'https://game.chesson.me/' },
+  secondaryCta: { label: 'Play as guest', href: 'https://game.chesson.me/' },
+  ghostCta: { label: 'Learn rules', href: '/en/chess-rules-for-beginners/' },
+};
+
+const valueProps = [
+  { title: 'No mandatory account wall', description: 'Users can start a game immediately without registration forms.' },
+  { title: 'Optional sign-up later', description: 'Profile features remain available when players are ready for them.' },
+  { title: 'Fast room flow', description: 'Create, share, and start in one short sequence.' },
+  { title: 'Better first-game conversion', description: 'Lower friction means more successful starts for new players.' },
+  { title: 'Great for casual sessions', description: 'Ideal for spontaneous games during short free windows.' },
+  { title: 'Device-flexible', description: 'Runs in modern desktop and mobile browsers.' },
+];
+
+const steps = [
+  { title: 'Open Chesson', description: 'Go to the game page and click Create game.' },
+  { title: 'Generate room link', description: 'A shareable invite appears right after room creation.' },
+  { title: 'Invite a friend', description: 'Send the link in chat with no account setup needed first.' },
+  { title: 'Play immediately', description: 'Both players join and start the match from the same room URL.' },
+];
+
+const useCases = [
+  { title: 'Trying the platform first', description: 'Evaluate gameplay before committing to an account.' },
+  { title: 'Short break match', description: 'Launch a fast game with minimal overhead.' },
+  { title: 'Low-friction friend invites', description: 'Easier onboarding when your friend wants zero setup friction.' },
+];
+
+const internalLinks = [
+  { title: 'Play chess online for free', description: 'Overview of free browser-based play.', href: '/en/play-chess-online-free/' },
+  { title: 'Play chess with friends by link', description: 'Invite-focused flow for recurring sessions.', href: '/en/play-chess-with-friends-link/' },
+  { title: 'Онлайн шахматы без регистрации (RU)', description: 'Russian version of the same no-sign-up flow.', href: '/ru/online-chess-without-registration/' },
+];
+---
+
+<SeoLayout
+  lang="en"
+  title={title}
+  description={description}
+  canonicalUrl={canonicalUrl}
+  locale="en_US"
+  breadcrumbs={breadcrumbs}
+  faq={faq}
+>
+  <SeoPageLayout
+    hero={hero}
+    valueTitle="Why no-sign-up matters"
+    valueProps={valueProps}
+    quickCallout="One click flow: create game -> share link"
+    trustTitle="Trust highlights"
+    trustPoints={['No installation', 'Works on mobile', 'Free to start']}
+    howTitle="How it works"
+    steps={steps}
+    useCasesTitle="Use cases"
+    useCases={useCases}
+    faqTitle="FAQ"
+    faq={faq}
+    linksTitle="Read also"
+    links={internalLinks}
+    stickyTitle="Play now"
+    stickyText="Create a room first, register only if and when you need it."
+    stickyCta={{ label: 'Create game', href: 'https://game.chesson.me/' }}
+  >
+    <section class="seo-section">
+      <h2>Start sessions before asking for commitment</h2>
+      <p>
+        Account-first onboarding can block the very behavior users came for: an immediate game. In chess, especially for casual and friend matches,
+        speed to first move has a direct impact on retention. A no-sign-up path removes that initial drop-off point and lets users validate the
+        product in real play. If they like the experience, account creation can happen later, at a moment that feels justified by real value.
+      </p>
+      <p>
+        This sequence is pragmatic for both players and product outcomes. Players avoid unnecessary setup, and the platform captures more completed
+        first sessions. The invite-link model then extends that benefit to multiplayer flow: users can bring someone else in without forcing both
+        people through registration just to test one match.
+      </p>
+    </section>
+
+    <section class="seo-section">
+      <h2>Keep no-sign-up sessions structured</h2>
+      <p>
+        Low friction does not mean low quality. You can still get meaningful improvement by setting one objective per game and running short review
+        loops. Examples: avoid undefended pieces, finish development before attack, or spot checks earlier. After each game, note one mistake and
+        replay quickly with the same partner. This keeps learning practical while preserving the speed advantage of no-sign-up entry.
+      </p>
+      <p>
+        For deeper pathways, combine this page with <a href="/en/chess-rules-for-beginners/">beginner rules</a> and
+        <a href="/en/play-chess-with-friends-link/">friend-link sessions</a>. That creates a full stack: simple entry, reliable invites, and
+        incremental skill growth across repeated matches.
+      </p>
+    </section>
+  </SeoPageLayout>
+</SeoLayout>

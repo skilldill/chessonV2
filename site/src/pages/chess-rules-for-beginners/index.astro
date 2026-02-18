@@ -1,0 +1,136 @@
+---
+import SeoLayout from '../../layouts/SeoLayout.astro';
+import SeoPageLayout from '../../components/seo/SeoPageLayout.astro';
+
+const title = 'Chess Rules for Beginners (Quick Guide) | Chesson';
+const description = 'Learn chess rules for beginners: piece moves, check, checkmate, castling, and draws. Read the basics, then start an online game.';
+const canonicalUrl = 'https://chesson.me/en/chess-rules-for-beginners/';
+
+const breadcrumbs = [
+  { name: 'Home', url: 'https://chesson.me/' },
+  { name: 'Chess rules for beginners', url: canonicalUrl },
+];
+
+const faq = [
+  {
+    question: 'What is the goal of chess?',
+    answer: 'The objective is to checkmate your opponent’s king, meaning the king is under attack and has no legal escape.',
+  },
+  {
+    question: 'Who moves first in chess?',
+    answer: 'White always moves first, then players alternate turns.',
+  },
+  {
+    question: 'Can a king move into check?',
+    answer: 'No. A king cannot move to a square controlled by an opponent’s piece.',
+  },
+  {
+    question: 'What is castling?',
+    answer: 'Castling is a special move involving the king and rook to improve king safety and connect rooks.',
+  },
+  {
+    question: 'What is stalemate?',
+    answer: 'Stalemate is a draw where the player to move has no legal move but is not in check.',
+  },
+  {
+    question: 'How should beginners practice?',
+    answer: 'Use short study sessions: learn one rule, play a game, review a few mistakes, and repeat consistently.',
+  },
+];
+
+const hero = {
+  h1: 'Chess rules for beginners',
+  kicker: 'ChessOn • Learn then play',
+  summary:
+    'Understand core rules quickly, then apply them in a live game. A practical format for turning theory into confident board decisions.',
+  primaryCta: { label: 'Create game', href: 'https://game.chesson.me/' },
+  secondaryCta: { label: 'Play as guest', href: 'https://game.chesson.me/' },
+  ghostCta: { label: 'Learn rules', href: '/en/chess-rules-for-beginners/' },
+};
+
+const valueProps = [
+  { title: 'Clear fundamentals', description: 'Piece movement, check, checkmate, castling, and draw states in one flow.' },
+  { title: 'Practice-ready format', description: 'Move from reading directly into live gameplay.' },
+  { title: 'Short and focused', description: 'Built for quick learning sessions with less cognitive overload.' },
+  { title: 'Beginner mistake awareness', description: 'Highlights common opening and tactical errors early.' },
+  { title: 'Link-based training fit', description: 'Easy to apply with a friend in immediate rematch cycles.' },
+  { title: 'Mobile-friendly access', description: 'Learn and play from desktop or phone with the same flow.' },
+];
+
+const steps = [
+  { title: 'Review the basic rules', description: 'Understand goals, legal moves, and king safety.' },
+  { title: 'Play one short game', description: 'Apply the rule set in a real board context.' },
+  { title: 'Review a few mistakes', description: 'Identify one tactical and one positional issue.' },
+  { title: 'Run the rematch', description: 'Test corrections immediately in the next game.' },
+];
+
+const useCases = [
+  { title: 'First game from zero', description: 'A practical start for complete beginners.' },
+  { title: 'Teach a friend live', description: 'Explain core rules while playing together online.' },
+  { title: 'Quick fundamentals refresh', description: 'Revisit basics before a focused game session.' },
+];
+
+const internalLinks = [
+  { title: 'Play chess online for free', description: 'Apply beginner rules directly in live games.', href: '/en/play-chess-online-free/' },
+  { title: 'Play with friends by link', description: 'Fast invite format for guided practice sessions.', href: '/en/play-chess-with-friends-link/' },
+  { title: 'Правила шахмат для начинающих (RU)', description: 'Russian version for bilingual learners.', href: '/ru/chess-rules-for-beginners/' },
+];
+---
+
+<SeoLayout
+  lang="en"
+  title={title}
+  description={description}
+  canonicalUrl={canonicalUrl}
+  locale="en_US"
+  breadcrumbs={breadcrumbs}
+  faq={faq}
+>
+  <SeoPageLayout
+    hero={hero}
+    valueTitle="What you get as a beginner"
+    valueProps={valueProps}
+    quickCallout="One click flow: create game -> share link"
+    trustTitle="Trust highlights"
+    trustPoints={['No installation', 'Works on mobile', 'Free to start']}
+    howTitle="How to learn effectively"
+    steps={steps}
+    useCasesTitle="Use cases"
+    useCases={useCases}
+    faqTitle="FAQ"
+    faq={faq}
+    linksTitle="Read also"
+    links={internalLinks}
+    stickyTitle="Training game"
+    stickyText="Read one rule, play one game, review one mistake."
+    stickyCta={{ label: 'Create game', href: 'https://game.chesson.me/' }}
+  >
+    <section class="seo-section">
+      <h2>Build confidence through short learn-play cycles</h2>
+      <p>
+        Beginners often overestimate how much theory they need before their first useful game. In practice, a compact fundamentals set is enough:
+        legal moves, check/checkmate logic, castling conditions, and draw scenarios. Once these are clear, live games become the fastest learning
+        engine. You see patterns, notice tactical threats, and understand timing in context instead of trying to memorize everything abstractly.
+      </p>
+      <p>
+        The most efficient path is repetition with intent. Study one concept, play immediately, then review one or two mistakes. This keeps training
+        light and sustainable while still improving board awareness. Over time, these short loops produce stronger results than long passive reading
+        sessions with no practical application.
+      </p>
+    </section>
+
+    <section class="seo-section">
+      <h2>Common beginner leaks and fast fixes</h2>
+      <p>
+        A frequent early leak is overusing one piece in the opening while neglecting development. That hands center control to your opponent and
+        creates tactical vulnerabilities. A practical correction is a simple checklist: develop minor pieces, castle, connect rooks, then launch
+        active operations. This structure prevents many quick losses without requiring deep opening memorization.
+      </p>
+      <p>
+        Another major leak is moving too fast without a blunder check. Before each move, ask what your opponent threatens next and which of your
+        pieces would become loose. This short pause dramatically reduces one-move blunders. To apply the method right away, open
+        <a href="/en/play-chess-online-free/">a free online game</a> and test one correction target per match.
+      </p>
+    </section>
+  </SeoPageLayout>
+</SeoLayout>

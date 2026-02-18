@@ -1,0 +1,253 @@
+---
+const title = '404 — Page Not Found | Chesson';
+const description = 'The page you are looking for does not exist. Start a chess game or return to the home page.';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="robots" content="noindex,follow" />
+    <meta name="theme-color" content="#000000" />
+    <link rel="icon" href="/favicon.png" sizes="64x64" type="image/png" />
+  </head>
+  <body>
+    <div class="page-bg">
+      <div class="ambient ambient-one"></div>
+      <div class="ambient ambient-two"></div>
+
+      <header class="page-header">
+        <a href="/" class="brand-link" aria-label="Chesson home">
+          <img src="/chesson-logo.svg" alt="Chesson" class="brand-logo" />
+        </a>
+      </header>
+
+      <main class="container" aria-labelledby="not-found-title">
+        <section class="hero-card">
+          <p class="code">404</p>
+          <h1 id="not-found-title">Страница не найдена</h1>
+          <p class="subtitle">
+            Такой страницы нет или она была перемещена. Запустите новую партию или вернитесь на главную.
+          </p>
+
+          <div class="actions">
+            <button id="create-room-btn" class="btn btn-primary" type="button">Создать игру</button>
+            <a class="btn btn-secondary" href="/ru/">На главную</a>
+            <a class="btn btn-ghost" href="/">EN Home</a>
+          </div>
+
+          <p class="hint">В 1 клик: создать игру -> поделиться ссылкой</p>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      function redirectBasedOnScreenSize() {
+        const isMobile =
+          window.innerWidth < 768 ||
+          /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+        if (isMobile) {
+          window.location.href = 'https://mobile.chesson.me/';
+        } else {
+          window.location.href = 'https://game.chesson.me/';
+        }
+      }
+
+      document.addEventListener('DOMContentLoaded', () => {
+        const button = document.getElementById('create-room-btn');
+        if (button) {
+          button.addEventListener('click', redirectBasedOnScreenSize);
+        }
+      });
+    </script>
+  </body>
+</html>
+
+<style>
+  :root {
+    --bg: #000000;
+    --text: #f6f5ff;
+    --text-soft: rgba(243, 241, 255, 0.8);
+    --violet: #4f39f6;
+    --violet-soft: #6d5bff;
+    --line: rgba(255, 255, 255, 0.1);
+  }
+
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+  }
+
+  .page-bg {
+    min-height: 100vh;
+    position: relative;
+    overflow: hidden;
+    background:
+      radial-gradient(70% 50% at 8% -8%, rgba(79, 57, 246, 0.24), transparent 74%),
+      radial-gradient(55% 36% at 100% 0%, rgba(109, 91, 255, 0.16), transparent 74%),
+      linear-gradient(180deg, #080808 0%, #020202 100%);
+  }
+
+  .ambient {
+    position: absolute;
+    border-radius: 999px;
+    pointer-events: none;
+    filter: blur(80px);
+  }
+
+  .ambient-one {
+    width: 300px;
+    height: 300px;
+    top: -120px;
+    right: -90px;
+    background: rgba(79, 57, 246, 0.24);
+  }
+
+  .ambient-two {
+    width: 260px;
+    height: 260px;
+    bottom: -100px;
+    left: -80px;
+    background: rgba(109, 91, 255, 0.14);
+  }
+
+  .page-header {
+    padding: 22px 24px;
+  }
+
+  .brand-link {
+    display: inline-flex;
+  }
+
+  .brand-logo {
+    height: 28px;
+    width: auto;
+  }
+
+  .container {
+    width: min(100%, 980px);
+    margin: 0 auto;
+    padding: 36px 18px 72px;
+  }
+
+  .hero-card {
+    border-radius: 20px;
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.03);
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
+    padding: clamp(24px, 4vw, 48px);
+    text-align: center;
+  }
+
+  .code {
+    margin: 0;
+    font-size: clamp(4rem, 12vw, 8rem);
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    line-height: 1;
+    color: #ffffff;
+    text-shadow: 0 0 36px rgba(79, 57, 246, 0.45);
+  }
+
+  h1 {
+    margin: 14px 0 10px;
+    font-size: clamp(1.6rem, 4vw, 2.5rem);
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+  }
+
+  .subtitle {
+    margin: 0 auto;
+    max-width: 58ch;
+    color: var(--text-soft);
+    line-height: 1.7;
+  }
+
+  .actions {
+    margin-top: 24px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .btn {
+    border-radius: 12px;
+    border: 1px solid transparent;
+    padding: 11px 16px;
+    font-weight: 700;
+    font-size: 1rem;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform 180ms ease, background 180ms ease, border-color 180ms ease;
+  }
+
+  .btn:hover {
+    transform: translateY(-1px);
+  }
+
+  .btn-primary {
+    background: #ffffff;
+    border-color: #ffffff;
+    color: #111111;
+  }
+
+  .btn-primary:hover {
+    background: #ececec;
+  }
+
+  .btn-secondary {
+    background: #4f39f6;
+    border-color: #6d5bff;
+    color: #ffffff;
+    box-shadow: 0 8px 24px rgba(79, 57, 246, 0.45);
+  }
+
+  .btn-secondary:hover {
+    background: #5c47ff;
+  }
+
+  .btn-ghost {
+    background: transparent;
+    border-color: rgba(109, 91, 255, 0.45);
+    color: #b8aeff;
+  }
+
+  .hint {
+    margin: 16px 0 0;
+    color: #ddd6ff;
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+
+  @media (max-width: 640px) {
+    .page-header {
+      padding: 16px;
+    }
+
+    .brand-logo {
+      height: 24px;
+    }
+
+    .container {
+      padding: 20px 14px 48px;
+    }
+
+    .actions {
+      flex-direction: column;
+    }
+
+    .btn {
+      width: 100%;
+    }
+  }
+</style>

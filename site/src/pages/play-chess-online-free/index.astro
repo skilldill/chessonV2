@@ -1,0 +1,151 @@
+---
+import SeoLayout from '../../layouts/SeoLayout.astro';
+import SeoPageLayout from '../../components/seo/SeoPageLayout.astro';
+
+const title = 'Play Chess Online for Free | Chesson';
+const description = 'Play chess online for free in your browser. No installation, fast game setup, and easy friend invites with a simple link.';
+const canonicalUrl = 'https://chesson.me/en/play-chess-online-free/';
+
+const breadcrumbs = [
+  { name: 'Home', url: 'https://chesson.me/' },
+  { name: 'Play chess online for free', url: canonicalUrl },
+];
+
+const faq = [
+  {
+    question: 'Is Chesson free to use?',
+    answer: 'Yes. You can start and play online chess games for free in your browser.',
+  },
+  {
+    question: 'Do I need to install an app?',
+    answer: 'No. Chesson works directly in modern browsers, so no installation is required.',
+  },
+  {
+    question: 'Can I invite a friend to my game?',
+    answer: 'Yes. Create a game and share the invite link with your friend to start a match quickly.',
+  },
+  {
+    question: 'Can beginners use this platform?',
+    answer: 'Absolutely. The setup is simple and works well for both beginners and experienced players.',
+  },
+  {
+    question: 'Can I play from mobile devices?',
+    answer: 'Yes, as long as you have a supported browser and internet connection.',
+  },
+  {
+    question: 'Do I have to sign up first?',
+    answer: 'No, sign-up is optional for getting started. You can begin with a quick game flow.',
+  },
+];
+
+const hero = {
+  h1: 'Play chess online for free',
+  kicker: 'ChessOn • Browser-first chess',
+  summary:
+    'Launch a match in your browser, send one invite link, and start playing without installs or onboarding friction. Built for fast daily games.',
+  primaryCta: { label: 'Create game', href: 'https://game.chesson.me/' },
+  secondaryCta: { label: 'Play as guest', href: 'https://game.chesson.me/' },
+  ghostCta: { label: 'Learn rules', href: '/en/chess-rules-for-beginners/' },
+};
+
+const valueProps = [
+  { title: 'No install', description: 'Everything runs in-browser, so there is nothing to download first.' },
+  { title: 'Instant link invites', description: 'Start a room once and invite friends using the same chat flow you already use.' },
+  { title: 'Clean UI', description: 'Focused board layout with clear actions and minimal visual noise.' },
+  { title: 'Cross-device', description: 'Play on desktop or mobile in modern browsers with the same flow.' },
+  { title: 'Beginner-friendly', description: 'Simple enough for first-time players, practical enough for regular practice.' },
+  { title: 'Free access', description: 'Core gameplay is available without paywall friction.' },
+];
+
+const steps = [
+  { title: 'Open a new room', description: 'Click Create game and spin up a fresh board in seconds.' },
+  { title: 'Copy your invite link', description: 'The room link appears immediately after creation.' },
+  { title: 'Share it with a friend', description: 'Send the link in Telegram, Discord, WhatsApp, or email.' },
+  { title: 'Start playing', description: 'As soon as your friend joins, the match is live.' },
+];
+
+const useCases = [
+  { title: 'Evening match with a friend', description: 'Quick setup for a casual game after work or class.' },
+  { title: 'Mobile game on the go', description: 'Open the board from your phone during short breaks.' },
+  { title: 'Fast rematch series', description: 'Create the next room instantly and keep the training rhythm.' },
+];
+
+const internalLinks = [
+  {
+    title: 'Play with friends by link',
+    description: 'Detailed friend-invite flow and match routine ideas.',
+    href: '/en/play-chess-with-friends-link/',
+  },
+  {
+    title: 'Online chess without sign-up',
+    description: 'Account-optional path for even lower friction.',
+    href: '/en/online-chess-without-signup/',
+  },
+  {
+    title: 'Играть в шахматы онлайн бесплатно (RU)',
+    description: 'Russian version of the same page and structure.',
+    href: '/ru/play-chess-online-free/',
+  },
+];
+---
+
+<SeoLayout
+  lang="en"
+  title={title}
+  description={description}
+  canonicalUrl={canonicalUrl}
+  locale="en_US"
+  breadcrumbs={breadcrumbs}
+  faq={faq}
+>
+  <SeoPageLayout
+    hero={hero}
+    valueTitle="Why this free format works"
+    valueProps={valueProps}
+    quickCallout="One click flow: create game -> share link"
+    trustTitle="Trust highlights"
+    trustPoints={['No installation', 'Works on mobile', 'Free to start']}
+    howTitle="How it works"
+    steps={steps}
+    useCasesTitle="Use cases"
+    useCases={useCases}
+    faqTitle="FAQ"
+    faq={faq}
+    linksTitle="Read also"
+    links={internalLinks}
+    stickyTitle="Ready to play"
+    stickyText="Open a room and share the link in under a minute."
+    stickyCta={{ label: 'Create game', href: 'https://game.chesson.me/' }}
+  >
+    <section class="seo-section">
+      <h2>Free online chess with product-level UX</h2>
+      <p>
+        Free chess platforms are only useful when the first match starts quickly. In most real sessions, players do not want to read a long setup
+        guide, install software, and then explain the process to a friend. They want a board, a shareable link, and a stable connection. That is
+        why this page is structured around the same product flow as the app itself: low-friction entry, clear actions, and immediate gameplay.
+        The result is less drop-off before the first move and more repeat sessions week after week.
+      </p>
+      <p>
+        This model works for both casual players and focused improvers. Casual players value speed and simplicity, while improving players value
+        repeatability. If room creation and invites are predictable, it is easier to run short training blocks, quick rematches, and post-game
+        reviews with the same opponent. The interface should stay out of the way so decisions happen on the board, not in onboarding menus.
+      </p>
+    </section>
+
+    <section class="seo-section">
+      <h2>Turn quick games into steady progress</h2>
+      <p>
+        A free game gives more value when each session has one intention. Keep it small: castle early, avoid undefended pieces, or track center
+        control through the first ten moves. One tactical goal is enough to make short games more deliberate. After the game, review one missed
+        tactic and one strategic decision, then launch the rematch immediately. This compact loop takes minutes and creates measurable progress over
+        time without heavy study overhead.
+      </p>
+      <p>
+        If you play mostly with the same partner, combine this page with
+        <a href="/en/play-chess-with-friends-link/">friend-link match routines</a>. If your focus is fundamentals, keep
+        <a href="/en/chess-rules-for-beginners/">beginner rules</a> nearby and apply one concept per match. This play-review-repeat cycle is
+        usually more effective than reading long theory without live practice.
+      </p>
+    </section>
+  </SeoPageLayout>
+</SeoLayout>

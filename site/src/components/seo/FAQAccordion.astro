@@ -1,0 +1,23 @@
+---
+import type { FaqItem } from './types';
+
+const {
+  title,
+  faq,
+} = Astro.props as {
+  title: string;
+  faq: FaqItem[];
+};
+---
+
+<section class="seo-section" aria-labelledby="faq-title">
+  <h2 id="faq-title">{title}</h2>
+  <div class="faq-accordion" role="list">
+    {faq.map((item) => (
+      <details class="faq-item" role="listitem">
+        <summary>{item.question}</summary>
+        <p>{item.answer}</p>
+      </details>
+    ))}
+  </div>
+</section>
