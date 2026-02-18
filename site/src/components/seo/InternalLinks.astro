@@ -1,0 +1,23 @@
+---
+import type { InternalLink } from './types';
+
+const {
+  title,
+  items,
+} = Astro.props as {
+  title: string;
+  items: InternalLink[];
+};
+---
+
+<section class="seo-section" aria-labelledby="internal-links-title">
+  <h2 id="internal-links-title">{title}</h2>
+  <div class="cards-grid cards-grid-3">
+    {items.map((item) => (
+      <a class="seo-card seo-link-card" href={item.href}>
+        <h3>{item.title}</h3>
+        <p>{item.description}</p>
+      </a>
+    ))}
+  </div>
+</section>

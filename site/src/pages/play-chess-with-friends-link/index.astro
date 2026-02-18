@@ -1,0 +1,136 @@
+---
+import SeoLayout from '../../layouts/SeoLayout.astro';
+import SeoPageLayout from '../../components/seo/SeoPageLayout.astro';
+
+const title = 'Play Chess with Friends by Link | Chesson';
+const description = 'Create a chess game and invite friends with a link. Play online for free in your browser with no installation required.';
+const canonicalUrl = 'https://chesson.me/en/play-chess-with-friends-link/';
+
+const breadcrumbs = [
+  { name: 'Home', url: 'https://chesson.me/' },
+  { name: 'Play chess with friends by link', url: canonicalUrl },
+];
+
+const faq = [
+  {
+    question: 'How do I invite a friend to a chess game?',
+    answer: 'Create a game, copy the invite link, and send it to your friend. They join by opening that link.',
+  },
+  {
+    question: 'Can we play from different devices?',
+    answer: 'Yes. Link-based games work across supported browsers on desktop and mobile.',
+  },
+  {
+    question: 'Is sign-up required for both players?',
+    answer: 'No. You can start quickly without mandatory sign-up.',
+  },
+  {
+    question: 'Can I use messaging apps for invites?',
+    answer: 'Yes. You can share the game link through Telegram, WhatsApp, Discord, email, or other channels.',
+  },
+  {
+    question: 'How fast can we start playing?',
+    answer: 'Usually within a minute: create the room, send the link, and join.',
+  },
+  {
+    question: 'What if the invite link fails?',
+    answer: 'Ask your friend to open the full link in a modern browser. If needed, create a new room and share a fresh link.',
+  },
+];
+
+const hero = {
+  h1: 'Play chess with friends using a link',
+  kicker: 'ChessOn • Friend invite flow',
+  summary:
+    'Create a room once, share one link, and start your match with almost zero setup friction. Built for daily rematches and planned sessions.',
+  primaryCta: { label: 'Create game', href: 'https://game.chesson.me/' },
+  secondaryCta: { label: 'Play as guest', href: 'https://game.chesson.me/' },
+  ghostCta: { label: 'Learn rules', href: '/en/chess-rules-for-beginners/' },
+};
+
+const valueProps = [
+  { title: 'One-link entry', description: 'Your friend opens one URL and lands in the exact room you created.' },
+  { title: 'No match setup overhead', description: 'Skip profile search, friend requests, and manual lobby coordination.' },
+  { title: 'Works across chat apps', description: 'Invite through your existing communication channel in seconds.' },
+  { title: 'Great for mini-series', description: 'Launch back-to-back games with predictable setup every time.' },
+  { title: 'Beginner-safe onboarding', description: 'Simple enough for first-time players to join without confusion.' },
+  { title: 'Fast rematches', description: 'Create a fresh room after each game and keep the rhythm.' },
+];
+
+const steps = [
+  { title: 'Create a room', description: 'Use Create game to open a new match board.' },
+  { title: 'Copy invite link', description: 'A unique room URL is generated immediately.' },
+  { title: 'Send it to your friend', description: 'Share in any messenger your group already uses.' },
+  { title: 'Play instantly', description: 'Once your friend opens the link, both players are in the game.' },
+];
+
+const useCases = [
+  { title: 'Weekly friend sessions', description: 'Keep a simple recurring game routine with low coordination cost.' },
+  { title: 'Teaching a new player', description: 'Invite them directly and explain ideas while playing live.' },
+  { title: 'Quick best-of-three', description: 'Run short match series with immediate room restarts.' },
+];
+
+const internalLinks = [
+  { title: 'Play chess online for free', description: 'Broader page about no-install browser chess.', href: '/en/play-chess-online-free/' },
+  { title: 'Online chess without sign-up', description: 'Account-optional flow for even faster entry.', href: '/en/online-chess-without-signup/' },
+  { title: 'Играть с друзьями по ссылке (RU)', description: 'Russian version for mixed-language groups.', href: '/ru/play-chess-with-friends-link/' },
+];
+---
+
+<SeoLayout
+  lang="en"
+  title={title}
+  description={description}
+  canonicalUrl={canonicalUrl}
+  locale="en_US"
+  breadcrumbs={breadcrumbs}
+  faq={faq}
+>
+  <SeoPageLayout
+    hero={hero}
+    valueTitle="Why link-based games are practical"
+    valueProps={valueProps}
+    quickCallout="One click flow: create game -> share link"
+    trustTitle="Trust highlights"
+    trustPoints={['No installation', 'Works on mobile', 'Free to start']}
+    howTitle="How it works"
+    steps={steps}
+    useCasesTitle="Use cases"
+    useCases={useCases}
+    faqTitle="FAQ"
+    faq={faq}
+    linksTitle="Read also"
+    links={internalLinks}
+    stickyTitle="Friend match"
+    stickyText="Open a room and send one direct invite link."
+    stickyCta={{ label: 'Create game', href: 'https://game.chesson.me/' }}
+  >
+    <section class="seo-section">
+      <h2>Friend invites without platform friction</h2>
+      <p>
+        Most friend games start from a message thread, not from a complex gaming lobby. A link-based flow matches this behavior directly: create the
+        room, share the URL, and move to the board. That reduces failure points before move one. You do not need to explain account steps, ask your
+        friend to search for your profile, or walk through additional menus. The invitation itself becomes the exact game entry point.
+      </p>
+      <p>
+        This speed is valuable for both casual and improvement-oriented players. Casual players get immediate sessions with less coordination, while
+        improving players can run repeatable game blocks and post-game reviews with the same partner. The less time you spend on setup, the more
+        consistent your practice cadence becomes.
+      </p>
+    </section>
+
+    <section class="seo-section">
+      <h2>Build a repeatable friend-match routine</h2>
+      <p>
+        A stable routine can stay very lightweight. Set a recurring time, send a fresh link, play one to three focused games, and review one key
+        moment after each match. This structure keeps sessions short but useful. It also avoids link confusion because every new game has a clear,
+        recent invite. Over several weeks, this small operational discipline improves consistency more than occasional long sessions.
+      </p>
+      <p>
+        For related flows, pair this page with <a href="/en/play-chess-online-free/">free browser chess</a> for broader setup context and
+        <a href="/en/chess-rules-for-beginners/">beginner rules</a> when onboarding a new player. Together, these pages support a clean loop:
+        invite, play, review, rematch.
+      </p>
+    </section>
+  </SeoPageLayout>
+</SeoLayout>

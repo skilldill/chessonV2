@@ -1,0 +1,24 @@
+---
+import type { StepItem } from './types';
+
+const {
+  title,
+  steps,
+} = Astro.props as {
+  title: string;
+  steps: StepItem[];
+};
+---
+
+<section class="seo-section" aria-labelledby="how-it-works-title">
+  <h2 id="how-it-works-title">{title}</h2>
+  <ol class="numbered-grid">
+    {steps.map((step, idx) => (
+      <li class="seo-card">
+        <span class="step-badge">{idx + 1}</span>
+        <h3>{step.title}</h3>
+        <p>{step.description}</p>
+      </li>
+    ))}
+  </ol>
+</section>

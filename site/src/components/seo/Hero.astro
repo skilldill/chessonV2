@@ -1,0 +1,107 @@
+---
+import type { HeroData } from './types';
+
+const { hero } = Astro.props as { hero: HeroData };
+---
+
+<section class="seo-section seo-hero" aria-labelledby="seo-page-title">
+  <p class="seo-kicker">{hero.kicker}</p>
+  <h1 id="seo-page-title">{hero.h1}</h1>
+  <p class="seo-summary">{hero.summary}</p>
+  <div class="hero-actions" role="group" aria-label="Primary actions">
+    <a class="btn btn-primary" href={hero.primaryCta.href}>{hero.primaryCta.label}</a>
+    <a class="btn btn-secondary" href={hero.secondaryCta.href}>{hero.secondaryCta.label}</a>
+    {hero.ghostCta && <a class="btn btn-ghost" href={hero.ghostCta.href}>{hero.ghostCta.label}</a>}
+  </div>
+</section>
+
+<style>
+  .seo-hero {
+    padding-top: clamp(8px, 2vw, 20px);
+  }
+
+  .seo-kicker {
+    margin: 0;
+    color: var(--seo-accent);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-size: 0.74rem;
+    font-weight: 700;
+  }
+
+  h1 {
+    margin: 10px 0 14px;
+    color: #eef7ff;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    font-size: clamp(2rem, 4.7vw, 3.4rem);
+    text-wrap: balance;
+  }
+
+  .seo-summary {
+    margin: 0;
+    max-width: 66ch;
+    color: var(--seo-text-soft);
+    font-size: clamp(1.02rem, 1.6vw, 1.2rem);
+    line-height: 1.75;
+  }
+
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 24px;
+  }
+
+  .btn {
+    border-radius: 12px;
+    padding: 11px 15px;
+    font-weight: 650;
+    text-decoration: none;
+    transition: transform 180ms ease, border-color 180ms ease, background 180ms ease, color 180ms ease;
+    border: 1px solid transparent;
+  }
+
+  .btn:hover {
+    transform: translateY(-1px);
+  }
+
+  .btn-primary {
+    color: #111111;
+    background: #ffffff;
+    border-color: #ffffff;
+    box-shadow: none;
+  }
+
+  .btn-secondary {
+    color: #ffffff;
+    background: #4f39f6;
+    border-color: #6d5bff;
+    box-shadow: 0 8px 24px rgba(79, 57, 246, 0.45);
+  }
+
+  .btn-ghost {
+    color: #b8aeff;
+    background: transparent;
+    border-color: rgba(109, 91, 255, 0.45);
+  }
+
+  .btn-primary:hover {
+    background: #ececec;
+  }
+
+  .btn-secondary:hover {
+    background: #5c47ff;
+  }
+
+  @media (max-width: 640px) {
+    .hero-actions {
+      gap: 8px;
+    }
+
+    .btn {
+      width: 100%;
+      text-align: center;
+    }
+  }
+</style>

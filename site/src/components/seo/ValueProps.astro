@@ -1,0 +1,23 @@
+---
+import type { ValueProp } from './types';
+
+const {
+  title,
+  items,
+} = Astro.props as {
+  title: string;
+  items: ValueProp[];
+};
+---
+
+<section class="seo-section" aria-labelledby="value-props-title">
+  <h2 id="value-props-title">{title}</h2>
+  <div class="cards-grid cards-grid-3">
+    {items.map((item) => (
+      <article class="seo-card">
+        <h3>{item.title}</h3>
+        <p>{item.description}</p>
+      </article>
+    ))}
+  </div>
+</section>
