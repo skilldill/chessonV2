@@ -177,7 +177,7 @@ function clearAuthCookie(set: { headers: Record<string, string> }) {
   set.headers['Set-Cookie'] = 'authToken=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0';
 }
 
-function formatAdminUser(user: any) {
+function formatAdminUser(user: any, gamesPlayed = 0) {
   return {
     id: (user._id as mongoose.Types.ObjectId).toString(),
     login: user.login,
@@ -188,6 +188,7 @@ function formatAdminUser(user: any) {
     isBlocked: Boolean(user.isBlocked),
     blockedReason: user.blockedReason || null,
     blockedAt: user.blockedAt || null,
+    gamesPlayed,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt
   };
@@ -1795,9 +1796,54 @@ app.get('/api/admin/users', async ({ headers, query, set }) => {
       User.countDocuments(filter)
     ]);
 
+    const userIds = users.map((user) => user._id as mongoose.Types.ObjectId);
+    let gamesPlayedByUserId = new Map<string, number>();
+
+    if (userIds.length > 0) {
+      const gamesPlayedStats = await Game.aggregate<{
+        _id: mongoose.Types.ObjectId;
+        gamesPlayed: number;
+      }>([
+        {
+          $match: {
+            $or: [
+              { 'whitePlayer.userId': { $in: userIds } },
+              { 'blackPlayer.userId': { $in: userIds } }
+            ]
+          }
+        },
+        {
+          $project: {
+            participants: ['$whitePlayer.userId', '$blackPlayer.userId']
+          }
+        },
+        { $unwind: '$participants' },
+        {
+          $match: {
+            participants: { $in: userIds }
+          }
+        },
+        {
+          $group: {
+            _id: '$participants',
+            gamesPlayed: { $sum: 1 }
+          }
+        }
+      ]);
+
+      gamesPlayedByUserId = new Map(
+        gamesPlayedStats.map((item) => [item._id.toString(), item.gamesPlayed])
+      );
+    }
+
     return {
       success: true,
-      users: users.map(formatAdminUser),
+      users: users.map((user) =>
+        formatAdminUser(
+          user,
+          gamesPlayedByUserId.get((user._id as mongoose.Types.ObjectId).toString()) ?? 0
+        )
+      ),
       pagination: {
         page,
         limit,

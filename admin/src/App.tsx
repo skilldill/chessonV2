@@ -13,6 +13,7 @@ type AdminUser = {
   email: string;
   name: string | null;
   avatar: string;
+  gamesPlayed: number;
   emailVerified: boolean;
   isBlocked: boolean;
   blockedReason: string | null;
@@ -305,6 +306,7 @@ function App() {
                   <th>Login</th>
                   <th>Email</th>
                   <th>Name</th>
+                  <th>Games played</th>
                   <th>Status</th>
                   <th>Verified</th>
                   <th>Created</th>
@@ -314,11 +316,11 @@ function App() {
               <tbody>
                 {loadingUsers ? (
                   <tr>
-                    <td colSpan={7} className="empty">Loading users...</td>
+                    <td colSpan={8} className="empty">Loading users...</td>
                   </tr>
                 ) : users.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="empty">No users found</td>
+                    <td colSpan={8} className="empty">No users found</td>
                   </tr>
                 ) : (
                   users.map((user) => (
@@ -326,6 +328,7 @@ function App() {
                       <td>{user.login}</td>
                       <td>{user.email}</td>
                       <td>{user.name || '-'}</td>
+                      <td>{user.gamesPlayed}</td>
                       <td>
                         <span className={user.isBlocked ? 'pill blocked' : 'pill active'}>
                           {user.isBlocked ? 'Blocked' : 'Active'}
