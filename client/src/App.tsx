@@ -9,6 +9,7 @@ import { ForgotPasswordScreen } from "./screens/ForgotPasswordScreen/ForgotPassw
 import { ResetPasswordScreen } from "./screens/ResetPasswordScreen/ResetPasswordScreen";
 import { HomeScreen } from "./screens/HomeScreen/HomeScreen";
 import { CreateRoomScreen } from "./screens/CreateRoomScreen/CreateRoomScreen";
+import { QuickPlayWaitingScreen } from "./screens/QuickPlayWaitingScreen/QuickPlayWaitingScreen";
 import { HomeRedirect } from "./components/HomeRedirect/HomeRedirect";
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 import 'react-chessboard-ui/dist/index.css';
@@ -68,6 +69,7 @@ function App() {
       <Switch>
         <Route exact path="/" component={HomeRedirect} />
         <Route exact path="/main" component={HomeScreen} />
+        <Route exact path="/quick-play" component={QuickPlayWaitingScreen} />
         <Route exact path="/create-room" component={CreateRoomScreen} />
         <Route path="/game/:roomId" component={AppScreen} />
         <Route exact path="/custom/room" component={CreateCustomFenRoomScreen} />

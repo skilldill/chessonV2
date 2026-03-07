@@ -121,10 +121,25 @@ type Room = {
     hasMobilePlayer?: boolean; // Есть ли мобильный игрок в комнате
 };
 
+type RandomMatchQueueEntry = {
+  userId: string;
+  createdAt: number;
+  timeKey: string;
+};
+
+type RandomMatchAssignment = {
+  roomId: string;
+  createdAt: number;
+  timeKey: string;
+};
+
 const rooms = new Map<string, Room>();
 const roomTimers = new Map<string, NodeJS.Timeout>();
 const roomLastActivity = new Map<string, number>(); // Время последней активности комнаты
 const userMessageCounts = new Map<string, { count: number, resetAt: number }>(); // Rate limiting для пользователей
+const randomMatchQueueByTime = new Map<string, RandomMatchQueueEntry[]>();
+const randomMatchUserToTimeKey = new Map<string, string>();
+const randomMatchAssignments = new Map<string, RandomMatchAssignment>();
 
 // Метрики для мониторинга
 const metrics = {
@@ -143,6 +158,8 @@ const CLEANUP_INTERVAL = 60 * 60 * 1000; // Проверка каждый час
 const RATE_LIMIT_WINDOW = 1000; // 1 секунда
 const RATE_LIMIT_MAX_MESSAGES = 100; // Максимум сообщений в секунду
 const METRICS_RESET_INTERVAL = 1000; // Сброс счетчика сообщений в секунду каждую секунду
+const RANDOM_MATCH_QUEUE_ENTRY_TTL = 10 * 60 * 1000; // 10 минут
+const RANDOM_MATCH_ASSIGNMENT_TTL = 10 * 60 * 1000; // 10 минут
 const DEFAULT_ALLOWED_ORIGINS = [
   'http://localhost:3000',
   'http://127.0.0.1:3000',
@@ -474,6 +491,182 @@ function getCurrentPlayerFromFEN(fen: string): "white" | "black" {
     }
     const activeColor = parts[1].toLowerCase();
     return activeColor === 'b' ? "black" : "white";
+}
+
+function getRandomMatchTimeConfig(rawTimeMinutes?: unknown, rawIncrementSeconds?: unknown) {
+  const parsedTimeMinutes = Number(rawTimeMinutes);
+  const parsedIncrementSeconds = Number(rawIncrementSeconds);
+
+  const timeMinutes = Number.isFinite(parsedTimeMinutes) && parsedTimeMinutes > 0
+    ? Math.min(Math.floor(parsedTimeMinutes), 120)
+    : 10;
+  const incrementSeconds = Number.isFinite(parsedIncrementSeconds) && parsedIncrementSeconds >= 0
+    ? Math.min(Math.floor(parsedIncrementSeconds), 120)
+    : 0;
+
+  return { timeMinutes, incrementSeconds };
+}
+
+function getRandomMatchTimeKey(timeMinutes: number, incrementSeconds: number): string {
+  return `${timeMinutes}+${incrementSeconds}`;
+}
+
+function getTotalRandomMatchQueueCount(): number {
+  let total = 0;
+  for (const queue of randomMatchQueueByTime.values()) {
+    total += queue.length;
+  }
+  return total;
+}
+
+function cleanupRandomMatchState() {
+  const now = Date.now();
+  randomMatchUserToTimeKey.clear();
+
+  for (const [timeKey, queue] of randomMatchQueueByTime.entries()) {
+    const filteredQueue = queue.filter((entry) => now - entry.createdAt <= RANDOM_MATCH_QUEUE_ENTRY_TTL);
+
+    if (filteredQueue.length === 0) {
+      randomMatchQueueByTime.delete(timeKey);
+    } else {
+      randomMatchQueueByTime.set(timeKey, filteredQueue);
+      for (const entry of filteredQueue) {
+        randomMatchUserToTimeKey.set(entry.userId, timeKey);
+      }
+    }
+  }
+
+  for (const [userId, assignment] of randomMatchAssignments.entries()) {
+    if (now - assignment.createdAt > RANDOM_MATCH_ASSIGNMENT_TTL) {
+      randomMatchAssignments.delete(userId);
+    }
+  }
+}
+
+function removeUserFromRandomMatchQueue(userId: string) {
+  const existingTimeKey = randomMatchUserToTimeKey.get(userId);
+  if (!existingTimeKey) {
+    return;
+  }
+
+  const queue = randomMatchQueueByTime.get(existingTimeKey);
+  if (!queue) {
+    randomMatchUserToTimeKey.delete(userId);
+    return;
+  }
+
+  const filteredQueue = queue.filter((entry) => entry.userId !== userId);
+
+  if (filteredQueue.length === 0) {
+    randomMatchQueueByTime.delete(existingTimeKey);
+  } else {
+    randomMatchQueueByTime.set(existingTimeKey, filteredQueue);
+  }
+
+  randomMatchUserToTimeKey.delete(userId);
+}
+
+function parseTimerConfig(rawConfig: any) {
+  const whiteTimer = Number(rawConfig?.whiteTimer ?? DEFAULT_TIME_SECONDS);
+  const blackTimer = Number(rawConfig?.blackTimer ?? DEFAULT_TIME_SECONDS);
+  const increment = Number(rawConfig?.increment ?? 0);
+
+  const normalizedWhiteTimer = Number.isFinite(whiteTimer) && whiteTimer > 0 ? Math.floor(whiteTimer) : DEFAULT_TIME_SECONDS;
+  const normalizedBlackTimer = Number.isFinite(blackTimer) && blackTimer > 0 ? Math.floor(blackTimer) : DEFAULT_TIME_SECONDS;
+  const normalizedIncrement = Number.isFinite(increment) && increment >= 0 ? Math.floor(increment) : 0;
+
+  const currentFEN = (rawConfig?.currentFEN && typeof rawConfig.currentFEN === 'string' && rawConfig.currentFEN.trim())
+    ? rawConfig.currentFEN
+    : INITIAL_FEN;
+  const firstPlayerColor = (rawConfig?.color === "white" || rawConfig?.color === "black")
+    ? rawConfig.color
+    : undefined;
+
+  return {
+    whiteTimer: normalizedWhiteTimer,
+    blackTimer: normalizedBlackTimer,
+    increment: normalizedIncrement,
+    currentFEN,
+    firstPlayerColor
+  };
+}
+
+function createRoomWithConfig(rawConfig: any) {
+  const roomId = generateShortId();
+  const timerConfig = parseTimerConfig(rawConfig);
+  const currentPlayer = getCurrentPlayerFromFEN(timerConfig.currentFEN);
+
+  const room: Room = {
+    users: new Map(),
+    gameState: {
+      currentFEN: timerConfig.currentFEN,
+      moveHistory: [],
+      currentPlayer: currentPlayer,
+      currentColor: currentPlayer,
+      gameStarted: false,
+      gameEnded: false,
+      gameResult: undefined,
+      drawOffer: undefined,
+      drawOfferCount: {},
+      timer: {
+        whiteTime: timerConfig.whiteTimer,
+        blackTime: timerConfig.blackTimer,
+        whiteIncrement: timerConfig.increment,
+        blackIncrement: timerConfig.increment,
+        initialWhiteTime: timerConfig.whiteTimer,
+        initialBlackTime: timerConfig.blackTimer,
+      }
+    },
+    firstPlayerColor: timerConfig.firstPlayerColor,
+    hasMobilePlayer: undefined
+  };
+
+  rooms.set(roomId, room);
+  updateRoomActivity(roomId);
+  metrics.roomsCreated++;
+  updateMetrics();
+
+  return {
+    roomId,
+    room,
+    timerConfig
+  };
+}
+
+function parseCookiesFromHeader(cookieHeader: string): Record<string, string> {
+  return cookieHeader.split(';').reduce((acc: Record<string, string>, cookie) => {
+    const [key, value] = cookie.trim().split('=');
+    if (key && value) {
+      acc[key] = value;
+    }
+    return acc;
+  }, {});
+}
+
+async function getAuthenticatedUserFromHeaders(headers: Record<string, string | undefined>) {
+  const cookieHeader = headers.cookie || '';
+  const cookies = parseCookiesFromHeader(cookieHeader);
+  const authToken = cookies.authToken;
+
+  if (!authToken) {
+    return null;
+  }
+
+  const payload = await verifyToken(authToken);
+  if (!payload?.userId) {
+    return null;
+  }
+
+  const user = await User.findById(payload.userId);
+  if (!user || (user as any).isBlocked) {
+    return null;
+  }
+
+  return {
+    userId: (user._id as mongoose.Types.ObjectId).toString(),
+    userName: user.name || user.login,
+    avatar: user.avatar || '0'
+  };
 }
 
 // Функция для извлечения позиции из FEN (без счетчиков ходов и полуходов)
@@ -2157,11 +2350,175 @@ app.delete('/api/admin/users/:id', async ({ headers, params, set }) => {
   })
 });
 
+app.post('/api/random-match/join', async ({ body, headers, set }) => {
+  try {
+    cleanupRandomMatchState();
+
+    const authUser = await getAuthenticatedUserFromHeaders(headers as Record<string, string | undefined>);
+    if (!authUser) {
+      set.status = 401;
+      return {
+        success: false,
+        error: 'Not authenticated'
+      };
+    }
+
+    let payload: any = {};
+    if (typeof body === 'string') {
+      try {
+        payload = JSON.parse(body);
+      } catch (error) {
+        payload = {};
+      }
+    } else if (body && typeof body === 'object') {
+      payload = body;
+    }
+
+    const { timeMinutes, incrementSeconds } = getRandomMatchTimeConfig(payload.timeMinutes, payload.incrementSeconds);
+    const timeKey = getRandomMatchTimeKey(timeMinutes, incrementSeconds);
+
+    const existingAssignment = randomMatchAssignments.get(authUser.userId);
+    if (existingAssignment) {
+      return {
+        success: true,
+        status: 'matched',
+        roomId: existingAssignment.roomId,
+        queueCountForTimeControl: randomMatchQueueByTime.get(existingAssignment.timeKey)?.length ?? 0,
+        totalPlayersInRandomQueue: getTotalRandomMatchQueueCount(),
+        timeControl: { timeMinutes, incrementSeconds }
+      };
+    }
+
+    removeUserFromRandomMatchQueue(authUser.userId);
+
+    const queue = randomMatchQueueByTime.get(timeKey) ?? [];
+    const opponent = queue.find((entry) => entry.userId !== authUser.userId);
+
+    if (opponent) {
+      const filteredQueue = queue.filter((entry) => entry.userId !== opponent.userId);
+      if (filteredQueue.length === 0) {
+        randomMatchQueueByTime.delete(timeKey);
+      } else {
+        randomMatchQueueByTime.set(timeKey, filteredQueue);
+      }
+      randomMatchUserToTimeKey.delete(opponent.userId);
+
+      const totalTimeSeconds = timeMinutes * 60;
+      const { roomId } = createRoomWithConfig({
+        whiteTimer: totalTimeSeconds,
+        blackTimer: totalTimeSeconds,
+        increment: incrementSeconds
+      });
+
+      const assignment: RandomMatchAssignment = {
+        roomId,
+        createdAt: Date.now(),
+        timeKey
+      };
+      randomMatchAssignments.set(authUser.userId, assignment);
+      randomMatchAssignments.set(opponent.userId, assignment);
+
+      return {
+        success: true,
+        status: 'matched',
+        roomId,
+        queueCountForTimeControl: randomMatchQueueByTime.get(timeKey)?.length ?? 0,
+        totalPlayersInRandomQueue: getTotalRandomMatchQueueCount(),
+        timeControl: { timeMinutes, incrementSeconds }
+      };
+    }
+
+    const newQueueEntry: RandomMatchQueueEntry = {
+      userId: authUser.userId,
+      createdAt: Date.now(),
+      timeKey
+    };
+    queue.push(newQueueEntry);
+    randomMatchQueueByTime.set(timeKey, queue);
+    randomMatchUserToTimeKey.set(authUser.userId, timeKey);
+
+    return {
+      success: true,
+      status: 'waiting',
+      queueCountForTimeControl: queue.length,
+      totalPlayersInRandomQueue: getTotalRandomMatchQueueCount(),
+      timeControl: { timeMinutes, incrementSeconds }
+    };
+  } catch (error: any) {
+    console.error('Random match join error:', error);
+    set.status = 500;
+    return {
+      success: false,
+      error: error.message || 'Failed to join random match queue'
+    };
+  }
+});
+
+app.get('/api/random-match/status', async ({ query, headers, set }) => {
+  try {
+    cleanupRandomMatchState();
+
+    const { timeMinutes, incrementSeconds } = getRandomMatchTimeConfig(
+      (query as any)?.timeMinutes,
+      (query as any)?.incrementSeconds
+    );
+    const timeKey = getRandomMatchTimeKey(timeMinutes, incrementSeconds);
+
+    const authUser = await getAuthenticatedUserFromHeaders(headers as Record<string, string | undefined>);
+    const assignment = authUser ? randomMatchAssignments.get(authUser.userId) : undefined;
+    const isInQueue = authUser ? randomMatchUserToTimeKey.has(authUser.userId) : false;
+
+    return {
+      success: true,
+      status: assignment ? 'matched' : (isInQueue ? 'waiting' : 'idle'),
+      roomId: assignment?.roomId,
+      queueCountForTimeControl: randomMatchQueueByTime.get(timeKey)?.length ?? 0,
+      totalPlayersInRandomQueue: getTotalRandomMatchQueueCount(),
+      timeControl: { timeMinutes, incrementSeconds }
+    };
+  } catch (error: any) {
+    console.error('Random match status error:', error);
+    set.status = 500;
+    return {
+      success: false,
+      error: error.message || 'Failed to fetch random match status'
+    };
+  }
+});
+
+app.delete('/api/random-match/leave', async ({ headers, set }) => {
+  try {
+    cleanupRandomMatchState();
+
+    const authUser = await getAuthenticatedUserFromHeaders(headers as Record<string, string | undefined>);
+    if (!authUser) {
+      set.status = 401;
+      return {
+        success: false,
+        error: 'Not authenticated'
+      };
+    }
+
+    removeUserFromRandomMatchQueue(authUser.userId);
+    randomMatchAssignments.delete(authUser.userId);
+
+    return {
+      success: true,
+      status: 'left',
+      totalPlayersInRandomQueue: getTotalRandomMatchQueueCount()
+    };
+  } catch (error: any) {
+    console.error('Random match leave error:', error);
+    set.status = 500;
+    return {
+      success: false,
+      error: error.message || 'Failed to leave random match queue'
+    };
+  }
+});
+
 // Create room endpoint
 app.post('/api/rooms', async ({ body }) => {
-  // Generate unique room ID using short format
-  const roomId = generateShortId();
-  
   // Извлекаем конфигурацию таймеров или используем значения по умолчанию
   // В Elysia body может быть строкой или объектом, поэтому парсим если нужно
   let timerConfig: any = {};
@@ -2174,68 +2531,25 @@ app.post('/api/rooms', async ({ body }) => {
   } else if (body && typeof body === 'object') {
     timerConfig = body;
   }
-  
-  const whiteTimer = timerConfig.whiteTimer ?? DEFAULT_TIME_SECONDS;
-  const blackTimer = timerConfig.blackTimer ?? DEFAULT_TIME_SECONDS;
-  const increment = timerConfig.increment ?? 0;
-  // Если currentFEN не передан, пустой или null, используем INITIAL_FEN для обычной игры
-  const currentFEN = (timerConfig.currentFEN && timerConfig.currentFEN.trim()) 
-    ? timerConfig.currentFEN 
-    : INITIAL_FEN;
-  // Цвет для первого подключившегося игрока (необязательный)
-  const firstPlayerColor = (timerConfig.color === "white" || timerConfig.color === "black") 
-    ? timerConfig.color 
-    : undefined;
 
   // {"whiteTimer":60,"blackTimer":60,"increment":5,"currentFEN":"...","color":"white"}
   console.log('TIMER CONFIG BODY', body);
   console.log('TIMER CONFIG', timerConfig);
 
-  // Определяем текущего игрока из FEN
-  const currentPlayer = getCurrentPlayerFromFEN(currentFEN);
-
-  // Create empty room with initial game state
-  const room = { 
-    users: new Map(),
-    gameState: {
-      currentFEN: currentFEN, // Используем переданный FEN или начальную позицию
-      moveHistory: [],
-      currentPlayer: currentPlayer,
-      currentColor: currentPlayer,
-      gameStarted: false,
-      gameEnded: false,
-      gameResult: undefined,
-      drawOffer: undefined,
-      drawOfferCount: {},
-      timer: {
-        whiteTime: whiteTimer,
-        blackTime: blackTimer,
-        whiteIncrement: increment,
-        blackIncrement: increment,
-        initialWhiteTime: whiteTimer,
-        initialBlackTime: blackTimer,
-      }
-    },
-    firstPlayerColor: firstPlayerColor,
-    hasMobilePlayer: undefined // Будет установлено при подключении мобильного игрока
-  };
-  rooms.set(roomId, room);
-  updateRoomActivity(roomId);
-  metrics.roomsCreated++;
-  updateMetrics();
+  const { roomId, room, timerConfig: normalizedConfig } = createRoomWithConfig(timerConfig);
   
   console.log('ROOM CREATED WITH TIMER:', room.gameState.timer);
   console.log('ROOM ID:', roomId);
-  console.log('ROOM CREATED WITH FEN:', currentFEN);
+  console.log('ROOM CREATED WITH FEN:', normalizedConfig.currentFEN);
   
   return {
     success: true,
     roomId,
     message: 'Room created successfully',
     timerConfig: {
-      whiteTimer: whiteTimer,
-      blackTimer: blackTimer,
-      increment: increment,
+      whiteTimer: normalizedConfig.whiteTimer,
+      blackTimer: normalizedConfig.blackTimer,
+      increment: normalizedConfig.increment,
     }
   };
 });
