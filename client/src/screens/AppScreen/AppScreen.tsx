@@ -6,9 +6,16 @@ import { GameScreen } from "../GameScreen/GameScreen";
 import { SetProfileScreen } from "../SetProfileScreen/SetProfileScreen";
 import { useGameStorage } from "../../hooks/useGameStorage";
 import { useAutoConnect } from "../../hooks/useAutoConnect";
+import { useMemo } from "react";
+
+const QUICK_PLAY_ROOM_ID_KEY = "quickPlayRoomId";
 
 export const AppScreen = () => {
     const { roomId } = useParams<{ roomId: string }>();
+    const isQuickPlayRoom = useMemo(
+        () => !!roomId && localStorage.getItem(QUICK_PLAY_ROOM_ID_KEY) === roomId,
+        [roomId]
+    );
 
     const {
         gameState,
@@ -57,6 +64,9 @@ export const AppScreen = () => {
 
     // Если игра началась, показываем игровой экран
     if (userColor && gameState.gameStarted) {
+        if (isQuickPlayRoom) {
+            localStorage.removeItem(QUICK_PLAY_ROOM_ID_KEY);
+        }
         return (
             <GameScreen
                 gameState={gameState}
@@ -74,6 +84,17 @@ export const AppScreen = () => {
                 offeredDraw={offeredDraw}
                 connectionLost={connectionLost}
             />
+        );
+    }
+
+    if (isQuickPlayRoom && userName) {
+        return (
+            <div className="w-full h-[100vh] flex justify-center items-center">
+                <div className="text-center text-white/85">
+                    <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#4F39F6] border-t-transparent mx-auto"></div>
+                    <p className="mt-4 text-sm">Подключаемся к партии...</p>
+                </div>
+            </div>
         );
     }
 

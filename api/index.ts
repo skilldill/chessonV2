@@ -105,6 +105,7 @@ type GameState = {
 type UserData = {
     userName: string;
     avatar: string;
+    clientId?: string;
     ws: ElysiaWS<any, any>;
     isConnected: boolean;
     color?: "white" | "black";
@@ -160,6 +161,28 @@ const RATE_LIMIT_MAX_MESSAGES = 100; // Максимум сообщений в �
 const METRICS_RESET_INTERVAL = 1000; // Сброс счетчика сообщений в секунду каждую секунду
 const RANDOM_MATCH_QUEUE_ENTRY_TTL = 10 * 60 * 1000; // 10 минут
 const RANDOM_MATCH_ASSIGNMENT_TTL = 10 * 60 * 1000; // 10 минут
+const GUEST_CAT_WORDS = [
+  "Mad",
+  "Fury",
+  "Good",
+  "Big",
+  "Small",
+  "Swift",
+  "Lucky",
+  "Brave",
+  "Calm",
+  "Wild",
+  "Sharp",
+  "Rapid",
+  "Bold",
+  "Mighty",
+  "Sneaky",
+  "Quiet",
+  "Storm",
+  "Silver",
+  "Golden",
+  "Cosmic"
+];
 const DEFAULT_ALLOWED_ORIGINS = [
   'http://localhost:3000',
   'http://127.0.0.1:3000',
@@ -591,6 +614,33 @@ function parseTimerConfig(rawConfig: any) {
   };
 }
 
+function buildUniqueUserNameInRoom(room: Room, requestedName: string): string {
+  const trimmed = requestedName.trim();
+  const baseName = trimmed || "Anonymous cat";
+
+  const usedNames = new Set(
+    Array.from(room.users.values()).map((user) => user.userName.toLowerCase())
+  );
+
+  if (!usedNames.has(baseName.toLowerCase())) {
+    return baseName;
+  }
+
+  const guestCandidates = GUEST_CAT_WORDS.map((word) => `${word} cat`);
+  for (const candidate of guestCandidates) {
+    if (!usedNames.has(candidate.toLowerCase())) {
+      return candidate;
+    }
+  }
+
+  let suffix = 2;
+  while (usedNames.has(`${baseName} ${suffix}`.toLowerCase())) {
+    suffix++;
+  }
+
+  return `${baseName} ${suffix}`;
+}
+
 function createRoomWithConfig(rawConfig: any) {
   const roomId = generateShortId();
   const timerConfig = parseTimerConfig(rawConfig);
@@ -666,6 +716,45 @@ async function getAuthenticatedUserFromHeaders(headers: Record<string, string | 
     userId: (user._id as mongoose.Types.ObjectId).toString(),
     userName: user.name || user.login,
     avatar: user.avatar || '0'
+  };
+}
+
+function normalizeGuestId(guestIdRaw: unknown): string | null {
+  if (typeof guestIdRaw !== 'string') {
+    return null;
+  }
+
+  const guestId = guestIdRaw.trim();
+  if (!guestId) {
+    return null;
+  }
+
+  if (!/^[a-zA-Z0-9_-]{6,80}$/.test(guestId)) {
+    return null;
+  }
+
+  return guestId;
+}
+
+async function getRandomMatchParticipant(headers: Record<string, string | undefined>, guestIdRaw?: unknown) {
+  const authUser = await getAuthenticatedUserFromHeaders(headers);
+  if (authUser) {
+    return {
+      participantId: `user:${authUser.userId}`,
+      userName: authUser.userName,
+      avatar: authUser.avatar
+    };
+  }
+
+  const guestId = normalizeGuestId(guestIdRaw);
+  if (!guestId) {
+    return null;
+  }
+
+  return {
+    participantId: `guest:${guestId}`,
+    userName: 'Anonymous Cat',
+    avatar: '0'
   };
 }
 
@@ -2354,15 +2443,6 @@ app.post('/api/random-match/join', async ({ body, headers, set }) => {
   try {
     cleanupRandomMatchState();
 
-    const authUser = await getAuthenticatedUserFromHeaders(headers as Record<string, string | undefined>);
-    if (!authUser) {
-      set.status = 401;
-      return {
-        success: false,
-        error: 'Not authenticated'
-      };
-    }
-
     let payload: any = {};
     if (typeof body === 'string') {
       try {
@@ -2374,10 +2454,22 @@ app.post('/api/random-match/join', async ({ body, headers, set }) => {
       payload = body;
     }
 
+    const participant = await getRandomMatchParticipant(
+      headers as Record<string, string | undefined>,
+      payload.guestId
+    );
+    if (!participant) {
+      set.status = 400;
+      return {
+        success: false,
+        error: 'Missing guestId for anonymous queue join'
+      };
+    }
+
     const { timeMinutes, incrementSeconds } = getRandomMatchTimeConfig(payload.timeMinutes, payload.incrementSeconds);
     const timeKey = getRandomMatchTimeKey(timeMinutes, incrementSeconds);
 
-    const existingAssignment = randomMatchAssignments.get(authUser.userId);
+    const existingAssignment = randomMatchAssignments.get(participant.participantId);
     if (existingAssignment) {
       return {
         success: true,
@@ -2389,10 +2481,10 @@ app.post('/api/random-match/join', async ({ body, headers, set }) => {
       };
     }
 
-    removeUserFromRandomMatchQueue(authUser.userId);
+    removeUserFromRandomMatchQueue(participant.participantId);
 
     const queue = randomMatchQueueByTime.get(timeKey) ?? [];
-    const opponent = queue.find((entry) => entry.userId !== authUser.userId);
+    const opponent = queue.find((entry) => entry.userId !== participant.participantId);
 
     if (opponent) {
       const filteredQueue = queue.filter((entry) => entry.userId !== opponent.userId);
@@ -2415,7 +2507,7 @@ app.post('/api/random-match/join', async ({ body, headers, set }) => {
         createdAt: Date.now(),
         timeKey
       };
-      randomMatchAssignments.set(authUser.userId, assignment);
+      randomMatchAssignments.set(participant.participantId, assignment);
       randomMatchAssignments.set(opponent.userId, assignment);
 
       return {
@@ -2429,13 +2521,13 @@ app.post('/api/random-match/join', async ({ body, headers, set }) => {
     }
 
     const newQueueEntry: RandomMatchQueueEntry = {
-      userId: authUser.userId,
+      userId: participant.participantId,
       createdAt: Date.now(),
       timeKey
     };
     queue.push(newQueueEntry);
     randomMatchQueueByTime.set(timeKey, queue);
-    randomMatchUserToTimeKey.set(authUser.userId, timeKey);
+    randomMatchUserToTimeKey.set(participant.participantId, timeKey);
 
     return {
       success: true,
@@ -2464,9 +2556,12 @@ app.get('/api/random-match/status', async ({ query, headers, set }) => {
     );
     const timeKey = getRandomMatchTimeKey(timeMinutes, incrementSeconds);
 
-    const authUser = await getAuthenticatedUserFromHeaders(headers as Record<string, string | undefined>);
-    const assignment = authUser ? randomMatchAssignments.get(authUser.userId) : undefined;
-    const isInQueue = authUser ? randomMatchUserToTimeKey.has(authUser.userId) : false;
+    const participant = await getRandomMatchParticipant(
+      headers as Record<string, string | undefined>,
+      (query as any)?.guestId
+    );
+    const assignment = participant ? randomMatchAssignments.get(participant.participantId) : undefined;
+    const isInQueue = participant ? randomMatchUserToTimeKey.has(participant.participantId) : false;
 
     return {
       success: true,
@@ -2486,21 +2581,19 @@ app.get('/api/random-match/status', async ({ query, headers, set }) => {
   }
 });
 
-app.delete('/api/random-match/leave', async ({ headers, set }) => {
+app.delete('/api/random-match/leave', async ({ headers, query, set }) => {
   try {
     cleanupRandomMatchState();
 
-    const authUser = await getAuthenticatedUserFromHeaders(headers as Record<string, string | undefined>);
-    if (!authUser) {
-      set.status = 401;
-      return {
-        success: false,
-        error: 'Not authenticated'
-      };
-    }
+    const participant = await getRandomMatchParticipant(
+      headers as Record<string, string | undefined>,
+      (query as any)?.guestId
+    );
 
-    removeUserFromRandomMatchQueue(authUser.userId);
-    randomMatchAssignments.delete(authUser.userId);
+    if (participant) {
+      removeUserFromRandomMatchQueue(participant.participantId);
+      randomMatchAssignments.delete(participant.participantId);
+    }
 
     return {
       success: true,
@@ -2838,6 +2931,7 @@ app.ws('/ws/room', {
       roomId: t.String(),
       userName: t.String(),
       avatar: t.String(),
+      clientId: t.Optional(t.String()),
       currentFEN: t.Optional(t.String()),
       color: t.Optional(t.Union([t.Literal("white"), t.Literal("black")])),
       authToken: t.Optional(t.String()), // Опциональный токен аутентификации
@@ -2917,7 +3011,8 @@ app.ws('/ws/room', {
   ]),
 
   async open(ws) {
-      const { roomId, userName, avatar, currentFEN: queryFEN, color: queryColor, authToken, hasMobilePlayer: queryHasMobilePlayer } = ws.data.query;
+      const { roomId, userName, avatar, clientId, currentFEN: queryFEN, color: queryColor, authToken, hasMobilePlayer: queryHasMobilePlayer } = ws.data.query;
+      const normalizedUserName = userName?.trim() || "Anonymous cat";
 
       // Преобразуем строку "true" или "1" в boolean для hasMobilePlayer
       const hasMobilePlayer: boolean = queryHasMobilePlayer === "true" || queryHasMobilePlayer === "1";
@@ -2990,10 +3085,17 @@ app.ws('/ws/room', {
           metrics.roomsCreated++;
       }
 
-      // Проверяем, есть ли уже пользователь с таким именем в комнате
+      // Проверяем, есть ли уже такой пользователь в комнате (clientId/registeredUserId),
+      // а userName используем только как legacy fallback
       let existingUserId: string | null = null;
       for (const [userId, userData] of room.users) {
-          if (userData.userName === userName) {
+          const sameClientId = !!clientId && userData.clientId === clientId;
+          const sameRegisteredUser = !!registeredUserId
+            && !!userData.registeredUserId
+            && userData.registeredUserId.toString() === registeredUserId.toString();
+          const sameUserNameLegacy = !clientId && !registeredUserId && userData.userName === userName;
+
+          if (sameClientId || sameRegisteredUser || sameUserNameLegacy) {
               existingUserId = userId;
               break;
           }
@@ -3012,8 +3114,9 @@ app.ws('/ws/room', {
           // Приоритет: новый registeredUserId > существующий registeredUserId
           const currentRegisteredUserId = registeredUserId || existingUserData?.registeredUserId;
           room.users.set(existingUserId, {
-              userName: userName,
+              userName: existingUserData?.userName || normalizedUserName,
               avatar: avatar,
+              clientId: clientId || existingUserData?.clientId,
               ws: ws,
               isConnected: true,
               color: existingUserData?.color,
@@ -3033,7 +3136,7 @@ app.ws('/ws/room', {
           // Приветствие для вернувшегося пользователя
           ws.send({ 
             system: true, 
-            message: `Welcome back to room ${roomId}, ${userName}! Your ID: ${existingUserId}`,
+            message: `Welcome back to room ${roomId}, ${existingUserData?.userName || normalizedUserName}! Your ID: ${existingUserId}`,
             type: "reconnection",
             gameState: getPersonalizedGameState(room, existingUserId),
             userColor: existingUserData?.color
@@ -3057,7 +3160,7 @@ app.ws('/ws/room', {
           // Уведомляем других пользователей о возвращении
           for (const [id, userData] of room.users) {
               if (id !== existingUserId) {
-                  userData.ws.send({ system: true, message: `${userName} rejoined the room` });
+                  userData.ws.send({ system: true, message: `${existingUserData?.userName || normalizedUserName} rejoined the room` });
               }
           }
           return;
@@ -3086,9 +3189,12 @@ app.ws('/ws/room', {
       }
 
       // Сохраняем данные нового пользователя в комнате
+      const finalUserName = buildUniqueUserNameInRoom(room, normalizedUserName);
+
       room.users.set(userId, {
-          userName: userName,
+          userName: finalUserName,
           avatar: avatar,
+          clientId: clientId,
           ws: ws,
           isConnected: true,
           color: assignedColor,
@@ -3109,9 +3215,9 @@ app.ws('/ws/room', {
       updateMetrics();
 
       // приветствие для нового пользователя
-      ws.send({ 
+      ws.send({
         system: true, 
-        message: `Welcome to room ${roomId}, ${userName}! Your ID: ${userId}`,
+        message: `Welcome to room ${roomId}, ${finalUserName}! Your ID: ${userId}`,
         type: "connection",
         userColor: assignedColor,
         gameState: getPersonalizedGameState(room, userId)
@@ -3129,13 +3235,13 @@ app.ws('/ws/room', {
 
       // уведомляем других пользователей о подключении
       for (const [id, userData] of room.users) {
-          if (id !== userId) {
-              userData.ws.send({ 
-                system: true, 
-                message: `${userName} connected`,
-                opponentColor: assignedColor
-              });
-          }
+              if (id !== userId) {
+                  userData.ws.send({ 
+                      system: true, 
+                      message: `${finalUserName} connected`,
+                      opponentColor: assignedColor
+                  });
+              }
       }
 
       // Если теперь 2 игрока, начинаем игру
@@ -3166,9 +3272,13 @@ app.ws('/ws/room', {
       // Находим пользователя по WebSocket соединению
       let senderUserId: string | null = null;
       let senderUserData: UserData | null = null;
+      const currentClientId = ws.data.query.clientId;
       
       for (const [userId, userData] of room.users) {
-          if (userData.userName === ws.data.query.userName) {
+          const sameClientId = !!currentClientId && userData.clientId === currentClientId;
+          const sameUserNameLegacy = !currentClientId && userData.userName === ws.data.query.userName;
+
+          if (sameClientId || sameUserNameLegacy) {
               senderUserId = userId;
               senderUserData = userData;
               break;
@@ -3564,15 +3674,27 @@ app.ws('/ws/room', {
     const room = rooms.get(roomId);
     if (!room) return;
 
+    const currentClientId = ws.data.query.clientId;
+    let disconnectedUserId: string | null = null;
+    let disconnectedUserName = ws.data.query.userName;
+
+    for (const [userId, userData] of room.users) {
+      const sameClientId = !!currentClientId && userData.clientId === currentClientId;
+      const sameUserNameLegacy = !currentClientId && userData.userName === ws.data.query.userName;
+      if (sameClientId || sameUserNameLegacy) {
+        disconnectedUserId = userId;
+        disconnectedUserName = userData.userName;
+        break;
+      }
+    }
+
     // Проверяем, остались ли подключенные игроки
     let connectedUsers = 0;
-    for (const [_, userData] of room.users) {
-      const { userName } = userData;
-
-      if (userName !== ws.data.query.userName) {
+    for (const [userId, userData] of room.users) {
+      if (userId !== disconnectedUserId) {
         if (userData.isConnected) {
           connectedUsers++;
-          userData.ws.send({ system: true, message: `${ws.data.query.userName} disconnected` });
+          userData.ws.send({ system: true, message: `${disconnectedUserName} disconnected` });
         }
       } else {
         userData.isConnected = false;

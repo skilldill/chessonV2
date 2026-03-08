@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useHistory } from "react-router-dom";
 import { API_PREFIX } from "../constants/api";
 
@@ -9,10 +9,7 @@ export const useQuickPlayEntry = () => {
   const history = useHistory();
   const [playersInRandomQueue, setPlayersInRandomQueue] = useState(0);
 
-  const quickPlayPath = useMemo(
-    () => `/quick-play?timeMinutes=${DEFAULT_TIME_MINUTES}&incrementSeconds=${DEFAULT_INCREMENT_SECONDS}`,
-    []
-  );
+  const quickPlayPath = `/quick-play?timeMinutes=${DEFAULT_TIME_MINUTES}&incrementSeconds=${DEFAULT_INCREMENT_SECONDS}`;
 
   const quickPlayLabel = useMemo(
     () => `${DEFAULT_TIME_MINUTES} min + ${DEFAULT_INCREMENT_SECONDS} sec`,
@@ -48,9 +45,20 @@ export const useQuickPlayEntry = () => {
     };
   }, []);
 
-  const openQuickPlay = useCallback(() => {
+  const clearLocalStorageQuickPlay = () => {
+    localStorage.removeItem("gameData");
+    localStorage.removeItem("wsClientId");
+    localStorage.removeItem("quickPlayRoomId");
+    localStorage.removeItem("quickPlayGuestId");
+    localStorage.removeItem("quickPlayGuestNickname");
+
+    console.log('removed store');
+  }
+
+  const openQuickPlay = () => {
+    clearLocalStorageQuickPlay();
     history.push(quickPlayPath);
-  }, [history, quickPlayPath]);
+  };
 
   return {
     playersInRandomQueue,

@@ -2,6 +2,34 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useHistory, useLocation } from "react-router-dom";
 import { API_PREFIX } from "../../constants/api";
 
+const QUICK_PLAY_GUEST_ID_KEY = "quickPlayGuestId";
+const QUICK_PLAY_PROFILE_KEY = "quickPlayProfile";
+const QUICK_PLAY_ROOM_ID_KEY = "quickPlayRoomId";
+const QUICK_PLAY_GUEST_NICKNAME_KEY = "quickPlayGuestNickname";
+
+const GUEST_CAT_WORDS = [
+  "Mad",
+  "Fury",
+  "Good",
+  "Big",
+  "Small",
+  "Swift",
+  "Lucky",
+  "Brave",
+  "Calm",
+  "Wild",
+  "Sharp",
+  "Rapid",
+  "Bold",
+  "Mighty",
+  "Sneaky",
+  "Quiet",
+  "Storm",
+  "Silver",
+  "Golden",
+  "Cosmic",
+];
+
 type RandomMatchResponse = {
   success: boolean;
   status?: "idle" | "waiting" | "matched";
@@ -30,9 +58,43 @@ function useTimeControlFromQuery() {
   }, [location.search]);
 }
 
+function getOrCreateQuickPlayGuestId() {
+  const existingGuestId = localStorage.getItem(QUICK_PLAY_GUEST_ID_KEY);
+  if (existingGuestId) return existingGuestId;
+
+  const generatedGuestId =
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID().replace(/-/g, "")
+      : `${Date.now()}_${Math.random().toString(36).slice(2)}`;
+
+  localStorage.setItem(QUICK_PLAY_GUEST_ID_KEY, generatedGuestId);
+  return generatedGuestId;
+}
+
+function createStableGuestNickname(guestId: string) {
+  let hash = 0;
+  for (let i = 0; i < guestId.length; i++) {
+    hash = (hash * 31 + guestId.charCodeAt(i)) >>> 0;
+  }
+
+  const word = GUEST_CAT_WORDS[hash % GUEST_CAT_WORDS.length] || "Mad";
+  return `${word} cat`;
+}
+
+function getOrCreateQuickPlayGuestNickname(guestId: string) {
+  const existingNickname = localStorage.getItem(QUICK_PLAY_GUEST_NICKNAME_KEY);
+  if (existingNickname) return existingNickname;
+
+  const nickname = createStableGuestNickname(guestId);
+  localStorage.setItem(QUICK_PLAY_GUEST_NICKNAME_KEY, nickname);
+  return nickname;
+}
+
 export const QuickPlayWaitingScreen = () => {
   const history = useHistory();
   const { timeMinutes, incrementSeconds } = useTimeControlFromQuery();
+  const guestIdRef = useRef<string>(getOrCreateQuickPlayGuestId());
+  const guestNicknameRef = useRef<string>(getOrCreateQuickPlayGuestNickname(guestIdRef.current));
   const [isJoining, setIsJoining] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [playersInRandomQueue, setPlayersInRandomQueue] = useState(0);
@@ -47,14 +109,14 @@ export const QuickPlayWaitingScreen = () => {
         "Content-Type": "application/json",
       },
       credentials: "include",
-      body: JSON.stringify({ timeMinutes, incrementSeconds }),
+      body: JSON.stringify({ timeMinutes, incrementSeconds, guestId: guestIdRef.current }),
     });
     return response.json() as Promise<RandomMatchResponse>;
   };
 
   const fetchStatus = async () => {
     const response = await fetch(
-      `${API_PREFIX}/random-match/status?timeMinutes=${timeMinutes}&incrementSeconds=${incrementSeconds}`,
+      `${API_PREFIX}/random-match/status?timeMinutes=${timeMinutes}&incrementSeconds=${incrementSeconds}&guestId=${guestIdRef.current}`,
       { credentials: "include" }
     );
     return response.json() as Promise<RandomMatchResponse>;
@@ -65,7 +127,7 @@ export const QuickPlayWaitingScreen = () => {
     didLeaveQueueRef.current = true;
 
     try {
-      await fetch(`${API_PREFIX}/random-match/leave`, {
+      await fetch(`${API_PREFIX}/random-match/leave?guestId=${guestIdRef.current}`, {
         method: "DELETE",
         credentials: "include",
       });
@@ -87,6 +149,12 @@ export const QuickPlayWaitingScreen = () => {
       }
 
       if (data.success && data.status === "matched" && data.roomId) {
+        localStorage.setItem(
+          QUICK_PLAY_PROFILE_KEY,
+          JSON.stringify({ playerName: guestNicknameRef.current, avatar: "0" })
+        );
+        localStorage.removeItem("gameData");
+        localStorage.setItem(QUICK_PLAY_ROOM_ID_KEY, data.roomId);
         matchedRoomRef.current = data.roomId;
         history.replace(`/game/${data.roomId}`);
       }

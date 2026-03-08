@@ -35,6 +35,21 @@ const INITIAL_GAME_STATE = {
     }
 }
 
+const WS_CLIENT_ID_STORAGE_KEY = "wsClientId";
+
+function getOrCreateWsClientId() {
+    const existingId = localStorage.getItem(WS_CLIENT_ID_STORAGE_KEY);
+    if (existingId) return existingId;
+
+    const newId =
+        typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+            ? crypto.randomUUID().replace(/-/g, "")
+            : `${Date.now()}_${Math.random().toString(36).slice(2)}`;
+
+    localStorage.setItem(WS_CLIENT_ID_STORAGE_KEY, newId);
+    return newId;
+}
+
 export const useRoomWS = (roomId: string) => {
     const refWS = useRef<WebSocket | null>(null);
     const reconnectAttemptsRef = useRef<number>(0);
@@ -45,6 +60,7 @@ export const useRoomWS = (roomId: string) => {
     const connectionCheckIntervalRef = useRef<number | null>(null);
     const isReconnectingRef = useRef<boolean>(false);
     const authTokenRef = useRef<string | null>(null);
+    const clientIdRef = useRef<string>(getOrCreateWsClientId());
     
     const [gameState, setGameState] = useState<GameState>(INITIAL_GAME_STATE);
     const [currentColorMove, setCurrentColorMove] = useState<FigureColor>();
@@ -262,7 +278,7 @@ export const useRoomWS = (roomId: string) => {
         }
 
         // Получаем токен для авторизованных пользователей
-        let wsUrl = `${WS_URL}?roomId=${roomId}&userName=${encodeURIComponent(userName)}&avatar=${encodeURIComponent(avatar)}`;
+        let wsUrl = `${WS_URL}?roomId=${roomId}&userName=${encodeURIComponent(userName)}&avatar=${encodeURIComponent(avatar)}&clientId=${encodeURIComponent(clientIdRef.current)}`;
         
         // Если токен еще не получен или это не переподключение, пытаемся получить токен
         if (!authTokenRef.current && !isReconnect) {

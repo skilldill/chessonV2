@@ -1,12 +1,12 @@
 import { API_PREFIX } from '../constants/api';
 import type { GameState } from '../types';
-import { useGameStorage } from './useGameStorage';
 import { useEffect } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useHistory, useLocation } from 'react-router-dom';
 
 export const useRestoreGame = () => {
-    const { storageGameData, removeGameData } = useGameStorage();
     const history = useHistory();
+    const location = useLocation();
+    const removeGameData = () => localStorage.removeItem('gameData');
 
     const fetchGameState = async (gameId: string) => {
         try {
@@ -27,7 +27,21 @@ export const useRestoreGame = () => {
     }
 
     const checkStartedGame = async () => {
-        if (!storageGameData) return;
+        const rawGameData = localStorage.getItem('gameData');
+        if (!rawGameData) return;
+
+        let storageGameData: { gameId: string } | null = null;
+        try {
+            storageGameData = JSON.parse(rawGameData);
+        } catch (error) {
+            removeGameData();
+            return;
+        }
+
+        if (!storageGameData?.gameId) {
+            removeGameData();
+            return;
+        }
 
         const fetchedData = await fetchGameState(storageGameData.gameId);
 
@@ -38,15 +52,16 @@ export const useRestoreGame = () => {
 
         const { gameState } = fetchedData;
 
-        if (gameState.gameEnded) return; // Игра закончилась, показать экран, что игры больше нет
+        if (gameState.gameEnded) {
+            removeGameData();
+            return;
+        }
 
         if (!history) return;
         history.push('/game/' + storageGameData.gameId);
     }
 
     useEffect(() => {
-        if (!storageGameData) return;
-
         checkStartedGame();
-    }, [storageGameData, history])
+    }, [location.pathname, history])
 }

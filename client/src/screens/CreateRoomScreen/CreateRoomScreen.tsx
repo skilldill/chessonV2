@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { useHistory } from "react-router-dom";
 import { API_PREFIX } from "../../constants/api";
+import { useQuickPlayEntry } from "../../hooks/useQuickPlayEntry";
 
 const MINUTES_FOR_PLAYER = [1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 40, 50, 60, 120];
 const SECONDS_FOR_MOVE = [0, 1, 2, 3, 4, 5, 10, 15, 20, 30, 40, 50, 60, 100];
 
 export const CreateRoomScreen = () => {
     const history = useHistory();
+    const { openQuickPlay, quickPlayLabel, playersInRandomQueue } = useQuickPlayEntry();
     const [timeMinutes, setTimeMinutes] = useState(10);
     const [incrementSeconds, setIncrementSeconds] = useState(1);
     const [isCreating, setIsCreating] = useState(false);
@@ -57,6 +59,18 @@ export const CreateRoomScreen = () => {
                 </h3>
 
                 <div className="w-full flex flex-col gap-6 px-8">
+                    <button
+                        type="button"
+                        onClick={openQuickPlay}
+                        className="w-full rounded-xl px-6 py-4 bg-[#4F39F6] text-white font-semibold hover:bg-[#4332D7] transition-all duration-200 active:scale-[0.98] focus:outline-none cursor-pointer"
+                    >
+                        <div className="flex flex-col items-center gap-1">
+                            <span className="text-lg font-bold">Быстрая игра с рандомным игроком</span>
+                            <span className="text-sm opacity-90">{quickPlayLabel}</span>
+                            <span className="text-xs opacity-75">Сейчас в режиме: {playersInRandomQueue}</span>
+                        </div>
+                    </button>
+
                     {/* Время на игрока */}
                     <div className="flex flex-col gap-3">
                         <label className="text-white/80 text-sm font-medium">
