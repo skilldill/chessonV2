@@ -36,6 +36,7 @@ const INITIAL_GAME_STATE = {
 }
 
 const WS_CLIENT_ID_STORAGE_KEY = "wsClientId";
+const WS_CONNECT_TIMEOUT_MS = 3000;
 
 function getOrCreateWsClientId() {
     const existingId = localStorage.getItem(WS_CLIENT_ID_STORAGE_KEY);
@@ -54,6 +55,7 @@ export const useRoomWS = (roomId: string) => {
     const refWS = useRef<WebSocket | null>(null);
     const reconnectAttemptsRef = useRef<number>(0);
     const reconnectTimeoutRef = useRef<number | null>(null);
+    const connectTimeoutRef = useRef<number | null>(null);
     const pingIntervalRef = useRef<number | null>(null);
     const lastPongTimeRef = useRef<number>(Date.now());
     const userCredentialsRef = useRef<{ userName: string; avatar: string } | null>(null);
@@ -204,6 +206,10 @@ export const useRoomWS = (roomId: string) => {
             clearInterval(connectionCheckIntervalRef.current);
             connectionCheckIntervalRef.current = null;
         }
+        if (connectTimeoutRef.current) {
+            clearTimeout(connectTimeoutRef.current);
+            connectTimeoutRef.current = null;
+        }
     };
 
     const startConnectionCheck = () => {
@@ -302,8 +308,27 @@ export const useRoomWS = (roomId: string) => {
         }
 
         refWS.current = new WebSocket(wsUrl);
+
+        connectTimeoutRef.current = setTimeout(() => {
+            const ws = refWS.current;
+            if (!ws) return;
+
+            if (ws.readyState === WebSocket.CONNECTING) {
+                console.warn(`WebSocket connect timeout after ${WS_CONNECT_TIMEOUT_MS}ms, reconnecting...`);
+                try {
+                    ws.close();
+                } catch (error) {
+                    console.error("Failed to close timed out socket:", error);
+                }
+                handleReconnection();
+            }
+        }, WS_CONNECT_TIMEOUT_MS);
         
         refWS.current.onopen = () => {
+            if (connectTimeoutRef.current) {
+                clearTimeout(connectTimeoutRef.current);
+                connectTimeoutRef.current = null;
+            }
             setIsConnected(true);
             setConnectionLost(false);
             reconnectAttemptsRef.current = 0; // Сбрасываем счетчик попыток при успешном подключении
@@ -314,6 +339,10 @@ export const useRoomWS = (roomId: string) => {
         };
 
         refWS.current.onclose = (event) => {
+            if (connectTimeoutRef.current) {
+                clearTimeout(connectTimeoutRef.current);
+                connectTimeoutRef.current = null;
+            }
             setIsConnected(false);
             console.log('Disconnected from room', event.code, event.reason);
             clearConnectionCheck();
@@ -325,6 +354,10 @@ export const useRoomWS = (roomId: string) => {
         };
 
         refWS.current.onerror = (error) => {
+            if (connectTimeoutRef.current) {
+                clearTimeout(connectTimeoutRef.current);
+                connectTimeoutRef.current = null;
+            }
             console.error('WebSocket error:', error);
             clearConnectionCheck();
         };

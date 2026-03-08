@@ -51,8 +51,6 @@ export const useQuickPlayEntry = () => {
     localStorage.removeItem("quickPlayRoomId");
     localStorage.removeItem("quickPlayGuestId");
     localStorage.removeItem("quickPlayGuestNickname");
-
-    console.log('removed store');
   }
 
   const openQuickPlay = () => {

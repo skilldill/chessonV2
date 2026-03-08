@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useHistory } from "react-router-dom";
 import { API_PREFIX } from "../../constants/api";
+import { QuickPlayButton } from "../../components/QuickPlayButton/QuickPlayButton";
 import { useQuickPlayEntry } from "../../hooks/useQuickPlayEntry";
 
 const MINUTES_FOR_PLAYER = [1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 40, 50, 60, 120];
@@ -53,23 +54,22 @@ export const CreateRoomScreen = () => {
 
     return (
         <div className="w-full h-[100vh] flex justify-center items-center overflow-y-auto py-4">
-            <div className="w-[348px] flex flex-col m-auto items-center gap-[32px] py-[32px]">
+            <div className="max-w-[432px] px-6 flex flex-col m-auto items-center gap-[32px] py-[32px]">
                 <h3 className="text-white text-center text-3xl font-semibold">
                     Time settings
                 </h3>
 
-                <div className="w-full flex flex-col gap-6 px-8">
-                    <button
-                        type="button"
-                        onClick={openQuickPlay}
-                        className="w-full rounded-xl px-6 py-4 bg-[#4F39F6] text-white font-semibold hover:bg-[#4332D7] transition-all duration-200 active:scale-[0.98] focus:outline-none cursor-pointer"
-                    >
-                        <div className="flex flex-col items-center gap-1">
-                            <span className="text-lg font-bold">Быстрая игра с рандомным игроком</span>
-                            <span className="text-sm opacity-90">{quickPlayLabel}</span>
-                            <span className="text-xs opacity-75">Сейчас в режиме: {playersInRandomQueue}</span>
-                        </div>
-                    </button>
+                <div className="w-full flex flex-col gap-6">
+                    <div className="flex flex-col gap-1">
+                        <QuickPlayButton
+                            onClick={openQuickPlay}
+                            timeLabel={quickPlayLabel}
+                            playersInQueue={playersInRandomQueue}
+                        />
+                        <p className="text-xs text-white/60 px-2">
+                            {playersInRandomQueue} {playersInRandomQueue === 1 ? "player" : "players"} in quick play
+                        </p>
+                    </div>
 
                     {/* Время на игрока */}
                     <div className="flex flex-col gap-3">
