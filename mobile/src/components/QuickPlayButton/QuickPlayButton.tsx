@@ -1,5 +1,26 @@
 import React from "react";
 
+const glowStyles = `
+  @keyframes quick-play-glow {
+    0%, 100% { box-shadow: 0 0 16px rgba(79, 57, 246, 0.35), 0 0 32px rgba(79, 57, 246, 0.15); }
+    50% { box-shadow: 0 0 24px rgba(79, 57, 246, 0.55), 0 0 48px rgba(79, 57, 246, 0.25); }
+  }
+  @keyframes quick-play-shimmer {
+    0%, 100% { opacity: 0.65; }
+    50% { opacity: 1; }
+  }
+  .quick-play-btn-glow {
+    animation: quick-play-glow 2.5s ease-in-out infinite;
+  }
+  .quick-play-btn-shimmer {
+    animation: quick-play-shimmer 2s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .quick-play-btn-glow,
+    .quick-play-btn-shimmer { animation: none !important; }
+  }
+`;
+
 type QuickPlayButtonProps = {
   onClick: () => void;
   timeLabel: string;
@@ -40,13 +61,18 @@ export const QuickPlayButton: React.FC<QuickPlayButtonProps> = ({
   const { title, sub } = COPY[variant];
 
   return (
-    <div
-      onClick={onClick}
-      className={"flex items-center gap-[10px] px-[10px] rounded-[14px] bg-[#4F39F6] py-5 min-h-[64px] text-white/90 font-semibold transition-all duration-200 active:scale-[0.98] focus:outline-none  disabled:opacity-50 disabled:cursor-not-allowed"}
-    >
-      <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/15 flex items-center justify-center">
-        <LightningIcon />
-      </div>
+    <>
+      <style>{glowStyles}</style>
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={onClick}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } }}
+        className={"quick-play-btn-glow flex items-center gap-[10px] px-[10px] rounded-[14px] bg-[#4F39F6] py-5 min-h-[64px] text-white/90 font-semibold transition-all duration-200 active:scale-[0.98] focus:outline-none cursor-pointer touch-manipulation -webkit-tap-highlight-color: transparent disabled:opacity-50 disabled:cursor-not-allowed"}
+      >
+        <div className="quick-play-btn-shimmer flex-shrink-0 w-10 h-10 rounded-lg bg-white/15 flex items-center justify-center">
+          <LightningIcon />
+        </div>
 
       <div className="flex-1 min-w-0 text-left">
         <div className="flex items-center gap-2 flex-wrap">
@@ -79,5 +105,6 @@ export const QuickPlayButton: React.FC<QuickPlayButtonProps> = ({
         />
       </svg>
     </div>
+    </>
   );
 };

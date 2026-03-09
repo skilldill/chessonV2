@@ -1,5 +1,26 @@
 import React from "react";
 
+const glowStyles = `
+  @keyframes quick-play-glow {
+    0%, 100% { box-shadow: 0 0 16px rgba(79, 57, 246, 0.35), 0 0 32px rgba(79, 57, 246, 0.15); }
+    50% { box-shadow: 0 0 24px rgba(79, 57, 246, 0.55), 0 0 48px rgba(79, 57, 246, 0.25); }
+  }
+  @keyframes quick-play-shimmer {
+    0%, 100% { opacity: 0.65; }
+    50% { opacity: 1; }
+  }
+  .quick-play-btn-glow {
+    animation: quick-play-glow 2.5s ease-in-out infinite;
+  }
+  .quick-play-btn-shimmer {
+    animation: quick-play-shimmer 2s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .quick-play-btn-glow,
+    .quick-play-btn-shimmer { animation: none !important; }
+  }
+`;
+
 type QuickPlayButtonProps = {
   onClick: () => void;
   timeLabel: string;
@@ -45,24 +66,27 @@ export const QuickPlayButton: React.FC<QuickPlayButtonProps> = ({
   const { title, sub } = COPY[variant];
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={[
-        "w-full rounded-xl px-5 py-4",
-        "flex items-center gap-4",
-        "bg-[#4F39F6] text-white",
-        "hover:bg-[#5B45F8] active:bg-[#4332D7]",
-        "border border-[#4F39F6]/80",
-        "transition-colors duration-150 active:scale-[0.99]",
-        "focus:outline-none focus:ring-2 focus:ring-white/40 focus:ring-offset-2 focus:ring-offset-transparent",
-        "cursor-pointer touch-manipulation",
-        "min-h-[56px]",
-        className,
-      ].join(" ")}
-    >
-      {/* Icon - speed/action cue */}
-      <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-white/15 flex items-center justify-center">
+    <>
+      <style>{glowStyles}</style>
+      <button
+        type="button"
+        onClick={onClick}
+        className={[
+          "quick-play-btn-glow relative overflow-hidden",
+          "w-full rounded-xl px-5 py-4",
+          "flex items-center gap-4",
+          "bg-[#4F39F6] text-white",
+          "hover:bg-[#5B45F8] active:bg-[#4332D7]",
+          "border border-[#4F39F6]/80",
+          "transition-colors duration-150 active:scale-[0.99]",
+          "focus:outline-none focus:ring-2 focus:ring-white/40 focus:ring-offset-2 focus:ring-offset-transparent",
+          "cursor-pointer touch-manipulation",
+          "min-h-[56px]",
+          className,
+        ].join(" ")}
+      >
+      {/* Icon - speed/action cue with gentle shimmer */}
+      <div className="quick-play-btn-shimmer flex-shrink-0 w-10 h-10 rounded-lg bg-white/15 flex items-center justify-center">
         <LightningIcon />
       </div>
 
@@ -99,5 +123,6 @@ export const QuickPlayButton: React.FC<QuickPlayButtonProps> = ({
         />
       </svg>
     </button>
+    </>
   );
 };
