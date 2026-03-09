@@ -77,9 +77,8 @@ export const ResultsActions: FC<ResultsActionsProps> = ({
 
     const handleCloseButton = () => {
         onClose();
-        if (isAuthenticated === true) {
-            history.push("/main");
-        }
+        const url = isAuthenticated ? '/main' : '/';
+        history.push(url);
     };
 
     const handleSignup = () => {

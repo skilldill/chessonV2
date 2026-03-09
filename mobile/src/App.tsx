@@ -42,6 +42,7 @@ import './theme/variables.css';
 // Custom screens
 import CreateRoomScreen from './screens/CreateRoomScreen/CreateRoomScreen';
 import HomeScreen from './screens/HomeScreen/HomeScreen';
+import QuickPlayWaitingScreen from './screens/QuickPlayWaitingScreen/QuickPlayWaitingScreen';
 import AppScreen from './screens/AppScreen/AppScreen';
 import GameScreen from './screens/GameScreen/GameScreen';
 import VerifyEmailScreen from './screens/VerifyEmailScreen/VerifyEmailScreen';
@@ -73,6 +74,9 @@ const App: React.FC = () => {
           </Route>
           <Route exact path="/main">
             <HomeScreen />
+          </Route>
+          <Route exact path="/quick-play">
+            <QuickPlayWaitingScreen />
           </Route>
           <Route exact path="/create-room">
             <CreateRoomScreen />

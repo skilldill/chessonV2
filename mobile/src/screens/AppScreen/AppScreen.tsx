@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRoomWS } from '../../hooks/useRoomWS';
 import { useUserData } from '../../hooks/useUserData';
@@ -8,8 +9,14 @@ import { useGameStorage } from '../../hooks/useGameStorage';
 import { useAutoConnect } from '../../hooks/useAutoConnect';
 import { IonPage, IonContent, IonSpinner } from '@ionic/react';
 
+const QUICK_PLAY_ROOM_ID_KEY = "quickPlayRoomId";
+
 const AppScreen: React.FC = () => {
   const { roomId } = useParams<{ roomId: string }>();
+  const isQuickPlayRoom = useMemo(
+    () => !!roomId && localStorage.getItem(QUICK_PLAY_ROOM_ID_KEY) === roomId,
+    [roomId]
+  );
 
   const {
     gameState,
@@ -61,6 +68,9 @@ const AppScreen: React.FC = () => {
 
   // Если игра началась, показываем игровой экран
   if (userColor && gameState.gameStarted) {
+    if (isQuickPlayRoom) {
+      localStorage.removeItem(QUICK_PLAY_ROOM_ID_KEY);
+    }
     return (
       <GameScreen
         gameState={gameState}
@@ -77,6 +87,19 @@ const AppScreen: React.FC = () => {
         offeredDraw={offeredDraw}
         connectionLost={connectionLost}
       />
+    );
+  }
+
+  if (isQuickPlayRoom && userName) {
+    return (
+      <IonPage>
+        <IonContent className="ion-padding">
+          <div className="flex flex-col justify-center items-center h-full gap-4">
+            <IonSpinner name="crescent" />
+            <p className="text-white/85 text-sm">Connecting to game...</p>
+          </div>
+        </IonContent>
+      </IonPage>
     );
   }
 
