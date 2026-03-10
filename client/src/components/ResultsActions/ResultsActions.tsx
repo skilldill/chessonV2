@@ -76,11 +76,9 @@ export const ResultsActions: FC<ResultsActionsProps> = ({
 
     const handleCloseButton = () => {
         onClose();
-        if (isAuthenticated) {
-            history.push("/main");
-        } else {
-            window.location.href = import.meta.env.VITE_MAIN_SITE;
-        }
+
+        const url = isAuthenticated ? '/main' : '/';
+        history.push(url);
     };
 
     const handleSignup = () => {

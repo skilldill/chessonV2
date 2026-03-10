@@ -105,6 +105,7 @@ type GameState = {
 type UserData = {
     userName: string;
     avatar: string;
+    clientId?: string;
     ws: ElysiaWS<any, any>;
     isConnected: boolean;
     color?: "white" | "black";
@@ -121,10 +122,25 @@ type Room = {
     hasMobilePlayer?: boolean; // Есть ли мобильный игрок в комнате
 };
 
+type RandomMatchQueueEntry = {
+  userId: string;
+  createdAt: number;
+  timeKey: string;
+};
+
+type RandomMatchAssignment = {
+  roomId: string;
+  createdAt: number;
+  timeKey: string;
+};
+
 const rooms = new Map<string, Room>();
 const roomTimers = new Map<string, NodeJS.Timeout>();
 const roomLastActivity = new Map<string, number>(); // Время последней активности комнаты
 const userMessageCounts = new Map<string, { count: number, resetAt: number }>(); // Rate limiting для пользователей
+const randomMatchQueueByTime = new Map<string, RandomMatchQueueEntry[]>();
+const randomMatchUserToTimeKey = new Map<string, string>();
+const randomMatchAssignments = new Map<string, RandomMatchAssignment>();
 
 // Метрики для мониторинга
 const metrics = {
@@ -143,6 +159,30 @@ const CLEANUP_INTERVAL = 60 * 60 * 1000; // Проверка каждый час
 const RATE_LIMIT_WINDOW = 1000; // 1 секунда
 const RATE_LIMIT_MAX_MESSAGES = 100; // Максимум сообщений в секунду
 const METRICS_RESET_INTERVAL = 1000; // Сброс счетчика сообщений в секунду каждую секунду
+const RANDOM_MATCH_QUEUE_ENTRY_TTL = 10 * 60 * 1000; // 10 минут
+const RANDOM_MATCH_ASSIGNMENT_TTL = 10 * 60 * 1000; // 10 минут
+const GUEST_CAT_WORDS = [
+  "Mad",
+  "Fury",
+  "Good",
+  "Big",
+  "Small",
+  "Swift",
+  "Lucky",
+  "Brave",
+  "Calm",
+  "Wild",
+  "Sharp",
+  "Rapid",
+  "Bold",
+  "Mighty",
+  "Sneaky",
+  "Quiet",
+  "Storm",
+  "Silver",
+  "Golden",
+  "Cosmic"
+];
 const DEFAULT_ALLOWED_ORIGINS = [
   'http://localhost:3000',
   'http://127.0.0.1:3000',
@@ -474,6 +514,248 @@ function getCurrentPlayerFromFEN(fen: string): "white" | "black" {
     }
     const activeColor = parts[1].toLowerCase();
     return activeColor === 'b' ? "black" : "white";
+}
+
+function getRandomMatchTimeConfig(rawTimeMinutes?: unknown, rawIncrementSeconds?: unknown) {
+  const parsedTimeMinutes = Number(rawTimeMinutes);
+  const parsedIncrementSeconds = Number(rawIncrementSeconds);
+
+  const timeMinutes = Number.isFinite(parsedTimeMinutes) && parsedTimeMinutes > 0
+    ? Math.min(Math.floor(parsedTimeMinutes), 120)
+    : 10;
+  const incrementSeconds = Number.isFinite(parsedIncrementSeconds) && parsedIncrementSeconds >= 0
+    ? Math.min(Math.floor(parsedIncrementSeconds), 120)
+    : 0;
+
+  return { timeMinutes, incrementSeconds };
+}
+
+function getRandomMatchTimeKey(timeMinutes: number, incrementSeconds: number): string {
+  return `${timeMinutes}+${incrementSeconds}`;
+}
+
+function getTotalRandomMatchQueueCount(): number {
+  let total = 0;
+  for (const queue of randomMatchQueueByTime.values()) {
+    total += queue.length;
+  }
+  return total;
+}
+
+function cleanupRandomMatchState() {
+  const now = Date.now();
+  randomMatchUserToTimeKey.clear();
+
+  for (const [timeKey, queue] of randomMatchQueueByTime.entries()) {
+    const filteredQueue = queue.filter((entry) => now - entry.createdAt <= RANDOM_MATCH_QUEUE_ENTRY_TTL);
+
+    if (filteredQueue.length === 0) {
+      randomMatchQueueByTime.delete(timeKey);
+    } else {
+      randomMatchQueueByTime.set(timeKey, filteredQueue);
+      for (const entry of filteredQueue) {
+        randomMatchUserToTimeKey.set(entry.userId, timeKey);
+      }
+    }
+  }
+
+  for (const [userId, assignment] of randomMatchAssignments.entries()) {
+    if (now - assignment.createdAt > RANDOM_MATCH_ASSIGNMENT_TTL) {
+      randomMatchAssignments.delete(userId);
+    }
+  }
+}
+
+function removeUserFromRandomMatchQueue(userId: string) {
+  const existingTimeKey = randomMatchUserToTimeKey.get(userId);
+  if (!existingTimeKey) {
+    return;
+  }
+
+  const queue = randomMatchQueueByTime.get(existingTimeKey);
+  if (!queue) {
+    randomMatchUserToTimeKey.delete(userId);
+    return;
+  }
+
+  const filteredQueue = queue.filter((entry) => entry.userId !== userId);
+
+  if (filteredQueue.length === 0) {
+    randomMatchQueueByTime.delete(existingTimeKey);
+  } else {
+    randomMatchQueueByTime.set(existingTimeKey, filteredQueue);
+  }
+
+  randomMatchUserToTimeKey.delete(userId);
+}
+
+function parseTimerConfig(rawConfig: any) {
+  const whiteTimer = Number(rawConfig?.whiteTimer ?? DEFAULT_TIME_SECONDS);
+  const blackTimer = Number(rawConfig?.blackTimer ?? DEFAULT_TIME_SECONDS);
+  const increment = Number(rawConfig?.increment ?? 0);
+
+  const normalizedWhiteTimer = Number.isFinite(whiteTimer) && whiteTimer > 0 ? Math.floor(whiteTimer) : DEFAULT_TIME_SECONDS;
+  const normalizedBlackTimer = Number.isFinite(blackTimer) && blackTimer > 0 ? Math.floor(blackTimer) : DEFAULT_TIME_SECONDS;
+  const normalizedIncrement = Number.isFinite(increment) && increment >= 0 ? Math.floor(increment) : 0;
+
+  const currentFEN = (rawConfig?.currentFEN && typeof rawConfig.currentFEN === 'string' && rawConfig.currentFEN.trim())
+    ? rawConfig.currentFEN
+    : INITIAL_FEN;
+  const firstPlayerColor = (rawConfig?.color === "white" || rawConfig?.color === "black")
+    ? rawConfig.color
+    : undefined;
+
+  return {
+    whiteTimer: normalizedWhiteTimer,
+    blackTimer: normalizedBlackTimer,
+    increment: normalizedIncrement,
+    currentFEN,
+    firstPlayerColor
+  };
+}
+
+function buildUniqueUserNameInRoom(room: Room, requestedName: string): string {
+  const trimmed = requestedName.trim();
+  const baseName = trimmed || "Anonymous cat";
+
+  const usedNames = new Set(
+    Array.from(room.users.values()).map((user) => user.userName.toLowerCase())
+  );
+
+  if (!usedNames.has(baseName.toLowerCase())) {
+    return baseName;
+  }
+
+  const guestCandidates = GUEST_CAT_WORDS.map((word) => `${word} cat`);
+  for (const candidate of guestCandidates) {
+    if (!usedNames.has(candidate.toLowerCase())) {
+      return candidate;
+    }
+  }
+
+  let suffix = 2;
+  while (usedNames.has(`${baseName} ${suffix}`.toLowerCase())) {
+    suffix++;
+  }
+
+  return `${baseName} ${suffix}`;
+}
+
+function createRoomWithConfig(rawConfig: any) {
+  const roomId = generateShortId();
+  const timerConfig = parseTimerConfig(rawConfig);
+  const currentPlayer = getCurrentPlayerFromFEN(timerConfig.currentFEN);
+
+  const room: Room = {
+    users: new Map(),
+    gameState: {
+      currentFEN: timerConfig.currentFEN,
+      moveHistory: [],
+      currentPlayer: currentPlayer,
+      currentColor: currentPlayer,
+      gameStarted: false,
+      gameEnded: false,
+      gameResult: undefined,
+      drawOffer: undefined,
+      drawOfferCount: {},
+      timer: {
+        whiteTime: timerConfig.whiteTimer,
+        blackTime: timerConfig.blackTimer,
+        whiteIncrement: timerConfig.increment,
+        blackIncrement: timerConfig.increment,
+        initialWhiteTime: timerConfig.whiteTimer,
+        initialBlackTime: timerConfig.blackTimer,
+      }
+    },
+    firstPlayerColor: timerConfig.firstPlayerColor,
+    hasMobilePlayer: undefined
+  };
+
+  rooms.set(roomId, room);
+  updateRoomActivity(roomId);
+  metrics.roomsCreated++;
+  updateMetrics();
+
+  return {
+    roomId,
+    room,
+    timerConfig
+  };
+}
+
+function parseCookiesFromHeader(cookieHeader: string): Record<string, string> {
+  return cookieHeader.split(';').reduce((acc: Record<string, string>, cookie) => {
+    const [key, value] = cookie.trim().split('=');
+    if (key && value) {
+      acc[key] = value;
+    }
+    return acc;
+  }, {});
+}
+
+async function getAuthenticatedUserFromHeaders(headers: Record<string, string | undefined>) {
+  const cookieHeader = headers.cookie || '';
+  const cookies = parseCookiesFromHeader(cookieHeader);
+  const authToken = cookies.authToken;
+
+  if (!authToken) {
+    return null;
+  }
+
+  const payload = await verifyToken(authToken);
+  if (!payload?.userId) {
+    return null;
+  }
+
+  const user = await User.findById(payload.userId);
+  if (!user || (user as any).isBlocked) {
+    return null;
+  }
+
+  return {
+    userId: (user._id as mongoose.Types.ObjectId).toString(),
+    userName: user.name || user.login,
+    avatar: user.avatar || '0'
+  };
+}
+
+function normalizeGuestId(guestIdRaw: unknown): string | null {
+  if (typeof guestIdRaw !== 'string') {
+    return null;
+  }
+
+  const guestId = guestIdRaw.trim();
+  if (!guestId) {
+    return null;
+  }
+
+  if (!/^[a-zA-Z0-9_-]{6,80}$/.test(guestId)) {
+    return null;
+  }
+
+  return guestId;
+}
+
+async function getRandomMatchParticipant(headers: Record<string, string | undefined>, guestIdRaw?: unknown) {
+  const authUser = await getAuthenticatedUserFromHeaders(headers);
+  if (authUser) {
+    return {
+      participantId: `user:${authUser.userId}`,
+      userName: authUser.userName,
+      avatar: authUser.avatar
+    };
+  }
+
+  const guestId = normalizeGuestId(guestIdRaw);
+  if (!guestId) {
+    return null;
+  }
+
+  return {
+    participantId: `guest:${guestId}`,
+    userName: 'Anonymous Cat',
+    avatar: '0'
+  };
 }
 
 // Функция для извлечения позиции из FEN (без счетчиков ходов и полуходов)
@@ -2157,11 +2439,179 @@ app.delete('/api/admin/users/:id', async ({ headers, params, set }) => {
   })
 });
 
+app.post('/api/random-match/join', async ({ body, headers, set }) => {
+  try {
+    cleanupRandomMatchState();
+
+    let payload: any = {};
+    if (typeof body === 'string') {
+      try {
+        payload = JSON.parse(body);
+      } catch (error) {
+        payload = {};
+      }
+    } else if (body && typeof body === 'object') {
+      payload = body;
+    }
+
+    const participant = await getRandomMatchParticipant(
+      headers as Record<string, string | undefined>,
+      payload.guestId
+    );
+    if (!participant) {
+      set.status = 400;
+      return {
+        success: false,
+        error: 'Missing guestId for anonymous queue join'
+      };
+    }
+
+    const { timeMinutes, incrementSeconds } = getRandomMatchTimeConfig(payload.timeMinutes, payload.incrementSeconds);
+    const timeKey = getRandomMatchTimeKey(timeMinutes, incrementSeconds);
+
+    const existingAssignment = randomMatchAssignments.get(participant.participantId);
+    if (existingAssignment) {
+      return {
+        success: true,
+        status: 'matched',
+        roomId: existingAssignment.roomId,
+        queueCountForTimeControl: randomMatchQueueByTime.get(existingAssignment.timeKey)?.length ?? 0,
+        totalPlayersInRandomQueue: getTotalRandomMatchQueueCount(),
+        timeControl: { timeMinutes, incrementSeconds }
+      };
+    }
+
+    removeUserFromRandomMatchQueue(participant.participantId);
+
+    const queue = randomMatchQueueByTime.get(timeKey) ?? [];
+    const opponent = queue.find((entry) => entry.userId !== participant.participantId);
+
+    if (opponent) {
+      const filteredQueue = queue.filter((entry) => entry.userId !== opponent.userId);
+      if (filteredQueue.length === 0) {
+        randomMatchQueueByTime.delete(timeKey);
+      } else {
+        randomMatchQueueByTime.set(timeKey, filteredQueue);
+      }
+      randomMatchUserToTimeKey.delete(opponent.userId);
+
+      const totalTimeSeconds = timeMinutes * 60;
+      const { roomId } = createRoomWithConfig({
+        whiteTimer: totalTimeSeconds,
+        blackTimer: totalTimeSeconds,
+        increment: incrementSeconds
+      });
+
+      const assignment: RandomMatchAssignment = {
+        roomId,
+        createdAt: Date.now(),
+        timeKey
+      };
+      randomMatchAssignments.set(participant.participantId, assignment);
+      randomMatchAssignments.set(opponent.userId, assignment);
+
+      return {
+        success: true,
+        status: 'matched',
+        roomId,
+        queueCountForTimeControl: randomMatchQueueByTime.get(timeKey)?.length ?? 0,
+        totalPlayersInRandomQueue: getTotalRandomMatchQueueCount(),
+        timeControl: { timeMinutes, incrementSeconds }
+      };
+    }
+
+    const newQueueEntry: RandomMatchQueueEntry = {
+      userId: participant.participantId,
+      createdAt: Date.now(),
+      timeKey
+    };
+    queue.push(newQueueEntry);
+    randomMatchQueueByTime.set(timeKey, queue);
+    randomMatchUserToTimeKey.set(participant.participantId, timeKey);
+
+    return {
+      success: true,
+      status: 'waiting',
+      queueCountForTimeControl: queue.length,
+      totalPlayersInRandomQueue: getTotalRandomMatchQueueCount(),
+      timeControl: { timeMinutes, incrementSeconds }
+    };
+  } catch (error: any) {
+    console.error('Random match join error:', error);
+    set.status = 500;
+    return {
+      success: false,
+      error: error.message || 'Failed to join random match queue'
+    };
+  }
+});
+
+app.get('/api/random-match/status', async ({ query, headers, set }) => {
+  try {
+    cleanupRandomMatchState();
+
+    const { timeMinutes, incrementSeconds } = getRandomMatchTimeConfig(
+      (query as any)?.timeMinutes,
+      (query as any)?.incrementSeconds
+    );
+    const timeKey = getRandomMatchTimeKey(timeMinutes, incrementSeconds);
+
+    const participant = await getRandomMatchParticipant(
+      headers as Record<string, string | undefined>,
+      (query as any)?.guestId
+    );
+    const assignment = participant ? randomMatchAssignments.get(participant.participantId) : undefined;
+    const isInQueue = participant ? randomMatchUserToTimeKey.has(participant.participantId) : false;
+
+    return {
+      success: true,
+      status: assignment ? 'matched' : (isInQueue ? 'waiting' : 'idle'),
+      roomId: assignment?.roomId,
+      queueCountForTimeControl: randomMatchQueueByTime.get(timeKey)?.length ?? 0,
+      totalPlayersInRandomQueue: getTotalRandomMatchQueueCount(),
+      timeControl: { timeMinutes, incrementSeconds }
+    };
+  } catch (error: any) {
+    console.error('Random match status error:', error);
+    set.status = 500;
+    return {
+      success: false,
+      error: error.message || 'Failed to fetch random match status'
+    };
+  }
+});
+
+app.delete('/api/random-match/leave', async ({ headers, query, set }) => {
+  try {
+    cleanupRandomMatchState();
+
+    const participant = await getRandomMatchParticipant(
+      headers as Record<string, string | undefined>,
+      (query as any)?.guestId
+    );
+
+    if (participant) {
+      removeUserFromRandomMatchQueue(participant.participantId);
+      randomMatchAssignments.delete(participant.participantId);
+    }
+
+    return {
+      success: true,
+      status: 'left',
+      totalPlayersInRandomQueue: getTotalRandomMatchQueueCount()
+    };
+  } catch (error: any) {
+    console.error('Random match leave error:', error);
+    set.status = 500;
+    return {
+      success: false,
+      error: error.message || 'Failed to leave random match queue'
+    };
+  }
+});
+
 // Create room endpoint
 app.post('/api/rooms', async ({ body }) => {
-  // Generate unique room ID using short format
-  const roomId = generateShortId();
-  
   // Извлекаем конфигурацию таймеров или используем значения по умолчанию
   // В Elysia body может быть строкой или объектом, поэтому парсим если нужно
   let timerConfig: any = {};
@@ -2174,68 +2624,25 @@ app.post('/api/rooms', async ({ body }) => {
   } else if (body && typeof body === 'object') {
     timerConfig = body;
   }
-  
-  const whiteTimer = timerConfig.whiteTimer ?? DEFAULT_TIME_SECONDS;
-  const blackTimer = timerConfig.blackTimer ?? DEFAULT_TIME_SECONDS;
-  const increment = timerConfig.increment ?? 0;
-  // Если currentFEN не передан, пустой или null, используем INITIAL_FEN для обычной игры
-  const currentFEN = (timerConfig.currentFEN && timerConfig.currentFEN.trim()) 
-    ? timerConfig.currentFEN 
-    : INITIAL_FEN;
-  // Цвет для первого подключившегося игрока (необязательный)
-  const firstPlayerColor = (timerConfig.color === "white" || timerConfig.color === "black") 
-    ? timerConfig.color 
-    : undefined;
 
   // {"whiteTimer":60,"blackTimer":60,"increment":5,"currentFEN":"...","color":"white"}
   console.log('TIMER CONFIG BODY', body);
   console.log('TIMER CONFIG', timerConfig);
 
-  // Определяем текущего игрока из FEN
-  const currentPlayer = getCurrentPlayerFromFEN(currentFEN);
-
-  // Create empty room with initial game state
-  const room = { 
-    users: new Map(),
-    gameState: {
-      currentFEN: currentFEN, // Используем переданный FEN или начальную позицию
-      moveHistory: [],
-      currentPlayer: currentPlayer,
-      currentColor: currentPlayer,
-      gameStarted: false,
-      gameEnded: false,
-      gameResult: undefined,
-      drawOffer: undefined,
-      drawOfferCount: {},
-      timer: {
-        whiteTime: whiteTimer,
-        blackTime: blackTimer,
-        whiteIncrement: increment,
-        blackIncrement: increment,
-        initialWhiteTime: whiteTimer,
-        initialBlackTime: blackTimer,
-      }
-    },
-    firstPlayerColor: firstPlayerColor,
-    hasMobilePlayer: undefined // Будет установлено при подключении мобильного игрока
-  };
-  rooms.set(roomId, room);
-  updateRoomActivity(roomId);
-  metrics.roomsCreated++;
-  updateMetrics();
+  const { roomId, room, timerConfig: normalizedConfig } = createRoomWithConfig(timerConfig);
   
   console.log('ROOM CREATED WITH TIMER:', room.gameState.timer);
   console.log('ROOM ID:', roomId);
-  console.log('ROOM CREATED WITH FEN:', currentFEN);
+  console.log('ROOM CREATED WITH FEN:', normalizedConfig.currentFEN);
   
   return {
     success: true,
     roomId,
     message: 'Room created successfully',
     timerConfig: {
-      whiteTimer: whiteTimer,
-      blackTimer: blackTimer,
-      increment: increment,
+      whiteTimer: normalizedConfig.whiteTimer,
+      blackTimer: normalizedConfig.blackTimer,
+      increment: normalizedConfig.increment,
     }
   };
 });
@@ -2524,6 +2931,7 @@ app.ws('/ws/room', {
       roomId: t.String(),
       userName: t.String(),
       avatar: t.String(),
+      clientId: t.Optional(t.String()),
       currentFEN: t.Optional(t.String()),
       color: t.Optional(t.Union([t.Literal("white"), t.Literal("black")])),
       authToken: t.Optional(t.String()), // Опциональный токен аутентификации
@@ -2603,7 +3011,8 @@ app.ws('/ws/room', {
   ]),
 
   async open(ws) {
-      const { roomId, userName, avatar, currentFEN: queryFEN, color: queryColor, authToken, hasMobilePlayer: queryHasMobilePlayer } = ws.data.query;
+      const { roomId, userName, avatar, clientId, currentFEN: queryFEN, color: queryColor, authToken, hasMobilePlayer: queryHasMobilePlayer } = ws.data.query;
+      const normalizedUserName = userName?.trim() || "Anonymous cat";
 
       // Преобразуем строку "true" или "1" в boolean для hasMobilePlayer
       const hasMobilePlayer: boolean = queryHasMobilePlayer === "true" || queryHasMobilePlayer === "1";
@@ -2676,10 +3085,17 @@ app.ws('/ws/room', {
           metrics.roomsCreated++;
       }
 
-      // Проверяем, есть ли уже пользователь с таким именем в комнате
+      // Проверяем, есть ли уже такой пользователь в комнате (clientId/registeredUserId),
+      // а userName используем только как legacy fallback
       let existingUserId: string | null = null;
       for (const [userId, userData] of room.users) {
-          if (userData.userName === userName) {
+          const sameClientId = !!clientId && userData.clientId === clientId;
+          const sameRegisteredUser = !!registeredUserId
+            && !!userData.registeredUserId
+            && userData.registeredUserId.toString() === registeredUserId.toString();
+          const sameUserNameLegacy = !clientId && !registeredUserId && userData.userName === userName;
+
+          if (sameClientId || sameRegisteredUser || sameUserNameLegacy) {
               existingUserId = userId;
               break;
           }
@@ -2698,8 +3114,9 @@ app.ws('/ws/room', {
           // Приоритет: новый registeredUserId > существующий registeredUserId
           const currentRegisteredUserId = registeredUserId || existingUserData?.registeredUserId;
           room.users.set(existingUserId, {
-              userName: userName,
+              userName: existingUserData?.userName || normalizedUserName,
               avatar: avatar,
+              clientId: clientId || existingUserData?.clientId,
               ws: ws,
               isConnected: true,
               color: existingUserData?.color,
@@ -2719,7 +3136,7 @@ app.ws('/ws/room', {
           // Приветствие для вернувшегося пользователя
           ws.send({ 
             system: true, 
-            message: `Welcome back to room ${roomId}, ${userName}! Your ID: ${existingUserId}`,
+            message: `Welcome back to room ${roomId}, ${existingUserData?.userName || normalizedUserName}! Your ID: ${existingUserId}`,
             type: "reconnection",
             gameState: getPersonalizedGameState(room, existingUserId),
             userColor: existingUserData?.color
@@ -2743,7 +3160,7 @@ app.ws('/ws/room', {
           // Уведомляем других пользователей о возвращении
           for (const [id, userData] of room.users) {
               if (id !== existingUserId) {
-                  userData.ws.send({ system: true, message: `${userName} rejoined the room` });
+                  userData.ws.send({ system: true, message: `${existingUserData?.userName || normalizedUserName} rejoined the room` });
               }
           }
           return;
@@ -2772,9 +3189,12 @@ app.ws('/ws/room', {
       }
 
       // Сохраняем данные нового пользователя в комнате
+      const finalUserName = buildUniqueUserNameInRoom(room, normalizedUserName);
+
       room.users.set(userId, {
-          userName: userName,
+          userName: finalUserName,
           avatar: avatar,
+          clientId: clientId,
           ws: ws,
           isConnected: true,
           color: assignedColor,
@@ -2795,9 +3215,9 @@ app.ws('/ws/room', {
       updateMetrics();
 
       // приветствие для нового пользователя
-      ws.send({ 
+      ws.send({
         system: true, 
-        message: `Welcome to room ${roomId}, ${userName}! Your ID: ${userId}`,
+        message: `Welcome to room ${roomId}, ${finalUserName}! Your ID: ${userId}`,
         type: "connection",
         userColor: assignedColor,
         gameState: getPersonalizedGameState(room, userId)
@@ -2815,13 +3235,13 @@ app.ws('/ws/room', {
 
       // уведомляем других пользователей о подключении
       for (const [id, userData] of room.users) {
-          if (id !== userId) {
-              userData.ws.send({ 
-                system: true, 
-                message: `${userName} connected`,
-                opponentColor: assignedColor
-              });
-          }
+              if (id !== userId) {
+                  userData.ws.send({ 
+                      system: true, 
+                      message: `${finalUserName} connected`,
+                      opponentColor: assignedColor
+                  });
+              }
       }
 
       // Если теперь 2 игрока, начинаем игру
@@ -2852,9 +3272,13 @@ app.ws('/ws/room', {
       // Находим пользователя по WebSocket соединению
       let senderUserId: string | null = null;
       let senderUserData: UserData | null = null;
+      const currentClientId = ws.data.query.clientId;
       
       for (const [userId, userData] of room.users) {
-          if (userData.userName === ws.data.query.userName) {
+          const sameClientId = !!currentClientId && userData.clientId === currentClientId;
+          const sameUserNameLegacy = !currentClientId && userData.userName === ws.data.query.userName;
+
+          if (sameClientId || sameUserNameLegacy) {
               senderUserId = userId;
               senderUserData = userData;
               break;
@@ -3250,15 +3674,27 @@ app.ws('/ws/room', {
     const room = rooms.get(roomId);
     if (!room) return;
 
+    const currentClientId = ws.data.query.clientId;
+    let disconnectedUserId: string | null = null;
+    let disconnectedUserName = ws.data.query.userName;
+
+    for (const [userId, userData] of room.users) {
+      const sameClientId = !!currentClientId && userData.clientId === currentClientId;
+      const sameUserNameLegacy = !currentClientId && userData.userName === ws.data.query.userName;
+      if (sameClientId || sameUserNameLegacy) {
+        disconnectedUserId = userId;
+        disconnectedUserName = userData.userName;
+        break;
+      }
+    }
+
     // Проверяем, остались ли подключенные игроки
     let connectedUsers = 0;
-    for (const [_, userData] of room.users) {
-      const { userName } = userData;
-
-      if (userName !== ws.data.query.userName) {
+    for (const [userId, userData] of room.users) {
+      if (userId !== disconnectedUserId) {
         if (userData.isConnected) {
           connectedUsers++;
-          userData.ws.send({ system: true, message: `${ws.data.query.userName} disconnected` });
+          userData.ws.send({ system: true, message: `${disconnectedUserName} disconnected` });
         }
       } else {
         userData.isConnected = false;

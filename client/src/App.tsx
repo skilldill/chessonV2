@@ -9,6 +9,7 @@ import { ForgotPasswordScreen } from "./screens/ForgotPasswordScreen/ForgotPassw
 import { ResetPasswordScreen } from "./screens/ResetPasswordScreen/ResetPasswordScreen";
 import { HomeScreen } from "./screens/HomeScreen/HomeScreen";
 import { CreateRoomScreen } from "./screens/CreateRoomScreen/CreateRoomScreen";
+import { QuickPlayWaitingScreen } from "./screens/QuickPlayWaitingScreen/QuickPlayWaitingScreen";
 import { HomeRedirect } from "./components/HomeRedirect/HomeRedirect";
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 import 'react-chessboard-ui/dist/index.css';
@@ -56,29 +57,37 @@ const ALL_IMAGES = [
   Cat8PNG,
 ];
 
+function AppRoutes() {
+  useRestoreGame();
+
+  return (
+    <Switch>
+      <Route exact path="/" component={HomeRedirect} />
+      <Route exact path="/main" component={HomeScreen} />
+      <Route exact path="/quick-play" component={QuickPlayWaitingScreen} />
+      <Route exact path="/create-room" component={CreateRoomScreen} />
+      <Route path="/game/:roomId" component={AppScreen} />
+      <Route exact path="/custom/room" component={CreateCustomFenRoomScreen} />
+      <Route exact path="/verify-email" component={VerifyEmailScreen} />
+      <Route exact path="/login" component={LoginScreen} />
+      <Route exact path="/signup" component={SignupScreen} />
+      <Route exact path="/signup-success" component={SignupSuccessScreen} />
+      <Route exact path="/forgot-password" component={ForgotPasswordScreen} />
+      <Route exact path="/reset-password" component={ResetPasswordScreen} />
+      <Route exact path="/profile" component={ProfileScreen} />
+    </Switch>
+  );
+}
+
 function App() {
   // Используем хук для холодной прогрузки всех изображений
   useImagePreloader(ALL_IMAGES);
-  useRestoreGame();
   // Предзагрузка темы доски в localStorage при заходе в приложение
   useUserAppearancePreload();
 
   return (
     <Router>
-      <Switch>
-        <Route exact path="/" component={HomeRedirect} />
-        <Route exact path="/main" component={HomeScreen} />
-        <Route exact path="/create-room" component={CreateRoomScreen} />
-        <Route path="/game/:roomId" component={AppScreen} />
-        <Route exact path="/custom/room" component={CreateCustomFenRoomScreen} />
-        <Route exact path="/verify-email" component={VerifyEmailScreen} />
-        <Route exact path="/login" component={LoginScreen} />
-        <Route exact path="/signup" component={SignupScreen} />
-        <Route exact path="/signup-success" component={SignupSuccessScreen} />
-        <Route exact path="/forgot-password" component={ForgotPasswordScreen} />
-        <Route exact path="/reset-password" component={ResetPasswordScreen} />
-        <Route exact path="/profile" component={ProfileScreen} />
-      </Switch>
+      <AppRoutes />
     </Router>
   );
 }

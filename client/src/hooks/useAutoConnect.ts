@@ -22,6 +22,7 @@ export const useAutoConnect = ({
     removeGameData,
 }: UseAutoConnectParams) => {
     const [checkingAuth, setCheckingAuth] = useState(true);
+    const QUICK_PLAY_PROFILE_KEY = "quickPlayProfile";
 
     const handleSetUserName = async (userName: string, avatarIndex: number) => {
         setUserName(userName);
@@ -39,6 +40,11 @@ export const useAutoConnect = ({
 
     // Обработка сохраненных данных игры
     useEffect(() => {
+        if (userName) {
+            setCheckingAuth(false);
+            return;
+        }
+
         if (!storageGameData) return;
 
         // Проверим, если игрок пытается открыть
@@ -50,7 +56,7 @@ export const useAutoConnect = ({
 
         handleSetUserName(storageGameData.playerName, parseInt(storageGameData.avatar));
         setCheckingAuth(false);
-    }, [storageGameData, roomId]);
+    }, [storageGameData, roomId, userName]);
 
     // Проверка авторизации и автоматическая подстановка данных
     useEffect(() => {
@@ -63,6 +69,22 @@ export const useAutoConnect = ({
         }
 
         const checkAuthAndAutoConnect = async () => {
+            const quickPlayProfileRaw = localStorage.getItem(QUICK_PLAY_PROFILE_KEY);
+            if (quickPlayProfileRaw) {
+                try {
+                    const quickPlayProfile = JSON.parse(quickPlayProfileRaw) as { playerName?: string; avatar?: string };
+                    const playerName = quickPlayProfile.playerName || "Anonymous Cat";
+                    const avatarIndex = parseInt(quickPlayProfile.avatar || "0");
+                    localStorage.removeItem(QUICK_PLAY_PROFILE_KEY);
+                    handleSetUserName(playerName, Number.isNaN(avatarIndex) ? 0 : avatarIndex);
+                    setCheckingAuth(false);
+                    return;
+                } catch (error) {
+                    console.error("Failed to parse quick play profile:", error);
+                    localStorage.removeItem(QUICK_PLAY_PROFILE_KEY);
+                }
+            }
+
             try {
                 const response = await fetch(`${API_PREFIX}/auth/me`, {
                     credentials: "include",

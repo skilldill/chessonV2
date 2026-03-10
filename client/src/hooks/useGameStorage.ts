@@ -13,7 +13,10 @@ export const useGameStorage = () => {
         localStorage.setItem('gameData', JSON.stringify(data));
     }
 
-    const removeGameData = () => localStorage.removeItem('gameData');
+    const removeGameData = () => {
+        localStorage.removeItem('gameData');
+        setStorageGameData(undefined);
+    };
 
     const fetchGameData = () => {
         const gameData = localStorage.getItem('gameData');

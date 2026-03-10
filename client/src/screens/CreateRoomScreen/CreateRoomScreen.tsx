@@ -1,12 +1,15 @@
 import { useState } from "react";
 import { useHistory } from "react-router-dom";
 import { API_PREFIX } from "../../constants/api";
+import { QuickPlayButton } from "../../components/QuickPlayButton/QuickPlayButton";
+import { useQuickPlayEntry } from "../../hooks/useQuickPlayEntry";
 
 const MINUTES_FOR_PLAYER = [1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 40, 50, 60, 120];
 const SECONDS_FOR_MOVE = [0, 1, 2, 3, 4, 5, 10, 15, 20, 30, 40, 50, 60, 100];
 
 export const CreateRoomScreen = () => {
     const history = useHistory();
+    const { openQuickPlay, quickPlayLabel, playersInRandomQueue } = useQuickPlayEntry();
     const [timeMinutes, setTimeMinutes] = useState(10);
     const [incrementSeconds, setIncrementSeconds] = useState(1);
     const [isCreating, setIsCreating] = useState(false);
@@ -51,12 +54,23 @@ export const CreateRoomScreen = () => {
 
     return (
         <div className="w-full h-[100vh] flex justify-center items-center overflow-y-auto py-4">
-            <div className="w-[348px] flex flex-col m-auto items-center gap-[32px] py-[32px]">
+            <div className="max-w-[432px] px-6 flex flex-col m-auto items-center gap-[32px] py-[32px]">
                 <h3 className="text-white text-center text-3xl font-semibold">
                     Time settings
                 </h3>
 
-                <div className="w-full flex flex-col gap-6 px-8">
+                <div className="w-full flex flex-col gap-6">
+                    <div className="flex flex-col gap-1">
+                        <QuickPlayButton
+                            onClick={openQuickPlay}
+                            timeLabel={quickPlayLabel}
+                            playersInQueue={playersInRandomQueue}
+                        />
+                        <p className="text-xs text-white/60 px-2">
+                            {playersInRandomQueue} {playersInRandomQueue === 1 ? "player" : "players"} in quick play
+                        </p>
+                    </div>
+
                     {/* Время на игрока */}
                     <div className="flex flex-col gap-3">
                         <label className="text-white/80 text-sm font-medium">
