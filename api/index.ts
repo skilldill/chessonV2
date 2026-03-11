@@ -8,6 +8,7 @@ import { Game } from './models/Game';
 import { hashPassword, comparePassword } from './utils/password';
 import { createToken, verifyToken } from './utils/jwt';
 import { sendVerificationEmail, sendPasswordResetEmail, sendTestEmail } from './utils/email';
+import { chessBot } from './src/modules/chess-bot';
 import mongoose from 'mongoose';
 import crypto from 'crypto';
 
@@ -1117,6 +1118,40 @@ app.get('/api/health', () => ({
   status: 'ok',
   timestamp: new Date().toISOString()
 }));
+
+// Chess bot endpoint (for Postman/local testing)
+app.post('/api/bot/move', async ({ body, set }) => {
+  try {
+    const result = await chessBot.getMove({
+      fen: body.fen,
+      moves: body.moves,
+      difficulty: body.difficulty,
+      moveTimeMs: body.moveTimeMs,
+    });
+
+    return {
+      success: true,
+      ...result,
+    };
+  } catch (error) {
+    set.status = 400;
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}, {
+  body: t.Object({
+    fen: t.Optional(t.String()),
+    moves: t.Optional(t.Array(t.String())),
+    difficulty: t.Optional(t.Union([
+      t.Literal('easy'),
+      t.Literal('medium'),
+      t.Literal('hard'),
+    ])),
+    moveTimeMs: t.Numeric({ minimum: 1 }),
+  })
+});
 
 // Auth endpoints
 // Регистрация пользователя
@@ -3712,5 +3747,43 @@ app.ws('/ws/room', {
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 4000;
 
+try {
+  await chessBot.start();
+  console.log('[chess-bot] Stockfish engine started');
+} catch (error) {
+  const message = error instanceof Error ? error.message : String(error);
+  console.error('[chess-bot] Failed to start Stockfish engine:', message);
+  process.exit(1);
+}
+
 app.listen(PORT);
 console.log(`Server is running on port ${PORT}`);
+
+let isShuttingDown = false;
+
+const shutdown = async (signal: string): Promise<void> => {
+  if (isShuttingDown) {
+    return;
+  }
+
+  isShuttingDown = true;
+  console.log(`Received ${signal}. Shutting down...`);
+
+  try {
+    await chessBot.stop();
+    console.log('[chess-bot] Stockfish engine stopped');
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('[chess-bot] Error during shutdown:', message);
+  }
+
+  process.exit(0);
+};
+
+process.on('SIGINT', () => {
+  void shutdown('SIGINT');
+});
+
+process.on('SIGTERM', () => {
+  void shutdown('SIGTERM');
+});
