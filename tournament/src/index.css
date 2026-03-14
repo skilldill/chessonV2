@@ -1,20 +1,26 @@
 :root {
-  --bg: #f4f6f8;
-  --surface: #ffffff;
-  --surface-alt: #f1f4f7;
-  --text: #1f252b;
-  --text-muted: #5a6977;
-  --border: #d6dde4;
-  --border-strong: #9aa9b7;
-  --accent: #1167b1;
-  --accent-soft: #e7f2fb;
+  --bg: #09090b;
+  --surface: #18181b;
+  --surface-alt: #222228;
+  --text: #f3f4f6;
+  --text-muted: #999baf;
+  --border: #2f3138;
+  --border-strong: #444754;
+  --accent: #2b1565;
+  --accent-soft: rgba(43, 21, 101, 0.28);
+  --danger: #a62f2f;
+  --success-bg: #10351f;
+  --success-text: #9fe2b5;
+  --success-border: #2f7d4c;
+  --shadow: rgba(0, 0, 0, 0.32);
 
-  font-family: 'Avenir Next', Avenir, 'Trebuchet MS', 'Segoe UI', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+    Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   line-height: 1.4;
   font-weight: 400;
   color: var(--text);
-  background: radial-gradient(circle at top right, #e9f2fb, transparent 40%),
-    var(--bg);
+  background: linear-gradient(150deg, #282828, #000, #2b1565);
+  color-scheme: dark;
 }
 
 * {
@@ -24,4 +30,6 @@
 body {
   margin: 0;
   min-height: 100vh;
+  background: transparent;
+  color: var(--text);
 }
