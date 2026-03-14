@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import type { MatchResult, Round, Standing, Tournament } from '../../tournament-engine'
 
 type RoundsSectionProps = {
@@ -13,6 +14,15 @@ type RoundsSectionProps = {
   onFinishTournament: () => void
 }
 
+const TEAM_LABEL_PALETTE = [
+  { background: '#3d1f86', color: '#ece7ff', borderColor: '#6b46d9' },
+  { background: '#0f3d56', color: '#d9f2ff', borderColor: '#22a6f2' },
+  { background: '#3d3a12', color: '#fff9d9', borderColor: '#d4c14d' },
+  { background: '#3d1e28', color: '#ffe2eb', borderColor: '#d45882' },
+  { background: '#183c2a', color: '#ddf7e9', borderColor: '#4dbb7c' },
+  { background: '#4a2a0f', color: '#ffe9d8', borderColor: '#e09559' },
+]
+
 export const RoundsSection = ({
   tournament,
   standings,
@@ -25,6 +35,48 @@ export const RoundsSection = ({
   createNextRound,
   onFinishTournament,
 }: RoundsSectionProps) => {
+  const groupsById = useMemo(
+    () => new Map(tournament.groups.map((group) => [group.id, group.name])),
+    [tournament.groups],
+  )
+
+  const teamColorByGroupId = useMemo(() => {
+    const palette = [...TEAM_LABEL_PALETTE]
+
+    for (let index = palette.length - 1; index > 0; index -= 1) {
+      const randomIndex = Math.floor(Math.random() * (index + 1))
+      const current = palette[index]
+      palette[index] = palette[randomIndex]
+      palette[randomIndex] = current
+    }
+
+    return new Map(
+      tournament.groups.map((group, index) => [
+        group.id,
+        palette[index % palette.length],
+      ]),
+    )
+  }, [tournament.groups])
+
+  const renderPlayerWithTeam = (playerId: string, fallbackText: string) => {
+    const participant = participantsById.get(playerId)
+    if (!participant) {
+      return <span>{fallbackText}</span>
+    }
+
+    const teamName = groupsById.get(participant.groupId) ?? 'Без команды'
+    const teamColor = teamColorByGroupId.get(participant.groupId) ?? TEAM_LABEL_PALETTE[0]
+
+    return (
+      <span className="player-row">
+        <span>{participant.name}</span>
+        <span className="team-label" style={teamColor}>
+          {teamName}
+        </span>
+      </span>
+    )
+  }
+
   return (
     <section className="card stack">
       <h2>Туры и результаты</h2>
@@ -55,11 +107,17 @@ export const RoundsSection = ({
               return (
                 <article key={match.id} className="match-card">
                   <p className="match-title">Пара {index + 1}</p>
-                  <p>
-                    {playerAName}
-                    {' vs '}
-                    {playerBName ?? 'BYE'}
-                  </p>
+                  <div className="match-players">
+                    {renderPlayerWithTeam(match.playerAId, 'Неизвестный')}
+                    <span className="match-vs">vs</span>
+                    {match.playerBId ? (
+                      renderPlayerWithTeam(match.playerBId, 'Неизвестный')
+                    ) : (
+                      <span className="player-row">
+                        <span>BYE</span>
+                      </span>
+                    )}
+                  </div>
 
                   {match.playerBId ? (
                     <label className="field">
@@ -175,7 +233,19 @@ export const RoundsSection = ({
 
                   return (
                     <li key={match.id}>
-                      {playerAName} - {playerBName}: {resultText}
+                      <span className="history-match-line">
+                        {renderPlayerWithTeam(match.playerAId, 'Неизвестный')}
+                        <span className="history-separator">-</span>
+                        {match.playerBId ? (
+                          renderPlayerWithTeam(match.playerBId, 'Неизвестный')
+                        ) : (
+                          <span className="player-row">
+                            <span>BYE</span>
+                          </span>
+                        )}
+                        <span className="history-separator">:</span>
+                        <span className="history-result">{resultText}</span>
+                      </span>
                     </li>
                   )
                 })}

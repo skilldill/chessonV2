@@ -178,7 +178,7 @@ const collectPreviousOpponents = (tournament: Tournament) => {
   return map
 }
 
-const chooseByePlayer = (
+const getByeCandidates = (
   sortedPlayers: Participant[],
   standingsById: Map<string, Standing>,
   tournament: Tournament,
@@ -197,7 +197,7 @@ const chooseByePlayer = (
     }
   }
 
-  const sortedForBye = [...sortedPlayers].sort((left, right) => {
+  const byLowestScoreAndName = (left: Participant, right: Participant) => {
     const leftStanding = standingsById.get(left.id)
     const rightStanding = standingsById.get(right.id)
 
@@ -208,17 +208,82 @@ const chooseByePlayer = (
       return leftPoints - rightPoints
     }
 
-    const leftByes = byeCounts.get(left.id) ?? 0
-    const rightByes = byeCounts.get(right.id) ?? 0
-
-    if (leftByes !== rightByes) {
-      return leftByes - rightByes
-    }
-
     return left.name.localeCompare(right.name, 'ru')
-  })
+  }
 
-  return sortedForBye[0]
+  const playersWithoutBye = sortedPlayers.filter(
+    (player) => (byeCounts.get(player.id) ?? 0) === 0,
+  )
+  const playersWithBye = sortedPlayers.filter(
+    (player) => (byeCounts.get(player.id) ?? 0) > 0,
+  )
+
+  // If there is at least one player without a BYE, prefer only this pool.
+  // Players who already had BYE are used as a fallback when pairing is impossible.
+  return [
+    ...playersWithoutBye.sort(byLowestScoreAndName),
+    ...playersWithBye.sort(byLowestScoreAndName),
+  ]
+}
+
+const getPairWeight = (
+  player: Participant,
+  candidate: Participant,
+  standingsById: Map<string, Standing>,
+  diversityPriority: boolean,
+) => {
+  const playerStanding = standingsById.get(player.id)
+  const candidateStanding = standingsById.get(candidate.id)
+
+  const scoreDiff = Math.abs(
+    (playerStanding?.points ?? 0) - (candidateStanding?.points ?? 0),
+  )
+  const buchholzDiff = Math.abs(
+    (playerStanding?.buchholz ?? 0) - (candidateStanding?.buchholz ?? 0),
+  )
+  const sameGroup = player.groupId === candidate.groupId
+
+  return (
+    scoreDiff * 8 + buchholzDiff * 1.5 + (sameGroup ? (diversityPriority ? 50 : 7) : 0)
+  )
+}
+
+const buildPairsWithoutRepeats = (
+  players: Participant[],
+  standingsById: Map<string, Standing>,
+  previousOpponents: Map<string, Set<string>>,
+  diversityPriority: boolean,
+): Array<[Participant, Participant]> | null => {
+  if (players.length === 0) {
+    return []
+  }
+
+  const [player, ...rest] = players
+  const candidates = rest
+    .filter((candidate) => !previousOpponents.get(player.id)?.has(candidate.id))
+    .map((candidate) => ({
+      candidate,
+      weight: getPairWeight(player, candidate, standingsById, diversityPriority),
+    }))
+    .sort((left, right) => left.weight - right.weight)
+
+  for (const option of candidates) {
+    const remaining = rest.filter(
+      (participant) => participant.id !== option.candidate.id,
+    )
+    const tailPairs = buildPairsWithoutRepeats(
+      remaining,
+      standingsById,
+      previousOpponents,
+      diversityPriority,
+    )
+
+    if (tailPairs) {
+      return [[player, option.candidate], ...tailPairs]
+    }
+  }
+
+  return null
 }
 
 export const generateSwissRound = (tournament: Tournament): Round => {
@@ -245,64 +310,52 @@ export const generateSwissRound = (tournament: Tournament): Round => {
   })
 
   const previousOpponents = collectPreviousOpponents(tournament)
-  const unpaired = [...sortedPlayers]
   const matches: Match[] = []
+  const byeCandidates =
+    sortedPlayers.length % 2 === 1
+      ? getByeCandidates(sortedPlayers, standingsById, tournament)
+      : [null]
 
-  if (unpaired.length % 2 === 1) {
-    const byePlayer = chooseByePlayer(unpaired, standingsById, tournament)
-    matches.push({
-      id: uid(),
-      playerAId: byePlayer.id,
-      playerBId: null,
-      result: 'bye',
-    })
+  let finalPairs: Array<[Participant, Participant]> | null = null
 
-    const index = unpaired.findIndex((player) => player.id === byePlayer.id)
-    unpaired.splice(index, 1)
+  for (const byeCandidate of byeCandidates) {
+    const unpairedPlayers = byeCandidate
+      ? sortedPlayers.filter((player) => player.id !== byeCandidate.id)
+      : sortedPlayers
+
+    const pairs = buildPairsWithoutRepeats(
+      unpairedPlayers,
+      standingsById,
+      previousOpponents,
+      diversityPriority,
+    )
+
+    if (!pairs) {
+      continue
+    }
+
+    if (byeCandidate) {
+      matches.push({
+        id: uid(),
+        playerAId: byeCandidate.id,
+        playerBId: null,
+        result: 'bye',
+      })
+    }
+
+    finalPairs = pairs
+    break
   }
 
-  while (unpaired.length > 1) {
-    const player = unpaired.shift()
-    if (!player) {
-      break
-    }
+  if (!finalPairs) {
+    throw new Error('Cannot generate Swiss round without repeated pairs')
+  }
 
-    const playerStanding = standingsById.get(player.id)
-    let bestIndex = 0
-    let bestScore = Number.POSITIVE_INFINITY
-
-    for (let index = 0; index < unpaired.length; index += 1) {
-      const candidate = unpaired[index]
-      const candidateStanding = standingsById.get(candidate.id)
-
-      const scoreDiff = Math.abs(
-        (playerStanding?.points ?? 0) - (candidateStanding?.points ?? 0),
-      )
-      const buchholzDiff = Math.abs(
-        (playerStanding?.buchholz ?? 0) - (candidateStanding?.buchholz ?? 0),
-      )
-      const sameGroup = player.groupId === candidate.groupId
-      const alreadyPlayed =
-        previousOpponents.get(player.id)?.has(candidate.id) ?? false
-
-      const weight =
-        scoreDiff * 8 +
-        buchholzDiff * 1.5 +
-        (sameGroup ? (diversityPriority ? 50 : 7) : 0) +
-        (alreadyPlayed ? 200 : 0) +
-        index * 0.25
-
-      if (weight < bestScore) {
-        bestScore = weight
-        bestIndex = index
-      }
-    }
-
-    const opponent = unpaired.splice(bestIndex, 1)[0]
+  for (const [playerA, playerB] of finalPairs) {
     matches.push({
       id: uid(),
-      playerAId: player.id,
-      playerBId: opponent.id,
+      playerAId: playerA.id,
+      playerBId: playerB.id,
       result: null,
     })
   }

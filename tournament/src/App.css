@@ -194,6 +194,50 @@ tr:last-child td {
   font-weight: 600;
 }
 
+.match-players {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.player-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.team-label {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 0.78rem;
+  line-height: 1.2;
+  font-weight: 600;
+}
+
+.match-vs {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.history-match-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.history-separator {
+  color: var(--text-muted);
+}
+
+.history-result {
+  color: var(--text-muted);
+}
+
 .winner-banner {
   background: var(--success-bg);
   color: var(--success-text);

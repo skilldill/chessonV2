@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import type App from '../../App'
 import { AppFooter } from '../../components/AppFooter/AppFooter'
 import { AppHeader } from '../../components/AppHeader/AppHeader'
 import { AppTabs } from '../../components/AppTabs/AppTabs'

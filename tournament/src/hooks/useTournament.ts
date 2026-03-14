@@ -180,7 +180,13 @@ export const useTournament = () => {
       return false
     }
 
-    const round = generateSwissRound(tournament)
+    let round: Round
+    try {
+      round = generateSwissRound(tournament)
+    } catch {
+      return false
+    }
+
     setTournament({
       ...tournament,
       status: 'running',
@@ -203,7 +209,13 @@ export const useTournament = () => {
       return
     }
 
-    const nextRound = generateSwissRound(tournament)
+    let nextRound: Round
+    try {
+      nextRound = generateSwissRound(tournament)
+    } catch {
+      return
+    }
+
     setTournament({
       ...tournament,
       rounds: [...tournament.rounds, nextRound],
