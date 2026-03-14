@@ -14,6 +14,26 @@ export interface BotMoveResult {
   scoreCp?: number;
 }
 
+export interface RoomMoveData {
+  FEN: string;
+  from: [number, number];
+  to: [number, number];
+  figure: {
+    color: 'white' | 'black';
+    type: 'pawn' | 'bishop' | 'knight' | 'rook' | 'queen' | 'king';
+  };
+}
+
+export interface BotRoomMoveRequest {
+  fen: string;
+  difficulty?: BotDifficulty;
+  moveTimeMs: number;
+}
+
+export interface BotRoomMoveResult extends BotMoveResult {
+  moveData: RoomMoveData;
+}
+
 export interface StockfishEngineOptions {
   stockfishPath: string;
   startupTimeoutMs?: number;

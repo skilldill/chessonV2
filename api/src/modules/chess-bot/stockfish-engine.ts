@@ -14,6 +14,12 @@ type Deferred = {
   timeout: ReturnType<typeof setTimeout>;
 };
 
+type PendingFenRequest = {
+  resolve: (fen: string) => void;
+  reject: (error: Error) => void;
+  timeout: ReturnType<typeof setTimeout>;
+};
+
 const DEFAULT_STARTUP_TIMEOUT_MS = 10_000;
 const DEFAULT_TIMEOUT_BUFFER_MS = 2_000;
 const DEFAULT_RESTART_DELAY_MS = 500;
@@ -34,6 +40,7 @@ export class StockfishEngine {
 
   private pendingUci: Deferred | null = null;
   private pendingReady: Deferred | null = null;
+  private pendingFen: PendingFenRequest | null = null;
   private inflightMove: InflightMoveRequest | null = null;
 
   constructor(options: StockfishEngineOptions) {
@@ -72,6 +79,12 @@ export class StockfishEngine {
     this.rejectAndClearDeferred(this.pendingReady, new Error('Stockfish engine is stopping'));
     this.pendingReady = null;
 
+    if (this.pendingFen) {
+      clearTimeout(this.pendingFen.timeout);
+      this.pendingFen.reject(new Error('Stockfish engine is stopping'));
+      this.pendingFen = null;
+    }
+
     if (this.inflightMove) {
       clearTimeout(this.inflightMove.timeout);
       this.inflightMove.reject(new Error('Stockfish engine is stopping'));
@@ -101,6 +114,11 @@ export class StockfishEngine {
   }
 
   async getBestMove(request: BotMoveRequest): Promise<BotMoveResult> {
+    const { result } = await this.getBestMoveWithNextFen(request);
+    return result;
+  }
+
+  async getBestMoveWithNextFen(request: BotMoveRequest): Promise<{ result: BotMoveResult; nextFen: string }> {
     this.validateRequest(request);
 
     await this.ensureRunning();
@@ -113,7 +131,10 @@ export class StockfishEngine {
     const positionCommand = this.buildPositionCommand(request);
     await this.sendCommand(positionCommand);
 
-    return this.executeGo(request.moveTimeMs);
+    const result = await this.executeGo(request.moveTimeMs);
+    const nextFen = await this.getFenAfterMove(request, result.bestMove);
+
+    return { result, nextFen };
   }
 
   private async bootProcess(): Promise<void> {
@@ -203,8 +224,11 @@ export class StockfishEngine {
     await this.sendIsReady();
   }
 
-  private buildPositionCommand(request: BotMoveRequest): string {
-    const moves = request.moves?.filter((move) => move.trim().length > 0) ?? [];
+  private buildPositionCommand(request: BotMoveRequest, extraMoves: string[] = []): string {
+    const moves = [
+      ...(request.moves?.filter((move) => move.trim().length > 0) ?? []),
+      ...extraMoves,
+    ];
     const movesSuffix = moves.length > 0 ? ` moves ${moves.join(' ')}` : '';
 
     if (request.fen && request.fen.trim().length > 0) {
@@ -286,6 +310,14 @@ export class StockfishEngine {
       return;
     }
 
+    if (line.startsWith('Fen: ') && this.pendingFen) {
+      const request = this.pendingFen;
+      this.pendingFen = null;
+      clearTimeout(request.timeout);
+      request.resolve(line.slice('Fen: '.length).trim());
+      return;
+    }
+
     if (line.startsWith('bestmove')) {
       this.parseBestMoveLine(line);
     }
@@ -333,6 +365,31 @@ export class StockfishEngine {
     });
   }
 
+  private async getFenAfterMove(request: BotMoveRequest, bestMove: string): Promise<string> {
+    if (this.pendingFen) {
+      throw new Error('Duplicate FEN read request');
+    }
+
+    const timeout = this.createTimeout(
+      this.options.startupTimeoutMs,
+      () => {
+        this.pendingFen?.reject(new Error('Stockfish did not return FEN in time'));
+        this.pendingFen = null;
+      },
+    );
+
+    const fenPromise = new Promise<string>((resolve, reject) => {
+      this.pendingFen = { resolve, reject, timeout };
+    });
+
+    const positionWithMove = this.buildPositionCommand(request, [bestMove]);
+    await this.sendCommand(positionWithMove);
+    await this.sendCommand('d');
+    await this.sendIsReady();
+
+    return fenPromise;
+  }
+
   private handleProcessFailure(error: Error): void {
     this.failAllPending(error);
 
@@ -366,6 +423,12 @@ export class StockfishEngine {
 
     this.rejectAndClearDeferred(this.pendingReady, error);
     this.pendingReady = null;
+
+    if (this.pendingFen) {
+      clearTimeout(this.pendingFen.timeout);
+      this.pendingFen.reject(error);
+      this.pendingFen = null;
+    }
 
     if (this.inflightMove) {
       clearTimeout(this.inflightMove.timeout);

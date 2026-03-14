@@ -1122,15 +1122,26 @@ app.get('/api/health', () => ({
 // Chess bot endpoint (for Postman/local testing)
 app.post('/api/bot/move', async ({ body, set }) => {
   try {
-    const result = await chessBot.getMove({
-      fen: body.fen,
-      moves: body.moves,
+    const fen = body.fen ?? body.moveData?.FEN;
+    if (!fen) {
+      set.status = 400;
+      return {
+        success: false,
+        error: 'Either fen or moveData.FEN is required',
+      };
+    }
+
+    const playerMoveUci = body.moveData ? chessBot.roomMoveToUci(body.moveData) : undefined;
+
+    const result = await chessBot.getRoomMove({
+      fen,
       difficulty: body.difficulty,
       moveTimeMs: body.moveTimeMs,
     });
 
     return {
       success: true,
+      inputMoveUci: playerMoveUci,
       ...result,
     };
   } catch (error) {
@@ -1143,7 +1154,22 @@ app.post('/api/bot/move', async ({ body, set }) => {
 }, {
   body: t.Object({
     fen: t.Optional(t.String()),
-    moves: t.Optional(t.Array(t.String())),
+    moveData: t.Optional(t.Object({
+      FEN: t.String(),
+      from: t.Tuple([t.Number(), t.Number()]),
+      to: t.Tuple([t.Number(), t.Number()]),
+      figure: t.Object({
+        color: t.Union([t.Literal('white'), t.Literal('black')]),
+        type: t.Union([
+          t.Literal('pawn'),
+          t.Literal('bishop'),
+          t.Literal('knight'),
+          t.Literal('rook'),
+          t.Literal('queen'),
+          t.Literal('king'),
+        ]),
+      }),
+    })),
     difficulty: t.Optional(t.Union([
       t.Literal('easy'),
       t.Literal('medium'),
