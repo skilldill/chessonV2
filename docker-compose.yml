@@ -35,6 +35,13 @@ services:
     depends_on:
       - api
 
+  tournament:
+    build: ./tournament
+    container_name: chesson-tournaments
+    restart: unless-stopped
+    networks:
+      - app-network
+
   site:
     build: ./site
     container_name: chesson-site
@@ -66,6 +73,7 @@ services:
       - client
       - site
       - mobile
+      - tournament
     networks:
       - app-network
 
