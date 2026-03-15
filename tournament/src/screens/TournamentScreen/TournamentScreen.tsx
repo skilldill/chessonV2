@@ -27,7 +27,12 @@ export const TournamentScreen = () => {
     canAddParticipantsAfterStart,
     createTournament,
     addGroup,
+    updateGroupName,
+    removeGroup,
     addParticipant,
+    updateParticipantName,
+    updateParticipantGroup,
+    removeParticipant,
     startTournament,
     createNextRound,
     setMatchResult,
@@ -79,6 +84,8 @@ export const TournamentScreen = () => {
           groupName={groupName}
           setGroupName={setGroupName}
           addGroup={addGroup}
+          updateGroupName={updateGroupName}
+          removeGroup={removeGroup}
           onStartTournament={handleStartTournament}
         />
       ) : null}
@@ -92,6 +99,9 @@ export const TournamentScreen = () => {
           setParticipantGroupId={setParticipantGroupId}
           canAddParticipantsAfterStart={canAddParticipantsAfterStart}
           addParticipant={addParticipant}
+          updateParticipantName={updateParticipantName}
+          updateParticipantGroup={updateParticipantGroup}
+          removeParticipant={removeParticipant}
           standings={standings}
         />
       ) : null}

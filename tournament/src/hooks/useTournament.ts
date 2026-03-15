@@ -139,6 +139,49 @@ export const useTournament = () => {
     }
   }
 
+  const updateGroupName = (groupId: string, nextName: string) => {
+    if (!tournament || tournament.status !== 'setup' || tournament.participants.length > 0) {
+      return
+    }
+
+    const cleanedName = nextName.trim()
+    if (!cleanedName) {
+      return
+    }
+
+    if (
+      tournament.groups.some(
+        (group) =>
+          group.id !== groupId && group.name.toLowerCase() === cleanedName.toLowerCase(),
+      )
+    ) {
+      return
+    }
+
+    setTournament({
+      ...tournament,
+      groups: tournament.groups.map((group) =>
+        group.id === groupId ? { ...group, name: cleanedName } : group,
+      ),
+    })
+  }
+
+  const removeGroup = (groupId: string) => {
+    if (!tournament || tournament.status !== 'setup' || tournament.participants.length > 0) {
+      return
+    }
+
+    const nextGroups = tournament.groups.filter((group) => group.id !== groupId)
+    setTournament({
+      ...tournament,
+      groups: nextGroups,
+    })
+
+    if (participantGroupId === groupId) {
+      setParticipantGroupId(nextGroups[0]?.id ?? '')
+    }
+  }
+
   const addParticipant = (event: FormEvent) => {
     event.preventDefault()
 
@@ -169,6 +212,58 @@ export const useTournament = () => {
     })
 
     setParticipantName('')
+  }
+
+  const updateParticipantName = (participantId: string, nextName: string) => {
+    if (!tournament || tournament.status !== 'setup') {
+      return
+    }
+
+    const cleanedName = nextName.trim()
+    if (!cleanedName) {
+      return
+    }
+
+    setTournament({
+      ...tournament,
+      participants: tournament.participants.map((participant) =>
+        participant.id === participantId
+          ? { ...participant, name: cleanedName }
+          : participant,
+      ),
+    })
+  }
+
+  const updateParticipantGroup = (participantId: string, nextGroupId: string) => {
+    if (!tournament || tournament.status !== 'setup') {
+      return
+    }
+
+    if (!tournament.groups.some((group) => group.id === nextGroupId)) {
+      return
+    }
+
+    setTournament({
+      ...tournament,
+      participants: tournament.participants.map((participant) =>
+        participant.id === participantId
+          ? { ...participant, groupId: nextGroupId }
+          : participant,
+      ),
+    })
+  }
+
+  const removeParticipant = (participantId: string) => {
+    if (!tournament || tournament.status !== 'setup') {
+      return
+    }
+
+    setTournament({
+      ...tournament,
+      participants: tournament.participants.filter(
+        (participant) => participant.id !== participantId,
+      ),
+    })
   }
 
   const startTournament = () => {
@@ -317,7 +412,12 @@ export const useTournament = () => {
     canAddParticipantsAfterStart,
     createTournament,
     addGroup,
+    updateGroupName,
+    removeGroup,
     addParticipant,
+    updateParticipantName,
+    updateParticipantGroup,
+    removeParticipant,
     startTournament,
     createNextRound,
     setMatchResult,

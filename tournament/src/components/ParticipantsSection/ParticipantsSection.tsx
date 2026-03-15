@@ -9,6 +9,9 @@ type ParticipantsSectionProps = {
   setParticipantGroupId: (value: string) => void
   canAddParticipantsAfterStart: boolean
   addParticipant: (event: FormEvent) => void
+  updateParticipantName: (participantId: string, nextName: string) => void
+  updateParticipantGroup: (participantId: string, nextGroupId: string) => void
+  removeParticipant: (participantId: string) => void
   standings: Standing[]
 }
 
@@ -20,8 +23,13 @@ export const ParticipantsSection = ({
   setParticipantGroupId,
   canAddParticipantsAfterStart,
   addParticipant,
+  updateParticipantName,
+  updateParticipantGroup,
+  removeParticipant,
   standings,
 }: ParticipantsSectionProps) => {
+  const canManageParticipants = tournament.status === 'setup'
+
   return (
     <section className="card stack">
       <h2>Участники</h2>
@@ -76,24 +84,76 @@ export const ParticipantsSection = ({
               <th>Участник</th>
               <th>Группа</th>
               <th>Очки</th>
+              {canManageParticipants ? <th>Действия</th> : null}
             </tr>
           </thead>
           <tbody>
             {standings.length === 0 ? (
               <tr>
-                <td colSpan={4} className="muted center">
+                <td colSpan={canManageParticipants ? 5 : 4} className="muted center">
                   Участники еще не добавлены.
                 </td>
               </tr>
             ) : (
-              standings.map((item, index) => (
-                <tr key={item.participantId}>
-                  <td>{index + 1}</td>
-                  <td>{item.name}</td>
-                  <td>{item.groupName}</td>
-                  <td>{item.points}</td>
-                </tr>
-              ))
+              standings.map((item, index) => {
+                const participant = tournament.participants.find(
+                  (current) => current.id === item.participantId,
+                )
+
+                if (!participant) {
+                  return null
+                }
+
+                return (
+                  <tr key={item.participantId}>
+                    <td>{index + 1}</td>
+                    <td>
+                      {canManageParticipants ? (
+                        <input
+                          className="table-input"
+                          value={participant.name}
+                          onChange={(event) =>
+                            updateParticipantName(item.participantId, event.target.value)
+                          }
+                        />
+                      ) : (
+                        item.name
+                      )}
+                    </td>
+                    <td>
+                      {canManageParticipants ? (
+                        <select
+                          className="table-input"
+                          value={participant.groupId}
+                          onChange={(event) =>
+                            updateParticipantGroup(item.participantId, event.target.value)
+                          }
+                        >
+                          {tournament.groups.map((group) => (
+                            <option key={group.id} value={group.id}>
+                              {group.name}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        item.groupName
+                      )}
+                    </td>
+                    <td>{item.points}</td>
+                    {canManageParticipants ? (
+                      <td>
+                        <button
+                          type="button"
+                          className="danger table-action"
+                          onClick={() => removeParticipant(item.participantId)}
+                        >
+                          Удалить
+                        </button>
+                      </td>
+                    ) : null}
+                  </tr>
+                )
+              })
             )}
           </tbody>
         </table>

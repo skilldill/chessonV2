@@ -9,6 +9,8 @@ type CreateTournamentSectionProps = {
   groupName: string
   setGroupName: (value: string) => void
   addGroup: (event: FormEvent) => void
+  updateGroupName: (groupId: string, nextName: string) => void
+  removeGroup: (groupId: string) => void
   onStartTournament: () => void
 }
 
@@ -20,8 +22,13 @@ export const CreateTournamentSection = ({
   groupName,
   setGroupName,
   addGroup,
+  updateGroupName,
+  removeGroup,
   onStartTournament,
 }: CreateTournamentSectionProps) => {
+  const canManageGroups =
+    tournament?.status === 'setup' && tournament.participants.length === 0
+
   return (
     <section className="card stack">
       {!tournament ? (
@@ -64,9 +71,30 @@ export const CreateTournamentSection = ({
               <p className="muted">Пока нет групп. Добавьте минимум одну.</p>
             ) : (
               <ul className="plain-list">
-                {tournament.groups.map((group) => (
-                  <li key={group.id}>{group.name}</li>
-                ))}
+                {tournament.groups.map((group) => {
+                  return (
+                    <li key={group.id} className="group-item">
+                      {canManageGroups ? (
+                        <>
+                          <input
+                            className="group-input"
+                            defaultValue={group.name}
+                            onBlur={(event) => updateGroupName(group.id, event.target.value)}
+                          />
+                          <button
+                            type="button"
+                            className="danger table-action"
+                            onClick={() => removeGroup(group.id)}
+                          >
+                            Удалить
+                          </button>
+                        </>
+                      ) : (
+                        <span>{group.name}</span>
+                      )}
+                    </li>
+                  )
+                })}
               </ul>
             )}
           </div>
