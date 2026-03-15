@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { useI18n } from '../../i18n/i18n'
 
 type ConfirmDialogProps = {
   isOpen: boolean
@@ -15,12 +16,17 @@ export const ConfirmDialog = ({
   isOpen,
   title,
   description,
-  confirmLabel = 'Подтвердить',
-  cancelLabel = 'Отмена',
+  confirmLabel,
+  cancelLabel,
   confirmVariant = 'default',
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) => {
+  const { t } = useI18n()
+
+  const resolvedConfirmLabel = confirmLabel ?? t('confirm.default')
+  const resolvedCancelLabel = cancelLabel ?? t('confirm.cancel')
+
   useEffect(() => {
     if (!isOpen) {
       return
@@ -58,14 +64,14 @@ export const ConfirmDialog = ({
 
         <div className="confirm-dialog-actions">
           <button type="button" className="secondary" onClick={onCancel}>
-            {cancelLabel}
+            {resolvedCancelLabel}
           </button>
           <button
             type="button"
             className={confirmVariant === 'danger' ? 'danger' : undefined}
             onClick={onConfirm}
           >
-            {confirmLabel}
+            {resolvedConfirmLabel}
           </button>
         </div>
       </div>

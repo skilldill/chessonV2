@@ -1,4 +1,5 @@
 import type { FormEvent } from 'react'
+import { useI18n } from '../../i18n/i18n'
 import type { Tournament } from '../../tournament-engine'
 
 type CreateTournamentSectionProps = {
@@ -24,6 +25,7 @@ export const CreateTournamentSection = ({
   updateGroupName,
   removeGroup,
 }: CreateTournamentSectionProps) => {
+  const { t } = useI18n()
   const canManageGroups =
     tournament?.status === 'setup' && tournament.participants.length === 0
 
@@ -31,42 +33,42 @@ export const CreateTournamentSection = ({
     <section className="card stack">
       {!tournament ? (
         <form className="stack" onSubmit={createTournament}>
-          <h2>Создать турнир</h2>
+          <h2>{t('create.newTournament')}</h2>
           <label className="field">
-            Название турнира
+            {t('create.tournamentName')}
             <input
-              placeholder="Например, Кубок организаций"
+              placeholder={t('create.tournamentNamePlaceholder')}
               value={tournamentName}
               onChange={(event) => setTournamentName(event.target.value)}
             />
           </label>
-          <button type="submit">Создать</button>
+          <button type="submit">{t('create.createButton')}</button>
         </form>
       ) : (
         <>
           <h2>{tournament.name}</h2>
           <p className="muted">
-            Статус: <strong>{tournament.status}</strong>
+            {t('create.status')} <strong>{t(`status.${tournament.status}`)}</strong>
           </p>
           <form className="row" onSubmit={addGroup}>
             <label className="field grow">
-              Добавить группу
+              {t('create.addGroup')}
               <input
-                placeholder="Например, Организация А"
+                placeholder={t('create.groupPlaceholder')}
                 value={groupName}
                 onChange={(event) => setGroupName(event.target.value)}
                 disabled={tournament.status !== 'setup'}
               />
             </label>
             <button type="submit" disabled={tournament.status !== 'setup'}>
-              Добавить
+              {t('create.addButton')}
             </button>
           </form>
 
           <div>
-            <h3>Группы участников</h3>
+            <h3>{t('create.groupsTitle')}</h3>
             {tournament.groups.length === 0 ? (
-              <p className="muted">Пока нет групп. Добавьте минимум одну.</p>
+              <p className="muted">{t('create.noGroups')}</p>
             ) : (
               <ul className="plain-list">
                 {tournament.groups.map((group) => {
@@ -84,7 +86,7 @@ export const CreateTournamentSection = ({
                             className="danger table-action"
                             onClick={() => removeGroup(group.id)}
                           >
-                            Удалить
+                            {t('create.delete')}
                           </button>
                         </>
                       ) : (

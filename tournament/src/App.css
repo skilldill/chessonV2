@@ -17,6 +17,14 @@
   max-width: 52ch;
 }
 
+.header-actions {
+  display: inline-flex;
+  gap: 0.55rem;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .tabs {
   display: flex;
   flex-wrap: wrap;
@@ -25,11 +33,13 @@
 
 .tabs button {
   background: var(--surface-alt);
+  color: var(--text);
 }
 
 .tabs button.active {
   background: var(--accent-soft);
   border-color: var(--accent);
+  color: var(--text);
 }
 
 .card {
@@ -82,7 +92,7 @@ select {
 button {
   border: 1px solid var(--accent);
   background: var(--accent);
-  color: var(--text);
+  color: #fff;
   border-radius: 10px;
   padding: 0.58rem 0.9rem;
   cursor: pointer;
@@ -97,6 +107,7 @@ button.secondary {
 button.danger {
   border-color: var(--danger);
   background: var(--danger);
+  color: #fff;
 }
 
 button:disabled {
@@ -284,6 +295,38 @@ tr:last-child td {
   justify-content: space-between;
 }
 
+.footer {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.footer-controls {
+  display: inline-flex;
+  gap: 0.55rem;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.footer-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.footer-label {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+}
+
+.footer-mini-button {
+  padding: 0.2rem 0.5rem;
+  border-radius: 7px;
+  font-size: 0.78rem;
+  min-height: 28px;
+}
+
 .footnote {
   color: var(--text-muted);
   font-size: 0.9rem;
@@ -327,5 +370,11 @@ tr:last-child td {
   .topbar {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .nav-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.6rem;
   }
 }

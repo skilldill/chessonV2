@@ -1,4 +1,5 @@
 import type { FormEvent } from 'react'
+import { useI18n } from '../../i18n/i18n'
 import type { Standing, Tournament } from '../../tournament-engine'
 
 type ParticipantsSectionProps = {
@@ -28,29 +29,28 @@ export const ParticipantsSection = ({
   removeParticipant,
   standings,
 }: ParticipantsSectionProps) => {
+  const { t } = useI18n()
   const canManageParticipants = tournament.status === 'setup'
+  const groupsById = new Map(tournament.groups.map((group) => [group.id, group.name]))
 
   return (
     <section className="card stack">
-      <h2>Участники</h2>
-      <p className="muted">
-        После запуска турнира можно добавлять участников только между турами, до
-        формирования следующего тура.
-      </p>
+      <h2>{t('participants.title')}</h2>
+      <p className="muted">{t('participants.hint')}</p>
 
       <form className="row" onSubmit={addParticipant}>
         <label className="field grow">
-          Имя участника
+          {t('participants.name')}
           <input
             value={participantName}
             onChange={(event) => setParticipantName(event.target.value)}
-            placeholder="ФИО"
+            placeholder={t('participants.namePlaceholder')}
             disabled={!canAddParticipantsAfterStart}
           />
         </label>
 
         <label className="field grow">
-          Группа
+          {t('participants.group')}
           <select
             value={participantGroupId}
             onChange={(event) => setParticipantGroupId(event.target.value)}
@@ -72,7 +72,7 @@ export const ParticipantsSection = ({
             !participantGroupId
           }
         >
-          Добавить участника
+          {t('participants.add')}
         </button>
       </form>
 
@@ -81,17 +81,17 @@ export const ParticipantsSection = ({
           <thead>
             <tr>
               <th>#</th>
-              <th>Участник</th>
-              <th>Группа</th>
-              <th>Очки</th>
-              {canManageParticipants ? <th>Действия</th> : null}
+              <th>{t('table.participant')}</th>
+              <th>{t('table.group')}</th>
+              <th>{t('table.points')}</th>
+              {canManageParticipants ? <th>{t('participants.actions')}</th> : null}
             </tr>
           </thead>
           <tbody>
             {standings.length === 0 ? (
               <tr>
                 <td colSpan={canManageParticipants ? 5 : 4} className="muted center">
-                  Участники еще не добавлены.
+                  {t('participants.empty')}
                 </td>
               </tr>
             ) : (
@@ -136,7 +136,7 @@ export const ParticipantsSection = ({
                           ))}
                         </select>
                       ) : (
-                        item.groupName
+                        groupsById.get(participant.groupId) ?? t('common.noTeam')
                       )}
                     </td>
                     <td>{item.points}</td>
@@ -147,7 +147,7 @@ export const ParticipantsSection = ({
                           className="danger table-action"
                           onClick={() => removeParticipant(item.participantId)}
                         >
-                          Удалить
+                          {t('create.delete')}
                         </button>
                       </td>
                     ) : null}

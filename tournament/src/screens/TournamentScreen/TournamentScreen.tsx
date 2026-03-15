@@ -7,10 +7,12 @@ import { CreateTournamentSection } from '../../components/CreateTournamentSectio
 import { ParticipantsSection } from '../../components/ParticipantsSection/ParticipantsSection'
 import { RoundsSection } from '../../components/RoundsSection/RoundsSection'
 import { useTournament } from '../../hooks/useTournament'
+import { useI18n } from '../../i18n/i18n'
 
 type Tab = 'create' | 'participants' | 'rounds'
 
 export const TournamentScreen = () => {
+  const { t } = useI18n()
   const [tab, setTab] = useState<Tab>('create')
   const [isFinishDialogOpen, setIsFinishDialogOpen] = useState(false)
   const {
@@ -88,7 +90,7 @@ export const TournamentScreen = () => {
               onClick={handleStartTournament}
               disabled={tournament.participants.length < 2 || tournament.groups.length === 0}
             >
-              Запустить турнир и сформировать 1-й тур
+              {t('screen.startFirstRound')}
             </button>
           ) : null}
       </div>
@@ -142,9 +144,9 @@ export const TournamentScreen = () => {
 
       <ConfirmDialog
         isOpen={isFinishDialogOpen}
-        title="Завершить турнир?"
-        description="После завершения нельзя будет сформировать новые туры."
-        confirmLabel="Завершить"
+        title={t('screen.finishTitle')}
+        description={t('screen.finishDescription')}
+        confirmLabel={t('screen.finishConfirm')}
         confirmVariant="danger"
         onConfirm={handleConfirmFinishTournament}
         onCancel={() => setIsFinishDialogOpen(false)}

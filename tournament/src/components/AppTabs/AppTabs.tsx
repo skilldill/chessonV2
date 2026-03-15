@@ -1,3 +1,5 @@
+import { useI18n } from '../../i18n/i18n'
+
 type Tab = 'create' | 'participants' | 'rounds'
 
 type AppTabsProps = {
@@ -7,24 +9,26 @@ type AppTabsProps = {
 }
 
 export const AppTabs = ({ tab, hasTournament, onTabChange }: AppTabsProps) => {
+  const { t } = useI18n()
+
   return (
-    <nav className="tabs" aria-label="Разделы">
+    <nav className="tabs" aria-label={t('tabs.navLabel')}>
       <button className={tab === 'create' ? 'active' : ''} onClick={() => onTabChange('create')}>
-        Группы
+        {t('tabs.create')}
       </button>
       <button
         className={tab === 'participants' ? 'active' : ''}
         onClick={() => onTabChange('participants')}
         disabled={!hasTournament}
       >
-        Участники
+        {t('tabs.participants')}
       </button>
       <button
         className={tab === 'rounds' ? 'active' : ''}
         onClick={() => onTabChange('rounds')}
         disabled={!hasTournament}
       >
-        Туры и результаты
+        {t('tabs.rounds')}
       </button>
     </nav>
   )
