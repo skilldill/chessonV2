@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { AppFooter } from '../../components/AppFooter/AppFooter'
 import { AppHeader } from '../../components/AppHeader/AppHeader'
 import { AppTabs } from '../../components/AppTabs/AppTabs'
+import { ConfirmDialog } from '../../components/ConfirmDialog/ConfirmDialog'
 import { CreateTournamentSection } from '../../components/CreateTournamentSection/CreateTournamentSection'
 import { ParticipantsSection } from '../../components/ParticipantsSection/ParticipantsSection'
 import { RoundsSection } from '../../components/RoundsSection/RoundsSection'
@@ -11,6 +12,7 @@ type Tab = 'create' | 'participants' | 'rounds'
 
 export const TournamentScreen = () => {
   const [tab, setTab] = useState<Tab>('create')
+  const [isFinishDialogOpen, setIsFinishDialogOpen] = useState(false)
   const {
     tournament,
     tournamentName,
@@ -56,6 +58,11 @@ export const TournamentScreen = () => {
   }
 
   const handleFinishTournament = () => {
+    setIsFinishDialogOpen(true)
+  }
+
+  const handleConfirmFinishTournament = () => {
+    setIsFinishDialogOpen(false)
     const finished = finishTournament()
     if (finished) {
       setTab('rounds')
@@ -69,11 +76,22 @@ export const TournamentScreen = () => {
         onResetTournament={handleResetTournament}
       />
 
-      <AppTabs
-        tab={tab}
-        hasTournament={Boolean(tournament)}
-        onTabChange={setTab}
-      />
+      <div className="nav-controls">
+        <AppTabs
+          tab={tab}
+          hasTournament={Boolean(tournament)}
+          onTabChange={setTab}
+        />
+
+        {tournament && tournament.status === 'setup' ? (
+            <button
+              onClick={handleStartTournament}
+              disabled={tournament.participants.length < 2 || tournament.groups.length === 0}
+            >
+              Запустить турнир и сформировать 1-й тур
+            </button>
+          ) : null}
+      </div>
 
       {tab === 'create' ? (
         <CreateTournamentSection
@@ -86,7 +104,6 @@ export const TournamentScreen = () => {
           addGroup={addGroup}
           updateGroupName={updateGroupName}
           removeGroup={removeGroup}
-          onStartTournament={handleStartTournament}
         />
       ) : null}
 
@@ -122,6 +139,16 @@ export const TournamentScreen = () => {
       ) : null}
 
       <AppFooter />
+
+      <ConfirmDialog
+        isOpen={isFinishDialogOpen}
+        title="Завершить турнир?"
+        description="После завершения нельзя будет сформировать новые туры."
+        confirmLabel="Завершить"
+        confirmVariant="danger"
+        onConfirm={handleConfirmFinishTournament}
+        onCancel={() => setIsFinishDialogOpen(false)}
+      />
     </main>
   )
 }

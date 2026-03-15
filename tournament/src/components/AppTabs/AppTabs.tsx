@@ -10,7 +10,7 @@ export const AppTabs = ({ tab, hasTournament, onTabChange }: AppTabsProps) => {
   return (
     <nav className="tabs" aria-label="Разделы">
       <button className={tab === 'create' ? 'active' : ''} onClick={() => onTabChange('create')}>
-        Создание турнира
+        Группы
       </button>
       <button
         className={tab === 'participants' ? 'active' : ''}

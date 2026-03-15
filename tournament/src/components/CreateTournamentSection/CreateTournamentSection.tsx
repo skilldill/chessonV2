@@ -11,7 +11,6 @@ type CreateTournamentSectionProps = {
   addGroup: (event: FormEvent) => void
   updateGroupName: (groupId: string, nextName: string) => void
   removeGroup: (groupId: string) => void
-  onStartTournament: () => void
 }
 
 export const CreateTournamentSection = ({
@@ -24,7 +23,6 @@ export const CreateTournamentSection = ({
   addGroup,
   updateGroupName,
   removeGroup,
-  onStartTournament,
 }: CreateTournamentSectionProps) => {
   const canManageGroups =
     tournament?.status === 'setup' && tournament.participants.length === 0
@@ -98,15 +96,6 @@ export const CreateTournamentSection = ({
               </ul>
             )}
           </div>
-
-          {tournament.status === 'setup' ? (
-            <button
-              onClick={onStartTournament}
-              disabled={tournament.participants.length < 2 || tournament.groups.length === 0}
-            >
-              Запустить турнир и сформировать 1-й тур
-            </button>
-          ) : null}
         </>
       )}
     </section>
