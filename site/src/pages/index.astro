@@ -41,12 +41,19 @@ import { Chessboard3D } from "../components/Chessboard3D";
 				>
 					Sign In / Sign Up
 				</button>
+				<a
+					href="/tournaments"
+					class="relative w-full sm:w-auto bg-[#1f2937] text-white border border-[#374151] font-bold py-3 px-6 rounded-md hover:bg-[#111827] transition duration-300 text-lg text-center"
+				>
+					Create Tournament Bracket
+					<span class="absolute -top-2 -right-2 inline-block rounded bg-[#4F39F6] px-2 py-0.5 text-[10px] leading-none uppercase rotate-12 shadow-[0_4px_14px_rgba(79,57,246,0.55)]">beta</span>
+				</a>
 			</div>
 		</div>
 		<Chessboard3D client:only />
 		<div class="absolute left-0 bottom-[40px] right-0">
 			<div class="text-center text-xm opacity-70 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-[14px]">
-				<span class="order-2 md:order-1">v0.8.0</span>
+				<span class="order-2 md:order-1">v0.9.0</span>
 				<a href="https://t.me/chessonme" target="_blank" rel="noopener noreferrer" class="hover:opacity-100 transition-opacity order-1 md:order-3">Join our Telegram for updates</a>
 			</div>
 		</div>
