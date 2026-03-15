@@ -1,0 +1,139 @@
+---
+import SeoLayout from '../../layouts/SeoLayout.astro';
+import SeoPageLayout from '../../components/seo/SeoPageLayout.astro';
+
+const title = 'Offline Tournament Bracket Tool';
+const description = 'Create and run offline chess tournament brackets in your browser. Organize rounds, track winners, and manage event flow from one page.';
+const canonicalUrl = 'https://chesson.me/offline-tournament-bracket/';
+
+const breadcrumbs = [
+  { name: 'Home', url: 'https://chesson.me/' },
+  { name: 'Offline tournament bracket tool', url: canonicalUrl },
+];
+
+const faq = [
+  {
+    question: 'What is an offline tournament bracket?',
+    answer: 'It is a structured match tree that shows pairings, round progression, and the path to the final for an in-person tournament.',
+  },
+  {
+    question: 'Who is this tool for?',
+    answer: 'It is useful for club organizers, school coaches, local event hosts, and anyone running offline chess tournaments.',
+  },
+  {
+    question: 'Do I need to install software?',
+    answer: 'No. The bracket tool opens in your browser, so you can manage the event from a laptop or phone without installation.',
+  },
+  {
+    question: 'Can I update results during the event?',
+    answer: 'Yes. As games end, you can record winners and the next matchups become clear immediately.',
+  },
+  {
+    question: 'Is this only for large events?',
+    answer: 'No. It works well for small and medium offline tournaments where fast coordination matters.',
+  },
+  {
+    question: 'Where do I open the bracket page?',
+    answer: 'Open https://chesson.me/tournaments to access the tournament bracket tool.',
+  },
+];
+
+const hero = {
+  h1: 'Offline tournament bracket tool',
+  kicker: 'ChessOn • Tournament management',
+  summary:
+    'A new ChessOn page for running offline tournaments with clear pairings and round flow. No installation, just open and manage in-browser.',
+  primaryCta: { label: 'Open tournaments page', href: 'https://chesson.me/tournaments' },
+  secondaryCta: { label: 'Create game', href: 'https://game.chesson.me/' },
+  ghostCta: { label: 'Play with friends', href: '/play-chess-with-friends-link/' },
+};
+
+const valueProps = [
+  { title: 'Clear tournament structure', description: 'See who plays next and how each player advances toward the final.' },
+  { title: 'Faster organizer workflow', description: 'Update results quickly and keep the event moving without manual spreadsheet chaos.' },
+  { title: 'Browser-based access', description: 'Open from a laptop or mobile device at the venue, no extra app required.' },
+  { title: 'Transparent for participants', description: 'Players can understand tournament progress without constant staff clarification.' },
+  { title: 'Great for local events', description: 'Works for school rounds, club nights, and community tournaments.' },
+  { title: 'Single control point', description: 'One page for bracket progression instead of scattered notes and chat messages.' },
+];
+
+const steps = [
+  { title: 'Open the tournaments page', description: 'Go to the bracket tool and choose the setup for your event.' },
+  { title: 'Add participants', description: 'Build the player list so the initial bracket can be generated.' },
+  { title: 'Record winners by round', description: 'As matches finish, update results to advance players through the bracket.' },
+  { title: 'Finalize the event', description: 'Complete the final match and keep the full event structure in one place.' },
+];
+
+const useCases = [
+  { title: 'School chess events', description: 'Teachers and coaches can run bracket flow clearly for student competitions.' },
+  { title: 'Club tournament nights', description: 'Local clubs can start and track rounds without paper-based coordination.' },
+  { title: 'Festival and venue tournaments', description: 'Event teams can manage in-person chess activities with a simple live bracket.' },
+];
+
+const internalLinks = [
+  { title: 'Play chess online for free', description: 'Quick browser games for warm-ups before offline events.', href: '/play-chess-online-free/' },
+  { title: 'Play chess with friends by link', description: 'Fast friend matches outside tournament sessions.', href: '/play-chess-with-friends-link/' },
+  { title: 'Chess rules for beginners', description: 'Useful reference for new participants before the tournament starts.', href: '/chess-rules-for-beginners/' },
+];
+---
+
+<SeoLayout
+  lang="en"
+  title={title}
+  description={description}
+  canonicalUrl={canonicalUrl}
+  locale="en_US"
+  breadcrumbs={breadcrumbs}
+  faq={faq}
+>
+  <SeoPageLayout
+    hero={hero}
+    valueTitle="Why use an offline bracket page"
+    valueProps={valueProps}
+    quickCallout="New tool page: https://chesson.me/tournaments"
+    trustTitle="Organizer benefits"
+    trustPoints={['Fast bracket setup', 'Clear round control', 'No installation required']}
+    howTitle="How it works"
+    steps={steps}
+    useCasesTitle="Where it helps most"
+    useCases={useCases}
+    faqTitle="FAQ"
+    faq={faq}
+    linksTitle="Read also"
+    links={internalLinks}
+    stickyTitle="Start your event"
+    stickyText="Open the tournaments page and launch your offline bracket workflow."
+    stickyCta={{ label: 'Open tournaments', href: 'https://chesson.me/tournaments' }}
+  >
+    <section class="seo-section">
+      <h2>What this page is and why it matters</h2>
+      <p>
+        The new tournaments page in ChessOn is designed for offline chess events where organizers need fast, clear bracket control.
+        During in-person tournaments, logistics can become messy if pairings and round progression are spread across paper sheets,
+        chat threads, and manual notes. A dedicated bracket page solves this by showing one consistent structure from first round
+        to final. That reduces confusion for both organizers and players and keeps the event schedule on track.
+      </p>
+      <p>
+        The key advantage is visibility. Players can quickly see where they are in the bracket and who they face next, while organizers
+        can update outcomes as soon as matches finish. This shortens downtime between rounds and helps avoid repetitive clarification.
+        For local competitions with limited staff, that efficiency can significantly improve the overall event experience.
+      </p>
+    </section>
+
+    <section class="seo-section">
+      <h2>How it fits with the rest of ChessOn</h2>
+      <p>
+        The bracket tool supports the offline event layer, while regular ChessOn pages handle day-to-day online play. A practical workflow
+        is to run warm-up matches before an event on <a href="/play-chess-online-free/">free online chess</a>, then move to the offline
+        bracket during tournament day. After the event, players can continue with casual rematches through
+        <a href="/play-chess-with-friends-link/">friend-link games</a>. This creates a complete loop from preparation to competition to
+        post-event practice.
+      </p>
+      <p>
+        You can open the tournament bracket page here:
+        <a href="https://chesson.me/tournaments">https://chesson.me/tournaments</a>.
+        If you run school events, club nights, or local chess meetups, this tool gives you a simpler operational flow with less overhead.
+      </p>
+    </section>
+  </SeoPageLayout>
+</SeoLayout>
