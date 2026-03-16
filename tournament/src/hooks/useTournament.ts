@@ -6,6 +6,7 @@ import {
   generateSwissRound,
   uid,
   type Group,
+  type Match,
   type MatchResult,
   type Round,
   type Tournament,
@@ -64,6 +65,13 @@ export const useTournament = () => {
 
   const activeRound = useMemo(() => findActiveRound(tournament), [tournament])
 
+  const activeParticipantsCount = useMemo(
+    () =>
+      tournament?.participants.filter((participant) => participant.isActive ?? true)
+        .length ?? 0,
+    [tournament?.participants],
+  )
+
   const canAddParticipantsAfterStart = useMemo(() => {
     if (!tournament) {
       return false
@@ -79,6 +87,68 @@ export const useTournament = () => {
 
     return !activeRound
   }, [activeRound, tournament])
+
+  const canManageRoster = useMemo(() => {
+    if (!tournament) {
+      return false
+    }
+
+    if (tournament.status === 'setup') {
+      return true
+    }
+
+    return tournament.status === 'running' && !activeRound
+  }, [activeRound, tournament])
+
+  const hasTieBreakRounds = useMemo(
+    () => tournament?.rounds.some((round) => round.kind === 'tiebreak') ?? false,
+    [tournament?.rounds],
+  )
+
+  const prizeTieGroups = useMemo(() => {
+    if (!tournament || tournament.status !== 'running' || activeRound) {
+      return []
+    }
+
+    const prizePlaces = 3
+    const activeStandings = standings.filter(
+      (item) => participantsById.get(item.participantId)?.isActive ?? true,
+    )
+
+    if (activeStandings.length < 2) {
+      return []
+    }
+
+    const groupsByKey = new Map<string, typeof activeStandings>()
+    for (const item of activeStandings) {
+      const key = `${item.points}|${item.buchholz}`
+      const group = groupsByKey.get(key)
+      if (group) {
+        group.push(item)
+      } else {
+        groupsByKey.set(key, [item])
+      }
+    }
+
+    const indexById = new Map(
+      activeStandings.map((item, index) => [item.participantId, index]),
+    )
+
+    return [...groupsByKey.values()]
+      .filter((group) => group.length > 1)
+      .filter((group) =>
+        group.some((item) => (indexById.get(item.participantId) ?? Number.MAX_SAFE_INTEGER) < prizePlaces),
+      )
+      .sort((left, right) => {
+        const leftIndex = Math.min(
+          ...left.map((item) => indexById.get(item.participantId) ?? Number.MAX_SAFE_INTEGER),
+        )
+        const rightIndex = Math.min(
+          ...right.map((item) => indexById.get(item.participantId) ?? Number.MAX_SAFE_INTEGER),
+        )
+        return leftIndex - rightIndex
+      })
+  }, [activeRound, participantsById, standings, tournament])
 
   const createTournament = (event: FormEvent) => {
     event.preventDefault()
@@ -207,6 +277,7 @@ export const useTournament = () => {
           id: uid(),
           name: cleanedName,
           groupId: participantGroupId,
+          isActive: true,
         },
       ],
     })
@@ -254,14 +325,26 @@ export const useTournament = () => {
   }
 
   const removeParticipant = (participantId: string) => {
-    if (!tournament || tournament.status !== 'setup') {
+    if (!tournament || !canManageRoster) {
+      return
+    }
+
+    if (tournament.status === 'setup') {
+      setTournament({
+        ...tournament,
+        participants: tournament.participants.filter(
+          (participant) => participant.id !== participantId,
+        ),
+      })
       return
     }
 
     setTournament({
       ...tournament,
-      participants: tournament.participants.filter(
-        (participant) => participant.id !== participantId,
+      participants: tournament.participants.map((participant) =>
+        participant.id === participantId
+          ? { ...participant, isActive: false }
+          : participant,
       ),
     })
   }
@@ -271,7 +354,7 @@ export const useTournament = () => {
       return false
     }
 
-    if (tournament.participants.length < 2) {
+    if (activeParticipantsCount < 2) {
       return false
     }
 
@@ -300,7 +383,11 @@ export const useTournament = () => {
       return
     }
 
-    if (tournament.participants.length < 2) {
+    if (hasTieBreakRounds) {
+      return
+    }
+
+    if (activeParticipantsCount < 2) {
       return
     }
 
@@ -315,6 +402,65 @@ export const useTournament = () => {
       ...tournament,
       rounds: [...tournament.rounds, nextRound],
     })
+  }
+
+  const createPrizeBoundaryTieBreak = () => {
+    if (!tournament || tournament.status !== 'running') {
+      return false
+    }
+
+    if (findActiveRound(tournament)) {
+      return false
+    }
+
+    if (prizeTieGroups.length === 0) {
+      return false
+    }
+
+    const matches: Match[] = []
+    for (const group of prizeTieGroups) {
+      const participants = group
+        .map((item) => participantsById.get(item.participantId))
+        .filter(
+          (participant): participant is NonNullable<typeof participant> =>
+            Boolean(participant && (participant.isActive ?? true)),
+        )
+
+      for (let index = 0; index < participants.length; index += 1) {
+        for (
+          let candidateIndex = index + 1;
+          candidateIndex < participants.length;
+          candidateIndex += 1
+        ) {
+          matches.push({
+            id: uid(),
+            playerAId: participants[index].id,
+            playerBId: participants[candidateIndex].id,
+            result: null,
+          })
+        }
+      }
+    }
+
+    if (matches.length === 0) {
+      return false
+    }
+
+    setTournament({
+      ...tournament,
+      rounds: [
+        ...tournament.rounds,
+        {
+          id: uid(),
+          number: tournament.rounds.length + 1,
+          status: 'active',
+          kind: 'tiebreak',
+          matches,
+        },
+      ],
+    })
+
+    return true
   }
 
   const setMatchResult = (matchId: string, value: MatchResult) => {
@@ -410,6 +556,8 @@ export const useTournament = () => {
     participantsById,
     activeRound,
     canAddParticipantsAfterStart,
+    canManageRoster,
+    prizeTieGroups,
     createTournament,
     addGroup,
     updateGroupName,
@@ -420,11 +568,13 @@ export const useTournament = () => {
     removeParticipant,
     startTournament,
     createNextRound,
+    createPrizeBoundaryTieBreak,
     setMatchResult,
     finishCurrentRound,
     finishTournament,
     resetTournament,
     completedRoundsCount,
     isCurrentRoundReady,
+    activeParticipantsCount,
   }
 }

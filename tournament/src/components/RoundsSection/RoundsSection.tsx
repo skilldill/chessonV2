@@ -6,6 +6,7 @@ type RoundsSectionProps = {
   tournament: Tournament
   standings: Standing[]
   activeRound: Round | null
+  activeParticipantsCount: number
   completedRoundsCount: number
   isCurrentRoundReady: boolean
   participantsById: Map<string, { id: string; name: string; groupId: string }>
@@ -28,6 +29,7 @@ export const RoundsSection = ({
   tournament,
   standings,
   activeRound,
+  activeParticipantsCount,
   completedRoundsCount,
   isCurrentRoundReady,
   participantsById,
@@ -98,7 +100,11 @@ export const RoundsSection = ({
 
       {tournament.status === 'running' && activeRound ? (
         <>
-          <h3>{t('rounds.currentRound', { number: activeRound.number })}</h3>
+          <h3>
+            {activeRound.kind === 'tiebreak'
+              ? t('rounds.currentTieBreak', { number: activeRound.number })
+              : t('rounds.currentRound', { number: activeRound.number })}
+          </h3>
 
           <div className="round-list">
             {activeRound.matches.map((match, index) => {
@@ -154,7 +160,7 @@ export const RoundsSection = ({
 
       {tournament.status === 'running' && !activeRound ? (
         <div className="row">
-          <button onClick={createNextRound} disabled={tournament.participants.length < 2}>
+          <button onClick={createNextRound} disabled={activeParticipantsCount < 2}>
             {t('rounds.createNextRound')}
           </button>
           <button
@@ -194,7 +200,30 @@ export const RoundsSection = ({
             ) : (
               standings.map((item, index) => (
                 <tr key={item.participantId}>
-                  <td>{index + 1}</td>
+                  <td>
+                    <span
+                      className={[
+                        'rank-badge',
+                        index === 0
+                          ? 'rank-gold'
+                          : index === 1
+                            ? 'rank-silver'
+                            : index === 2
+                              ? 'rank-bronze'
+                              : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                    >
+                      {index === 0
+                        ? '🥇 1'
+                        : index === 1
+                          ? '🥈 2'
+                          : index === 2
+                            ? '🥉 3'
+                            : index + 1}
+                    </span>
+                  </td>
                   <td>{item.name}</td>
                   <td>
                     {groupsById.get(participantsById.get(item.participantId)?.groupId ?? '') ??
@@ -218,7 +247,10 @@ export const RoundsSection = ({
               <p>
                 {t('rounds.roundHistory', {
                   number: round.number,
-                  status: t(`status.${round.status}`),
+                  status:
+                    round.kind === 'tiebreak'
+                      ? `${t('rounds.tieBreakLabel')}, ${t(`status.${round.status}`)}`
+                      : t(`status.${round.status}`),
                 })}
               </p>
               <ul className="plain-list">

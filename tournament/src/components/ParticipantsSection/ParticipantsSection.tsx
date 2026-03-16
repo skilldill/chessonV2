@@ -9,6 +9,7 @@ type ParticipantsSectionProps = {
   participantGroupId: string
   setParticipantGroupId: (value: string) => void
   canAddParticipantsAfterStart: boolean
+  canManageRoster: boolean
   addParticipant: (event: FormEvent) => void
   updateParticipantName: (participantId: string, nextName: string) => void
   updateParticipantGroup: (participantId: string, nextGroupId: string) => void
@@ -23,6 +24,7 @@ export const ParticipantsSection = ({
   participantGroupId,
   setParticipantGroupId,
   canAddParticipantsAfterStart,
+  canManageRoster,
   addParticipant,
   updateParticipantName,
   updateParticipantGroup,
@@ -30,7 +32,7 @@ export const ParticipantsSection = ({
   standings,
 }: ParticipantsSectionProps) => {
   const { t } = useI18n()
-  const canManageParticipants = tournament.status === 'setup'
+  const canEditParticipants = tournament.status === 'setup'
   const groupsById = new Map(tournament.groups.map((group) => [group.id, group.name]))
 
   return (
@@ -84,13 +86,13 @@ export const ParticipantsSection = ({
               <th>{t('table.participant')}</th>
               <th>{t('table.group')}</th>
               <th>{t('table.points')}</th>
-              {canManageParticipants ? <th>{t('participants.actions')}</th> : null}
+              {canManageRoster ? <th>{t('participants.actions')}</th> : null}
             </tr>
           </thead>
           <tbody>
             {standings.length === 0 ? (
               <tr>
-                <td colSpan={canManageParticipants ? 5 : 4} className="muted center">
+                <td colSpan={canManageRoster ? 5 : 4} className="muted center">
                   {t('participants.empty')}
                 </td>
               </tr>
@@ -106,9 +108,32 @@ export const ParticipantsSection = ({
 
                 return (
                   <tr key={item.participantId}>
-                    <td>{index + 1}</td>
                     <td>
-                      {canManageParticipants ? (
+                      <span
+                        className={[
+                          'rank-badge',
+                          index === 0
+                            ? 'rank-gold'
+                            : index === 1
+                              ? 'rank-silver'
+                              : index === 2
+                                ? 'rank-bronze'
+                                : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' ')}
+                      >
+                        {index === 0
+                          ? '🥇 1'
+                          : index === 1
+                            ? '🥈 2'
+                            : index === 2
+                              ? '🥉 3'
+                              : index + 1}
+                      </span>
+                    </td>
+                    <td>
+                      {canEditParticipants ? (
                         <input
                           className="table-input"
                           value={participant.name}
@@ -117,11 +142,16 @@ export const ParticipantsSection = ({
                           }
                         />
                       ) : (
-                        item.name
+                        <>
+                          {item.name}
+                          {(participant.isActive ?? true) ? null : (
+                            <span className="participant-removed"> ({t('participants.removed')})</span>
+                          )}
+                        </>
                       )}
                     </td>
                     <td>
-                      {canManageParticipants ? (
+                      {canEditParticipants ? (
                         <select
                           className="table-input"
                           value={participant.groupId}
@@ -140,12 +170,13 @@ export const ParticipantsSection = ({
                       )}
                     </td>
                     <td>{item.points}</td>
-                    {canManageParticipants ? (
+                    {canManageRoster ? (
                       <td>
                         <button
                           type="button"
                           className="danger table-action"
                           onClick={() => removeParticipant(item.participantId)}
+                          disabled={!(participant.isActive ?? true)}
                         >
                           {t('create.delete')}
                         </button>

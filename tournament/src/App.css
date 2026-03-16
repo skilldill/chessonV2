@@ -175,6 +175,36 @@ tr:last-child td {
   font-size: 0.85rem;
 }
 
+.rank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  padding: 0.15rem 0.4rem;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.rank-gold {
+  background: rgba(212, 175, 55, 0.22);
+  color: #f6d97a;
+}
+
+.rank-silver {
+  background: rgba(165, 173, 186, 0.23);
+  color: #d5dae4;
+}
+
+.rank-bronze {
+  background: rgba(184, 115, 51, 0.2);
+  color: #e9b083;
+}
+
+.participant-removed {
+  color: var(--text-muted);
+  font-size: 0.88em;
+}
+
 .muted {
   color: var(--text-muted);
 }

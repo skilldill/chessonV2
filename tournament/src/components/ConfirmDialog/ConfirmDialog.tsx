@@ -8,6 +8,8 @@ type ConfirmDialogProps = {
   confirmLabel?: string
   cancelLabel?: string
   confirmVariant?: 'default' | 'danger'
+  closeOnOverlay?: boolean
+  closeOnEscape?: boolean
   onConfirm: () => void
   onCancel: () => void
 }
@@ -19,6 +21,8 @@ export const ConfirmDialog = ({
   confirmLabel,
   cancelLabel,
   confirmVariant = 'default',
+  closeOnOverlay = true,
+  closeOnEscape = true,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) => {
@@ -33,14 +37,14 @@ export const ConfirmDialog = ({
     }
 
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+      if (closeOnEscape && event.key === 'Escape') {
         onCancel()
       }
     }
 
     window.addEventListener('keydown', handleEscape)
     return () => window.removeEventListener('keydown', handleEscape)
-  }, [isOpen, onCancel])
+  }, [closeOnEscape, isOpen, onCancel])
 
   if (!isOpen) {
     return null
@@ -49,7 +53,11 @@ export const ConfirmDialog = ({
   return (
     <div
       className="confirm-dialog-overlay"
-      onClick={onCancel}
+      onClick={() => {
+        if (closeOnOverlay) {
+          onCancel()
+        }
+      }}
       role="presentation"
     >
       <div
