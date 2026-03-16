@@ -254,6 +254,11 @@ tr:last-child td {
   gap: 0.5rem;
 }
 
+.match-card-resolved {
+  border-color: var(--success-border);
+  background: var(--success-bg);
+}
+
 .match-title {
   font-weight: 600;
 }

@@ -45,6 +45,41 @@ export const RoundsSection = ({
     [tournament.groups],
   )
 
+  const hasTieBreakRounds = useMemo(
+    () => tournament.rounds.some((round) => round.kind === 'tiebreak'),
+    [tournament.rounds],
+  )
+
+  const displayedPlaces = useMemo(() => {
+    const shouldSharePrizePlaces =
+      tournament.status === 'finished' && !hasTieBreakRounds
+
+    if (!shouldSharePrizePlaces) {
+      return new Map(standings.map((item, index) => [item.participantId, index + 1]))
+    }
+
+    const placeByParticipantId = new Map<string, number>()
+    let currentPlace = 0
+
+    for (let index = 0; index < standings.length; index += 1) {
+      const current = standings[index]
+      const previous = standings[index - 1]
+      if (
+        previous &&
+        current.points === previous.points &&
+        current.buchholz === previous.buchholz
+      ) {
+        placeByParticipantId.set(current.participantId, currentPlace)
+        continue
+      }
+
+      currentPlace += 1
+      placeByParticipantId.set(current.participantId, currentPlace)
+    }
+
+    return placeByParticipantId
+  }, [hasTieBreakRounds, standings, tournament.status])
+
   const teamColorByGroupId = useMemo(() => {
     const palette = [...TEAM_LABEL_PALETTE]
 
@@ -115,7 +150,15 @@ export const RoundsSection = ({
                 : null
 
               return (
-                <article key={match.id} className="match-card">
+                <article
+                  key={match.id}
+                  className={[
+                    'match-card',
+                    match.result ? 'match-card-resolved' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                >
                   <p className="match-title">{t('rounds.pair', { number: index + 1 })}</p>
                   <div className="match-players">
                     {renderPlayerWithTeam(match.playerAId, t('common.unknown'))}
@@ -201,28 +244,29 @@ export const RoundsSection = ({
               standings.map((item, index) => (
                 <tr key={item.participantId}>
                   <td>
-                    <span
-                      className={[
-                        'rank-badge',
-                        index === 0
-                          ? 'rank-gold'
-                          : index === 1
-                            ? 'rank-silver'
-                            : index === 2
-                              ? 'rank-bronze'
-                              : '',
-                      ]
-                        .filter(Boolean)
-                        .join(' ')}
-                    >
-                      {index === 0
-                        ? '🥇 1'
-                        : index === 1
-                          ? '🥈 2'
-                          : index === 2
-                            ? '🥉 3'
-                            : index + 1}
-                    </span>
+                    {(() => {
+                      const place = displayedPlaces.get(item.participantId) ?? index + 1
+                      const showPrizeBadge = tournament.status === 'finished' && place <= 3
+
+                      if (!showPrizeBadge) {
+                        return place
+                      }
+
+                      return (
+                        <span
+                          className={[
+                            'rank-badge',
+                            place === 1
+                              ? 'rank-gold'
+                              : place === 2
+                                ? 'rank-silver'
+                                : 'rank-bronze',
+                          ].join(' ')}
+                        >
+                          {place === 1 ? `🥇 ${place}` : place === 2 ? `🥈 ${place}` : `🥉 ${place}`}
+                        </span>
+                      )
+                    })()}
                   </td>
                   <td>{item.name}</td>
                   <td>

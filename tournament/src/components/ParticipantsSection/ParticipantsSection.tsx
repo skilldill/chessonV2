@@ -108,30 +108,7 @@ export const ParticipantsSection = ({
 
                 return (
                   <tr key={item.participantId}>
-                    <td>
-                      <span
-                        className={[
-                          'rank-badge',
-                          index === 0
-                            ? 'rank-gold'
-                            : index === 1
-                              ? 'rank-silver'
-                              : index === 2
-                                ? 'rank-bronze'
-                                : '',
-                        ]
-                          .filter(Boolean)
-                          .join(' ')}
-                      >
-                        {index === 0
-                          ? '🥇 1'
-                          : index === 1
-                            ? '🥈 2'
-                            : index === 2
-                              ? '🥉 3'
-                              : index + 1}
-                      </span>
-                    </td>
+                    <td>{index + 1}</td>
                     <td>
                       {canEditParticipants ? (
                         <input
