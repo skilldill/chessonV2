@@ -10,6 +10,7 @@ services:
     environment:
       - PORT=4000
       - MONGODB_URI=mongodb://mongodb:27017/chesson
+      - STOCKFISH_PATH=/usr/games/stockfish
     depends_on:
       - mongodb
     networks:

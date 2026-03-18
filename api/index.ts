@@ -8,6 +8,7 @@ import { Game } from './models/Game';
 import { hashPassword, comparePassword } from './utils/password';
 import { createToken, verifyToken } from './utils/jwt';
 import { sendVerificationEmail, sendPasswordResetEmail, sendTestEmail } from './utils/email';
+import { chessBot, type BotDifficulty } from './src/modules/chess-bot';
 import mongoose from 'mongoose';
 import crypto from 'crypto';
 
@@ -120,6 +121,14 @@ type Room = {
     firstPlayerColor?: "white" | "black"; // Цвет для первого подключившегося игрока
     gameStartedAt?: Date; // Время начала игры
     hasMobilePlayer?: boolean; // Есть ли мобильный игрок в комнате
+    botSettings?: {
+      enabled: boolean;
+      difficulty: BotDifficulty;
+      color?: "white" | "black";
+      moveTimeMs: number;
+      name: string;
+      avatar: string;
+    };
 };
 
 type RandomMatchQueueEntry = {
@@ -141,6 +150,7 @@ const userMessageCounts = new Map<string, { count: number, resetAt: number }>();
 const randomMatchQueueByTime = new Map<string, RandomMatchQueueEntry[]>();
 const randomMatchUserToTimeKey = new Map<string, string>();
 const randomMatchAssignments = new Map<string, RandomMatchAssignment>();
+const botMoveInProgressRooms = new Set<string>();
 
 // Метрики для мониторинга
 const metrics = {
@@ -604,13 +614,24 @@ function parseTimerConfig(rawConfig: any) {
   const firstPlayerColor = (rawConfig?.color === "white" || rawConfig?.color === "black")
     ? rawConfig.color
     : undefined;
+  const botEnabled = rawConfig?.vsBot === true || rawConfig?.vsBot === 'true';
+  const botDifficulty: BotDifficulty = rawConfig?.botDifficulty === 'easy' || rawConfig?.botDifficulty === 'hard'
+    ? rawConfig.botDifficulty
+    : 'medium';
+  const botMoveTimeMsRaw = Number(rawConfig?.botMoveTimeMs ?? 800);
+  const botMoveTimeMs = Number.isFinite(botMoveTimeMsRaw) && botMoveTimeMsRaw > 0
+    ? Math.floor(botMoveTimeMsRaw)
+    : 800;
 
   return {
     whiteTimer: normalizedWhiteTimer,
     blackTimer: normalizedBlackTimer,
     increment: normalizedIncrement,
     currentFEN,
-    firstPlayerColor
+    firstPlayerColor,
+    botEnabled,
+    botDifficulty,
+    botMoveTimeMs
   };
 }
 
@@ -641,6 +662,23 @@ function buildUniqueUserNameInRoom(room: Room, requestedName: string): string {
   return `${baseName} ${suffix}`;
 }
 
+function generateGuestCatName(excludedNames: Set<string> = new Set()): string {
+  const candidates = GUEST_CAT_WORDS.map((word) => `${word} cat`);
+  const normalizedExcluded = new Set(Array.from(excludedNames).map((name) => name.toLowerCase()));
+  const available = candidates.filter((candidate) => !normalizedExcluded.has(candidate.toLowerCase()));
+
+  if (available.length > 0) {
+    return available[Math.floor(Math.random() * available.length)] as string;
+  }
+
+  const fallbackBase = candidates[Math.floor(Math.random() * candidates.length)] as string;
+  let suffix = 2;
+  while (normalizedExcluded.has(`${fallbackBase} ${suffix}`.toLowerCase())) {
+    suffix++;
+  }
+  return `${fallbackBase} ${suffix}`;
+}
+
 function createRoomWithConfig(rawConfig: any) {
   const roomId = generateShortId();
   const timerConfig = parseTimerConfig(rawConfig);
@@ -668,7 +706,16 @@ function createRoomWithConfig(rawConfig: any) {
       }
     },
     firstPlayerColor: timerConfig.firstPlayerColor,
-    hasMobilePlayer: undefined
+    hasMobilePlayer: undefined,
+    botSettings: timerConfig.botEnabled ? {
+      enabled: true,
+      difficulty: timerConfig.botDifficulty,
+      moveTimeMs: timerConfig.botMoveTimeMs,
+      name: typeof rawConfig?.botName === 'string' && rawConfig.botName.trim()
+        ? rawConfig.botName.trim()
+        : 'Chesson Bot',
+      avatar: '0'
+    } : undefined
   };
 
   rooms.set(roomId, room);
@@ -952,6 +999,24 @@ function getPersonalizedGameState(room: Room, userId: string): GameState {
     );
 
     if (!opponent) {
+        if (room.botSettings?.enabled && room.botSettings.color && room.botSettings.color !== userColor) {
+            return {
+                ...room.gameState,
+                player: {
+                    userId: userId,
+                    userName: userData.userName,
+                    avatar: userData.avatar,
+                    color: userColor
+                },
+                opponent: {
+                    userId: 'bot',
+                    userName: room.botSettings.name,
+                    avatar: room.botSettings.avatar,
+                    color: room.botSettings.color
+                }
+            };
+        }
+
         // Если соперник не найден, возвращаем gameState только с player
         return {
             ...room.gameState,
@@ -982,6 +1047,92 @@ function getPersonalizedGameState(room: Room, userId: string): GameState {
             color: opponentUserData.color!
         }
     };
+}
+
+function startRoomGame(room: Room, roomId: string) {
+  if (room.gameState.gameStarted || room.gameState.gameEnded) {
+    return;
+  }
+
+  room.gameState.gameStarted = true;
+  room.gameStartedAt = new Date();
+
+  createRoomTimer(roomId);
+
+  for (const [id, userData] of room.users) {
+    if (userData.isConnected && userData.ws) {
+      userData.ws.send({
+        system: true,
+        message: "Game started! White moves first.",
+        type: "gameStart",
+        gameState: getPersonalizedGameState(room, id)
+      });
+    }
+  }
+}
+
+async function triggerBotMoveIfNeeded(roomId: string) {
+  const room = rooms.get(roomId);
+  if (!room || !room.botSettings?.enabled || room.gameState.gameEnded || !room.gameState.gameStarted) {
+    return;
+  }
+
+  if (!room.botSettings.color || room.gameState.currentPlayer !== room.botSettings.color) {
+    return;
+  }
+
+  if (botMoveInProgressRooms.has(roomId)) {
+    return;
+  }
+
+  botMoveInProgressRooms.add(roomId);
+
+  try {
+    const botMove = await chessBot.getRoomMove({
+      fen: room.gameState.currentFEN,
+      difficulty: room.botSettings.difficulty,
+      moveTimeMs: room.botSettings.moveTimeMs
+    });
+
+    room.gameState.currentFEN = botMove.moveData.FEN;
+    room.gameState.moveHistory.push(botMove.moveData);
+
+    if (room.gameState.timer && room.botSettings.color === "white" && room.gameState.timer.whiteIncrement) {
+      room.gameState.timer.whiteTime += room.gameState.timer.whiteIncrement;
+    } else if (room.gameState.timer && room.botSettings.color === "black" && room.gameState.timer.blackIncrement) {
+      room.gameState.timer.blackTime += room.gameState.timer.blackIncrement;
+    }
+
+    room.gameState.currentPlayer = room.gameState.currentPlayer === "white" ? "black" : "white";
+    syncCurrentColor(room);
+
+    if (checkThreefoldRepetition(room)) {
+      declareDrawByThreefoldRepetition(room, roomId);
+      return;
+    }
+
+    if (checkInsufficientMaterial(room)) {
+      declareDrawByInsufficientMaterial(room, roomId);
+      return;
+    }
+
+    for (const [id, userData] of room.users) {
+      if (userData.isConnected && userData.ws) {
+        userData.ws.send({
+          type: "move",
+          moveData: botMove.moveData,
+          from: room.botSettings.name,
+          userId: 'bot',
+          gameState: getPersonalizedGameState(room, id),
+          time: Date.now()
+        });
+      }
+    }
+  } catch (error) {
+    console.error('[chess-bot] Failed to make bot move:', error);
+  } finally {
+    botMoveInProgressRooms.delete(roomId);
+  }
 }
 
 // Функция для безопасной очистки таймера комнаты
@@ -1117,6 +1268,66 @@ app.get('/api/health', () => ({
   status: 'ok',
   timestamp: new Date().toISOString()
 }));
+
+// Chess bot endpoint (for Postman/local testing)
+app.post('/api/bot/move', async ({ body, set }) => {
+  try {
+    const fen = body.fen ?? body.moveData?.FEN;
+    if (!fen) {
+      set.status = 400;
+      return {
+        success: false,
+        error: 'Either fen or moveData.FEN is required',
+      };
+    }
+
+    const playerMoveUci = body.moveData ? chessBot.roomMoveToUci(body.moveData) : undefined;
+
+    const result = await chessBot.getRoomMove({
+      fen,
+      difficulty: body.difficulty,
+      moveTimeMs: body.moveTimeMs,
+    });
+
+    return {
+      success: true,
+      inputMoveUci: playerMoveUci,
+      ...result,
+    };
+  } catch (error) {
+    set.status = 400;
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}, {
+  body: t.Object({
+    fen: t.Optional(t.String()),
+    moveData: t.Optional(t.Object({
+      FEN: t.String(),
+      from: t.Tuple([t.Number(), t.Number()]),
+      to: t.Tuple([t.Number(), t.Number()]),
+      figure: t.Object({
+        color: t.Union([t.Literal('white'), t.Literal('black')]),
+        type: t.Union([
+          t.Literal('pawn'),
+          t.Literal('bishop'),
+          t.Literal('knight'),
+          t.Literal('rook'),
+          t.Literal('queen'),
+          t.Literal('king'),
+        ]),
+      }),
+    })),
+    difficulty: t.Optional(t.Union([
+      t.Literal('easy'),
+      t.Literal('medium'),
+      t.Literal('hard'),
+    ])),
+    moveTimeMs: t.Numeric({ minimum: 1 }),
+  })
+});
 
 // Auth endpoints
 // Регистрация пользователя
@@ -2520,19 +2731,31 @@ app.post('/api/random-match/join', async ({ body, headers, set }) => {
       };
     }
 
-    const newQueueEntry: RandomMatchQueueEntry = {
-      userId: participant.participantId,
+    // Fallback: if no human opponent is waiting, start a game vs bot immediately.
+    const totalTimeSeconds = timeMinutes * 60;
+    const botName = generateGuestCatName(new Set([participant.userName]));
+    const { roomId } = createRoomWithConfig({
+      whiteTimer: totalTimeSeconds,
+      blackTimer: totalTimeSeconds,
+      increment: incrementSeconds,
+      vsBot: true,
+      botDifficulty: 'medium',
+      botMoveTimeMs: 800,
+      botName
+    });
+
+    const assignment: RandomMatchAssignment = {
+      roomId,
       createdAt: Date.now(),
       timeKey
     };
-    queue.push(newQueueEntry);
-    randomMatchQueueByTime.set(timeKey, queue);
-    randomMatchUserToTimeKey.set(participant.participantId, timeKey);
+    randomMatchAssignments.set(participant.participantId, assignment);
 
     return {
       success: true,
-      status: 'waiting',
-      queueCountForTimeControl: queue.length,
+      status: 'matched',
+      roomId,
+      queueCountForTimeControl: randomMatchQueueByTime.get(timeKey)?.length ?? 0,
       totalPlayersInRandomQueue: getTotalRandomMatchQueueCount(),
       timeControl: { timeMinutes, incrementSeconds }
     };
@@ -2639,6 +2862,9 @@ app.post('/api/rooms', async ({ body }) => {
     success: true,
     roomId,
     message: 'Room created successfully',
+    vsBot: room.botSettings?.enabled ?? false,
+    botDifficulty: room.botSettings?.difficulty,
+    botMoveTimeMs: room.botSettings?.moveTimeMs,
     timerConfig: {
       whiteTimer: normalizedConfig.whiteTimer,
       blackTimer: normalizedConfig.blackTimer,
@@ -3163,11 +3389,17 @@ app.ws('/ws/room', {
                   userData.ws.send({ system: true, message: `${existingUserData?.userName || normalizedUserName} rejoined the room` });
               }
           }
+
+          if (room.botSettings?.enabled) {
+            void triggerBotMoveIfNeeded(roomId);
+          }
           return;
       }
 
-      // Если уже 2 участника → не пускаем
-      if (room.users.size >= 2) {
+      const maxRoomUsers = room.botSettings?.enabled ? 1 : 2;
+
+      // Если комната заполнена → не пускаем
+      if (room.users.size >= maxRoomUsers) {
           ws.send({ system: true, message: 'Room is full' });
           ws.close();
           return;
@@ -3182,6 +3414,9 @@ app.ws('/ws/room', {
         // Если это первый пользователь и указан цвет при создании комнаты, используем его
         // Иначе назначаем случайный цвет
         assignedColor = room.firstPlayerColor ?? assignRandomColor();
+        if (room.botSettings?.enabled) {
+          room.botSettings.color = assignedColor === "white" ? "black" : "white";
+        }
       } else {
         // Если уже есть пользователь, назначаем противоположный цвет
         const existingUserColor = room.users.get(Array.from(room.users.keys())[0] as string)?.color;
@@ -3190,6 +3425,9 @@ app.ws('/ws/room', {
 
       // Сохраняем данные нового пользователя в комнате
       const finalUserName = buildUniqueUserNameInRoom(room, normalizedUserName);
+      if (room.botSettings?.enabled && room.botSettings.name.toLowerCase() === finalUserName.toLowerCase()) {
+        room.botSettings.name = generateGuestCatName(new Set([finalUserName]));
+      }
 
       room.users.set(userId, {
           userName: finalUserName,
@@ -3244,22 +3482,12 @@ app.ws('/ws/room', {
               }
       }
 
-      // Если теперь 2 игрока, начинаем игру
-      if (room.users.size === 2) {
-          room.gameState.gameStarted = true;
-          room.gameStartedAt = new Date(); // Сохраняем время начала игры
-          
-          // Запускаем таймер комнаты
-          createRoomTimer(roomId);
-          
-          // Уведомляем всех игроков о начале игры
-          for (const [id, userData] of room.users) {
-              userData.ws.send({
-                  system: true,
-                  message: "Game started! White moves first.",
-                  type: "gameStart",
-                  gameState: getPersonalizedGameState(room, id)
-              });
+      // Запускаем игру: в обычной комнате после 2 игроков, в bot-комнате после 1 игрока
+      if (room.users.size === 2 || (room.botSettings?.enabled && room.users.size === 1)) {
+          startRoomGame(room, roomId);
+
+          if (room.botSettings?.enabled) {
+            void triggerBotMoveIfNeeded(roomId);
           }
       }
   },
@@ -3376,6 +3604,10 @@ app.ws('/ws/room', {
                       time: Date.now()
                   });
               }
+          }
+
+          if (room.botSettings?.enabled) {
+            void triggerBotMoveIfNeeded(roomId);
           }
       } else if (data.type === "cursor") {
           // Позиция курсора
@@ -3712,5 +3944,43 @@ app.ws('/ws/room', {
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 4000;
 
+try {
+  await chessBot.start();
+  console.log('[chess-bot] Stockfish engine started');
+} catch (error) {
+  const message = error instanceof Error ? error.message : String(error);
+  console.error('[chess-bot] Failed to start Stockfish engine:', message);
+  process.exit(1);
+}
+
 app.listen(PORT);
 console.log(`Server is running on port ${PORT}`);
+
+let isShuttingDown = false;
+
+const shutdown = async (signal: string): Promise<void> => {
+  if (isShuttingDown) {
+    return;
+  }
+
+  isShuttingDown = true;
+  console.log(`Received ${signal}. Shutting down...`);
+
+  try {
+    await chessBot.stop();
+    console.log('[chess-bot] Stockfish engine stopped');
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('[chess-bot] Error during shutdown:', message);
+  }
+
+  process.exit(0);
+};
+
+process.on('SIGINT', () => {
+  void shutdown('SIGINT');
+});
+
+process.on('SIGTERM', () => {
+  void shutdown('SIGTERM');
+});

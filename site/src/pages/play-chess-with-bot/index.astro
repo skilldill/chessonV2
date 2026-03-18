@@ -1,0 +1,136 @@
+---
+import SeoLayout from '../../layouts/SeoLayout.astro';
+import SeoPageLayout from '../../components/seo/SeoPageLayout.astro';
+
+const title = 'Play Chess with a Bot Online';
+const description = 'Play chess with a bot online in your browser. No install, free access, and flexible pace for daily training and mistake review.';
+const canonicalUrl = 'https://chesson.me/play-chess-with-bot/';
+
+const breadcrumbs = [
+  { name: 'Home', url: 'https://chesson.me/' },
+  { name: 'Play chess with a bot', url: canonicalUrl },
+];
+
+const faq = [
+  {
+    question: 'Why play chess with a bot?',
+    answer: 'Bot games are great for focused training. You can play anytime, test ideas, and improve without waiting for a human opponent.',
+  },
+  {
+    question: 'Is this suitable for beginners?',
+    answer: 'Yes. It is a low-pressure way to learn rules, practice basic plans, and build confidence before playing with people.',
+  },
+  {
+    question: 'Can I play with a bot for free?',
+    answer: 'Yes. Core browser gameplay is available without installation and with a fast entry flow.',
+  },
+  {
+    question: 'Do I need to sign up first?',
+    answer: 'For quick starts, browser access is enough. Sign-up can remain optional for additional account features.',
+  },
+  {
+    question: 'How is bot mode different from playing friends?',
+    answer: 'Bot mode gives stable pace and repeatable training, while friend matches provide more human-style variety and unpredictability.',
+  },
+  {
+    question: 'Where can I start a bot game?',
+    answer: 'Open the ChessOn game page at https://game.chesson.me/ and launch your preferred match mode.',
+  },
+];
+
+const hero = {
+  h1: 'Play chess with a bot online',
+  kicker: 'ChessOn • Bot practice mode',
+  summary:
+    'Train in-browser with a chess bot: no install, flexible pace, and a practical loop for skill growth from one game to the next.',
+  primaryCta: { label: 'Start game', href: 'https://game.chesson.me/' },
+  secondaryCta: { label: 'Play with friends', href: '/play-chess-with-friends-link/' },
+  ghostCta: { label: 'Beginner rules', href: '/chess-rules-for-beginners/' },
+};
+
+const valueProps = [
+  { title: 'Train on your schedule', description: 'No waiting room needed. Launch a game whenever you have time.' },
+  { title: 'Target one skill at a time', description: 'Practice opening structure, tactics, king safety, or endgame ideas with intent.' },
+  { title: 'Fast browser start', description: 'Open and play without installing extra software.' },
+  { title: 'Beginner-friendly flow', description: 'A calm format for learning piece coordination and avoiding early blunders.' },
+  { title: 'Consistent daily reps', description: 'Short bot games support stable improvement through repetition.' },
+  { title: 'Great pre-match warmup', description: 'Run a quick game before a live match with a friend.' },
+];
+
+const steps = [
+  { title: 'Open the game page', description: 'Go to ChessOn and choose your preferred match setup.' },
+  { title: 'Start a bot game', description: 'Launch practice mode and begin your session immediately.' },
+  { title: 'Play and review mistakes', description: 'After each game, identify one tactical and one strategic improvement point.' },
+  { title: 'Repeat with a new goal', description: 'Run the next game with a specific focus and track progress over time.' },
+];
+
+const useCases = [
+  { title: 'Beginner learning path', description: 'Build confidence with steady game flow before joining human matches.' },
+  { title: 'Pre-game warmup', description: 'Use one short bot game to get into decision rhythm.' },
+  { title: 'Focused skill drills', description: 'Practice one concept repeatedly until it becomes automatic.' },
+];
+
+const internalLinks = [
+  { title: 'Play chess online for free', description: 'Core browser flow for quick daily games.', href: '/play-chess-online-free/' },
+  { title: 'Play chess with friends by link', description: 'Move from bot training to live friend matches.', href: '/play-chess-with-friends-link/' },
+  { title: 'Online chess without sign-up', description: 'Minimal-friction entry for fast sessions.', href: '/online-chess-without-signup/' },
+];
+---
+
+<SeoLayout
+  lang="en"
+  title={title}
+  description={description}
+  canonicalUrl={canonicalUrl}
+  locale="en_US"
+  breadcrumbs={breadcrumbs}
+  faq={faq}
+>
+  <SeoPageLayout
+    hero={hero}
+    valueTitle="Why bot practice works"
+    valueProps={valueProps}
+    quickCallout="Practice loop: open game -> train one goal -> review -> repeat"
+    trustTitle="Mode advantages"
+    trustPoints={['No install', 'Flexible pace', 'Beginner-friendly']}
+    howTitle="How it works"
+    steps={steps}
+    useCasesTitle="Use cases"
+    useCases={useCases}
+    faqTitle="FAQ"
+    faq={faq}
+    linksTitle="Read also"
+    links={internalLinks}
+    stickyTitle="Quick training"
+    stickyText="Start a bot game and improve one skill per session."
+    stickyCta={{ label: 'Start game', href: 'https://game.chesson.me/' }}
+  >
+    <section class="seo-section">
+      <h2>Who benefits most from bot games</h2>
+      <p>
+        Bot mode is useful for both new and active players. New players get a stable environment to learn movement rules, opening basics,
+        and king safety without the pressure of immediate human competition. Active players use bot games for repetition: test one idea,
+        check what fails, and replay the same concept right away. This fast feedback loop is one of the easiest ways to build board confidence.
+      </p>
+      <p>
+        It also solves the scheduling problem. If no friend is available right now, practice does not stop. You can run short sessions during
+        breaks, in the evening, or before a live match. Consistency matters more than long occasional study blocks, and bot mode supports exactly
+        that style of improvement.
+      </p>
+    </section>
+
+    <section class="seo-section">
+      <h2>Best results: combine bot mode and human games</h2>
+      <p>
+        The strongest workflow is mixed. Use bot games to clean up mechanical mistakes and sharpen a specific theme, then test it against a human
+        opponent via <a href="/play-chess-with-friends-link/">friend-link matches</a>. That transition shows whether your training holds under
+        more unpredictable decisions. Over time, this approach helps you move from isolated drills to practical game strength.
+      </p>
+      <p>
+        If you are still learning fundamentals, keep
+        <a href="/chess-rules-for-beginners/">beginner rules</a> nearby and apply one concept per game.
+        Ready to start now? Open <a href="https://game.chesson.me/">ChessOn game page</a> and launch your bot practice session.
+      </p>
+    </section>
+  </SeoPageLayout>
+</SeoLayout>
