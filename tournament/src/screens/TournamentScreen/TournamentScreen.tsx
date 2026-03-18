@@ -10,11 +10,12 @@ import { useTournament } from '../../hooks/useTournament'
 import { useI18n } from '../../i18n/i18n'
 
 type Tab = 'create' | 'participants' | 'rounds'
+type FinishDialogMode = 'finish' | 'tie-break' | null
 
 export const TournamentScreen = () => {
   const { t } = useI18n()
   const [tab, setTab] = useState<Tab>('create')
-  const [isFinishDialogOpen, setIsFinishDialogOpen] = useState(false)
+  const [finishDialogMode, setFinishDialogMode] = useState<FinishDialogMode>(null)
   const {
     tournament,
     tournamentName,
@@ -29,6 +30,7 @@ export const TournamentScreen = () => {
     participantsById,
     activeRound,
     canAddParticipantsAfterStart,
+    canManageRoster,
     createTournament,
     addGroup,
     updateGroupName,
@@ -42,9 +44,12 @@ export const TournamentScreen = () => {
     setMatchResult,
     finishCurrentRound,
     finishTournament,
+    createPrizeBoundaryTieBreak,
+    prizeTieGroups,
     resetTournament,
     completedRoundsCount,
     isCurrentRoundReady,
+    activeParticipantsCount,
   } = useTournament()
 
   const handleStartTournament = () => {
@@ -60,15 +65,42 @@ export const TournamentScreen = () => {
   }
 
   const handleFinishTournament = () => {
-    setIsFinishDialogOpen(true)
+    if (prizeTieGroups.length > 0) {
+      setFinishDialogMode('tie-break')
+      return
+    }
+
+    setFinishDialogMode('finish')
   }
 
   const handleConfirmFinishTournament = () => {
-    setIsFinishDialogOpen(false)
+    if (finishDialogMode === 'tie-break') {
+      const created = createPrizeBoundaryTieBreak()
+      setFinishDialogMode(null)
+      if (created) {
+        setTab('rounds')
+      }
+      return
+    }
+
     const finished = finishTournament()
+    setFinishDialogMode(null)
     if (finished) {
       setTab('rounds')
     }
+  }
+
+  const handleCancelFinishDialog = () => {
+    if (finishDialogMode === 'tie-break') {
+      const finished = finishTournament()
+      setFinishDialogMode(null)
+      if (finished) {
+        setTab('rounds')
+      }
+      return
+    }
+
+    setFinishDialogMode(null)
   }
 
   return (
@@ -88,7 +120,7 @@ export const TournamentScreen = () => {
         {tournament && tournament.status === 'setup' ? (
             <button
               onClick={handleStartTournament}
-              disabled={tournament.participants.length < 2 || tournament.groups.length === 0}
+              disabled={activeParticipantsCount < 2 || tournament.groups.length === 0}
             >
               {t('screen.startFirstRound')}
             </button>
@@ -117,6 +149,7 @@ export const TournamentScreen = () => {
           participantGroupId={participantGroupId}
           setParticipantGroupId={setParticipantGroupId}
           canAddParticipantsAfterStart={canAddParticipantsAfterStart}
+          canManageRoster={canManageRoster}
           addParticipant={addParticipant}
           updateParticipantName={updateParticipantName}
           updateParticipantGroup={updateParticipantGroup}
@@ -130,6 +163,7 @@ export const TournamentScreen = () => {
           tournament={tournament}
           standings={standings}
           activeRound={activeRound}
+          activeParticipantsCount={activeParticipantsCount}
           completedRoundsCount={completedRoundsCount}
           isCurrentRoundReady={isCurrentRoundReady}
           participantsById={participantsById}
@@ -143,13 +177,32 @@ export const TournamentScreen = () => {
       <AppFooter />
 
       <ConfirmDialog
-        isOpen={isFinishDialogOpen}
-        title={t('screen.finishTitle')}
-        description={t('screen.finishDescription')}
-        confirmLabel={t('screen.finishConfirm')}
-        confirmVariant="danger"
+        isOpen={finishDialogMode !== null}
+        title={
+          finishDialogMode === 'tie-break'
+            ? t('screen.tieBreakTitle')
+            : t('screen.finishTitle')
+        }
+        description={
+          finishDialogMode === 'tie-break'
+            ? t('screen.tieBreakDescription')
+            : t('screen.finishDescription')
+        }
+        confirmLabel={
+          finishDialogMode === 'tie-break'
+            ? t('screen.tieBreakAction')
+            : t('screen.finishConfirm')
+        }
+        cancelLabel={
+          finishDialogMode === 'tie-break'
+            ? t('screen.finishAnyway')
+            : t('confirm.cancel')
+        }
+        confirmVariant={finishDialogMode === 'tie-break' ? 'default' : 'danger'}
+        closeOnOverlay={finishDialogMode !== 'tie-break'}
+        closeOnEscape={finishDialogMode !== 'tie-break'}
         onConfirm={handleConfirmFinishTournament}
-        onCancel={() => setIsFinishDialogOpen(false)}
+        onCancel={handleCancelFinishDialog}
       />
     </main>
   )

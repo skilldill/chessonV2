@@ -11,6 +11,7 @@ export type Participant = {
   id: string
   name: string
   groupId: string
+  isActive?: boolean
 }
 
 export type Match = {
@@ -24,6 +25,7 @@ export type Round = {
   id: string
   number: number
   status: RoundStatus
+  kind?: 'swiss' | 'tiebreak'
   matches: Match[]
 }
 
@@ -59,10 +61,26 @@ export const findActiveRound = (tournament: Tournament | null) =>
 
 export const buildStandings = (tournament: Tournament): Standing[] => {
   const groupById = new Map(tournament.groups.map((group) => [group.id, group.name]))
+  const playedParticipantIds = new Set<string>()
+
+  for (const round of tournament.rounds) {
+    for (const match of round.matches) {
+      playedParticipantIds.add(match.playerAId)
+      if (match.playerBId) {
+        playedParticipantIds.add(match.playerBId)
+      }
+    }
+  }
+
   const byPlayer = new Map<string, Standing>()
   const opponentsByPlayer = new Map<string, string[]>()
 
   for (const player of tournament.participants) {
+    const isActive = player.isActive ?? true
+    if (!isActive && !playedParticipantIds.has(player.id)) {
+      continue
+    }
+
     byPlayer.set(player.id, {
       participantId: player.id,
       name: player.name,
@@ -294,7 +312,11 @@ export const generateSwissRound = (tournament: Tournament): Round => {
   ).length
   const diversityPriority = !leadersAreDefined(standings, completedRounds)
 
-  const sortedPlayers = [...tournament.participants].sort((left, right) => {
+  const activeParticipants = tournament.participants.filter(
+    (participant) => (participant.isActive ?? true),
+  )
+
+  const sortedPlayers = [...activeParticipants].sort((left, right) => {
     const leftStanding = standingsById.get(left.id)
     const rightStanding = standingsById.get(right.id)
 
@@ -364,6 +386,7 @@ export const generateSwissRound = (tournament: Tournament): Round => {
     id: uid(),
     number: tournament.rounds.length + 1,
     status: 'active',
+    kind: 'swiss',
     matches,
   }
 }

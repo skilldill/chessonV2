@@ -6,6 +6,7 @@ type RoundsSectionProps = {
   tournament: Tournament
   standings: Standing[]
   activeRound: Round | null
+  activeParticipantsCount: number
   completedRoundsCount: number
   isCurrentRoundReady: boolean
   participantsById: Map<string, { id: string; name: string; groupId: string }>
@@ -28,6 +29,7 @@ export const RoundsSection = ({
   tournament,
   standings,
   activeRound,
+  activeParticipantsCount,
   completedRoundsCount,
   isCurrentRoundReady,
   participantsById,
@@ -42,6 +44,41 @@ export const RoundsSection = ({
     () => new Map(tournament.groups.map((group) => [group.id, group.name])),
     [tournament.groups],
   )
+
+  const hasTieBreakRounds = useMemo(
+    () => tournament.rounds.some((round) => round.kind === 'tiebreak'),
+    [tournament.rounds],
+  )
+
+  const displayedPlaces = useMemo(() => {
+    const shouldSharePrizePlaces =
+      tournament.status === 'finished' && !hasTieBreakRounds
+
+    if (!shouldSharePrizePlaces) {
+      return new Map(standings.map((item, index) => [item.participantId, index + 1]))
+    }
+
+    const placeByParticipantId = new Map<string, number>()
+    let currentPlace = 0
+
+    for (let index = 0; index < standings.length; index += 1) {
+      const current = standings[index]
+      const previous = standings[index - 1]
+      if (
+        previous &&
+        current.points === previous.points &&
+        current.buchholz === previous.buchholz
+      ) {
+        placeByParticipantId.set(current.participantId, currentPlace)
+        continue
+      }
+
+      currentPlace += 1
+      placeByParticipantId.set(current.participantId, currentPlace)
+    }
+
+    return placeByParticipantId
+  }, [hasTieBreakRounds, standings, tournament.status])
 
   const teamColorByGroupId = useMemo(() => {
     const palette = [...TEAM_LABEL_PALETTE]
@@ -98,7 +135,11 @@ export const RoundsSection = ({
 
       {tournament.status === 'running' && activeRound ? (
         <>
-          <h3>{t('rounds.currentRound', { number: activeRound.number })}</h3>
+          <h3>
+            {activeRound.kind === 'tiebreak'
+              ? t('rounds.currentTieBreak', { number: activeRound.number })
+              : t('rounds.currentRound', { number: activeRound.number })}
+          </h3>
 
           <div className="round-list">
             {activeRound.matches.map((match, index) => {
@@ -109,7 +150,15 @@ export const RoundsSection = ({
                 : null
 
               return (
-                <article key={match.id} className="match-card">
+                <article
+                  key={match.id}
+                  className={[
+                    'match-card',
+                    match.result ? 'match-card-resolved' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                >
                   <p className="match-title">{t('rounds.pair', { number: index + 1 })}</p>
                   <div className="match-players">
                     {renderPlayerWithTeam(match.playerAId, t('common.unknown'))}
@@ -154,7 +203,7 @@ export const RoundsSection = ({
 
       {tournament.status === 'running' && !activeRound ? (
         <div className="row">
-          <button onClick={createNextRound} disabled={tournament.participants.length < 2}>
+          <button onClick={createNextRound} disabled={activeParticipantsCount < 2}>
             {t('rounds.createNextRound')}
           </button>
           <button
@@ -194,7 +243,31 @@ export const RoundsSection = ({
             ) : (
               standings.map((item, index) => (
                 <tr key={item.participantId}>
-                  <td>{index + 1}</td>
+                  <td>
+                    {(() => {
+                      const place = displayedPlaces.get(item.participantId) ?? index + 1
+                      const showPrizeBadge = tournament.status === 'finished' && place <= 3
+
+                      if (!showPrizeBadge) {
+                        return place
+                      }
+
+                      return (
+                        <span
+                          className={[
+                            'rank-badge',
+                            place === 1
+                              ? 'rank-gold'
+                              : place === 2
+                                ? 'rank-silver'
+                                : 'rank-bronze',
+                          ].join(' ')}
+                        >
+                          {place === 1 ? `🥇 ${place}` : place === 2 ? `🥈 ${place}` : `🥉 ${place}`}
+                        </span>
+                      )
+                    })()}
+                  </td>
                   <td>{item.name}</td>
                   <td>
                     {groupsById.get(participantsById.get(item.participantId)?.groupId ?? '') ??
@@ -218,7 +291,10 @@ export const RoundsSection = ({
               <p>
                 {t('rounds.roundHistory', {
                   number: round.number,
-                  status: t(`status.${round.status}`),
+                  status:
+                    round.kind === 'tiebreak'
+                      ? `${t('rounds.tieBreakLabel')}, ${t(`status.${round.status}`)}`
+                      : t(`status.${round.status}`),
                 })}
               </p>
               <ul className="plain-list">
