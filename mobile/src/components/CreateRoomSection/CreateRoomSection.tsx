@@ -1,9 +1,24 @@
 import { useHistory } from 'react-router-dom';
+import { useState } from 'react';
 import { useCreateRoom } from '../../hooks/useCreateRoom';
+import { BotDifficultyModal, type BotDifficulty } from '../BotDifficultyModal/BotDifficultyModal';
+import RobotEmojiWebp from '../../assets/robot-emoji.webp';
 
 export const CreateRoomSection: React.FC = () => {
   const history = useHistory();
   const { createRoom, isCreating } = useCreateRoom();
+  const [isBotModalOpen, setIsBotModalOpen] = useState(false);
+  const [botDifficulty, setBotDifficulty] = useState<BotDifficulty>('medium');
+
+  const handleCreateBotRoom = () => {
+    createRoom({
+      timeMinutes: 30,
+      incrementSeconds: 0,
+      vsBot: true,
+      botDifficulty,
+      botMoveTimeMs: 800
+    });
+  };
 
   return (
     <>
@@ -16,6 +31,21 @@ export const CreateRoomSection: React.FC = () => {
 
       {/* Быстрые кнопки создания комнаты - плитка */}
       <div className="w-full grid grid-cols-2 gap-3">
+        <button
+          type="button"
+          onClick={() => setIsBotModalOpen(true)}
+          disabled={isCreating}
+          className="btn-client btn-client-preset col-span-2 rounded-xl px-4 py-5 min-h-[64px] text-white/90 font-semibold transition-all duration-200 active:scale-[0.98] focus:outline-none touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed border border-[#2D7A4F]/60 bg-[#2D7A4F]/20"
+        >
+          <div className="flex flex-col items-center gap-1">
+            <div className="flex items-center gap-2">
+              <img src={RobotEmojiWebp} alt="Bot" className="w-[30px] h-[30px] select-none" />
+              <span className="text-lg font-bold">Play vs Bot</span>
+            </div>
+            <span className="text-sm opacity-90">30 min, choose difficulty</span>
+          </div>
+        </button>
+
         <button
           type="button"
           onClick={() => createRoom({ timeMinutes: 3, incrementSeconds: 0 })}
@@ -95,6 +125,15 @@ export const CreateRoomSection: React.FC = () => {
           Set time
         </div>
       </button>
+
+      <BotDifficultyModal
+        isOpen={isBotModalOpen}
+        isCreating={isCreating}
+        difficulty={botDifficulty}
+        onChangeDifficulty={setBotDifficulty}
+        onClose={() => setIsBotModalOpen(false)}
+        onConfirm={handleCreateBotRoom}
+      />
     </>
   );
 };

@@ -8,7 +8,7 @@ import { Game } from './models/Game';
 import { hashPassword, comparePassword } from './utils/password';
 import { createToken, verifyToken } from './utils/jwt';
 import { sendVerificationEmail, sendPasswordResetEmail, sendTestEmail } from './utils/email';
-import { chessBot } from './src/modules/chess-bot';
+import { chessBot, type BotDifficulty } from './src/modules/chess-bot';
 import mongoose from 'mongoose';
 import crypto from 'crypto';
 
@@ -121,6 +121,14 @@ type Room = {
     firstPlayerColor?: "white" | "black"; // Цвет для первого подключившегося игрока
     gameStartedAt?: Date; // Время начала игры
     hasMobilePlayer?: boolean; // Есть ли мобильный игрок в комнате
+    botSettings?: {
+      enabled: boolean;
+      difficulty: BotDifficulty;
+      color?: "white" | "black";
+      moveTimeMs: number;
+      name: string;
+      avatar: string;
+    };
 };
 
 type RandomMatchQueueEntry = {
@@ -142,6 +150,7 @@ const userMessageCounts = new Map<string, { count: number, resetAt: number }>();
 const randomMatchQueueByTime = new Map<string, RandomMatchQueueEntry[]>();
 const randomMatchUserToTimeKey = new Map<string, string>();
 const randomMatchAssignments = new Map<string, RandomMatchAssignment>();
+const botMoveInProgressRooms = new Set<string>();
 
 // Метрики для мониторинга
 const metrics = {
@@ -605,13 +614,24 @@ function parseTimerConfig(rawConfig: any) {
   const firstPlayerColor = (rawConfig?.color === "white" || rawConfig?.color === "black")
     ? rawConfig.color
     : undefined;
+  const botEnabled = rawConfig?.vsBot === true || rawConfig?.vsBot === 'true';
+  const botDifficulty: BotDifficulty = rawConfig?.botDifficulty === 'easy' || rawConfig?.botDifficulty === 'hard'
+    ? rawConfig.botDifficulty
+    : 'medium';
+  const botMoveTimeMsRaw = Number(rawConfig?.botMoveTimeMs ?? 800);
+  const botMoveTimeMs = Number.isFinite(botMoveTimeMsRaw) && botMoveTimeMsRaw > 0
+    ? Math.floor(botMoveTimeMsRaw)
+    : 800;
 
   return {
     whiteTimer: normalizedWhiteTimer,
     blackTimer: normalizedBlackTimer,
     increment: normalizedIncrement,
     currentFEN,
-    firstPlayerColor
+    firstPlayerColor,
+    botEnabled,
+    botDifficulty,
+    botMoveTimeMs
   };
 }
 
@@ -669,7 +689,14 @@ function createRoomWithConfig(rawConfig: any) {
       }
     },
     firstPlayerColor: timerConfig.firstPlayerColor,
-    hasMobilePlayer: undefined
+    hasMobilePlayer: undefined,
+    botSettings: timerConfig.botEnabled ? {
+      enabled: true,
+      difficulty: timerConfig.botDifficulty,
+      moveTimeMs: timerConfig.botMoveTimeMs,
+      name: 'Chesson Bot',
+      avatar: '0'
+    } : undefined
   };
 
   rooms.set(roomId, room);
@@ -953,6 +980,24 @@ function getPersonalizedGameState(room: Room, userId: string): GameState {
     );
 
     if (!opponent) {
+        if (room.botSettings?.enabled && room.botSettings.color && room.botSettings.color !== userColor) {
+            return {
+                ...room.gameState,
+                player: {
+                    userId: userId,
+                    userName: userData.userName,
+                    avatar: userData.avatar,
+                    color: userColor
+                },
+                opponent: {
+                    userId: 'bot',
+                    userName: room.botSettings.name,
+                    avatar: room.botSettings.avatar,
+                    color: room.botSettings.color
+                }
+            };
+        }
+
         // Если соперник не найден, возвращаем gameState только с player
         return {
             ...room.gameState,
@@ -983,6 +1028,92 @@ function getPersonalizedGameState(room: Room, userId: string): GameState {
             color: opponentUserData.color!
         }
     };
+}
+
+function startRoomGame(room: Room, roomId: string) {
+  if (room.gameState.gameStarted || room.gameState.gameEnded) {
+    return;
+  }
+
+  room.gameState.gameStarted = true;
+  room.gameStartedAt = new Date();
+
+  createRoomTimer(roomId);
+
+  for (const [id, userData] of room.users) {
+    if (userData.isConnected && userData.ws) {
+      userData.ws.send({
+        system: true,
+        message: "Game started! White moves first.",
+        type: "gameStart",
+        gameState: getPersonalizedGameState(room, id)
+      });
+    }
+  }
+}
+
+async function triggerBotMoveIfNeeded(roomId: string) {
+  const room = rooms.get(roomId);
+  if (!room || !room.botSettings?.enabled || room.gameState.gameEnded || !room.gameState.gameStarted) {
+    return;
+  }
+
+  if (!room.botSettings.color || room.gameState.currentPlayer !== room.botSettings.color) {
+    return;
+  }
+
+  if (botMoveInProgressRooms.has(roomId)) {
+    return;
+  }
+
+  botMoveInProgressRooms.add(roomId);
+
+  try {
+    const botMove = await chessBot.getRoomMove({
+      fen: room.gameState.currentFEN,
+      difficulty: room.botSettings.difficulty,
+      moveTimeMs: room.botSettings.moveTimeMs
+    });
+
+    room.gameState.currentFEN = botMove.moveData.FEN;
+    room.gameState.moveHistory.push(botMove.moveData);
+
+    if (room.gameState.timer && room.botSettings.color === "white" && room.gameState.timer.whiteIncrement) {
+      room.gameState.timer.whiteTime += room.gameState.timer.whiteIncrement;
+    } else if (room.gameState.timer && room.botSettings.color === "black" && room.gameState.timer.blackIncrement) {
+      room.gameState.timer.blackTime += room.gameState.timer.blackIncrement;
+    }
+
+    room.gameState.currentPlayer = room.gameState.currentPlayer === "white" ? "black" : "white";
+    syncCurrentColor(room);
+
+    if (checkThreefoldRepetition(room)) {
+      declareDrawByThreefoldRepetition(room, roomId);
+      return;
+    }
+
+    if (checkInsufficientMaterial(room)) {
+      declareDrawByInsufficientMaterial(room, roomId);
+      return;
+    }
+
+    for (const [id, userData] of room.users) {
+      if (userData.isConnected && userData.ws) {
+        userData.ws.send({
+          type: "move",
+          moveData: botMove.moveData,
+          from: room.botSettings.name,
+          userId: 'bot',
+          gameState: getPersonalizedGameState(room, id),
+          time: Date.now()
+        });
+      }
+    }
+  } catch (error) {
+    console.error('[chess-bot] Failed to make bot move:', error);
+  } finally {
+    botMoveInProgressRooms.delete(roomId);
+  }
 }
 
 // Функция для безопасной очистки таймера комнаты
@@ -2700,6 +2831,9 @@ app.post('/api/rooms', async ({ body }) => {
     success: true,
     roomId,
     message: 'Room created successfully',
+    vsBot: room.botSettings?.enabled ?? false,
+    botDifficulty: room.botSettings?.difficulty,
+    botMoveTimeMs: room.botSettings?.moveTimeMs,
     timerConfig: {
       whiteTimer: normalizedConfig.whiteTimer,
       blackTimer: normalizedConfig.blackTimer,
@@ -3224,11 +3358,17 @@ app.ws('/ws/room', {
                   userData.ws.send({ system: true, message: `${existingUserData?.userName || normalizedUserName} rejoined the room` });
               }
           }
+
+          if (room.botSettings?.enabled) {
+            void triggerBotMoveIfNeeded(roomId);
+          }
           return;
       }
 
-      // Если уже 2 участника → не пускаем
-      if (room.users.size >= 2) {
+      const maxRoomUsers = room.botSettings?.enabled ? 1 : 2;
+
+      // Если комната заполнена → не пускаем
+      if (room.users.size >= maxRoomUsers) {
           ws.send({ system: true, message: 'Room is full' });
           ws.close();
           return;
@@ -3243,6 +3383,9 @@ app.ws('/ws/room', {
         // Если это первый пользователь и указан цвет при создании комнаты, используем его
         // Иначе назначаем случайный цвет
         assignedColor = room.firstPlayerColor ?? assignRandomColor();
+        if (room.botSettings?.enabled) {
+          room.botSettings.color = assignedColor === "white" ? "black" : "white";
+        }
       } else {
         // Если уже есть пользователь, назначаем противоположный цвет
         const existingUserColor = room.users.get(Array.from(room.users.keys())[0] as string)?.color;
@@ -3305,22 +3448,12 @@ app.ws('/ws/room', {
               }
       }
 
-      // Если теперь 2 игрока, начинаем игру
-      if (room.users.size === 2) {
-          room.gameState.gameStarted = true;
-          room.gameStartedAt = new Date(); // Сохраняем время начала игры
-          
-          // Запускаем таймер комнаты
-          createRoomTimer(roomId);
-          
-          // Уведомляем всех игроков о начале игры
-          for (const [id, userData] of room.users) {
-              userData.ws.send({
-                  system: true,
-                  message: "Game started! White moves first.",
-                  type: "gameStart",
-                  gameState: getPersonalizedGameState(room, id)
-              });
+      // Запускаем игру: в обычной комнате после 2 игроков, в bot-комнате после 1 игрока
+      if (room.users.size === 2 || (room.botSettings?.enabled && room.users.size === 1)) {
+          startRoomGame(room, roomId);
+
+          if (room.botSettings?.enabled) {
+            void triggerBotMoveIfNeeded(roomId);
           }
       }
   },
@@ -3437,6 +3570,10 @@ app.ws('/ws/room', {
                       time: Date.now()
                   });
               }
+          }
+
+          if (room.botSettings?.enabled) {
+            void triggerBotMoveIfNeeded(roomId);
           }
       } else if (data.type === "cursor") {
           // Позиция курсора

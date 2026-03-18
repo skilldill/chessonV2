@@ -6,6 +6,9 @@ import { CapacitorHttp } from '@capacitor/core';
 type CreateRoomData = {
     timeMinutes: number;
     incrementSeconds: number;
+    vsBot?: boolean;
+    botDifficulty?: 'easy' | 'medium' | 'hard';
+    botMoveTimeMs?: number;
 }
 
 export const useCreateRoom = () => {
@@ -25,7 +28,10 @@ export const useCreateRoom = () => {
                 data: {
                     whiteTimer: timeSeconds,
                     blackTimer: timeSeconds,
-                    increment: roomData.incrementSeconds
+                    increment: roomData.incrementSeconds,
+                    vsBot: roomData.vsBot,
+                    botDifficulty: roomData.botDifficulty,
+                    botMoveTimeMs: roomData.botMoveTimeMs
                 }
             })
 
