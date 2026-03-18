@@ -662,6 +662,23 @@ function buildUniqueUserNameInRoom(room: Room, requestedName: string): string {
   return `${baseName} ${suffix}`;
 }
 
+function generateGuestCatName(excludedNames: Set<string> = new Set()): string {
+  const candidates = GUEST_CAT_WORDS.map((word) => `${word} cat`);
+  const normalizedExcluded = new Set(Array.from(excludedNames).map((name) => name.toLowerCase()));
+  const available = candidates.filter((candidate) => !normalizedExcluded.has(candidate.toLowerCase()));
+
+  if (available.length > 0) {
+    return available[Math.floor(Math.random() * available.length)] as string;
+  }
+
+  const fallbackBase = candidates[Math.floor(Math.random() * candidates.length)] as string;
+  let suffix = 2;
+  while (normalizedExcluded.has(`${fallbackBase} ${suffix}`.toLowerCase())) {
+    suffix++;
+  }
+  return `${fallbackBase} ${suffix}`;
+}
+
 function createRoomWithConfig(rawConfig: any) {
   const roomId = generateShortId();
   const timerConfig = parseTimerConfig(rawConfig);
@@ -694,7 +711,9 @@ function createRoomWithConfig(rawConfig: any) {
       enabled: true,
       difficulty: timerConfig.botDifficulty,
       moveTimeMs: timerConfig.botMoveTimeMs,
-      name: 'Chesson Bot',
+      name: typeof rawConfig?.botName === 'string' && rawConfig.botName.trim()
+        ? rawConfig.botName.trim()
+        : 'Chesson Bot',
       avatar: '0'
     } : undefined
   };
@@ -2712,19 +2731,31 @@ app.post('/api/random-match/join', async ({ body, headers, set }) => {
       };
     }
 
-    const newQueueEntry: RandomMatchQueueEntry = {
-      userId: participant.participantId,
+    // Fallback: if no human opponent is waiting, start a game vs bot immediately.
+    const totalTimeSeconds = timeMinutes * 60;
+    const botName = generateGuestCatName(new Set([participant.userName]));
+    const { roomId } = createRoomWithConfig({
+      whiteTimer: totalTimeSeconds,
+      blackTimer: totalTimeSeconds,
+      increment: incrementSeconds,
+      vsBot: true,
+      botDifficulty: 'medium',
+      botMoveTimeMs: 800,
+      botName
+    });
+
+    const assignment: RandomMatchAssignment = {
+      roomId,
       createdAt: Date.now(),
       timeKey
     };
-    queue.push(newQueueEntry);
-    randomMatchQueueByTime.set(timeKey, queue);
-    randomMatchUserToTimeKey.set(participant.participantId, timeKey);
+    randomMatchAssignments.set(participant.participantId, assignment);
 
     return {
       success: true,
-      status: 'waiting',
-      queueCountForTimeControl: queue.length,
+      status: 'matched',
+      roomId,
+      queueCountForTimeControl: randomMatchQueueByTime.get(timeKey)?.length ?? 0,
       totalPlayersInRandomQueue: getTotalRandomMatchQueueCount(),
       timeControl: { timeMinutes, incrementSeconds }
     };
@@ -3394,6 +3425,9 @@ app.ws('/ws/room', {
 
       // Сохраняем данные нового пользователя в комнате
       const finalUserName = buildUniqueUserNameInRoom(room, normalizedUserName);
+      if (room.botSettings?.enabled && room.botSettings.name.toLowerCase() === finalUserName.toLowerCase()) {
+        room.botSettings.name = generateGuestCatName(new Set([finalUserName]));
+      }
 
       room.users.set(userId, {
           userName: finalUserName,
