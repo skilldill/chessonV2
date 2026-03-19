@@ -1,30 +1,23 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useCreateRoom } from '../../hooks/useCreateRoom';
 import { BotDifficultyModal, type BotDifficulty } from '../BotDifficultyModal/BotDifficultyModal';
-import { RoomTimeModal, type RoomTimeControl } from '../RoomTimeModal/RoomTimeModal';
+import { RoomTimeModal } from '../RoomTimeModal/RoomTimeModal';
 import RobotEmojiWebp from '../../assets/robot-emoji.webp';
+import { getRoomTimeSettingsFromStorage, setRoomTimeSettingsToStorage } from '../../utils/roomTimeStorage';
 
-const ROOM_TIME_CONTROLS: RoomTimeControl[] = [
-  { timeMinutes: 3, incrementSeconds: 0, label: '3 min', subtitle: 'Fast game' },
-  { timeMinutes: 3, incrementSeconds: 2, label: '3 min + 2 sec', subtitle: 'Fast with increment' },
-  { timeMinutes: 5, incrementSeconds: 0, label: '5 min', subtitle: 'Classic blitz' },
-  { timeMinutes: 5, incrementSeconds: 2, label: '5 min + 2 sec', subtitle: 'Blitz with increment' },
-  { timeMinutes: 10, incrementSeconds: 0, label: '10 min', subtitle: 'Rapid game' },
-  { timeMinutes: 10, incrementSeconds: 5, label: '10 min + 5 sec', subtitle: 'Rapid with increment' },
-];
-
-const getControlKey = (timeMinutes: number, incrementSeconds: number) => `${timeMinutes}:${incrementSeconds}`;
+const initialRoomTime = getRoomTimeSettingsFromStorage();
 
 export const CreateRoomSection: React.FC = () => {
   const { createRoom, isCreating } = useCreateRoom();
   const [isBotModalOpen, setIsBotModalOpen] = useState(false);
   const [isTimeModalOpen, setIsTimeModalOpen] = useState(false);
   const [botDifficulty, setBotDifficulty] = useState<BotDifficulty>('medium');
-  const [selectedControlKey, setSelectedControlKey] = useState(getControlKey(10, 5));
+  const [timeMinutes, setTimeMinutes] = useState(initialRoomTime.timeMinutes);
+  const [incrementSeconds, setIncrementSeconds] = useState(initialRoomTime.incrementSeconds);
 
-  const selectedControl =
-    ROOM_TIME_CONTROLS.find((control) => getControlKey(control.timeMinutes, control.incrementSeconds) === selectedControlKey) ??
-    ROOM_TIME_CONTROLS[0];
+  useEffect(() => {
+    setRoomTimeSettingsToStorage(timeMinutes, incrementSeconds);
+  }, [timeMinutes, incrementSeconds]);
 
   const handleCreateBotRoom = () => {
     createRoom({
@@ -38,8 +31,8 @@ export const CreateRoomSection: React.FC = () => {
 
   const handleCreateFriendRoom = () => {
     createRoom({
-      timeMinutes: selectedControl.timeMinutes,
-      incrementSeconds: selectedControl.incrementSeconds,
+      timeMinutes,
+      incrementSeconds,
     });
   };
 
@@ -86,7 +79,7 @@ export const CreateRoomSection: React.FC = () => {
               </svg>
               <span className="text-lg font-bold">Create room</span>
             </div>
-            <span className="text-sm opacity-90">{selectedControl.label}</span>
+            <span className="text-sm opacity-90">{timeMinutes} min + {incrementSeconds} sec</span>
           </div>
         </button>
       </div>
@@ -103,9 +96,10 @@ export const CreateRoomSection: React.FC = () => {
       <RoomTimeModal
         isOpen={isTimeModalOpen}
         isCreating={isCreating}
-        controls={ROOM_TIME_CONTROLS}
-        selectedKey={selectedControlKey}
-        onSelect={setSelectedControlKey}
+        timeMinutes={timeMinutes}
+        incrementSeconds={incrementSeconds}
+        onChangeTimeMinutes={setTimeMinutes}
+        onChangeIncrementSeconds={setIncrementSeconds}
         onClose={() => setIsTimeModalOpen(false)}
         onConfirm={handleCreateFriendRoom}
       />

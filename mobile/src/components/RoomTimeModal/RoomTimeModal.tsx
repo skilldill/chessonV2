@@ -1,26 +1,24 @@
-export type RoomTimeControl = {
-  timeMinutes: number;
-  incrementSeconds: number;
-  label: string;
-  subtitle: string;
-};
-
 type RoomTimeModalProps = {
   isOpen: boolean;
   isCreating: boolean;
-  controls: RoomTimeControl[];
-  selectedKey: string;
-  onSelect: (key: string) => void;
+  timeMinutes: number;
+  incrementSeconds: number;
+  onChangeTimeMinutes: (value: number) => void;
+  onChangeIncrementSeconds: (value: number) => void;
   onClose: () => void;
   onConfirm: () => void;
 };
 
+const MINUTES_FOR_PLAYER = [1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 40, 50, 60, 120];
+const SECONDS_FOR_MOVE = [0, 1, 2, 3, 4, 5, 10, 15, 20, 30, 40, 50, 60, 100];
+
 export const RoomTimeModal = ({
   isOpen,
   isCreating,
-  controls,
-  selectedKey,
-  onSelect,
+  timeMinutes,
+  incrementSeconds,
+  onChangeTimeMinutes,
+  onChangeIncrementSeconds,
   onClose,
   onConfirm,
 }: RoomTimeModalProps) => {
@@ -47,29 +45,52 @@ export const RoomTimeModal = ({
           Create room for friends
         </p>
 
-        <div className="mt-8 grid grid-cols-1 gap-4">
-          {controls.map((control) => {
-            const key = `${control.timeMinutes}:${control.incrementSeconds}`;
-            const isSelected = selectedKey === key;
-
-            return (
+        <div className="mt-8 space-y-5">
+          <div>
+            <div className="text-white/70 text-sm mb-2">Time per player (minutes)</div>
+            <div className="grid grid-cols-4 gap-2">
+              {MINUTES_FOR_PLAYER.map((value) => (
               <button
-                key={key}
+                key={value}
                 type="button"
-                onClick={() => onSelect(key)}
+                onClick={() => onChangeTimeMinutes(value)}
                 disabled={isCreating}
-                className={`btn-client w-full text-left border transition-all duration-200 active:scale-[0.98] focus:outline-none touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden ${
-                  isSelected
+                className={`btn-client h-11 rounded-lg border transition-all duration-200 active:scale-[0.98] focus:outline-none touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed ${
+                  timeMinutes === value
                     ? 'bg-[#2D7A4F]/22 text-white border-[#2D7A4F]/70 shadow-[0_0_0_1px_rgba(45,122,79,0.35)_inset]'
                     : 'btn-client-preset text-white/90 border-white/15'
                 }`}
-                style={{ borderRadius: 20, padding: '18px 20px', minHeight: 86 }}
               >
-                <div className="font-semibold text-[18px] leading-tight">{control.label}</div>
-                <div className="text-sm text-white/60 mt-1 leading-tight">{control.subtitle}</div>
+                <span className="font-semibold">{value}</span>
               </button>
-            );
-          })}
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="text-white/70 text-sm mb-2">Increment per move (seconds)</div>
+            <div className="grid grid-cols-4 gap-2">
+              {SECONDS_FOR_MOVE.map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => onChangeIncrementSeconds(value)}
+                  disabled={isCreating}
+                  className={`btn-client h-11 rounded-lg border transition-all duration-200 active:scale-[0.98] focus:outline-none touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed ${
+                    incrementSeconds === value
+                      ? 'bg-[#2D7A4F]/22 text-white border-[#2D7A4F]/70 shadow-[0_0_0_1px_rgba(45,122,79,0.35)_inset]'
+                      : 'btn-client-preset text-white/90 border-white/15'
+                  }`}
+                >
+                  <span className="font-semibold">+{value}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="text-center text-white/70 text-sm">
+            Selected: {timeMinutes} min + {incrementSeconds} sec
+          </div>
         </div>
 
         <div className="mt-8 grid grid-cols-2 gap-4">

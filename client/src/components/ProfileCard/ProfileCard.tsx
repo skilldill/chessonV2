@@ -1,10 +1,74 @@
-import { useHistory } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
 import { useProfileData } from "../../hooks/useProfileData";
 import { MEM_AVATARS } from "../../constants/avatars";
+import { useUserGames } from "../../hooks/useUserGames";
+import { CHESSBOARD_THEMES } from "../ChessBoardConfigs/ChessBoardConfigs";
+import { ChessboardThemeModal } from "../ChessboardThemeModal/ChessboardThemeModal";
+import { API_PREFIX } from "../../constants/api";
+import { setChessboardThemeToStorage } from "../../utils/appearanceStorage";
+import { useHistory } from "react-router";
 
 export const ProfileCard = () => {
   const history = useHistory();
-  const { name, avatarIndex, loading } = useProfileData();
+  const { name, avatarIndex, chessboardTheme, loading } = useProfileData();
+  const {
+    loadTotalGames,
+    totalGames,
+  } = useUserGames();
+  const [isThemeModalOpen, setIsThemeModalOpen] = useState(false);
+  const [activeTheme, setActiveTheme] = useState("default");
+  const [selectedTheme, setSelectedTheme] = useState("default");
+  const [isSavingTheme, setIsSavingTheme] = useState(false);
+  const [themeError, setThemeError] = useState("");
+
+  const availableThemes = useMemo(() => Object.keys(CHESSBOARD_THEMES), []);
+
+  useEffect(() => {
+    loadTotalGames();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const nextTheme = chessboardTheme || "default";
+    setActiveTheme(nextTheme);
+    setSelectedTheme(nextTheme);
+  }, [chessboardTheme]);
+
+  const handleSaveTheme = async () => {
+    setThemeError("");
+    setIsSavingTheme(true);
+
+    try {
+      const response = await fetch(`${API_PREFIX}/auth/profile`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          name: name.trim(),
+          avatar: avatarIndex.toString(),
+          appearance: { chessboardTheme: selectedTheme },
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || "Failed to save theme");
+      }
+
+      setChessboardThemeToStorage(selectedTheme);
+      setActiveTheme(selectedTheme);
+      setIsThemeModalOpen(false);
+    } catch (error) {
+      setThemeError(error instanceof Error ? error.message : "Failed to save theme");
+    } finally {
+      setIsSavingTheme(false);
+    }
+  };
+
+  const activeThemeLabel = activeTheme === "magic" ? "Magic" : "Default";
 
   if (loading) {
     return (
@@ -15,26 +79,47 @@ export const ProfileCard = () => {
   }
 
   return (
-    <div 
-      className="w-full flex items-center justify-between px-4 py-3 bg-white/5 border border-white/10 rounded-xl cursor-pointer hover:bg-white/10 transition-all active:scale-[0.98]"
-      onClick={() => history.push('/profile')}
-    >
-      <div className="flex items-center gap-3">
-        <div className="relative">
-          <div className="absolute inset-0 rounded-full"></div>
-          <img
-            src={MEM_AVATARS[avatarIndex]}
-            alt="Avatar"
-            className="relative w-[56px] h-[56px] rounded-full"
-          />
+    <div className="w-full flex flex-col items-center gap-6">
+      <h2 className="text-white text-lg font-semibold text-center cursor-pointer" onClick={() => history.push('/profile')}>@{name}</h2>
+      <img
+        src={MEM_AVATARS[avatarIndex]}
+        alt="Avatar"
+        className="relative w-[64px] h-[64px] rounded-full"
+      />
+
+      <div className="w-full flex gap-3">
+        <div className="flex-1 rounded-xl border border-white/10 bg-white/4 px-4 py-3">
+          <div className="text-white/50 text-xs">Games played</div>
+          <div className="text-white/90 text-xl font-semibold mt-1">
+            {totalGames}
+          </div>
         </div>
-        <div>
-          <h2 className="text-white text-lg font-semibold">{name}</h2>
-        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setSelectedTheme(activeTheme);
+            setThemeError("");
+            setIsThemeModalOpen(true);
+          }}
+          className="flex-1 rounded-xl border border-white/10 bg-white/4 px-4 py-3 text-left hover:bg-white/8 transition-all duration-200 active:scale-[0.98]"
+        >
+          <div className="text-white/50 text-xs">Chessboard theme</div>
+          <div className="text-white/80 text-sm font-medium mt-1">
+            {activeThemeLabel}
+          </div>
+        </button>
       </div>
-      <svg className="w-6 h-6 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-      </svg>
+
+      <ChessboardThemeModal
+        isOpen={isThemeModalOpen}
+        isSaving={isSavingTheme}
+        selectedTheme={selectedTheme}
+        availableThemes={availableThemes}
+        onSelectTheme={setSelectedTheme}
+        onClose={() => setIsThemeModalOpen(false)}
+        onConfirm={handleSaveTheme}
+        error={themeError}
+      />
     </div>
-  );
+  )
 };

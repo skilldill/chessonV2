@@ -1,35 +1,37 @@
 import { IonPage, IonContent } from '@ionic/react';
 import { QuickPlayButton } from '../../components/QuickPlayButton/QuickPlayButton';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useCreateRoom } from '../../hooks/useCreateRoom';
 import { useQuickPlayEntry } from '../../hooks/useQuickPlayEntry';
 import { BotDifficultyModal, type BotDifficulty } from '../../components/BotDifficultyModal/BotDifficultyModal';
-import { RoomTimeModal, type RoomTimeControl } from '../../components/RoomTimeModal/RoomTimeModal';
+import { RoomTimeModal } from '../../components/RoomTimeModal/RoomTimeModal';
+import { CHESSBOARD_THEMES } from '../../components/ChessBoardConfigs/ChessBoardConfigs';
+import { ChessboardThemeModal } from '../../components/ChessboardThemeModal/ChessboardThemeModal';
+import { getChessboardThemeFromStorage, setChessboardThemeToStorage } from '../../utils/appearanceStorage';
 import RobotEmojiWebp from '../../assets/robot-emoji.webp';
+import { getRoomTimeSettingsFromStorage, setRoomTimeSettingsToStorage } from '../../utils/roomTimeStorage';
 
-const ROOM_TIME_CONTROLS: RoomTimeControl[] = [
-    { timeMinutes: 3, incrementSeconds: 0, label: '3 min', subtitle: 'Fast game' },
-    { timeMinutes: 3, incrementSeconds: 2, label: '3 min + 2 sec', subtitle: 'Fast with increment' },
-    { timeMinutes: 5, incrementSeconds: 0, label: '5 min', subtitle: 'Classic blitz' },
-    { timeMinutes: 5, incrementSeconds: 2, label: '5 min + 2 sec', subtitle: 'Blitz with increment' },
-    { timeMinutes: 10, incrementSeconds: 0, label: '10 min', subtitle: 'Rapid game' },
-    { timeMinutes: 10, incrementSeconds: 5, label: '10 min + 5 sec', subtitle: 'Rapid with increment' },
-];
-
-const getControlKey = (timeMinutes: number, incrementSeconds: number) => `${timeMinutes}:${incrementSeconds}`;
+const initialRoomTime = getRoomTimeSettingsFromStorage();
 
 const CreateRoomScreen: React.FC = () => {
     const [isBotModalOpen, setIsBotModalOpen] = useState(false);
     const [isTimeModalOpen, setIsTimeModalOpen] = useState(false);
+    const [isThemeModalOpen, setIsThemeModalOpen] = useState(false);
     const [botDifficulty, setBotDifficulty] = useState<BotDifficulty>('medium');
-    const [selectedControlKey, setSelectedControlKey] = useState(getControlKey(10, 5));
+    const [timeMinutes, setTimeMinutes] = useState(initialRoomTime.timeMinutes);
+    const [incrementSeconds, setIncrementSeconds] = useState(initialRoomTime.incrementSeconds);
+    const [activeTheme, setActiveTheme] = useState(getChessboardThemeFromStorage());
+    const [selectedTheme, setSelectedTheme] = useState(getChessboardThemeFromStorage());
+
+    useEffect(() => {
+        setRoomTimeSettingsToStorage(timeMinutes, incrementSeconds);
+    }, [timeMinutes, incrementSeconds]);
 
     const { createRoom, isCreating } = useCreateRoom();
     const { openQuickPlay, quickPlayLabel, playersInRandomQueue } = useQuickPlayEntry();
 
-    const selectedControl =
-        ROOM_TIME_CONTROLS.find((control) => getControlKey(control.timeMinutes, control.incrementSeconds) === selectedControlKey) ??
-        ROOM_TIME_CONTROLS[0];
+    const availableThemes = Object.keys(CHESSBOARD_THEMES);
+    const activeThemeLabel = activeTheme === 'magic' ? 'Magic' : 'Default';
 
     const handleCreateBotRoom = () => {
         createRoom({
@@ -43,9 +45,15 @@ const CreateRoomScreen: React.FC = () => {
 
     const handleCreateFriendRoom = () => {
         createRoom({
-            timeMinutes: selectedControl.timeMinutes,
-            incrementSeconds: selectedControl.incrementSeconds,
+            timeMinutes,
+            incrementSeconds,
         });
+    };
+
+    const handleSaveThemeToStorage = () => {
+        setChessboardThemeToStorage(selectedTheme);
+        setActiveTheme(selectedTheme);
+        setIsThemeModalOpen(false);
     };
 
     return (
@@ -94,9 +102,23 @@ const CreateRoomScreen: React.FC = () => {
                                         >
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v12m6-6H6" />
                                         </svg>
-                                        <span className="text-lg font-bold">Create room</span>
-                                    </div>
-                                    <span className="text-sm opacity-90">{selectedControl.label}</span>
+                                    <span className="text-lg font-bold">Create room</span>
+                                </div>
+                                    <span className="text-sm opacity-90">{timeMinutes} min + {incrementSeconds} sec</span>
+                                </div>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setSelectedTheme(activeTheme);
+                                    setIsThemeModalOpen(true);
+                                }}
+                                className="btn-client btn-client-preset w-full rounded-xl px-4 py-5 min-h-[64px] text-white/90 font-semibold transition-all duration-200 active:scale-[0.98] focus:outline-none touch-manipulation border border-white/10 bg-white/4"
+                            >
+                                <div className="flex flex-col items-center gap-1">
+                                    <span className="text-lg font-bold">Chessboard theme</span>
+                                    <span className="text-sm opacity-90">{activeThemeLabel}</span>
                                 </div>
                             </button>
                         </div>
@@ -115,11 +137,21 @@ const CreateRoomScreen: React.FC = () => {
                 <RoomTimeModal
                     isOpen={isTimeModalOpen}
                     isCreating={isCreating}
-                    controls={ROOM_TIME_CONTROLS}
-                    selectedKey={selectedControlKey}
-                    onSelect={setSelectedControlKey}
+                    timeMinutes={timeMinutes}
+                    incrementSeconds={incrementSeconds}
+                    onChangeTimeMinutes={setTimeMinutes}
+                    onChangeIncrementSeconds={setIncrementSeconds}
                     onClose={() => setIsTimeModalOpen(false)}
                     onConfirm={handleCreateFriendRoom}
+                />
+
+                <ChessboardThemeModal
+                    isOpen={isThemeModalOpen}
+                    selectedTheme={selectedTheme}
+                    availableThemes={availableThemes}
+                    onSelectTheme={setSelectedTheme}
+                    onClose={() => setIsThemeModalOpen(false)}
+                    onConfirm={handleSaveThemeToStorage}
                 />
             </IonContent>
         </IonPage>
