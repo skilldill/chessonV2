@@ -2,6 +2,8 @@ import { useState } from "react";
 import { API_PREFIX } from "../constants/api";
 import { useHistory } from "react-router-dom";
 
+const BOT_GUEST_PROFILE_KEY = "botGuestProfile";
+
 type CreateRoomData = {
     timeMinutes: number;
     incrementSeconds: number;
@@ -40,6 +42,18 @@ export const useCreateRoom = () => {
             const data = await response.json();
 
             if (data.success && data.roomId) {
+                if (roomData.vsBot) {
+                    const randomId = Math.floor(100 + Math.random() * 900);
+                    const avatar = Math.floor(Math.random() * 6);
+                    localStorage.setItem(
+                        BOT_GUEST_PROFILE_KEY,
+                        JSON.stringify({
+                            roomId: data.roomId,
+                            playerName: `Guest Cat ${randomId}`,
+                            avatar: `${avatar}`,
+                        })
+                    );
+                }
                 // Редирект на созданную комнату
                 history.push(`/game/${data.roomId}`);
             } else {
