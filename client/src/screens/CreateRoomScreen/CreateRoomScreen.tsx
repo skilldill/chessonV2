@@ -6,6 +6,7 @@ import { useQuickPlayEntry } from "../../hooks/useQuickPlayEntry";
 import { BotDifficultyModal, type BotDifficulty } from "../../components/BotDifficultyModal/BotDifficultyModal";
 import RobotEmojiWebp from "../../assets/robot-emoji.webp";
 
+const BOT_GUEST_PROFILE_KEY = "botGuestProfile";
 const MINUTES_FOR_PLAYER = [1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 40, 50, 60, 120];
 const SECONDS_FOR_MOVE = [0, 1, 2, 3, 4, 5, 10, 15, 20, 30, 40, 50, 60, 100];
 export const CreateRoomScreen = () => {
@@ -57,6 +58,18 @@ export const CreateRoomScreen = () => {
             const data = await response.json();
 
             if (data.success && data.roomId) {
+                if (options?.vsBot) {
+                    const randomId = Math.floor(100 + Math.random() * 900);
+                    const avatar = Math.floor(Math.random() * 6);
+                    localStorage.setItem(
+                        BOT_GUEST_PROFILE_KEY,
+                        JSON.stringify({
+                            roomId: data.roomId,
+                            playerName: `Guest Cat ${randomId}`,
+                            avatar: `${avatar}`,
+                        })
+                    );
+                }
                 history.push(`/game/${data.roomId}`);
             } else {
                 throw new Error('Invalid response from server');

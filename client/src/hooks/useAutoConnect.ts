@@ -23,6 +23,7 @@ export const useAutoConnect = ({
 }: UseAutoConnectParams) => {
     const [checkingAuth, setCheckingAuth] = useState(true);
     const QUICK_PLAY_PROFILE_KEY = "quickPlayProfile";
+    const BOT_GUEST_PROFILE_KEY = "botGuestProfile";
 
     const handleSetUserName = async (userName: string, avatarIndex: number) => {
         setUserName(userName);
@@ -69,40 +70,61 @@ export const useAutoConnect = ({
         }
 
         const checkAuthAndAutoConnect = async () => {
-            const quickPlayProfileRaw = localStorage.getItem(QUICK_PLAY_PROFILE_KEY);
-            if (quickPlayProfileRaw) {
-                try {
-                    const quickPlayProfile = JSON.parse(quickPlayProfileRaw) as { playerName?: string; avatar?: string };
-                    const playerName = quickPlayProfile.playerName || "Anonymous Cat";
-                    const avatarIndex = parseInt(quickPlayProfile.avatar || "0");
-                    localStorage.removeItem(QUICK_PLAY_PROFILE_KEY);
-                    handleSetUserName(playerName, Number.isNaN(avatarIndex) ? 0 : avatarIndex);
-                    setCheckingAuth(false);
-                    return;
-                } catch (error) {
-                    console.error("Failed to parse quick play profile:", error);
-                    localStorage.removeItem(QUICK_PLAY_PROFILE_KEY);
-                }
-            }
-
             try {
-                const response = await fetch(`${API_PREFIX}/auth/me`, {
-                    credentials: "include",
-                });
+                try {
+                    const response = await fetch(`${API_PREFIX}/auth/me`, {
+                        credentials: "include",
+                    });
 
-                const data = await response.json();
+                    const data = await response.json();
 
-                if (data.success && data.user) {
-                    // Пользователь авторизован - используем данные из профиля
-                    const profileName = data.user.name || data.user.login;
-                    const profileAvatar = parseInt(data.user.avatar || "0");
-                    const theme = data.user.appearance?.chessboardTheme;
-                    if (theme) setChessboardThemeToStorage(theme);
-                    handleSetUserName(profileName, profileAvatar);
+                    if (data.success && data.user) {
+                        // Пользователь авторизован - используем данные из профиля
+                        const profileName = data.user.name || data.user.login;
+                        const profileAvatar = parseInt(data.user.avatar || "0");
+                        const theme = data.user.appearance?.chessboardTheme;
+                        if (theme) setChessboardThemeToStorage(theme);
+                        localStorage.removeItem(BOT_GUEST_PROFILE_KEY);
+                        await handleSetUserName(profileName, profileAvatar);
+                        return;
+                    }
+                } catch (err) {
+                    // Не авторизован или ошибка - пробуем гостевые профили
+                    console.error("Auth check error:", err);
                 }
-            } catch (err) {
-                // Не авторизован или ошибка - покажем форму
-                console.error("Auth check error:", err);
+
+                const quickPlayProfileRaw = localStorage.getItem(QUICK_PLAY_PROFILE_KEY);
+                if (quickPlayProfileRaw) {
+                    try {
+                        const quickPlayProfile = JSON.parse(quickPlayProfileRaw) as { playerName?: string; avatar?: string };
+                        const playerName = quickPlayProfile.playerName || "Anonymous Cat";
+                        const avatarIndex = parseInt(quickPlayProfile.avatar || "0");
+                        localStorage.removeItem(QUICK_PLAY_PROFILE_KEY);
+                        await handleSetUserName(playerName, Number.isNaN(avatarIndex) ? 0 : avatarIndex);
+                        return;
+                    } catch (error) {
+                        console.error("Failed to parse quick play profile:", error);
+                        localStorage.removeItem(QUICK_PLAY_PROFILE_KEY);
+                    }
+                }
+
+                const botGuestProfileRaw = localStorage.getItem(BOT_GUEST_PROFILE_KEY);
+                if (botGuestProfileRaw) {
+                    try {
+                        const botGuestProfile = JSON.parse(botGuestProfileRaw) as { roomId?: string; playerName?: string; avatar?: string };
+                        if (botGuestProfile.roomId === roomId) {
+                            const playerName = botGuestProfile.playerName || "Guest Cat";
+                            const avatarIndex = parseInt(botGuestProfile.avatar || "0");
+                            localStorage.removeItem(BOT_GUEST_PROFILE_KEY);
+                            await handleSetUserName(playerName, Number.isNaN(avatarIndex) ? 0 : avatarIndex);
+                            return;
+                        }
+                    } catch (error) {
+                        console.error("Failed to parse bot guest profile:", error);
+                    } finally {
+                        localStorage.removeItem(BOT_GUEST_PROFILE_KEY);
+                    }
+                }
             } finally {
                 setCheckingAuth(false);
             }

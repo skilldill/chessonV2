@@ -2731,7 +2731,12 @@ app.post('/api/random-match/join', async ({ body, headers, set }) => {
       };
     }
 
-    // Fallback: if no human opponent is waiting, start a game vs bot immediately.
+    // Fallback: if no human opponent is waiting, add a short "searching" delay
+    // before starting a game vs bot so quick play feels natural.
+    const botMatchDelayMs = 900 + Math.floor(Math.random() * 900); // 900-1800ms
+    await new Promise((resolve) => setTimeout(resolve, botMatchDelayMs));
+
+    // Start a game vs bot.
     const totalTimeSeconds = timeMinutes * 60;
     const botName = generateGuestCatName(new Set([participant.userName]));
     const { roomId } = createRoomWithConfig({
@@ -3705,6 +3710,48 @@ app.ws('/ws/room', {
               // Предложение ничьей
               if (room.gameState.drawOffer && room.gameState.drawOffer.status === "pending") {
                   ws.send({ system: true, message: "There is already an active draw offer" });
+                  return;
+              }
+
+              // В играх против бота бот всегда принимает ничью.
+              if (room.botSettings?.enabled) {
+                  room.gameState.drawOffer = {
+                      from: senderUserId,
+                      to: "bot",
+                      status: "accepted"
+                  };
+
+                  room.gameState.gameEnded = true;
+                  room.gameState.gameResult = {
+                      resultType: "draw"
+                  };
+
+                  clearRoomTimer(roomId);
+                  saveGameToDatabase(room, roomId);
+
+                  for (const [id, userData] of room.users) {
+                      if (userData.isConnected && userData.ws) {
+                          userData.ws.send({
+                              type: "gameResult",
+                              gameResult: room.gameState.gameResult,
+                              from: room.botSettings.name,
+                              userId: senderUserId,
+                              gameState: getPersonalizedGameState(room, id),
+                              time: Date.now()
+                          });
+                      }
+                  }
+
+                  for (const [_, userData] of room.users) {
+                      if (userData.isConnected && userData.ws) {
+                          userData.ws.send({
+                              system: true,
+                              message: `${room.botSettings.name} accepted draw offer. Game ended in a draw.`,
+                              type: "gameEnd"
+                          });
+                      }
+                  }
+
                   return;
               }
 
