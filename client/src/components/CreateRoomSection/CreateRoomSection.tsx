@@ -3,6 +3,9 @@ import { useCreateRoom } from "../../hooks/useCreateRoom";
 import { BotDifficultyModal, type BotDifficulty } from "../BotDifficultyModal/BotDifficultyModal";
 import { RoomTimeModal, type RoomTimeControl } from "../RoomTimeModal/RoomTimeModal";
 import RobotEmojiWebp from "../../assets/robot-emoji.webp";
+import HandShakeEmojiWebp from "../../assets/handshake.webp";
+import SharedLinkSVG from '../../assets/shared-link.svg';
+import { CreateGameButton } from "../CreateGameButton/CreateGameButton";
 
 const ROOM_TIME_CONTROLS: RoomTimeControl[] = [
   { timeMinutes: 3, incrementSeconds: 0, label: "3 min", subtitle: "Fast game" },
@@ -47,7 +50,7 @@ export const CreateRoomSection = () => {
   return (
     <>
       <div className="w-full flex flex-col gap-3">
-        <button
+        {/* <button
           type="button"
           onClick={() => setIsBotModalOpen(true)}
           disabled={isCreating}
@@ -87,7 +90,18 @@ export const CreateRoomSection = () => {
             </div>
             <span className="text-sm opacity-90">{selectedControl.label}</span>
           </div>
-        </button>
+        </button> */}
+
+        <CreateGameButton 
+          title="Play vs Bot"
+          subtitle="30 min, choose difficulty"
+          onClick={() => setIsBotModalOpen(true)}
+        />
+        <CreateGameButton 
+          title="Create room"
+          subtitle="Share link and play with a friend"
+          onClick={() => setIsTimeModalOpen(true)}
+        />
       </div>
 
       <BotDifficultyModal

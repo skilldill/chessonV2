@@ -1,4 +1,5 @@
 import React from "react";
+import { CreateGameButton } from "../CreateGameButton/CreateGameButton";
 
 type QuickPlayButtonProps = {
   onClick: () => void;
@@ -22,6 +23,14 @@ export const QuickPlayButton: React.FC<QuickPlayButtonProps> = ({
   variant = "quick",
 }) => {
   const { title, sub } = COPY[variant];
+
+  return (
+    <CreateGameButton 
+      title={title}
+      subtitle={`${sub} · ${timeLabel} ${playersInQueue > 0 && `· ${playersInQueue} players`}`}
+      onClick={onClick}
+    />
+  )
 
   return (
     <button
@@ -55,7 +64,7 @@ export const QuickPlayButton: React.FC<QuickPlayButtonProps> = ({
         </div>
         <span className="text-sm opacity-90">
           {sub} · {timeLabel}
-          {playersInQueue > 0 && ` · ${playersInQueue} waiting`}
+          {playersInQueue > 0 && ` · ${playersInQueue} players`}
         </span>
       </div>
     </button>
