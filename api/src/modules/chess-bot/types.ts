@@ -18,9 +18,11 @@ export interface RoomMoveData {
   FEN: string;
   from: [number, number];
   to: [number, number];
+  type?: 'transform';
   figure: {
     color: 'white' | 'black';
     type: 'pawn' | 'bishop' | 'knight' | 'rook' | 'queen' | 'king';
+    touched?: boolean;
   };
 }
 

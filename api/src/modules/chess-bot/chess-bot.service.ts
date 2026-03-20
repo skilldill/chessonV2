@@ -71,9 +71,12 @@ export class ChessBotService {
   roomMoveToUci(moveData: Pick<RoomMoveData, 'from' | 'to' | 'figure' | 'FEN'>): string {
     const fromSquare = this.coordsToSquare(moveData.from);
     const toSquare = this.coordsToSquare(moveData.to);
+    const moveWithMeta = moveData as Pick<RoomMoveData, 'from' | 'to' | 'figure' | 'FEN' | 'type'>;
 
     let promotionSuffix = '';
-    if (
+    if (moveWithMeta.type === 'transform') {
+      promotionSuffix = this.getPromotionSuffixFromPiece(moveData.figure);
+    } else if (
       moveData.figure.type === 'pawn' &&
       (moveData.to[1] === 0 || moveData.to[1] === 7)
     ) {
@@ -97,11 +100,38 @@ export class ChessBotService {
       throw new Error(`Cannot determine moved piece for UCI move: ${input.uci}`);
     }
 
+    const promotionSuffix = input.uci[4]?.toLowerCase();
+    const promotionTypeMap: Record<string, RoomMoveData['figure']['type']> = {
+      q: 'queen',
+      r: 'rook',
+      b: 'bishop',
+      n: 'knight',
+    };
+
+    if (promotionSuffix && promotionTypeMap[promotionSuffix]) {
+      const promotedPieceFromFen = this.getPieceAt(input.nextFen, to);
+      const promotedType = promotionTypeMap[promotionSuffix];
+      const promotedPiece = promotedPieceFromFen
+        ? { ...promotedPieceFromFen, touched: true }
+        : { color: movedPiece.color, type: promotedType, touched: true };
+
+      return {
+        FEN: input.nextFen,
+        from,
+        to,
+        type: 'transform',
+        figure: promotedPiece,
+      };
+    }
+
     return {
       FEN: input.nextFen,
       from,
       to,
-      figure: movedPiece,
+      figure: {
+        ...movedPiece,
+        touched: true,
+      },
     };
   }
 
