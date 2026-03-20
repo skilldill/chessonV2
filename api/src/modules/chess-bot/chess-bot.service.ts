@@ -69,6 +69,11 @@ export class ChessBotService {
   }
 
   roomMoveToUci(moveData: Pick<RoomMoveData, 'from' | 'to' | 'figure' | 'FEN'>): string {
+    const castlingUci = this.getCastlingUci(moveData);
+    if (castlingUci) {
+      return castlingUci;
+    }
+
     const fromSquare = this.coordsToSquare(moveData.from);
     const toSquare = this.coordsToSquare(moveData.to);
     const moveWithMeta = moveData as Pick<RoomMoveData, 'from' | 'to' | 'figure' | 'FEN' | 'type'>;
@@ -124,6 +129,28 @@ export class ChessBotService {
       };
     }
 
+    if (movedPiece.type === 'king' && from[0] === 4 && (from[1] === 7 || from[1] === 0)) {
+      const isShortCastle = to[0] === 6 && to[1] === from[1];
+      const isLongCastle = to[0] === 2 && to[1] === from[1];
+
+      if (isShortCastle || isLongCastle) {
+        const normalizedTo: [number, number] =
+          movedPiece.color === 'white' && isLongCastle
+            ? [1, 7]
+            : to;
+
+        return {
+          FEN: input.nextFen,
+          from,
+          to: normalizedTo,
+          figure: {
+            ...movedPiece,
+            touched: false,
+          },
+        };
+      }
+    }
+
     return {
       FEN: input.nextFen,
       from,
@@ -133,6 +160,29 @@ export class ChessBotService {
         touched: true,
       },
     };
+  }
+
+  private getCastlingUci(moveData: Pick<RoomMoveData, 'from' | 'to' | 'figure' | 'FEN'>): string | null {
+    if (moveData.figure.type !== 'king') {
+      return null;
+    }
+
+    const [fx, fy] = moveData.from;
+    const [tx, ty] = moveData.to;
+
+    // Not reversed board
+    if (fy === 7 && fx === 4 && ty === 7 && tx === 6) return 'e1g1';
+    if (fy === 7 && fx === 4 && ty === 7 && (tx === 1 || tx === 2)) return 'e1c1';
+    if (fy === 0 && fx === 4 && ty === 0 && tx === 6) return 'e8g8';
+    if (fy === 0 && fx === 4 && ty === 0 && tx === 2) return 'e8c8';
+
+    // Reversed board
+    if (fy === 0 && fx === 3 && ty === 0 && tx === 1) return 'e1g1';
+    if (fy === 0 && fx === 3 && ty === 0 && (tx === 6 || tx === 5)) return 'e1c1';
+    if (fy === 7 && fx === 3 && ty === 7 && tx === 1) return 'e8g8';
+    if (fy === 7 && fx === 3 && ty === 7 && tx === 5) return 'e8c8';
+
+    return null;
   }
 
   private coordsToSquare(coords: [number, number]): string {
