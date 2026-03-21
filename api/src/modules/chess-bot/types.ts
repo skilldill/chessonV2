@@ -1,4 +1,4 @@
-export type BotDifficulty = 'easy' | 'medium' | 'hard';
+export type BotDifficulty = 'super_easy' | 'easy' | 'medium' | 'hard';
 
 export interface BotMoveRequest {
   fen?: string;

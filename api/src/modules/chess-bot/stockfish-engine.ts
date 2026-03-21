@@ -25,6 +25,7 @@ const DEFAULT_TIMEOUT_BUFFER_MS = 2_000;
 const DEFAULT_RESTART_DELAY_MS = 500;
 
 const DIFFICULTY_SKILL_LEVEL: Record<BotDifficulty, number> = {
+  super_easy: 0,
   easy: 4,
   medium: 10,
   hard: 18,

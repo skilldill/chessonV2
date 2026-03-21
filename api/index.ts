@@ -615,7 +615,7 @@ function parseTimerConfig(rawConfig: any) {
     ? rawConfig.color
     : undefined;
   const botEnabled = rawConfig?.vsBot === true || rawConfig?.vsBot === 'true';
-  const botDifficulty: BotDifficulty = rawConfig?.botDifficulty === 'easy' || rawConfig?.botDifficulty === 'hard'
+  const botDifficulty: BotDifficulty = rawConfig?.botDifficulty === 'super_easy' || rawConfig?.botDifficulty === 'easy' || rawConfig?.botDifficulty === 'hard'
     ? rawConfig.botDifficulty
     : 'medium';
   const botMoveTimeMsRaw = Number(rawConfig?.botMoveTimeMs ?? 800);
@@ -1321,6 +1321,7 @@ app.post('/api/bot/move', async ({ body, set }) => {
       }),
     })),
     difficulty: t.Optional(t.Union([
+      t.Literal('super_easy'),
       t.Literal('easy'),
       t.Literal('medium'),
       t.Literal('hard'),
