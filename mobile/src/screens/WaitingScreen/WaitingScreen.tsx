@@ -6,11 +6,17 @@ import { useParams } from 'react-router';
 import cn from 'classnames';
 import { useState } from 'react';
 import { Share } from '@capacitor/share';
+import { useHistory } from 'react-router-dom';
 
 const SITE_BASE_URL = import.meta.env.VITE_TEST_MODE ? 'http://localhost:' + window.location.port : import.meta.env.VITE_MAIN_SITE;
 
-const WaitingScreen: React.FC = () => {
+type WaitingScreenProps = {
+  onLeave?: () => void;
+};
+
+const WaitingScreen: React.FC<WaitingScreenProps> = ({ onLeave }) => {
   const { roomId } = useParams<{ roomId: string }>();
+  const history = useHistory();
 
   const [copied, setCopied] = useState(false);
 
@@ -44,6 +50,11 @@ const WaitingScreen: React.FC = () => {
       }
   };
 
+  const handleLeave = () => {
+      onLeave?.();
+      history.push('/main');
+  };
+
   return (
     <IonPage>
       <IonContent>
@@ -69,7 +80,7 @@ const WaitingScreen: React.FC = () => {
               >Room's ID: {roomId}</p>
             </IonText>
           </div>
-          <div className="py-[20px] px-[36px]">
+          <div className="py-[20px] px-[36px] flex flex-col gap-3">
             <ChessButton onClick={handleShare}>
               <div className="flex flex-1 items-center justify-center gap-[4px]">
                 <IonIcon src={ShareIconSVG} />
@@ -78,6 +89,9 @@ const WaitingScreen: React.FC = () => {
                 </span>
               </div>
             </ChessButton>
+            {/* <ChessButton onClick={handleLeave} className="bg-white/10 border border-white/15">
+              <span>Leave</span>
+            </ChessButton> */}
           </div>
         </div>
 
@@ -97,4 +111,3 @@ const WaitingScreen: React.FC = () => {
 };
 
 export default WaitingScreen;
-

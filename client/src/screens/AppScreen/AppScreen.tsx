@@ -72,6 +72,7 @@ export const AppScreen = () => {
         sendCursorPosition,
         sendResignation,
         sendGameResult,
+        disconnect,
     } = useRoomWS(roomId || "");
     const { userName, setUserName } = useUserData();
     const { saveGameData, storageGameData, removeGameData } = useGameStorage();
@@ -136,5 +137,13 @@ export const AppScreen = () => {
         );
     }
 
-    return <WaitingScreen />;
+    return (
+        <WaitingScreen
+            onLeave={() => {
+                disconnect();
+                localStorage.removeItem("gameData");
+                localStorage.removeItem("wsClientId");
+            }}
+        />
+    );
 };

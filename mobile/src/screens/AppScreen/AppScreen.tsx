@@ -77,6 +77,7 @@ const AppScreen: React.FC = () => {
     sendCursorPosition,
     sendResignation,
     sendGameResult,
+    disconnect,
   } = useRoomWS(roomId || "");
   const { userName, setUserName } = useUserData();
   const { saveGameData, storageGameData, removeGameData } = useGameStorage();
@@ -144,7 +145,15 @@ const AppScreen: React.FC = () => {
     );
   }
 
-  return <WaitingScreen />;
+  return (
+    <WaitingScreen
+      onLeave={() => {
+        disconnect();
+        localStorage.removeItem("gameData");
+        localStorage.removeItem("wsClientId");
+      }}
+    />
+  );
 };
 
 export default AppScreen;
