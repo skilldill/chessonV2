@@ -8,7 +8,7 @@ type CreateRoomData = {
     timeMinutes: number;
     incrementSeconds: number;
     vsBot?: boolean;
-    botDifficulty?: 'easy' | 'medium' | 'hard';
+    botDifficulty?: 'super_easy' | 'easy' | 'medium' | 'hard';
     botMoveTimeMs?: number;
 }
 

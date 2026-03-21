@@ -1,4 +1,4 @@
-export type BotDifficulty = 'easy' | 'medium' | 'hard';
+export type BotDifficulty = 'super_easy' | 'easy' | 'medium' | 'hard';
 
 type BotDifficultyModalProps = {
   isOpen: boolean;
@@ -14,9 +14,10 @@ const BOT_LEVELS: Array<{
   label: string;
   subtitle: string;
 }> = [
-  { key: 'easy', label: 'Easy', subtitle: 'Makes more inaccuracies' },
-  { key: 'medium', label: 'Medium', subtitle: 'Balanced play style' },
-  { key: 'hard', label: 'Hard', subtitle: 'Plays significantly stronger' },
+  { key: 'super_easy', label: 'Super Easy', subtitle: 'Very simple play (~900-1200 Elo)' },
+  { key: 'easy', label: 'Easy', subtitle: 'Makes more inaccuracies (~1200-1600 Elo)' },
+  { key: 'medium', label: 'Medium', subtitle: 'Balanced play style (~1700-2200 Elo)' },
+  { key: 'hard', label: 'Hard', subtitle: 'Plays significantly stronger (~2300+ Elo)' },
 ];
 
 export const BotDifficultyModal = ({
