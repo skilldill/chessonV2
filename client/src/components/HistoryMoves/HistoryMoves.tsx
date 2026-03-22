@@ -1,4 +1,4 @@
-import { useEffect, useState, type FC } from "react";
+import { useCallback, useEffect, useState, type FC } from "react";
 import { groupByTwoMoves } from "../../utils/groupByTwoMoves";
 import { getReadableMoveNotation } from "../../utils/getReadableMoveNotation";
 import { Resizable } from 're-resizable';
@@ -58,14 +58,60 @@ export const HistoryMoves: FC<HistoryMovesProps> = ({ moves, onSelectMove }) => 
     const groupedMoves = groupByTwoMoves(moves)
         .map((moveItem) => moveItem.map((move) => getReadableMoveNotation(move)));
 
-    const handleSelectMove = (moveIndex: number) => {
+    const handleSelectMove = useCallback((moveIndex: number) => {
+        if (moveIndex < 0 || moveIndex >= moves.length) return;
         const selectedMove = moves[moveIndex];
         setSelectedMoveIndex(moveIndex);
         onSelectMove?.({
             moveData: selectedMove,
             isLastMove: moveIndex === (moves.length - 1),
         });
-    }
+    }, [moves, onSelectMove]);
+
+    useEffect(() => {
+        const isEditableTarget = (target: EventTarget | null): boolean => {
+            if (!(target instanceof HTMLElement)) return false;
+            const tagName = target.tagName.toLowerCase();
+
+            return tagName === 'input' || tagName === 'textarea' || target.isContentEditable;
+        };
+
+        const handleHistoryArrowNavigation = (event: KeyboardEvent) => {
+            if (isEditableTarget(event.target)) return;
+            if (moves.length === 0) return;
+
+            if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight' && event.key !== 'ArrowUp' && event.key !== 'ArrowDown') {
+                return;
+            }
+
+            const isPrevMove = event.key === 'ArrowLeft' || event.key === 'ArrowUp';
+            const isNextMove = event.key === 'ArrowRight' || event.key === 'ArrowDown';
+
+            const currentIndex = selectedMoveIndex === undefined
+                ? (moves.length - 1)
+                : Math.min(Math.max(selectedMoveIndex, 0), moves.length - 1);
+            let nextIndex = currentIndex;
+
+            if (isPrevMove) {
+                nextIndex = Math.max(0, currentIndex - 1);
+            }
+
+            if (isNextMove) {
+                nextIndex = Math.min(moves.length - 1, currentIndex + 1);
+            }
+
+            if (nextIndex === currentIndex) return;
+
+            event.preventDefault();
+            handleSelectMove(nextIndex);
+        };
+
+        window.addEventListener('keydown', handleHistoryArrowNavigation);
+
+        return () => {
+            window.removeEventListener('keydown', handleHistoryArrowNavigation);
+        };
+    }, [handleSelectMove, moves.length, selectedMoveIndex]);
 
     return (
         <DraggableWrap>
