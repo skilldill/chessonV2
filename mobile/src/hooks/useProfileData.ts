@@ -5,6 +5,7 @@ import { setChessboardThemeToStorage } from '../utils/appearanceStorage';
 export const useProfileData = () => {
   const [name, setName] = useState("");
   const [avatarIndex, setAvatarIndex] = useState(0);
+  const [chessboardTheme, setChessboardTheme] = useState("default");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -19,8 +20,9 @@ export const useProfileData = () => {
         if (data.success && data.user) {
           setName(data.user.name || data.user.login);
           setAvatarIndex(parseInt(data.user.avatar || "0"));
-          const theme = data.user.appearance?.chessboardTheme;
-          if (theme) setChessboardThemeToStorage(theme);
+          const theme = data.user.appearance?.chessboardTheme || "default";
+          setChessboardTheme(theme);
+          setChessboardThemeToStorage(theme);
         }
       } catch (err) {
         console.error("Error loading profile:", err);
@@ -35,6 +37,7 @@ export const useProfileData = () => {
   return {
     name,
     avatarIndex,
+    chessboardTheme,
     loading,
   };
 };

@@ -1,4 +1,5 @@
 import React from 'react';
+import { CreateGameButton } from '../CreateGameButton/CreateGameButton';
 
 type QuickPlayButtonProps = {
   onClick: () => void;
@@ -24,39 +25,10 @@ export const QuickPlayButton: React.FC<QuickPlayButtonProps> = ({
   const { title, sub } = COPY[variant];
 
   return (
-    <button
-      type="button"
+    <CreateGameButton 
+      title={`${title} · ${sub}`}
+      subtitle={`${timeLabel} ${playersInQueue > 0 && ` · ${playersInQueue} waiting`}`}
       onClick={onClick}
-      className={[
-        'btn-client btn-client-preset w-full rounded-xl px-4 py-5 min-h-[64px]',
-        'text-white/90 font-semibold transition-all duration-200 active:scale-[0.98]',
-        'focus:outline-none touch-manipulation',
-        'border border-[#2D7A4F]/60 bg-[#2D7A4F]/20',
-        className,
-      ].join(' ')}
-    >
-      <div className="flex flex-col items-center gap-1">
-        <div className="flex items-center gap-2">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-            className="w-5 h-5 shrink-0"
-            aria-hidden
-          >
-            <path
-              fillRule="evenodd"
-              d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"
-              clipRule="evenodd"
-            />
-          </svg>
-          <span className="text-lg font-bold">{title}</span>
-        </div>
-        <span className="text-sm opacity-90">
-          {sub} · {timeLabel}
-          {playersInQueue > 0 && ` · ${playersInQueue} waiting`}
-        </span>
-      </div>
-    </button>
+    />
   );
 };

@@ -4,6 +4,7 @@ import { BotDifficultyModal, type BotDifficulty } from '../BotDifficultyModal/Bo
 import { RoomTimeModal } from '../RoomTimeModal/RoomTimeModal';
 import RobotEmojiWebp from '../../assets/robot-emoji.webp';
 import { getRoomTimeSettingsFromStorage, setRoomTimeSettingsToStorage } from '../../utils/roomTimeStorage';
+import { CreateGameButton } from '../CreateGameButton/CreateGameButton';
 
 const initialRoomTime = getRoomTimeSettingsFromStorage();
 
@@ -38,51 +39,19 @@ export const CreateRoomSection: React.FC = () => {
 
   return (
     <>
-      <div className="w-full text-center">
-        <h3 className="text-left text-[24px] text-white/90 font-semibold">
-          Create a Room
-        </h3>
-      </div>
+      <CreateGameButton
+        title="Play vs Bot"
+        subtitle="30 min, choose difficulty"
+        onClick={() => setIsBotModalOpen(true)}
+        theme="primary"
+      />
 
-      <div className="w-full flex flex-col gap-3">
-        <button
-          type="button"
-          onClick={() => setIsBotModalOpen(true)}
-          disabled={isCreating}
-          className="btn-client btn-client-preset w-full rounded-xl px-4 py-5 min-h-[64px] text-white/90 font-semibold transition-all duration-200 active:scale-[0.98] focus:outline-none touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed border border-[#2D7A4F]/60 bg-[#2D7A4F]/20"
-        >
-          <div className="flex flex-col items-center gap-1">
-            <div className="flex items-center gap-2">
-              <img src={RobotEmojiWebp} alt="Bot" className="w-[30px] h-[30px] select-none" />
-              <span className="text-lg font-bold">Play vs Bot</span>
-            </div>
-            <span className="text-sm opacity-90">30 min, choose difficulty</span>
-          </div>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setIsTimeModalOpen(true)}
-          disabled={isCreating}
-          className="btn-client btn-client-preset w-full rounded-xl px-4 py-5 min-h-[64px] text-white/90 font-semibold transition-all duration-200 active:scale-[0.98] focus:outline-none touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed border border-[#2D7A4F]/60 bg-[#2D7A4F]/20"
-        >
-          <div className="flex flex-col items-center gap-1">
-            <div className="flex items-center gap-2">
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v12m6-6H6" />
-              </svg>
-              <span className="text-lg font-bold">Create room</span>
-            </div>
-            <span className="text-sm opacity-90">{timeMinutes} min + {incrementSeconds} sec</span>
-          </div>
-        </button>
-      </div>
+      <CreateGameButton
+        title="Create room"
+        subtitle={`${timeMinutes} min + ${incrementSeconds} sec`}
+        onClick={() => setIsTimeModalOpen(true)}
+        theme="primary"
+      />
 
       <BotDifficultyModal
         isOpen={isBotModalOpen}
