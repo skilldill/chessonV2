@@ -82,6 +82,14 @@ export class ChessBotService {
     if (moveWithMeta.type === 'transform') {
       promotionSuffix = this.getPromotionSuffixFromPiece(moveData.figure);
     } else if (
+      (moveData.to[1] === 0 || moveData.to[1] === 7) &&
+      (moveData.from[1] === 1 || moveData.from[1] === 6) &&
+      ['queen', 'rook', 'bishop', 'knight'].includes(moveData.figure.type)
+    ) {
+      // Some clients may drop moveData.type during transport; infer promotion
+      // from final rank + promoted piece type.
+      promotionSuffix = this.getPromotionSuffixFromPiece(moveData.figure);
+    } else if (
       moveData.figure.type === 'pawn' &&
       (moveData.to[1] === 0 || moveData.to[1] === 7)
     ) {

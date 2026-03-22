@@ -3417,9 +3417,16 @@ app.ws('/ws/room', {
       // Назначаем цвет пользователю
       let assignedColor: "white" | "black";
       if (room.users.size === 0) {
-        // Если это первый пользователь и указан цвет при создании комнаты, используем его
-        // Иначе назначаем случайный цвет
-        assignedColor = room.firstPlayerColor ?? assignRandomColor();
+        // Если это первый пользователь, фиксируем цвет в комнате один раз,
+        // чтобы при обновлении страницы (и повторном подключении) сторона не менялась.
+        if (!room.firstPlayerColor) {
+          if (room.botSettings?.enabled && room.botSettings.color) {
+            room.firstPlayerColor = room.botSettings.color === "white" ? "black" : "white";
+          } else {
+            room.firstPlayerColor = assignRandomColor();
+          }
+        }
+        assignedColor = room.firstPlayerColor;
         if (room.botSettings?.enabled) {
           room.botSettings.color = assignedColor === "white" ? "black" : "white";
         }
