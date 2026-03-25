@@ -62,7 +62,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
 
     const [initialFEN, setInitialFEN] = useState(INITIAL_FEN);
     const [isHistoryMode, setIsHistoryMode] = useState(false);
-    const [selectedHistroyMode, setSelectedHistoryMove] = useState<MoveData>();
+    const [selectedHistroyMove, setSelectedHistoryMove] = useState<MoveData>();
 
     const reversed = useMemo(() => playerColor === "black", [playerColor]);
     const { 
@@ -103,7 +103,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
     const handleQuitGame = () => {
         onSendResignation();
         removeGameData();
-        window.location.href = import.meta.env.VITE_MAIN_SITE;
+        window.location.href = '/';
     };
 
     useEffect(() => {
@@ -173,7 +173,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                                 <div style={{ position: 'absolute', top: 0, left: 0, zIndex: 1 }}>
                                     <ChessBoard
                                         key="historyBoard"
-                                        FEN={selectedHistroyMode?.FEN || initialFEN}
+                                        FEN={selectedHistroyMove?.FEN || initialFEN}
                                         onChange={() => {}} 
                                         onEndGame={() => {}}
                                         reversed={playerColor === "black"}
@@ -182,7 +182,17 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                                             squareSize: wrapWidth / 8,
                                             ...chessboardConfig,
                                         }}
-                                        moveHighlight={selectedHistroyMode ? [selectedHistroyMode?.from, selectedHistroyMode?.to] : undefined}
+                                        moveHighlight={selectedHistroyMove ? 
+                                            // TODO: Небольшой костыль по переворачиванию хода для правильной подсветки
+                                            (playerColor === "black" ? [
+                                                JSChessEngine.reverseMove(selectedHistroyMove).from,
+                                                JSChessEngine.reverseMove(selectedHistroyMove).to
+                                            ] : [
+                                                selectedHistroyMove.from,
+                                                selectedHistroyMove.to
+                                            ]) : 
+                                            undefined
+                                        }
                                     />
                                 </div>
                             )}

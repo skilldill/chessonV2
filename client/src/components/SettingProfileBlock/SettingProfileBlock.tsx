@@ -1,7 +1,8 @@
-import { useState, type FC } from "react";
+import { useEffect, useState, type FC } from "react";
 import { MemAvatarSelect } from "../MemAvatarSelect/MemAvatarSelect";
 
 const MAX_NICKNAME_LENGTH = 10;
+const GUEST_CREATE_PROFILE_KEY = "guestCreateProfile";
 
 type SettingProfileBlockProps = {
     onToPlay: (profileData: { nickname: string, avatarIndex: number }) => void;
@@ -11,6 +12,44 @@ type SettingProfileBlockProps = {
 export const SettingProfileBlock: FC<SettingProfileBlockProps> = ({ onToPlay, onClose }) => {
     const [nickname, setNickname] = useState("");
     const [avatarIndex, setSelectedAvatarIndex] = useState(0);
+
+    useEffect(() => {
+        const storedProfileRaw = localStorage.getItem(GUEST_CREATE_PROFILE_KEY);
+        if (!storedProfileRaw) {
+            return;
+        }
+
+        try {
+            const storedProfile = JSON.parse(storedProfileRaw) as { playerName?: string; avatar?: number | string };
+            const storedName = (storedProfile.playerName || "").trim();
+            const parsedAvatar =
+                typeof storedProfile.avatar === "string"
+                    ? parseInt(storedProfile.avatar, 10)
+                    : storedProfile.avatar;
+            const storedAvatar =
+                typeof parsedAvatar === "number" && !Number.isNaN(parsedAvatar) && parsedAvatar >= 0
+                    ? parsedAvatar
+                    : 0;
+
+            if (storedName) {
+                setNickname(storedName.slice(0, MAX_NICKNAME_LENGTH));
+            }
+            setSelectedAvatarIndex(storedAvatar);
+        } catch (error) {
+            console.error("Failed to parse guest create profile:", error);
+            localStorage.removeItem(GUEST_CREATE_PROFILE_KEY);
+        }
+    }, []);
+
+    useEffect(() => {
+        localStorage.setItem(
+            GUEST_CREATE_PROFILE_KEY,
+            JSON.stringify({
+                playerName: nickname.trim(),
+                avatar: avatarIndex,
+            }),
+        );
+    }, [avatarIndex, nickname]);
 
     const handleSelectAvatar = (index: number) => {
         setSelectedAvatarIndex(index);
@@ -24,10 +63,19 @@ export const SettingProfileBlock: FC<SettingProfileBlockProps> = ({ onToPlay, on
     }
 
     const hanleToPlay = () => {
-        if (!nickname) {
+        const cleanedNickname = nickname.trim();
+        if (!cleanedNickname) {
             return;
         }
-        onToPlay({ nickname, avatarIndex });
+
+        localStorage.setItem(
+            GUEST_CREATE_PROFILE_KEY,
+            JSON.stringify({
+                playerName: cleanedNickname,
+                avatar: avatarIndex,
+            }),
+        );
+        onToPlay({ nickname: cleanedNickname, avatarIndex });
     }
 
     const handleClose = () => {
@@ -99,7 +147,7 @@ export const SettingProfileBlock: FC<SettingProfileBlockProps> = ({ onToPlay, on
                     </div>
                 </form>
 
-                <MemAvatarSelect onSelectAvatar={handleSelectAvatar} />
+                <MemAvatarSelect onSelectAvatar={handleSelectAvatar} initialSelected={avatarIndex} />
 
                 <button 
                     className="rounded-md text-sm font-semibold px-4 py-2 bg-[#4F39F6] text-white min-w-[126px] cursor-pointer transition-all duration-300 active:scale-95 focus:outline-none"
