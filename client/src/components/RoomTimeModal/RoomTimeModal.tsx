@@ -3,8 +3,10 @@ type RoomTimeModalProps = {
   isCreating: boolean;
   timeMinutes: number;
   incrementSeconds: number;
+  withAIhints: boolean;
   onChangeTimeMinutes: (value: number) => void;
   onChangeIncrementSeconds: (value: number) => void;
+  onChangeWithAIhints: (value: boolean) => void;
   onClose: () => void;
   onConfirm: () => void;
 };
@@ -17,8 +19,10 @@ export const RoomTimeModal = ({
   isCreating,
   timeMinutes,
   incrementSeconds,
+  withAIhints,
   onChangeTimeMinutes,
   onChangeIncrementSeconds,
+  onChangeWithAIhints,
   onClose,
   onConfirm,
 }: RoomTimeModalProps) => {
@@ -89,6 +93,20 @@ export const RoomTimeModal = ({
           <div className="text-center text-white/70 text-sm">
             Selected: {timeMinutes} min + {incrementSeconds} sec
           </div>
+
+          <label className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl px-3 py-3 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={withAIhints}
+              onChange={(event) => onChangeWithAIhints(event.target.checked)}
+              disabled={isCreating}
+              className="h-4 w-4 accent-[#2D7A4F] cursor-pointer"
+            />
+            <div className="flex flex-col">
+              <span className="text-white font-medium leading-tight">Enable AI hints</span>
+              <span className="text-white/60 text-xs leading-tight">Allow hint button in this room</span>
+            </div>
+          </label>
         </div>
 
         <div className="mt-5 grid grid-cols-2 gap-2">

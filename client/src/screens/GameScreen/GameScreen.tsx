@@ -31,6 +31,8 @@ type GameScreenProps = {
     onSendResignation: () => void;
     onSendGameResult: (gameResult: GameResult) => void;
     onSendDrawOffer: (action: 'offer' | 'accept' | 'decline') => void;
+    onSendAIHintRequest: () => void;
+    aiHintArrow: { from: [number, number]; to: [number, number] } | null;
     
     resultMessage?: string;
     offeredDraw?: boolean;
@@ -49,6 +51,8 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
     onSendDrawOffer,
     onSendResignation,
     onSendGameResult,
+    onSendAIHintRequest,
+    aiHintArrow,
 
     resultMessage,
     offeredDraw,
@@ -118,6 +122,23 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
         setIsHistoryMode(!historyMoveData.isLastMove);
         setSelectedHistoryMove(historyMoveData.moveData);
     }
+
+    const handleAIhints = () => {
+        onSendAIHintRequest();
+    }
+
+    const mappedHintArrow = useMemo(() => {
+        if (!aiHintArrow || isHistoryMode) {
+            return [];
+        }
+
+        if (playerColor !== "black") {
+            return [{ start: aiHintArrow.from, end: aiHintArrow.to }];
+        }
+
+        const reverseCoords = (coords: [number, number]): [number, number] => [7 - coords[0], 7 - coords[1]];
+        return [{ start: reverseCoords(aiHintArrow.from), end: reverseCoords(aiHintArrow.to) }];
+    }, [aiHintArrow, playerColor, isHistoryMode]);
 
     return (
         <div
@@ -205,6 +226,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                                     reversed={playerColor === "black"}
                                     change={externalChangeMove}
                                     playerColor={playerColor}
+                                    moveArrows={mappedHintArrow}
                                     config={{ 
                                         squareSize: wrapWidth / 8,
                                         ...chessboardConfig,
@@ -217,10 +239,12 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                 <div className={`absolute ${screenSize === "L" ? "bottom-[-100px]" : "bottom-[-86px]"} left-0 right-0 flex justify-center`}>
                     <GameScreenControls
                         key={resultMessage}
+                        withAIhints={gameState.withAIhints}
                         gameEnded={!!resultMessage} // Если есть сообщение об окончании игры, то игра закончилась
                         onDrawOffer={() => onSendDrawOffer('offer')}
                         onResignation={onSendResignation}
                         onQuitGame={handleQuitGame}
+                        onAIhints={handleAIhints}
                     />
                 </div>
             </div>

@@ -20,6 +20,7 @@ const INITIAL_GAME_STATE = {
     moveHistory: [],
     currentPlayer: "white" as ChessColor,
     currentColor: "white" as ChessColor,
+    withAIhints: false,
     gameStarted: false,
     gameEnded: false,
     gameResult: undefined,
@@ -76,6 +77,7 @@ export const useRoomWS = (roomId: string) => {
     const [lastMove, setLastMove] = useState<MoveData>();
     const [timer, setTimer] = useState<TimerState | undefined>(INITIAL_GAME_STATE.timer);
     const [movesHistory, setMovesHistory] = useState<MoveData[]>([]);
+    const [aiHintArrow, setAiHintArrow] = useState<{ from: [number, number]; to: [number, number] } | null>(null);
     
     const [resultMessage, setResultMessage] = useState<string>();
     const [offeredDraw, setOfferedDraw] = useState(false);
@@ -142,6 +144,7 @@ export const useRoomWS = (roomId: string) => {
                     setGameState(data.gameState);
                     setLastMove(data.moveData);
                     setMovesHistory(data.gameState.moveHistory);
+                    setAiHintArrow(null);
                     // Обновляем currentColorMove на основе currentColor
                     setCurrentColorMove(data.gameState.currentColor as FigureColor);
                 }
@@ -167,6 +170,15 @@ export const useRoomWS = (roomId: string) => {
 
             case 'drawOffer':
                 setOfferedDraw(true);
+                break;
+            
+            case 'hintAI':
+                if (data.hint) {
+                    setAiHintArrow({
+                        from: data.hint.from,
+                        to: data.hint.to,
+                    });
+                }
                 break;
 
             case 'timerTick':
@@ -409,7 +421,8 @@ export const useRoomWS = (roomId: string) => {
     };
 
     const sendMove =(moveData: MoveData) => {
-        setMovesHistory((moves) => [...moves, moveData]); 
+        setMovesHistory((moves) => [...moves, moveData]);
+        setAiHintArrow(null);
         // Обновляем currentColorMove сразу после отправки хода
         // Ход переходит к оппоненту, поэтому меняем цвет на противоположный текущему
         setGameState((prev) => {
@@ -447,6 +460,10 @@ export const useRoomWS = (roomId: string) => {
         sendMessage({ type: 'resign' });
     };
 
+    const sendAIHintRequest = () => {
+        sendMessage({ type: 'hintAI' });
+    };
+
     return {
         // Состояние
         isConnected,
@@ -476,11 +493,13 @@ export const useRoomWS = (roomId: string) => {
         sendGameResult,
         sendDrawOffer,
         sendResignation,
+        sendAIHintRequest,
         
         // Общая функция отправки
         sendMessage,
 
         // Преобразованные данные
         movesHistory,
+        aiHintArrow,
     };
 };

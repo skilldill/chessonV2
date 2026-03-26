@@ -23,6 +23,7 @@ export const CreateRoomScreen = () => {
     const [incrementSeconds, setIncrementSeconds] = useState(initialRoomTime.incrementSeconds);
     const [activeTheme, setActiveTheme] = useState(getChessboardThemeFromStorage());
     const [selectedTheme, setSelectedTheme] = useState(getChessboardThemeFromStorage());
+    const [withAIhints, setWithAIhints] = useState(false);
 
     useEffect(() => {
       setRoomTimeSettingsToStorage(timeMinutes, incrementSeconds);
@@ -45,6 +46,7 @@ export const CreateRoomScreen = () => {
         createRoom({
             timeMinutes,
             incrementSeconds,
+            withAIhints,
         });
     };
 
@@ -114,8 +116,10 @@ export const CreateRoomScreen = () => {
                 isCreating={isCreating}
                 timeMinutes={timeMinutes}
                 incrementSeconds={incrementSeconds}
+                withAIhints={withAIhints}
                 onChangeTimeMinutes={setTimeMinutes}
                 onChangeIncrementSeconds={setIncrementSeconds}
+                onChangeWithAIhints={setWithAIhints}
                 onClose={() => setIsTimeModalOpen(false)}
                 onConfirm={handleCreateFriendRoom}
             />

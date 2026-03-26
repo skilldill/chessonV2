@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+@keyframes ai_spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes ai_pulse {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 0.9; }
+}
+
 @theme {
   --color-back-primary: #09090B;
   --color-back-secondary: #18181B;
