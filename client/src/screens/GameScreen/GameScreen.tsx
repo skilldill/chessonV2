@@ -67,6 +67,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
     const [initialFEN, setInitialFEN] = useState(INITIAL_FEN);
     const [isHistoryMode, setIsHistoryMode] = useState(false);
     const [selectedHistroyMove, setSelectedHistoryMove] = useState<MoveData>();
+    const [waitAIhint, setWaitAIhint] = useState(false);
 
     const reversed = useMemo(() => playerColor === "black", [playerColor]);
     const { 
@@ -124,8 +125,32 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
     }
 
     const handleAIhints = () => {
+        if (waitAIhint) {
+            return;
+        }
+        setWaitAIhint(true);
         onSendAIHintRequest();
     }
+
+    useEffect(() => {
+        if (aiHintArrow) {
+            setWaitAIhint(false);
+        }
+    }, [aiHintArrow]);
+
+    useEffect(() => {
+        if (!waitAIhint) {
+            return;
+        }
+
+        const timeout = window.setTimeout(() => {
+            setWaitAIhint(false);
+        }, 10_000);
+
+        return () => {
+            window.clearTimeout(timeout);
+        };
+    }, [waitAIhint]);
 
     const mappedHintArrow = useMemo(() => {
         if (!aiHintArrow || isHistoryMode) {
@@ -245,6 +270,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                         onResignation={onSendResignation}
                         onQuitGame={handleQuitGame}
                         onAIhints={handleAIhints}
+                        loading={waitAIhint}
                     />
                 </div>
             </div>

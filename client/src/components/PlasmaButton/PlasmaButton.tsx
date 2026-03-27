@@ -118,6 +118,7 @@ export const PlasmaButton: React.FC<PlasmaButtonProps> = ({
   const isInteractionBlocked = disabled || loading;
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const loadingRef = useRef(false);
   const containerRef = useRef<HTMLButtonElement | null>(null);
   const rafRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number>(0);
@@ -127,6 +128,10 @@ export const PlasmaButton: React.FC<PlasmaButtonProps> = ({
     return window.matchMedia?.(REDUCED_MOTION_QUERY).matches ?? false;
   });
   const [isVisible, setIsVisible] = useState<boolean>(true);
+
+  useEffect(() => {
+    loadingRef.current = loading;
+  }, [loading])
 
   // Intersection Observer to pause when hidden
   useEffect(() => {
@@ -203,7 +208,7 @@ export const PlasmaButton: React.FC<PlasmaButtonProps> = ({
 
     // Additive blobs
     ctx.globalCompositeOperation = "lighter";
-    const speedMultiplier = loading ? LOADING_SPEED_MULTIPLIER : 1;
+    const speedMultiplier = loadingRef.current ? LOADING_SPEED_MULTIPLIER : 1;
     const t = (time / 1000) * speedMultiplier;
 
     seedsRef.current.forEach((s, i) => {

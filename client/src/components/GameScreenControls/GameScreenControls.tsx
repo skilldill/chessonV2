@@ -11,14 +11,16 @@ import { useScreenSize } from "../../hooks/useScreenSize";
 type RoundedControlButtonProps = {
     icon: string;
     active: boolean;
+    disabled?: boolean;
     className?: string;
     onClick: () => void;
     onActiveClick: () => void;
 }
 
-const RoundedControlButton = ({ icon, active, onClick, onActiveClick, className = '' }: RoundedControlButtonProps) => {
+const RoundedControlButton = ({ icon, active, disabled, onClick, onActiveClick, className = '' }: RoundedControlButtonProps) => {
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
         event.stopPropagation();
+        if (disabled) return;
         active ? onActiveClick() : onClick();
     }
 
@@ -27,9 +29,11 @@ const RoundedControlButton = ({ icon, active, onClick, onActiveClick, className 
             className={cn(
                 'min-w-[52px] min-h-[52px] rounded-full bg-black/60 backdrop-blur-xl flex items-center justify-center cursor-pointer border border-[#364153] transition-all duration-300 hover:scale-105 active:scale-95',
                 { 'w-[56px] min-w-[56px] h-[56px] border-indigo-700': active },
+                { 'opacity-60 cursor-not-allowed hover:scale-100 active:scale-100': disabled },
                 className,
             )}
             onClick={handleClick}
+            disabled={disabled}
         >
             <img src={icon} alt="Control Button" height={18} width={18} />
         </button>
@@ -39,6 +43,7 @@ const RoundedControlButton = ({ icon, active, onClick, onActiveClick, className 
 type GameScreenControlsProps = {
     gameEnded: boolean;
     withAIhints: boolean;
+    loading?: boolean;
 
     onDrawOffer: () => void;
     onResignation: () => void;
@@ -49,6 +54,7 @@ type GameScreenControlsProps = {
 export const GameScreenControls: FC<GameScreenControlsProps> = ({ 
     gameEnded,
     withAIhints,
+    loading = false,
 
     onDrawOffer, 
     onResignation, 
@@ -95,6 +101,9 @@ export const GameScreenControls: FC<GameScreenControlsProps> = ({
     }
 
     const handleAIhints = () => {
+        if (loading) {
+            return;
+        }
         onAIhints();
         hideButtons();
     }
@@ -120,7 +129,8 @@ export const GameScreenControls: FC<GameScreenControlsProps> = ({
                                 icon={LightBlubPNG} 
                                 onClick={() => handleNotActiveClick(0)}
                                 onActiveClick={handleAIhints}
-                                active={activeActionIndex === 0}
+                                active={activeActionIndex === 0 || loading}
+                                disabled={loading}
                             />
                         )}
                         <RoundedControlButton
@@ -144,7 +154,7 @@ export const GameScreenControls: FC<GameScreenControlsProps> = ({
                     active={activeActionIndex === 3}
                 />
             </div>
-            <PlasmaButton active={!gameEnded} onClick={handleClickPlasmaButton} />
+            <PlasmaButton loading={loading} active={!gameEnded} onClick={handleClickPlasmaButton} />
         </div>
     )
 }
