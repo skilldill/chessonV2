@@ -7,6 +7,7 @@ type PlasmaButtonProps = {
   className?: string;
   title?: string;
   active?: boolean;
+  loading?: boolean;
   size?: 'S' | 'M' | 'L';
 };
 
@@ -25,6 +26,7 @@ const NOT_ACTIVE_COLORS = ["#bcbcbc", "#dddddd", "#bababa", "#f3f3f3"] as const;
 // Animation parameters
 const BLOB_COUNT = 5;
 const BASE_SPEED = 0.6; // movement speed multiplier
+const LOADING_SPEED_MULTIPLIER = 2.4;
 const FRAME_INTERVAL_MS = 22; // ~45fps cap
 const TOP_VIGNETTE_ALPHA = 0.32;
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
@@ -47,8 +49,12 @@ function injectStylesOnce() {
     user-select: none;
     cursor: pointer;
     background: transparent;
-    transition: transform 120ms ease, filter 160ms ease, opacity 160ms ease;
+    transition: transform 90ms ease-out, filter 120ms ease, opacity 120ms ease;
     outline: none;
+  }
+  .plasma-btn[data-loading="true"] {
+    transform: scale(1.1);
+    transition-duration: 70ms;
   }
   .plasma-btn[data-disabled="true"] {
     cursor: not-allowed;
@@ -106,6 +112,7 @@ export const PlasmaButton: React.FC<PlasmaButtonProps> = ({
   disabled,
   className,
   active = true,
+  loading = false,
   title,
   size = 'L',
 }) => {
@@ -113,6 +120,7 @@ export const PlasmaButton: React.FC<PlasmaButtonProps> = ({
 
   const { width: WIDTH, height: HEIGHT } = SIZES[size];
   const colorsForRendering = active ? COLORS : NOT_ACTIVE_COLORS;
+  const isInteractionBlocked = disabled || loading;
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLButtonElement | null>(null);
@@ -200,7 +208,8 @@ export const PlasmaButton: React.FC<PlasmaButtonProps> = ({
 
     // Additive blobs
     ctx.globalCompositeOperation = "lighter";
-    const t = time / 1000;
+    const speedMultiplier = loading ? LOADING_SPEED_MULTIPLIER : 1;
+    const t = (time / 1000) * speedMultiplier;
 
     seedsRef.current.forEach((s, i) => {
       const px =
@@ -335,11 +344,11 @@ export const PlasmaButton: React.FC<PlasmaButtonProps> = ({
       if (!playingRef.current) start(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [disabled, isReduced, isVisible, isDocVisible]);
+  }, [disabled, loading, isReduced, isVisible, isDocVisible]);
 
   // Keyboard handling for Enter/Space (works even if using <button>)
   const onKeyDown: React.KeyboardEventHandler<HTMLButtonElement> = (e) => {
-    if (disabled) return;
+    if (isInteractionBlocked) return;
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       onClick?.();
@@ -353,11 +362,13 @@ export const PlasmaButton: React.FC<PlasmaButtonProps> = ({
       title={title}
       className={`plasma-btn${className ? " " + className : ""}`}
       data-disabled={disabled ? "true" : "false"}
-      onClick={disabled ? undefined : (e) => onClick?.(e)}
+      data-loading={loading ? "true" : "false"}
+      onClick={isInteractionBlocked ? undefined : (e) => onClick?.(e)}
       onKeyDown={onKeyDown}
       role="button"
       tabIndex={0}
-      aria-disabled={disabled ? true : undefined}
+      aria-disabled={isInteractionBlocked ? true : undefined}
+      aria-busy={loading ? true : undefined}
       style={{ width: `${WIDTH}px`, height: `${HEIGHT}px` }}
     >
       <canvas ref={canvasRef} className="plasma-btn__canvas" />
