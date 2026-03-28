@@ -105,7 +105,12 @@ export const RoomTimeModal = ({
               className="h-4 w-4 accent-[#2D7A4F] cursor-pointer"
             />
             <div className="flex flex-col">
-              <span className="text-white font-medium leading-tight">Enable AI hints</span>
+              <span className="text-white font-medium leading-tight">
+                Enable{' '}
+                <span className="font-extrabold bg-gradient-to-r from-[#E810A7] to-[#FFE600] bg-clip-text text-transparent">
+                  AI hints
+                </span>
+              </span>
               <span className="text-white/60 text-xs leading-tight">Allow hint button in this room</span>
             </div>
           </label>

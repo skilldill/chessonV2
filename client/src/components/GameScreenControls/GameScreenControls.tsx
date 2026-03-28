@@ -3,7 +3,7 @@ import { PlasmaButton } from "../PlasmaButton/PlasmaButton"
 import WhiteFlagPNG from "../../assets/white-flag.png";
 import CrossMarkRedPNG from "../../assets/cross-mark.png";
 import HandShakePNG from "../../assets/handshake.png";
-import LightBlubPNG from "../../assets/light_bulb.png";
+import AiIconPNG from "../../assets/ai-icon.png";
 import cn from "classnames";
 import styles from "./GameScreenControls.module.css";
 import { useScreenSize } from "../../hooks/useScreenSize";
@@ -126,7 +126,7 @@ export const GameScreenControls: FC<GameScreenControlsProps> = ({
                     <>
                         {withAIhints && (
                             <RoundedControlButton
-                                icon={LightBlubPNG} 
+                                icon={AiIconPNG} 
                                 onClick={() => handleNotActiveClick(0)}
                                 onActiveClick={handleAIhints}
                                 active={activeActionIndex === 0 || loading}
