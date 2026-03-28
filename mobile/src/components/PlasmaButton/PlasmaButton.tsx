@@ -40,6 +40,7 @@ function injectStylesOnce() {
   injectedStyles = true;
   const css = `
   .plasma-btn {
+    opacity: 1;
     position: relative;
     border: none;
     border-radius: ${RADIUS_PX}px;
@@ -52,12 +53,13 @@ function injectStylesOnce() {
     cursor: pointer;
     background: transparent;
     --plasma-scale: 1;
-    transform: scale(var(--plasma-scale));
+    transform: scaleX(1) scaleY(1);
     transition: transform 520ms cubic-bezier(0.22, 1, 0.36, 1), filter 220ms ease, opacity 220ms ease;
     outline: none;
   }
   .plasma-btn[data-loading="true"] {
-    --plasma-scale: 1.1;
+    transform: scaleX(1.2) scaleY(1.2);
+    animation: blink 3s cubic-bezier(0.4, 0, 0.2, 1) 0s infinite;
   }
   .plasma-btn[data-disabled="true"] {
     cursor: not-allowed;

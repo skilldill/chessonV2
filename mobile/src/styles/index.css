@@ -30,6 +30,29 @@ body {
   background: linear-gradient(150deg, #282828, #000, #2b1565);
 }
 
+@keyframes blink {
+  0% {
+    opacity: 1;
+  }
+    
+  25% {
+    opacity: .4;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  75% {
+    opacity: .4;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+
 @keyframes chessonAnimation {
   0% {
     opacity: 0;
