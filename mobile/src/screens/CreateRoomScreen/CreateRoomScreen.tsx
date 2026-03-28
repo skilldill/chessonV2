@@ -20,6 +20,7 @@ const CreateRoomScreen: React.FC = () => {
     const [botDifficulty, setBotDifficulty] = useState<BotDifficulty>('medium');
     const [timeMinutes, setTimeMinutes] = useState(initialRoomTime.timeMinutes);
     const [incrementSeconds, setIncrementSeconds] = useState(initialRoomTime.incrementSeconds);
+    const [withAIhints, setWithAIhints] = useState(false);
     const [activeTheme, setActiveTheme] = useState(getChessboardThemeFromStorage());
     const [selectedTheme, setSelectedTheme] = useState(getChessboardThemeFromStorage());
 
@@ -47,6 +48,7 @@ const CreateRoomScreen: React.FC = () => {
         createRoom({
             timeMinutes,
             incrementSeconds,
+            withAIhints,
         });
     };
 
@@ -139,8 +141,10 @@ const CreateRoomScreen: React.FC = () => {
                     isCreating={isCreating}
                     timeMinutes={timeMinutes}
                     incrementSeconds={incrementSeconds}
+                    withAIhints={withAIhints}
                     onChangeTimeMinutes={setTimeMinutes}
                     onChangeIncrementSeconds={setIncrementSeconds}
+                    onChangeWithAIhints={setWithAIhints}
                     onClose={() => setIsTimeModalOpen(false)}
                     onConfirm={handleCreateFriendRoom}
                 />

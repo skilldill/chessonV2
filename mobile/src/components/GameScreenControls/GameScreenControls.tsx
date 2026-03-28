@@ -3,6 +3,7 @@ import { PlasmaButton } from "../PlasmaButton/PlasmaButton"
 import WhiteFlagPNG from "../../assets/white-flag.png";
 import CrossMarkRedPNG from "../../assets/cross-mark.png";
 import HandShakePNG from "../../assets/handshake.png";
+import RobotEmojiWebp from "../../assets/robot-emoji.webp";
 import cn from "classnames";
 import styles from "./GameScreenControls.module.css";
 import { useScreenSize } from "../../hooks/useScreenSize";
@@ -10,13 +11,15 @@ import { useScreenSize } from "../../hooks/useScreenSize";
 type RoundedControlButtonProps = {
     icon: string;
     active: boolean;
+    disabled?: boolean;
     onClick: () => void;
     onActiveClick: () => void;
 }
 
-const RoundedControlButton = ({ icon, active, onClick, onActiveClick }: RoundedControlButtonProps) => {
+const RoundedControlButton = ({ icon, active, disabled, onClick, onActiveClick }: RoundedControlButtonProps) => {
     const handleClick = (event: any) => {
         event.stopPropagation();
+        if (disabled) return;
         active ? onActiveClick() : onClick();
     }
 
@@ -24,7 +27,8 @@ const RoundedControlButton = ({ icon, active, onClick, onActiveClick }: RoundedC
         <div
             className={cn(
                 'min-w-[66px] min-h-[66px] bg-black/60 rounded-full backdrop-blur-xl flex items-center justify-center cursor-pointer border border-[#364153] transition-all duration-300 hover:scale-105 active:scale-95',
-                { 'w-[70px] h-[70px] border-indigo-700': active }
+                { 'w-[70px] h-[70px] border-indigo-700': active },
+                { 'opacity-60 cursor-not-allowed hover:scale-100 active:scale-100': disabled }
             )}
             onClick={handleClick}
         >
@@ -35,18 +39,24 @@ const RoundedControlButton = ({ icon, active, onClick, onActiveClick }: RoundedC
 
 type GameScreenControlsProps = {
     gameEnded: boolean;
+    withAIhints: boolean;
+    loadingAIhint?: boolean;
 
     onDrawOffer: () => void;
     onResignation: () => void;
     onQuitGame: () => void;
+    onAIhints: () => void;
 }
 
 export const GameScreenControls: FC<GameScreenControlsProps> = ({ 
     gameEnded,
+    withAIhints,
+    loadingAIhint = false,
 
     onDrawOffer, 
     onResignation, 
     onQuitGame, 
+    onAIhints,
 }) => {
     const [showButtons, setShowButtons] = useState(false);
     const [activeActionIndex, setActiveActionIndex] = useState<number>();
@@ -88,6 +98,14 @@ export const GameScreenControls: FC<GameScreenControlsProps> = ({
         hideButtons();
     }
 
+    const handleAIhints = () => {
+        if (loadingAIhint) {
+            return;
+        }
+        onAIhints();
+        hideButtons();
+    }
+
     useEffect(() => {
         window.addEventListener("click", hideButtons);
         return () => {
@@ -104,30 +122,40 @@ export const GameScreenControls: FC<GameScreenControlsProps> = ({
             })}>
                 {!gameEnded && (
                     <>
+                        {withAIhints && (
+                            <RoundedControlButton
+                                icon={RobotEmojiWebp}
+                                onClick={() => handleNotActiveClick(0)}
+                                onActiveClick={handleAIhints}
+                                active={activeActionIndex === 0 || loadingAIhint}
+                                disabled={loadingAIhint}
+                            />
+                        )}
                         <RoundedControlButton
                             icon={HandShakePNG} 
-                            onClick={() => handleNotActiveClick(0)}
+                            onClick={() => handleNotActiveClick(1)}
                             onActiveClick={handleDrawOffer}
-                            active={activeActionIndex === 0}
+                            active={activeActionIndex === 1}
                         />
                         <RoundedControlButton
                             icon={WhiteFlagPNG} 
-                            onClick={() => handleNotActiveClick(1)}
+                            onClick={() => handleNotActiveClick(2)}
                             onActiveClick={handleResignation}
-                            active={activeActionIndex === 1}
+                            active={activeActionIndex === 2}
                         />
                     </>
                 )}
                 <RoundedControlButton
                     icon={CrossMarkRedPNG} 
-                    onClick={() => handleNotActiveClick(2)}
+                    onClick={() => handleNotActiveClick(3)}
                     onActiveClick={handleQuitGame}
-                    active={activeActionIndex === 2}
+                    active={activeActionIndex === 3}
                 />
             </div>
             <PlasmaButton 
                 active={!gameEnded} 
                 onClick={handleClickPlasmaButton}
+                loading={loadingAIhint}
                 size={screenSize}
             />
         </div>

@@ -15,8 +15,10 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
     args: {
+        withAIhints: true,
         onDrawOffer: () => { },
         onResignation: () => { },
         onQuitGame: () => { },
+        onAIhints: () => { },
     },
 };

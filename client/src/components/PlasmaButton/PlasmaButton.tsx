@@ -55,7 +55,7 @@ function injectStylesOnce() {
     outline: none;
   }
   .plasma-btn[data-loading="true"] {
-    transform: scaleX(1.2) scaleY(1.1);
+    transform: scaleX(1.2) scaleY(1.2);
     animation: blink 3s cubic-bezier(0.4, 0, 0.2, 1) 0s infinite;
   }
   .plasma-btn[data-disabled="true"] {

@@ -61,6 +61,7 @@ export interface GameState {
   moveHistory: MoveData[];
   currentPlayer: ChessColor;
   currentColor: ChessColor; // чей ход
+  withAIhints: boolean;
   gameStarted: boolean;
   gameEnded: boolean;
   gameResult?: GameResult;
