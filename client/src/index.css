@@ -49,6 +49,28 @@ body {
   }
 }
 
+@keyframes blink {
+  0% {
+    opacity: 1;
+  }
+    
+  25% {
+    opacity: .4;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  75% {
+    opacity: .4;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
 .titleChesson {
   font-size: 4rem;
   font-weight: 600;

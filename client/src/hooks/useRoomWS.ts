@@ -174,10 +174,18 @@ export const useRoomWS = (roomId: string) => {
             
             case 'hintAI':
                 if (data.hint) {
-                    setAiHintArrow({
-                        from: data.hint.from,
-                        to: data.hint.to,
-                    });
+                    const hintArrowFrom = data.hint.from;
+                    const hintArrowTo = data.hint.to;
+
+                    // Минимальная задержка ответа
+                    // чтобы показать визульаный эффект
+                    const aiHintTimeout = setTimeout(() => {
+                        setAiHintArrow({
+                            from: hintArrowFrom,
+                            to: hintArrowTo,
+                        });
+                        clearTimeout(aiHintTimeout);
+                    }, 3000)
                 }
                 break;
 

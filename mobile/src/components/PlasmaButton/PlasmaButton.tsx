@@ -128,11 +128,13 @@ export const PlasmaButton: React.FC<PlasmaButtonProps> = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLButtonElement | null>(null);
   const rafRef = useRef<number | null>(null);
+  const animationRunIdRef = useRef<number>(0);
   const lastTimeRef = useRef<number>(0);
   const playingRef = useRef<boolean>(false);
   const speedRef = useRef<number>(loading ? LOADING_SPEED_MULTIPLIER : 1);
   const speedTargetRef = useRef<number>(loading ? LOADING_SPEED_MULTIPLIER : 1);
   const prevFrameTimeRef = useRef<number | null>(null);
+  const animTimeRef = useRef<number>(0);
   const [isReduced, setIsReduced] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     return window.matchMedia?.(REDUCED_MOTION_QUERY).matches ?? false;
@@ -203,7 +205,8 @@ export const PlasmaButton: React.FC<PlasmaButtonProps> = ({
     }))
   );
 
-  const drawFrame = (time: number, oneshot = false) => {
+  const drawFrame = (time: number, oneshot = false, runId = animationRunIdRef.current) => {
+    if (runId !== animationRunIdRef.current) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d")!;
@@ -225,7 +228,8 @@ export const PlasmaButton: React.FC<PlasmaButtonProps> = ({
       speedTargetRef.current > speedRef.current ? SPEED_RAMP_UP_MS : SPEED_RAMP_DOWN_MS;
     const alpha = 1 - Math.exp(-dtMs / rampMs);
     speedRef.current += (speedTargetRef.current - speedRef.current) * alpha;
-    const t = (time / 1000) * speedRef.current;
+    animTimeRef.current += (dtMs / 1000) * speedRef.current;
+    const t = animTimeRef.current;
 
     seedsRef.current.forEach((s, i) => {
       const px =
@@ -287,20 +291,23 @@ export const PlasmaButton: React.FC<PlasmaButtonProps> = ({
       lastTimeRef.current = now;
     }
     rafRef.current = requestAnimationFrame((ts) => {
-      if (playingRef.current) drawFrame(ts);
+      if (playingRef.current && runId === animationRunIdRef.current) drawFrame(ts, false, runId);
     });
   };
 
   // Start/stop controls
   const start = (oneshot = false) => {
+    animationRunIdRef.current += 1;
+    const runId = animationRunIdRef.current;
     if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
     playingRef.current = !oneshot;
     prevFrameTimeRef.current = null;
     lastTimeRef.current = performance.now();
-    drawFrame(lastTimeRef.current, oneshot);
+    drawFrame(lastTimeRef.current, oneshot, runId);
   };
   const stop = () => {
     playingRef.current = false;
+    animationRunIdRef.current += 1;
     if (rafRef.current != null) {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
