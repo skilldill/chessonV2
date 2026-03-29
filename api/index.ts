@@ -129,6 +129,7 @@ type Room = {
       moveTimeMs: number;
       name: string;
       avatar: string;
+      allowAIhints?: boolean;
     };
 };
 
@@ -616,6 +617,7 @@ function parseTimerConfig(rawConfig: any) {
     ? rawConfig.color
     : undefined;
   const botEnabled = rawConfig?.vsBot === true || rawConfig?.vsBot === 'true';
+  const forceDisableAIhints = rawConfig?.forceDisableAIhints === true || rawConfig?.forceDisableAIhints === 'true';
   const botDifficulty: BotDifficulty = rawConfig?.botDifficulty === 'super_easy' || rawConfig?.botDifficulty === 'easy' || rawConfig?.botDifficulty === 'hard'
     ? rawConfig.botDifficulty
     : 'medium';
@@ -623,7 +625,9 @@ function parseTimerConfig(rawConfig: any) {
   const botMoveTimeMs = Number.isFinite(botMoveTimeMsRaw) && botMoveTimeMsRaw > 0
     ? Math.floor(botMoveTimeMsRaw)
     : 800;
-  const withAIhints = botEnabled || rawConfig?.withAIhints === true || rawConfig?.withAIhints === 'true';
+  const withAIhints = forceDisableAIhints
+    ? false
+    : (botEnabled || rawConfig?.withAIhints === true || rawConfig?.withAIhints === 'true');
 
   return {
     whiteTimer: normalizedWhiteTimer,
@@ -634,7 +638,8 @@ function parseTimerConfig(rawConfig: any) {
     botEnabled,
     botDifficulty,
     botMoveTimeMs,
-    withAIhints
+    withAIhints,
+    forceDisableAIhints
   };
 }
 
@@ -718,7 +723,8 @@ function createRoomWithConfig(rawConfig: any) {
       name: typeof rawConfig?.botName === 'string' && rawConfig.botName.trim()
         ? rawConfig.botName.trim()
         : 'Chesson Bot',
-      avatar: '0'
+      avatar: '0',
+      allowAIhints: !timerConfig.forceDisableAIhints
     } : undefined
   };
 
@@ -2719,7 +2725,8 @@ app.post('/api/random-match/join', async ({ body, headers, set }) => {
       const { roomId } = createRoomWithConfig({
         whiteTimer: totalTimeSeconds,
         blackTimer: totalTimeSeconds,
-        increment: incrementSeconds
+        increment: incrementSeconds,
+        forceDisableAIhints: true
       });
 
       const assignment: RandomMatchAssignment = {
@@ -2752,6 +2759,7 @@ app.post('/api/random-match/join', async ({ body, headers, set }) => {
       whiteTimer: totalTimeSeconds,
       blackTimer: totalTimeSeconds,
       increment: incrementSeconds,
+      forceDisableAIhints: true,
       vsBot: true,
       botDifficulty: 'medium',
       botMoveTimeMs: 800,
@@ -3285,9 +3293,11 @@ app.ws('/ws/room', {
       console.log('ROOM', room?.gameState);
 
       if (room && typeof room.gameState.withAIhints !== 'boolean') {
-          room.gameState.withAIhints = room.botSettings?.enabled ? true : false;
+          room.gameState.withAIhints = room.botSettings?.enabled
+            ? room.botSettings.allowAIhints !== false
+            : false;
       }
-      if (room?.botSettings?.enabled && room.gameState.withAIhints !== true) {
+      if (room?.botSettings?.enabled && room.botSettings.allowAIhints !== false && room.gameState.withAIhints !== true) {
           room.gameState.withAIhints = true;
       }
 
