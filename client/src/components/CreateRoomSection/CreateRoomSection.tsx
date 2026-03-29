@@ -4,6 +4,7 @@ import { BotDifficultyModal, type BotDifficulty } from "../BotDifficultyModal/Bo
 import { RoomTimeModal } from "../RoomTimeModal/RoomTimeModal";
 import { CreateGameButton } from "../CreateGameButton/CreateGameButton";
 import { getRoomTimeSettingsFromStorage, setRoomTimeSettingsToStorage } from "../../utils/roomTimeStorage";
+import AIiconPNG from '../../assets/ai-icon.png';
 
 const initialRoomTime = getRoomTimeSettingsFromStorage();
 
@@ -42,14 +43,28 @@ export const CreateRoomSection = () => {
     <>
       <div className="w-full flex flex-col gap-3">
         <CreateGameButton 
-          title="Play vs Bot"
+          title={(
+            <span className="flex gap-[4px]">
+                Play vs Bot
+                <span className="flex font-extrabold bg-gradient-to-r from-[#E810A7] to-[#FFE600] bg-clip-text text-transparent">
+                    + AI hints <img className="w-[14px] h-[14px]" src={AIiconPNG} />
+                </span>
+            </span>
+          )}
           subtitle="30 min, choose difficulty"
           onClick={() => setIsBotModalOpen(true)}
           theme="success"
           disabled={isCreating}
         />
         <CreateGameButton 
-          title="Create room"
+          title={(
+            <span className="flex gap-[4px]">
+                Create room
+                <span className="flex font-extrabold bg-gradient-to-r from-[#E810A7] to-[#FFE600] bg-clip-text text-transparent">
+                    + AI hints <img className="w-[14px] h-[14px]" src={AIiconPNG} />
+                </span>
+            </span>
+          )}
           subtitle={`${timeMinutes} min + ${incrementSeconds} sec`}
           onClick={() => setIsTimeModalOpen(true)}
           theme="success"

@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 type ChessboardThemeModalProps = {
   isOpen: boolean;
   isSaving: boolean;
@@ -9,9 +11,11 @@ type ChessboardThemeModalProps = {
   error?: string;
 };
 
-const THEME_LABELS: Record<string, string> = {
+const THEME_LABELS: Record<string, ReactNode> = {
   default: "Default",
-  magic: "Magic",
+  magic: <span>Magic <span className="font-extrabold bg-gradient-to-r from-[#10D6E8] to-[#D079DF] bg-clip-text text-transparent">
+    New theme
+  </span></span>,
 };
 
 export const ChessboardThemeModal = ({
@@ -52,11 +56,10 @@ export const ChessboardThemeModal = ({
               type="button"
               onClick={() => onSelectTheme(theme)}
               disabled={isSaving}
-              className={`w-full rounded-xl px-4 py-3 text-left border transition-all duration-200 active:scale-[0.98] focus:outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
-                selectedTheme === theme
+              className={`w-full rounded-xl px-4 py-3 text-left border transition-all duration-200 active:scale-[0.98] focus:outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${selectedTheme === theme
                   ? "bg-[#555ab9]/20 text-white border-[#555ab9]/70"
                   : "bg-white/5 text-white/90 border-white/15 hover:border-white/35"
-              }`}
+                }`}
             >
               <div className="font-semibold">{THEME_LABELS[theme] ?? theme}</div>
             </button>
