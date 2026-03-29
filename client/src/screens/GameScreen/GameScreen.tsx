@@ -125,7 +125,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
     }
 
     const handleAIhints = () => {
-        if (waitAIhint) {
+        if (waitAIhint || playerColor !== gameState.currentColor) {
             return;
         }
         setWaitAIhint(true);
