@@ -54,19 +54,17 @@ export const RoomTimeModal = ({
             <div className="text-white/70 text-sm mb-2">Time per player (minutes)</div>
             <div className="grid grid-cols-4 gap-2">
               {MINUTES_FOR_PLAYER.map((value) => (
-              <button
+              <div
                 key={value}
-                type="button"
                 onClick={() => onChangeTimeMinutes(value)}
-                disabled={isCreating}
-                className={`btn-client h-11 rounded-lg border transition-all duration-200 active:scale-[0.98] focus:outline-none touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed ${
+                className={`flex items-center justify-center btn-client h-11 rounded-lg border transition-all duration-200 active:scale-[0.98] focus:outline-none touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed ${
                   timeMinutes === value
                     ? 'bg-[#555ab9]/22 text-white border-[#555ab9]/70 shadow-[0_0_0_1px_rgba(45,122,79,0.35)_inset]'
                     : 'btn-client-preset text-white/90 border-white/15'
                 }`}
               >
                 <span className="font-semibold">{value}</span>
-              </button>
+              </div>
               ))}
             </div>
           </div>
@@ -75,19 +73,17 @@ export const RoomTimeModal = ({
             <div className="text-white/70 text-sm mb-2">Increment per move (seconds)</div>
             <div className="grid grid-cols-4 gap-2">
               {SECONDS_FOR_MOVE.map((value) => (
-                <button
+                <div
                   key={value}
-                  type="button"
                   onClick={() => onChangeIncrementSeconds(value)}
-                  disabled={isCreating}
-                  className={`btn-client h-11 rounded-lg border transition-all duration-200 active:scale-[0.98] focus:outline-none touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed ${
+                  className={`flex items-center justify-center btn-client h-11 rounded-lg border transition-all duration-200 active:scale-[0.98] focus:outline-none touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed ${
                     incrementSeconds === value
                       ? 'bg-[#555ab9]/22 text-white border-[#555ab9]/70 shadow-[0_0_0_1px_rgba(45,122,79,0.35)_inset]'
                       : 'btn-client-preset text-white/90 border-white/15'
                   }`}
                 >
                   <span className="font-semibold">+{value}</span>
-                </button>
+                </div>
               ))}
             </div>
           </div>
