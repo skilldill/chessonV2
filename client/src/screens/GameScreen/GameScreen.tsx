@@ -265,6 +265,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                     <GameScreenControls
                         key={resultMessage}
                         withAIhints={gameState.withAIhints}
+                        showOnboardingAIhint={gameState.withAIhints}
                         gameEnded={!!resultMessage} // Если есть сообщение об окончании игры, то игра закончилась
                         onDrawOffer={() => onSendDrawOffer('offer')}
                         onResignation={onSendResignation}

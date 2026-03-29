@@ -13,11 +13,12 @@ type RoundedControlButtonProps = {
     active: boolean;
     disabled?: boolean;
     className?: string;
+    iconSize?: number;
     onClick: () => void;
     onActiveClick: () => void;
 }
 
-const RoundedControlButton = ({ icon, active, disabled, onClick, onActiveClick, className = '' }: RoundedControlButtonProps) => {
+const RoundedControlButton = ({ icon, active, disabled, onClick, onActiveClick, className = '', iconSize = 18 }: RoundedControlButtonProps) => {
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
         event.stopPropagation();
         if (disabled) return;
@@ -35,7 +36,7 @@ const RoundedControlButton = ({ icon, active, disabled, onClick, onActiveClick, 
             onClick={handleClick}
             disabled={disabled}
         >
-            <img src={icon} alt="Control Button" height={18} width={18} />
+            <img src={icon} alt="Control Button" height={iconSize} width={iconSize} />
         </button>
     )
 }
@@ -44,6 +45,7 @@ type GameScreenControlsProps = {
     gameEnded: boolean;
     withAIhints: boolean;
     loading?: boolean;
+    showOnboardingAIhint: boolean;
 
     onDrawOffer: () => void;
     onResignation: () => void;
@@ -55,6 +57,7 @@ export const GameScreenControls: FC<GameScreenControlsProps> = ({
     gameEnded,
     withAIhints,
     loading = false,
+    showOnboardingAIhint = false,
 
     onDrawOffer, 
     onResignation, 
@@ -63,9 +66,14 @@ export const GameScreenControls: FC<GameScreenControlsProps> = ({
 }) => {
     const screenSize = useScreenSize();
     const [showButtons, setShowButtons] = useState(false);
+    const [showOnboarding, setShowOnboarding] = useState(false);
     const [activeActionIndex, setActiveActionIndex] = useState<number>();
 
     const handleClickPlasmaButton = (event?: React.MouseEvent<HTMLButtonElement>) => {
+        if (showOnboarding) {
+            setShowOnboarding(false);
+        };
+
         setShowButtons(!showButtons);
         setActiveActionIndex(undefined);
         event?.stopPropagation()
@@ -115,8 +123,35 @@ export const GameScreenControls: FC<GameScreenControlsProps> = ({
         };
     }, []);
 
+    useEffect(() => {
+        if (showOnboardingAIhint) {
+            setTimeout(() => {
+                setShowOnboarding(true);
+            }, 1000)
+            setTimeout(() => {
+                setShowOnboarding(false);
+            }, 3000)
+        }
+    }, [showOnboardingAIhint])
+
     return (
         <div className={`flex justify-center ${screenSize === "L" ? "py-[36px]" : "py-[28px]"} relative`}>
+            
+            <div className={cn("absolute top-0 w-full z-10 flex items-center justify-center gap-[28px] scale-0 transition-all duration-300", {
+                "scale-120": showOnboarding,
+                "top-[-54px]": showOnboarding,
+                [styles.bounce]: showOnboarding,
+            })}>
+                <RoundedControlButton
+                    icon={AiIconPNG}
+                    onClick={() => {}}
+                    onActiveClick={() => {}}
+                    active={false}
+                    iconSize={22}
+                    disabled={loading}
+                />
+            </div>
+
             <div className={cn("absolute top-0 w-full z-10 flex items-center justify-center gap-[28px] scale-0 transition-all duration-300", {
                 "scale-100": showButtons,
                 "top-[-44px]": showButtons,
@@ -130,6 +165,7 @@ export const GameScreenControls: FC<GameScreenControlsProps> = ({
                                 onClick={() => handleNotActiveClick(0)}
                                 onActiveClick={handleAIhints}
                                 active={activeActionIndex === 0 || loading}
+                                iconSize={22}
                                 disabled={loading}
                             />
                         )}
@@ -152,6 +188,7 @@ export const GameScreenControls: FC<GameScreenControlsProps> = ({
                     onClick={() => handleNotActiveClick(3)}
                     onActiveClick={handleQuitGame}
                     active={activeActionIndex === 3}
+                    iconSize={16}
                 />
             </div>
             <PlasmaButton loading={loading} active={!gameEnded} onClick={handleClickPlasmaButton} />
