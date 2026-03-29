@@ -8,8 +8,9 @@ import { RoomTimeModal } from '../../components/RoomTimeModal/RoomTimeModal';
 import { CHESSBOARD_THEMES } from '../../components/ChessBoardConfigs/ChessBoardConfigs';
 import { ChessboardThemeModal } from '../../components/ChessboardThemeModal/ChessboardThemeModal';
 import { getChessboardThemeFromStorage, setChessboardThemeToStorage } from '../../utils/appearanceStorage';
-import RobotEmojiWebp from '../../assets/robot-emoji.webp';
 import { getRoomTimeSettingsFromStorage, setRoomTimeSettingsToStorage } from '../../utils/roomTimeStorage';
+import { CreateGameButton } from '../../components/CreateGameButton/CreateGameButton';
+import AIiconPNG from '../../assets/ai-icon.png';
 
 const initialRoomTime = getRoomTimeSettingsFromStorage();
 
@@ -64,65 +65,58 @@ const CreateRoomScreen: React.FC = () => {
                 <div className="w-full min-h-full flex justify-center items-center overflow-y-auto py-4">
                     <div className="max-w-[432px] w-full flex flex-col items-center gap-6 px-4">
                         <div className='w-full flex flex-col gap-6'>
-                            <div className="flex flex-col gap-1">
+                            <CreateGameButton
+                                title={(
+                                    <span className="flex gap-[4px]">
+                                        Chessboard theme
+                                        <span className="flex font-extrabold bg-gradient-to-r from-[#10D6E8] to-[#D079DF] bg-clip-text text-transparent">
+                                            + New theme
+                                        </span>
+                                    </span>
+                                )}
+                                subtitle={activeThemeLabel}
+                                onClick={() => {
+                                    setSelectedTheme(activeTheme);
+                                    setIsThemeModalOpen(true);
+                                }}
+                                theme="neutral"
+                            />
+
                             <QuickPlayButton
                                 onClick={openQuickPlay}
                                 timeLabel={quickPlayLabel}
                                 playersInQueue={playersInRandomQueue}
                             />
-                            </div>
 
-                            <button
-                                type="button"
+                            <CreateGameButton
+                                title={(
+                                    <span className="flex gap-[4px]">
+                                        Play vs Bot
+                                        <span className="flex font-extrabold bg-gradient-to-r from-[#E810A7] to-[#FFE600] bg-clip-text text-transparent">
+                                            + AI hints <img className="w-[14px] h-[14px]" src={AIiconPNG} />
+                                        </span>
+                                    </span>
+                                )}
+                                subtitle="30 min, choose difficulty"
                                 onClick={() => setIsBotModalOpen(true)}
+                                theme="success"
                                 disabled={isCreating}
-                                className="btn-client btn-client-preset w-full rounded-xl px-4 py-5 min-h-[64px] text-white/90 font-semibold transition-all duration-200 active:scale-[0.98] focus:outline-none touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed border border-[#555ab9]/60 bg-[#555ab9]/20"
-                            >
-                                <div className="flex flex-col items-center gap-1">
-                                    <div className="flex items-center gap-2">
-                                        <img src={RobotEmojiWebp} alt="Bot" className="w-[30px] h-[30px] select-none" />
-                                        <span className="text-lg font-bold">Play vs Bot</span>
-                                    </div>
-                                    <span className="text-sm opacity-90">30 min, choose difficulty</span>
-                                </div>
-                            </button>
+                            />
 
-                            <button
-                                type="button"
+                            <CreateGameButton
+                                title={(
+                                    <span className="flex gap-[4px]">
+                                        Create room
+                                        <span className="flex font-extrabold bg-gradient-to-r from-[#E810A7] to-[#FFE600] bg-clip-text text-transparent">
+                                            + AI hints <img className="w-[14px] h-[14px]" src={AIiconPNG} />
+                                        </span>
+                                    </span>
+                                )}
+                                subtitle={`${timeMinutes} min + ${incrementSeconds} sec`}
                                 onClick={() => setIsTimeModalOpen(true)}
+                                theme="success"
                                 disabled={isCreating}
-                                className="btn-client btn-client-preset w-full rounded-xl px-4 py-5 min-h-[64px] text-white/90 font-semibold transition-all duration-200 active:scale-[0.98] focus:outline-none touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed border border-[#555ab9]/60 bg-[#555ab9]/20"
-                            >
-                                <div className="flex flex-col items-center gap-1">
-                                    <div className="flex items-center gap-2">
-                                        <svg
-                                            className="w-5 h-5"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                            aria-hidden
-                                        >
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v12m6-6H6" />
-                                        </svg>
-                                    <span className="text-lg font-bold">Create room</span>
-                                </div>
-                                    <span className="text-sm opacity-90">{timeMinutes} min + {incrementSeconds} sec</span>
-                                </div>
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setSelectedTheme(activeTheme);
-                                    setIsThemeModalOpen(true);
-                                }}
-                                className="btn-client btn-client-preset w-full rounded-xl px-4 py-5 min-h-[64px] text-white/90 font-semibold transition-all duration-200 active:scale-[0.98] focus:outline-none touch-manipulation border border-white/10 bg-white/4"
-                            >
-                                <div className="flex flex-col items-center gap-1">
-                                    <span className="text-lg font-bold">Chessboard theme</span>
-                                    <span className="text-sm opacity-90">{activeThemeLabel}</span>
-                                </div>
-                            </button>
+                            />
                         </div>
                     </div>
                 </div>

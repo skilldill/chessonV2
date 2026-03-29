@@ -11,8 +11,8 @@ type RoomTimeModalProps = {
   onConfirm: () => void;
 };
 
-const MINUTES_FOR_PLAYER = [1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 40, 50, 60, 120];
-const SECONDS_FOR_MOVE = [0, 1, 2, 3, 4, 5, 10, 15, 20, 30, 40, 50, 60, 100];
+const MINUTES_FOR_PLAYER = [1, 2, 3, 5, 10, 15, 30, 60];
+const SECONDS_FOR_MOVE = [0, 1, 2, 3, 4, 5, 10, 15]; //, 20, 30, 40, 50, 60, 100];
 
 export const RoomTimeModal = ({
   isOpen,

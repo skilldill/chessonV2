@@ -66,6 +66,8 @@ const GameScreen: React.FC<GameScreenProps> = ({
 
   const [initialFEN, setInitialFEN] = useState(INITIAL_FEN);
   const [waitAIhint, setWaitAIhint] = useState(false);
+  const [gameControlsNotify, setGameControlsNotify] = useState<{ text: string }>();
+
   const reversed = useMemo(() => playerColor === "black", [playerColor]);
   const {
     opponentTime,
@@ -120,6 +122,12 @@ const GameScreen: React.FC<GameScreenProps> = ({
     if (waitAIhint) {
       return;
     }
+
+    if (playerColor !== gameState.currentColor) {
+        setGameControlsNotify({ text: 'Only on your turn' });
+        return;
+    }
+
     setWaitAIhint(true);
     onSendAIHintRequest();
   };
@@ -241,7 +249,9 @@ const GameScreen: React.FC<GameScreenProps> = ({
             <GameScreenControls
               key={resultMessage}
               withAIhints={gameState.withAIhints}
-              loadingAIhint={waitAIhint}
+              showOnboardingAIhint={gameState.withAIhints}
+              loading={waitAIhint}
+              notify={gameControlsNotify}
               gameEnded={!!resultMessage} // Если есть сообщение об окончании игры, то игра закончилась
               onDrawOffer={() => onSendDrawOffer('offer')}
               onResignation={onSendResignation}
