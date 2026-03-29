@@ -14,6 +14,7 @@ type RoundedControlButtonProps = {
     disabled?: boolean;
     className?: string;
     iconSize?: number;
+
     onClick: () => void;
     onActiveClick: () => void;
 }
@@ -46,6 +47,7 @@ type GameScreenControlsProps = {
     withAIhints: boolean;
     loading?: boolean;
     showOnboardingAIhint: boolean;
+    notify?: { text: string };
 
     onDrawOffer: () => void;
     onResignation: () => void;
@@ -58,6 +60,7 @@ export const GameScreenControls: FC<GameScreenControlsProps> = ({
     withAIhints,
     loading = false,
     showOnboardingAIhint = false,
+    notify,
 
     onDrawOffer, 
     onResignation, 
@@ -68,6 +71,7 @@ export const GameScreenControls: FC<GameScreenControlsProps> = ({
     const [showButtons, setShowButtons] = useState(false);
     const [showOnboarding, setShowOnboarding] = useState(false);
     const [activeActionIndex, setActiveActionIndex] = useState<number>();
+    const [showNotify, setShowNotify] = useState(false);
 
     const handleClickPlasmaButton = (event?: React.MouseEvent<HTMLButtonElement>) => {
         if (showOnboarding) {
@@ -124,7 +128,7 @@ export const GameScreenControls: FC<GameScreenControlsProps> = ({
     }, []);
 
     useEffect(() => {
-        if (showOnboardingAIhint) {
+        if (!gameEnded && showOnboardingAIhint) {
             setTimeout(() => {
                 setShowOnboarding(true);
             }, 1000)
@@ -132,11 +136,40 @@ export const GameScreenControls: FC<GameScreenControlsProps> = ({
                 setShowOnboarding(false);
             }, 3000)
         }
-    }, [showOnboardingAIhint])
+    }, [showOnboardingAIhint, gameEnded])
+
+    useEffect(() => {
+        if (!notify || notify.text.length === 0) return;
+
+        setShowNotify(true);
+
+        setTimeout(() => {
+            setShowNotify(false);
+        }, 3000)
+    }, [notify])
 
     return (
         <div className={`flex justify-center ${screenSize === "L" ? "py-[36px]" : "py-[28px]"} relative`}>
             
+            <div className={cn("absolute top-0 w-full z-10 flex items-center justify-center gap-[28px] scale-0 transition-all duration-300", {
+                "scale-120": showNotify,
+                "top-[-44px]": showNotify,
+                [styles.bounce]: showNotify,
+            })}>
+                <div 
+                    className={cn(
+                        'min-h-[52px] px-[12px] whitespace-nowrap rounded-[26px] bg-black/60 backdrop-blur-xl flex items-center justify-center cursor-pointer border border-[#364153] transition-all duration-300 hover:scale-105 active:scale-95',
+                        // { 'w-[56px] min-w-[56px] h-[56px] border-indigo-700': active },
+                        // { 'opacity-60 cursor-not-allowed hover:scale-100 active:scale-100': disabled },
+                        // className,
+                    )}
+                >
+                    <span className="text-sm">
+                        {notify && notify.text}
+                    </span>
+                </div>
+            </div>
+
             <div className={cn("absolute top-0 w-full z-10 flex items-center justify-center gap-[28px] scale-0 transition-all duration-300", {
                 "scale-120": showOnboarding,
                 "top-[-54px]": showOnboarding,

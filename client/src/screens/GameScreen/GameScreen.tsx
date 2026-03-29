@@ -68,6 +68,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
     const [isHistoryMode, setIsHistoryMode] = useState(false);
     const [selectedHistroyMove, setSelectedHistoryMove] = useState<MoveData>();
     const [waitAIhint, setWaitAIhint] = useState(false);
+    const [gameControlsNotify, setGameControlsNotify] = useState<{ text: string }>();
 
     const reversed = useMemo(() => playerColor === "black", [playerColor]);
     const { 
@@ -125,9 +126,13 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
     }
 
     const handleAIhints = () => {
-        if (waitAIhint || playerColor !== gameState.currentColor) {
+        if (waitAIhint) return;
+
+        if (playerColor !== gameState.currentColor) {
+            setGameControlsNotify({ text: 'Только в свой ход' });
             return;
         }
+
         setWaitAIhint(true);
         onSendAIHintRequest();
     }
@@ -272,6 +277,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                         onQuitGame={handleQuitGame}
                         onAIhints={handleAIhints}
                         loading={waitAIhint}
+                        notify={gameControlsNotify}
                     />
                 </div>
             </div>

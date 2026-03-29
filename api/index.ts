@@ -623,7 +623,7 @@ function parseTimerConfig(rawConfig: any) {
   const botMoveTimeMs = Number.isFinite(botMoveTimeMsRaw) && botMoveTimeMsRaw > 0
     ? Math.floor(botMoveTimeMsRaw)
     : 800;
-  const withAIhints = rawConfig?.withAIhints === true || rawConfig?.withAIhints === 'true';
+  const withAIhints = botEnabled || rawConfig?.withAIhints === true || rawConfig?.withAIhints === 'true';
 
   return {
     whiteTimer: normalizedWhiteTimer,
@@ -3285,7 +3285,10 @@ app.ws('/ws/room', {
       console.log('ROOM', room?.gameState);
 
       if (room && typeof room.gameState.withAIhints !== 'boolean') {
-          room.gameState.withAIhints = false;
+          room.gameState.withAIhints = room.botSettings?.enabled ? true : false;
+      }
+      if (room?.botSettings?.enabled && room.gameState.withAIhints !== true) {
+          room.gameState.withAIhints = true;
       }
 
       if (!room) {
