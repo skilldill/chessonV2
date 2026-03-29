@@ -4,6 +4,7 @@ import { BotDifficultyModal, type BotDifficulty } from "../BotDifficultyModal/Bo
 import { RoomTimeModal } from "../RoomTimeModal/RoomTimeModal";
 import { CreateGameButton } from "../CreateGameButton/CreateGameButton";
 import { getRoomTimeSettingsFromStorage, setRoomTimeSettingsToStorage } from "../../utils/roomTimeStorage";
+import AIiconPNG from '../../assets/ai-icon.png';
 
 const initialRoomTime = getRoomTimeSettingsFromStorage();
 
@@ -14,6 +15,7 @@ export const CreateRoomSection = () => {
   const [botDifficulty, setBotDifficulty] = useState<BotDifficulty>("medium");
   const [timeMinutes, setTimeMinutes] = useState(initialRoomTime.timeMinutes);
   const [incrementSeconds, setIncrementSeconds] = useState(initialRoomTime.incrementSeconds);
+  const [withAIhints, setWithAIhints] = useState(false);
 
   useEffect(() => {
     setRoomTimeSettingsToStorage(timeMinutes, incrementSeconds);
@@ -33,6 +35,7 @@ export const CreateRoomSection = () => {
     createRoom({
       timeMinutes,
       incrementSeconds,
+      withAIhints,
     });
   };
 
@@ -40,14 +43,28 @@ export const CreateRoomSection = () => {
     <>
       <div className="w-full flex flex-col gap-3">
         <CreateGameButton 
-          title="Play vs Bot"
+          title={(
+            <span className="flex gap-[4px]">
+                Play vs Bot
+                <span className="flex font-extrabold bg-gradient-to-r from-[#E810A7] to-[#FFE600] bg-clip-text text-transparent">
+                    + AI hints <img className="w-[14px] h-[14px]" src={AIiconPNG} />
+                </span>
+            </span>
+          )}
           subtitle="30 min, choose difficulty"
           onClick={() => setIsBotModalOpen(true)}
           theme="success"
           disabled={isCreating}
         />
         <CreateGameButton 
-          title="Create room"
+          title={(
+            <span className="flex gap-[4px]">
+                Create room
+                <span className="flex font-extrabold bg-gradient-to-r from-[#E810A7] to-[#FFE600] bg-clip-text text-transparent">
+                    + AI hints <img className="w-[14px] h-[14px]" src={AIiconPNG} />
+                </span>
+            </span>
+          )}
           subtitle={`${timeMinutes} min + ${incrementSeconds} sec`}
           onClick={() => setIsTimeModalOpen(true)}
           theme="success"
@@ -69,8 +86,10 @@ export const CreateRoomSection = () => {
         isCreating={isCreating}
         timeMinutes={timeMinutes}
         incrementSeconds={incrementSeconds}
+        withAIhints={withAIhints}
         onChangeTimeMinutes={setTimeMinutes}
         onChangeIncrementSeconds={setIncrementSeconds}
+        onChangeWithAIhints={setWithAIhints}
         onClose={() => setIsTimeModalOpen(false)}
         onConfirm={handleCreateFriendRoom}
       />

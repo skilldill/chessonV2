@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import { useCreateRoom } from '../../hooks/useCreateRoom';
 import { BotDifficultyModal, type BotDifficulty } from '../BotDifficultyModal/BotDifficultyModal';
 import { RoomTimeModal } from '../RoomTimeModal/RoomTimeModal';
-import RobotEmojiWebp from '../../assets/robot-emoji.webp';
 import { getRoomTimeSettingsFromStorage, setRoomTimeSettingsToStorage } from '../../utils/roomTimeStorage';
 import { CreateGameButton } from '../CreateGameButton/CreateGameButton';
+import AIiconPNG from '../../assets/ai-icon.png';
 
 const initialRoomTime = getRoomTimeSettingsFromStorage();
 
@@ -15,6 +15,7 @@ export const CreateRoomSection: React.FC = () => {
   const [botDifficulty, setBotDifficulty] = useState<BotDifficulty>('medium');
   const [timeMinutes, setTimeMinutes] = useState(initialRoomTime.timeMinutes);
   const [incrementSeconds, setIncrementSeconds] = useState(initialRoomTime.incrementSeconds);
+  const [withAIhints, setWithAIhints] = useState(false);
 
   useEffect(() => {
     setRoomTimeSettingsToStorage(timeMinutes, incrementSeconds);
@@ -34,23 +35,40 @@ export const CreateRoomSection: React.FC = () => {
     createRoom({
       timeMinutes,
       incrementSeconds,
+      withAIhints,
     });
   };
 
   return (
     <>
       <CreateGameButton
-        title="Play vs Bot"
+        title={(
+          <span className="flex gap-[4px]">
+            Play vs Bot
+            <span className="flex font-extrabold bg-gradient-to-r from-[#E810A7] to-[#FFE600] bg-clip-text text-transparent">
+              + AI hints <img className="w-[14px] h-[14px]" src={AIiconPNG} />
+            </span>
+          </span>
+        )}
         subtitle="30 min, choose difficulty"
         onClick={() => setIsBotModalOpen(true)}
-        theme="primary"
+        theme="success"
+        disabled={isCreating}
       />
 
       <CreateGameButton
-        title="Create room"
+        title={(
+          <span className="flex gap-[4px]">
+            Create room
+            <span className="flex font-extrabold bg-gradient-to-r from-[#E810A7] to-[#FFE600] bg-clip-text text-transparent">
+              + AI hints <img className="w-[14px] h-[14px]" src={AIiconPNG} />
+            </span>
+          </span>
+        )}
         subtitle={`${timeMinutes} min + ${incrementSeconds} sec`}
         onClick={() => setIsTimeModalOpen(true)}
-        theme="primary"
+        theme="success"
+        disabled={isCreating}
       />
 
       <BotDifficultyModal
@@ -67,8 +85,10 @@ export const CreateRoomSection: React.FC = () => {
         isCreating={isCreating}
         timeMinutes={timeMinutes}
         incrementSeconds={incrementSeconds}
+        withAIhints={withAIhints}
         onChangeTimeMinutes={setTimeMinutes}
         onChangeIncrementSeconds={setIncrementSeconds}
+        onChangeWithAIhints={setWithAIhints}
         onClose={() => setIsTimeModalOpen(false)}
         onConfirm={handleCreateFriendRoom}
       />

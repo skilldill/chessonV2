@@ -93,6 +93,7 @@ type GameState = {
     moveHistory: MoveData[];
     currentPlayer: "white" | "black";
     currentColor: "white" | "black"; // чей ход
+    withAIhints: boolean;
     gameStarted: boolean;
     gameEnded: boolean;
     gameResult?: GameResult;
@@ -128,6 +129,7 @@ type Room = {
       moveTimeMs: number;
       name: string;
       avatar: string;
+      allowAIhints?: boolean;
     };
 };
 
@@ -615,6 +617,7 @@ function parseTimerConfig(rawConfig: any) {
     ? rawConfig.color
     : undefined;
   const botEnabled = rawConfig?.vsBot === true || rawConfig?.vsBot === 'true';
+  const forceDisableAIhints = rawConfig?.forceDisableAIhints === true || rawConfig?.forceDisableAIhints === 'true';
   const botDifficulty: BotDifficulty = rawConfig?.botDifficulty === 'super_easy' || rawConfig?.botDifficulty === 'easy' || rawConfig?.botDifficulty === 'hard'
     ? rawConfig.botDifficulty
     : 'medium';
@@ -622,6 +625,9 @@ function parseTimerConfig(rawConfig: any) {
   const botMoveTimeMs = Number.isFinite(botMoveTimeMsRaw) && botMoveTimeMsRaw > 0
     ? Math.floor(botMoveTimeMsRaw)
     : 800;
+  const withAIhints = forceDisableAIhints
+    ? false
+    : (botEnabled || rawConfig?.withAIhints === true || rawConfig?.withAIhints === 'true');
 
   return {
     whiteTimer: normalizedWhiteTimer,
@@ -631,7 +637,9 @@ function parseTimerConfig(rawConfig: any) {
     firstPlayerColor,
     botEnabled,
     botDifficulty,
-    botMoveTimeMs
+    botMoveTimeMs,
+    withAIhints,
+    forceDisableAIhints
   };
 }
 
@@ -691,6 +699,7 @@ function createRoomWithConfig(rawConfig: any) {
       moveHistory: [],
       currentPlayer: currentPlayer,
       currentColor: currentPlayer,
+      withAIhints: timerConfig.withAIhints,
       gameStarted: false,
       gameEnded: false,
       gameResult: undefined,
@@ -714,7 +723,8 @@ function createRoomWithConfig(rawConfig: any) {
       name: typeof rawConfig?.botName === 'string' && rawConfig.botName.trim()
         ? rawConfig.botName.trim()
         : 'Chesson Bot',
-      avatar: '0'
+      avatar: '0',
+      allowAIhints: !timerConfig.forceDisableAIhints
     } : undefined
   };
 
@@ -981,16 +991,17 @@ function declareDrawByInsufficientMaterial(room: Room, roomId: string) {
 
 // Функция для получения персонализированного gameState для конкретного игрока
 function getPersonalizedGameState(room: Room, userId: string): GameState {
+    const withAIhints = room.gameState.withAIhints === true;
     const userData = room.users.get(userId);
     if (!userData) {
         // Если пользователь не найден, возвращаем базовый gameState без player/opponent
-        return { ...room.gameState };
+        return { ...room.gameState, withAIhints };
     }
 
     const userColor = userData.color;
     if (!userColor) {
         // Если у пользователя нет цвета, возвращаем базовый gameState
-        return { ...room.gameState };
+        return { ...room.gameState, withAIhints };
     }
 
     // Находим соперника
@@ -1002,6 +1013,7 @@ function getPersonalizedGameState(room: Room, userId: string): GameState {
         if (room.botSettings?.enabled && room.botSettings.color && room.botSettings.color !== userColor) {
             return {
                 ...room.gameState,
+                withAIhints,
                 player: {
                     userId: userId,
                     userName: userData.userName,
@@ -1020,6 +1032,7 @@ function getPersonalizedGameState(room: Room, userId: string): GameState {
         // Если соперник не найден, возвращаем gameState только с player
         return {
             ...room.gameState,
+            withAIhints,
             player: {
                 userId: userId,
                 userName: userData.userName,
@@ -1034,6 +1047,7 @@ function getPersonalizedGameState(room: Room, userId: string): GameState {
     // Создаем персонализированный gameState
     return {
         ...room.gameState,
+        withAIhints,
         player: {
             userId: userId,
             userName: userData.userName,
@@ -2711,7 +2725,8 @@ app.post('/api/random-match/join', async ({ body, headers, set }) => {
       const { roomId } = createRoomWithConfig({
         whiteTimer: totalTimeSeconds,
         blackTimer: totalTimeSeconds,
-        increment: incrementSeconds
+        increment: incrementSeconds,
+        forceDisableAIhints: true
       });
 
       const assignment: RandomMatchAssignment = {
@@ -2744,6 +2759,7 @@ app.post('/api/random-match/join', async ({ body, headers, set }) => {
       whiteTimer: totalTimeSeconds,
       blackTimer: totalTimeSeconds,
       increment: incrementSeconds,
+      forceDisableAIhints: true,
       vsBot: true,
       botDifficulty: 'medium',
       botMoveTimeMs: 800,
@@ -2869,6 +2885,7 @@ app.post('/api/rooms', async ({ body }) => {
     roomId,
     message: 'Room created successfully',
     vsBot: room.botSettings?.enabled ?? false,
+    withAIhints: room.gameState.withAIhints,
     botDifficulty: room.botSettings?.difficulty,
     botMoveTimeMs: room.botSettings?.moveTimeMs,
     timerConfig: {
@@ -3235,6 +3252,9 @@ app.ws('/ws/room', {
       ])
     }),
     t.Object({
+      type: t.Literal("hintAI")
+    }),
+    t.Object({
       type: t.Literal("resign")
     }),
     t.Object({
@@ -3272,6 +3292,15 @@ app.ws('/ws/room', {
       console.log('ROOM FOUND:', !!room);
       console.log('ROOM', room?.gameState);
 
+      if (room && typeof room.gameState.withAIhints !== 'boolean') {
+          room.gameState.withAIhints = room.botSettings?.enabled
+            ? room.botSettings.allowAIhints !== false
+            : false;
+      }
+      if (room?.botSettings?.enabled && room.botSettings.allowAIhints !== false && room.gameState.withAIhints !== true) {
+          room.gameState.withAIhints = true;
+      }
+
       if (!room) {
           console.log('ROOM NOT DEFINED - CREATING NEW ROOM WITH DEFAULT TIMERS');  
 
@@ -3295,6 +3324,7 @@ app.ws('/ws/room', {
               moveHistory: [],
               currentPlayer: currentPlayer,
               currentColor: currentPlayer,
+              withAIhints: false,
               gameStarted: false,
               gameEnded: false,
               gameResult: undefined,
@@ -3645,6 +3675,53 @@ app.ws('/ws/room', {
                   });
               }
           }
+      } else if (data.type === "hintAI") {
+          if (!room.gameState.gameStarted) {
+              ws.send({ system: true, message: "Game has not started yet" });
+              return;
+          }
+
+          if (room.gameState.gameEnded) {
+              ws.send({ system: true, message: "Game is already finished" });
+              return;
+          }
+
+          if (!room.gameState.withAIhints) {
+              ws.send({ system: true, message: "AI hints are disabled for this room" });
+              return;
+          }
+
+          const difficulty = room.botSettings?.difficulty ?? "medium";
+          const moveTimeMs = room.botSettings?.moveTimeMs ?? 600;
+
+          void (async () => {
+              try {
+                  const hint = await chessBot.getRoomMove({
+                      fen: room.gameState.currentFEN,
+                      difficulty,
+                      moveTimeMs
+                  });
+
+                  if (!senderUserData?.isConnected || !senderUserData.ws) {
+                      return;
+                  }
+
+                  senderUserData.ws.send({
+                      type: "hintAI",
+                      from: "Stockfish",
+                      hint: {
+                          from: hint.moveData.from,
+                          to: hint.moveData.to
+                      },
+                      time: Date.now()
+                  });
+              } catch (error) {
+                  ws.send({
+                      system: true,
+                      message: "Failed to get AI hint"
+                  });
+              }
+          })();
       } else if (data.type === "gameResult") {
           // Результат игры
           if (!room.gameState.gameStarted) {

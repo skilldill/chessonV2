@@ -3,7 +3,7 @@ import type { FC } from "react";
 type CreateGameButtonTheme = "success" | "primary" | "neutral";
 
 type CreateGameButtonProps = {
-    title: string;
+    title: React.ReactNode;
     subtitle: string;
     onClick: () => void;
     theme?: CreateGameButtonTheme;

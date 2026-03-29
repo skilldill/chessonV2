@@ -77,7 +77,9 @@ const AppScreen: React.FC = () => {
     sendCursorPosition,
     sendResignation,
     sendGameResult,
+    sendAIHintRequest,
     disconnect,
+    aiHintArrow,
   } = useRoomWS(roomId || "");
   const { userName, setUserName } = useUserData();
   const { saveGameData, storageGameData, removeGameData } = useGameStorage();
@@ -126,6 +128,8 @@ const AppScreen: React.FC = () => {
         onSendCursorPosition={sendCursorPosition}
         onSendResignation={sendResignation}
         onSendGameResult={sendGameResult}
+        onSendAIHintRequest={sendAIHintRequest}
+        aiHintArrow={aiHintArrow}
         resultMessage={resultMessage}
         onSendDrawOffer={sendDrawOffer}
         offeredDraw={offeredDraw}

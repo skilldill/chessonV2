@@ -3,8 +3,10 @@ type RoomTimeModalProps = {
   isCreating: boolean;
   timeMinutes: number;
   incrementSeconds: number;
+  withAIhints: boolean;
   onChangeTimeMinutes: (value: number) => void;
   onChangeIncrementSeconds: (value: number) => void;
+  onChangeWithAIhints: (value: boolean) => void;
   onClose: () => void;
   onConfirm: () => void;
 };
@@ -17,8 +19,10 @@ export const RoomTimeModal = ({
   isCreating,
   timeMinutes,
   incrementSeconds,
+  withAIhints,
   onChangeTimeMinutes,
   onChangeIncrementSeconds,
+  onChangeWithAIhints,
   onClose,
   onConfirm,
 }: RoomTimeModalProps) => {
@@ -55,7 +59,7 @@ export const RoomTimeModal = ({
                 disabled={isCreating}
                 className={`h-11 rounded-lg border transition-all duration-200 active:scale-[0.98] focus:outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
                   timeMinutes === value
-                    ? 'bg-[#2D7A4F]/20 text-white border-[#2D7A4F]/70'
+                    ? 'bg-[#555ab9]/20 text-white border-[#555ab9]/70'
                     : 'bg-white/5 text-white/90 border-white/15 hover:border-white/35'
                 }`}
               >
@@ -76,7 +80,7 @@ export const RoomTimeModal = ({
                   disabled={isCreating}
                   className={`h-11 rounded-lg border transition-all duration-200 active:scale-[0.98] focus:outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
                     incrementSeconds === value
-                      ? 'bg-[#2D7A4F]/20 text-white border-[#2D7A4F]/70'
+                      ? 'bg-[#555ab9]/20 text-white border-[#555ab9]/70'
                       : 'bg-white/5 text-white/90 border-white/15 hover:border-white/35'
                   }`}
                 >
@@ -89,6 +93,25 @@ export const RoomTimeModal = ({
           <div className="text-center text-white/70 text-sm">
             Selected: {timeMinutes} min + {incrementSeconds} sec
           </div>
+
+          <label className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl px-3 py-3 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={withAIhints}
+              onChange={(event) => onChangeWithAIhints(event.target.checked)}
+              disabled={isCreating}
+              className="h-4 w-4 accent-[#555ab9] cursor-pointer"
+            />
+            <div className="flex flex-col">
+              <span className="text-white font-medium leading-tight">
+                Enable{' '}
+                <span className="font-extrabold bg-gradient-to-r from-[#E810A7] to-[#FFE600] bg-clip-text text-transparent">
+                  AI hints
+                </span>
+              </span>
+              <span className="text-white/60 text-xs leading-tight">Allow hint button in this room</span>
+            </div>
+          </label>
         </div>
 
         <div className="mt-5 grid grid-cols-2 gap-2">
@@ -104,7 +127,7 @@ export const RoomTimeModal = ({
             type="button"
             onClick={onConfirm}
             disabled={isCreating}
-            className="rounded-xl px-4 py-3 bg-[#2D7A4F] text-white font-semibold hover:bg-[#266944] transition-all duration-200 active:scale-[0.98] focus:outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-xl px-4 py-3 bg-[#555ab9] text-white font-semibold hover:bg-[#555ab9] transition-all duration-200 active:scale-[0.98] focus:outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isCreating ? 'Creating...' : 'Create'}
           </button>

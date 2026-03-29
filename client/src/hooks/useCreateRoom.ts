@@ -8,6 +8,7 @@ type CreateRoomData = {
     timeMinutes: number;
     incrementSeconds: number;
     vsBot?: boolean;
+    withAIhints?: boolean;
     botDifficulty?: 'super_easy' | 'easy' | 'medium' | 'hard';
     botMoveTimeMs?: number;
 }
@@ -34,6 +35,7 @@ export const useCreateRoom = () => {
                     blackTimer: timeSeconds,
                     increment: roomData.incrementSeconds,
                     vsBot: roomData.vsBot,
+                    withAIhints: roomData.withAIhints,
                     botDifficulty: roomData.botDifficulty,
                     botMoveTimeMs: roomData.botMoveTimeMs
                 })

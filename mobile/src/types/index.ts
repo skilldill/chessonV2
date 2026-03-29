@@ -61,6 +61,7 @@ export interface GameState {
   moveHistory: MoveData[];
   currentPlayer: ChessColor;
   currentColor: ChessColor; // чей ход
+  withAIhints: boolean;
   gameStarted: boolean;
   gameEnded: boolean;
   gameResult?: GameResult;
@@ -82,6 +83,7 @@ export type WSClientMessage =
   | { type: "message"; message: string }
   | { type: "move"; moveData: MoveData }
   | { type: "cursor"; position: CursorPosition, screenSize: ScreenSize }
+  | { type: "hintAI" }
   | { type: "gameResult"; gameResult: GameResult }
   | { type: "drawOffer"; action: "offer" | "accept" | "decline" }
   | { type: "resign" };
@@ -90,11 +92,12 @@ export type WSClientMessage =
 export interface WSServerMessage {
   system?: boolean;
   message?: string;
-  type?: "connection" | "reconnection" | "gameStart" | "gameEnd" | "message" | "move" | "cursor" | "gameResult" | "drawOffer" | "timerTick";
+  type?: "connection" | "reconnection" | "gameStart" | "gameEnd" | "message" | "move" | "cursor" | "hintAI" | "gameResult" | "drawOffer" | "timerTick";
   userColor?: ChessColor;
   opponentColor?: ChessColor;
   gameState?: GameState;
   moveData?: MoveData;
+  hint?: { from: [number, number]; to: [number, number] };
   position?: CursorPosition;
   screenSize?: ScreenSize;
   gameResult?: GameResult;

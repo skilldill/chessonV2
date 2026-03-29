@@ -7,6 +7,7 @@ type PlasmaButtonProps = {
   className?: string;
   title?: string;
   active?: boolean;
+  loading?: boolean;
 };
 
 const WIDTH = 96;
@@ -20,6 +21,9 @@ const NOT_ACTIVE_COLORS = ["#bcbcbc", "#dddddd", "#bababa", "#f3f3f3"] as const;
 // Animation parameters
 const BLOB_COUNT = 5;
 const BASE_SPEED = 0.6; // movement speed multiplier
+const LOADING_SPEED_MULTIPLIER = 4.4;
+const SPEED_RAMP_UP_MS = 900;
+const SPEED_RAMP_DOWN_MS = 1200;
 const FRAME_INTERVAL_MS = 22; // ~45fps cap
 const TOP_VIGNETTE_ALPHA = 0.32;
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
@@ -31,6 +35,7 @@ function injectStylesOnce() {
   injectedStyles = true;
   const css = `
   .plasma-btn {
+    opacity: 1;
     position: relative;
     width: ${WIDTH}px;
     height: ${HEIGHT}px;
@@ -44,8 +49,14 @@ function injectStylesOnce() {
     user-select: none;
     cursor: pointer;
     background: transparent;
-    transition: transform 120ms ease, filter 160ms ease, opacity 160ms ease;
+    --plasma-scale: 1;
+    transform: scaleX(1) scaleY(1);
+    transition: transform 520ms cubic-bezier(0.22, 1, 0.36, 1), filter 220ms ease, opacity 220ms ease;
     outline: none;
+  }
+  .plasma-btn[data-loading="true"] {
+    transform: scaleX(1.2) scaleY(1.2);
+    animation: blink 3s cubic-bezier(0.4, 0, 0.2, 1) 0s infinite;
   }
   .plasma-btn[data-disabled="true"] {
     cursor: not-allowed;
@@ -56,7 +67,7 @@ function injectStylesOnce() {
     filter: brightness(1.05) saturate(1.08);
   }
   .plasma-btn:not([data-disabled="true"]):active {
-    transform: scaleX(0.95) scaleY(1.05);
+    transform: scaleX(calc(1.1 * 0.95)) scaleY(calc(1.1 * 1.05));
   }
   .plasma-btn:focus-visible {
     box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.9), 0 0 0 4px rgba(181, 96, 255, 0.26);
@@ -103,22 +114,33 @@ export const PlasmaButton: React.FC<PlasmaButtonProps> = ({
   disabled,
   className,
   active = true,
+  loading = false,
   title,
 }) => {
   injectStylesOnce();
 
   const colorsForRendering = active ? COLORS : NOT_ACTIVE_COLORS;
+  const isInteractionBlocked = disabled || loading;
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLButtonElement | null>(null);
   const rafRef = useRef<number | null>(null);
+  const animationRunIdRef = useRef<number>(0);
   const lastTimeRef = useRef<number>(0);
   const playingRef = useRef<boolean>(false);
+  const speedRef = useRef<number>(loading ? LOADING_SPEED_MULTIPLIER : 1);
+  const speedTargetRef = useRef<number>(loading ? LOADING_SPEED_MULTIPLIER : 1);
+  const prevFrameTimeRef = useRef<number | null>(null);
+  const animTimeRef = useRef<number>(0);
   const [isReduced, setIsReduced] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     return window.matchMedia?.(REDUCED_MOTION_QUERY).matches ?? false;
   });
   const [isVisible, setIsVisible] = useState<boolean>(true);
+
+  useEffect(() => {
+    speedTargetRef.current = loading ? LOADING_SPEED_MULTIPLIER : 1;
+  }, [loading]);
 
   // Intersection Observer to pause when hidden
   useEffect(() => {
@@ -180,7 +202,8 @@ export const PlasmaButton: React.FC<PlasmaButtonProps> = ({
     }))
   );
 
-  const drawFrame = (time: number, oneshot = false) => {
+  const drawFrame = (time: number, oneshot = false, runId = animationRunIdRef.current) => {
+    if (runId !== animationRunIdRef.current) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d")!;
@@ -195,7 +218,15 @@ export const PlasmaButton: React.FC<PlasmaButtonProps> = ({
 
     // Additive blobs
     ctx.globalCompositeOperation = "lighter";
-    const t = time / 1000;
+    const prevTime = prevFrameTimeRef.current ?? time;
+    const dtMs = Math.min(64, Math.max(0, time - prevTime));
+    prevFrameTimeRef.current = time;
+    const rampMs =
+      speedTargetRef.current > speedRef.current ? SPEED_RAMP_UP_MS : SPEED_RAMP_DOWN_MS;
+    const alpha = 1 - Math.exp(-dtMs / rampMs);
+    speedRef.current += (speedTargetRef.current - speedRef.current) * alpha;
+    animTimeRef.current += (dtMs / 1000) * speedRef.current;
+    const t = animTimeRef.current;
 
     seedsRef.current.forEach((s, i) => {
       const px =
@@ -257,19 +288,23 @@ export const PlasmaButton: React.FC<PlasmaButtonProps> = ({
       lastTimeRef.current = now;
     }
     rafRef.current = requestAnimationFrame((ts) => {
-      if (playingRef.current) drawFrame(ts);
+      if (playingRef.current && runId === animationRunIdRef.current) drawFrame(ts, false, runId);
     });
   };
 
   // Start/stop controls
   const start = (oneshot = false) => {
+    animationRunIdRef.current += 1;
+    const runId = animationRunIdRef.current;
     if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
     playingRef.current = !oneshot;
+    prevFrameTimeRef.current = null;
     lastTimeRef.current = performance.now();
-    drawFrame(lastTimeRef.current, oneshot);
+    drawFrame(lastTimeRef.current, oneshot, runId);
   };
   const stop = () => {
     playingRef.current = false;
+    animationRunIdRef.current += 1;
     if (rafRef.current != null) {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
@@ -334,7 +369,7 @@ export const PlasmaButton: React.FC<PlasmaButtonProps> = ({
 
   // Keyboard handling for Enter/Space (works even if using <button>)
   const onKeyDown: React.KeyboardEventHandler<HTMLButtonElement> = (e) => {
-    if (disabled) return;
+    if (isInteractionBlocked) return;
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       onClick?.();
@@ -348,11 +383,13 @@ export const PlasmaButton: React.FC<PlasmaButtonProps> = ({
       title={title}
       className={`plasma-btn${className ? " " + className : ""}`}
       data-disabled={disabled ? "true" : "false"}
-      onClick={disabled ? undefined : (e) => onClick?.(e)}
+      data-loading={loading ? "true" : "false"}
+      onClick={isInteractionBlocked ? undefined : (e) => onClick?.(e)}
       onKeyDown={onKeyDown}
       role="button"
       tabIndex={0}
-      aria-disabled={disabled ? true : undefined}
+      aria-disabled={isInteractionBlocked ? true : undefined}
+      aria-busy={loading ? true : undefined}
     >
       <canvas ref={canvasRef} className="plasma-btn__canvas" />
       <span className="plasma-btn__label">{children}</span>

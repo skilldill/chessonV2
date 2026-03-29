@@ -1,9 +1,9 @@
-import type { FC } from "react";
+import type { FC, ReactNode } from "react";
 
 type CreateGameButtonTheme = "success" | "primary" | "neutral";
 
 type CreateGameButtonProps = {
-    title: string;
+    title: ReactNode;
     subtitle: string;
     onClick: () => void;
     theme?: CreateGameButtonTheme;

@@ -9,6 +9,7 @@ import { ChessboardThemeModal } from "../../components/ChessboardThemeModal/Ches
 import { CHESSBOARD_THEMES } from "../../components/ChessBoardConfigs/ChessBoardConfigs";
 import { getChessboardThemeFromStorage, setChessboardThemeToStorage } from "../../utils/appearanceStorage";
 import { getRoomTimeSettingsFromStorage, setRoomTimeSettingsToStorage } from "../../utils/roomTimeStorage";
+import AIiconPNG from '../../assets/ai-icon.png';
 
 const initialRoomTime = getRoomTimeSettingsFromStorage();
 
@@ -23,6 +24,7 @@ export const CreateRoomScreen = () => {
     const [incrementSeconds, setIncrementSeconds] = useState(initialRoomTime.incrementSeconds);
     const [activeTheme, setActiveTheme] = useState(getChessboardThemeFromStorage());
     const [selectedTheme, setSelectedTheme] = useState(getChessboardThemeFromStorage());
+    const [withAIhints, setWithAIhints] = useState(false);
 
     useEffect(() => {
       setRoomTimeSettingsToStorage(timeMinutes, incrementSeconds);
@@ -45,6 +47,7 @@ export const CreateRoomScreen = () => {
         createRoom({
             timeMinutes,
             incrementSeconds,
+            withAIhints,
         });
     };
 
@@ -59,7 +62,14 @@ export const CreateRoomScreen = () => {
             <div className="max-w-[432px] flex flex-col m-auto items-center gap-[32px] py-[32px]">
                 <div className="w-full flex flex-col gap-6">
                     <CreateGameButton
-                        title="Chessboard theme ✨"
+                        title={(
+                            <span className="flex gap-[4px]">
+                                Chessboard theme
+                                <span className="flex font-extrabold bg-gradient-to-r from-[#10D6E8] to-[#D079DF] bg-clip-text text-transparent">
+                                    + New theme
+                                </span>
+                            </span>
+                        )}
                         subtitle={activeThemeLabel}
                         onClick={() => {
                             setSelectedTheme(activeTheme);
@@ -77,7 +87,14 @@ export const CreateRoomScreen = () => {
                     </div>
 
                     <CreateGameButton
-                        title="Play vs Bot"
+                        title={(
+                            <span className="flex gap-[4px]">
+                                Play vs Bot
+                                <span className="flex font-extrabold bg-gradient-to-r from-[#E810A7] to-[#FFE600] bg-clip-text text-transparent">
+                                    + AI hints <img className="w-[14px] h-[14px]" src={AIiconPNG} />
+                                </span>
+                            </span>
+                         )}
                         subtitle="30 min, choose difficulty"
                         onClick={() => setIsBotModalOpen(true)}
                         theme="success"
@@ -85,7 +102,14 @@ export const CreateRoomScreen = () => {
                     />
 
                     <CreateGameButton
-                        title="Create room"
+                        title={(
+                            <span className="flex gap-[4px]">
+                                Create room
+                                <span className="flex font-extrabold bg-gradient-to-r from-[#E810A7] to-[#FFE600] bg-clip-text text-transparent">
+                                    + AI hints <img className="w-[14px] h-[14px]" src={AIiconPNG} />
+                                </span>
+                            </span>
+                          )}
                         subtitle={`${timeMinutes} min + ${incrementSeconds} sec`}
                         onClick={() => setIsTimeModalOpen(true)}
                         theme="success"
@@ -114,8 +138,10 @@ export const CreateRoomScreen = () => {
                 isCreating={isCreating}
                 timeMinutes={timeMinutes}
                 incrementSeconds={incrementSeconds}
+                withAIhints={withAIhints}
                 onChangeTimeMinutes={setTimeMinutes}
                 onChangeIncrementSeconds={setIncrementSeconds}
+                onChangeWithAIhints={setWithAIhints}
                 onClose={() => setIsTimeModalOpen(false)}
                 onConfirm={handleCreateFriendRoom}
             />

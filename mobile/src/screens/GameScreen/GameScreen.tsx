@@ -31,6 +31,8 @@ type GameScreenProps = {
   onSendResignation: () => void;
   onSendGameResult: (gameResult: GameResult) => void;
   onSendDrawOffer: (action: 'offer' | 'accept' | 'decline') => void;
+  onSendAIHintRequest: () => void;
+  aiHintArrow: { from: [number, number]; to: [number, number] } | null;
 
   resultMessage?: string;
   offeredDraw?: boolean;
@@ -48,6 +50,8 @@ const GameScreen: React.FC<GameScreenProps> = ({
   onSendDrawOffer,
   onSendResignation,
   onSendGameResult,
+  onSendAIHintRequest,
+  aiHintArrow,
 
   resultMessage,
   offeredDraw,
@@ -61,6 +65,9 @@ const GameScreen: React.FC<GameScreenProps> = ({
   const themeConfig = CHESSBOARD_THEMES[chessboardTheme];
 
   const [initialFEN, setInitialFEN] = useState(INITIAL_FEN);
+  const [waitAIhint, setWaitAIhint] = useState(false);
+  const [gameControlsNotify, setGameControlsNotify] = useState<{ text: string }>();
+
   const reversed = useMemo(() => playerColor === "black", [playerColor]);
   const {
     opponentTime,
@@ -110,6 +117,53 @@ const GameScreen: React.FC<GameScreenProps> = ({
   const handleCloseResults = () => {
     window.location.href = import.meta.env.VITE_MAIN_SITE;
   };
+
+  const handleAIhints = () => {
+    if (waitAIhint) {
+      return;
+    }
+
+    if (playerColor !== gameState.currentColor) {
+        setGameControlsNotify({ text: 'Only on your turn' });
+        return;
+    }
+
+    setWaitAIhint(true);
+    onSendAIHintRequest();
+  };
+
+  useEffect(() => {
+    if (aiHintArrow) {
+      setWaitAIhint(false);
+    }
+  }, [aiHintArrow]);
+
+  useEffect(() => {
+    if (!waitAIhint) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setWaitAIhint(false);
+    }, 10_000);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [waitAIhint]);
+
+  const mappedHintArrow = useMemo(() => {
+    if (!aiHintArrow) {
+      return [];
+    }
+
+    if (playerColor !== "black") {
+      return [{ start: aiHintArrow.from, end: aiHintArrow.to }];
+    }
+
+    const reverseCoords = (coords: [number, number]): [number, number] => [7 - coords[0], 7 - coords[1]];
+    return [{ start: reverseCoords(aiHintArrow.from), end: reverseCoords(aiHintArrow.to) }];
+  }, [aiHintArrow, playerColor]);
 
   const playerAvatarIndex = gameState.player?.avatar ? parseInt(gameState.player.avatar) : undefined;
   const playerAvatar = playerAvatarIndex ? MEM_AVATARS[playerAvatarIndex] : MEM_AVATARS[0];
@@ -164,6 +218,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
               reversed={playerColor === "black"}
               change={externalChangeMove}
               playerColor={playerColor}
+              moveArrows={mappedHintArrow}
               config={{
                 squareSize: cellSize,
                 ...themeConfig
@@ -193,10 +248,15 @@ const GameScreen: React.FC<GameScreenProps> = ({
           <div className="p-[12px] flex justify-center">
             <GameScreenControls
               key={resultMessage}
+              withAIhints={gameState.withAIhints}
+              showOnboardingAIhint={gameState.withAIhints}
+              loading={waitAIhint}
+              notify={gameControlsNotify}
               gameEnded={!!resultMessage} // Если есть сообщение об окончании игры, то игра закончилась
               onDrawOffer={() => onSendDrawOffer('offer')}
               onResignation={onSendResignation}
               onQuitGame={handleQuitGame}
+              onAIhints={handleAIhints}
             />
           </div>
         </div>
