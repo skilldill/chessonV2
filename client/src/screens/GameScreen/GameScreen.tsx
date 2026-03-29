@@ -129,7 +129,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
         if (waitAIhint) return;
 
         if (playerColor !== gameState.currentColor) {
-            setGameControlsNotify({ text: 'Только в свой ход' });
+            setGameControlsNotify({ text: 'Only on your turn' });
             return;
         }
 
