@@ -61,7 +61,7 @@ export const RoomTimeModal = ({
                 disabled={isCreating}
                 className={`btn-client h-11 rounded-lg border transition-all duration-200 active:scale-[0.98] focus:outline-none touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed ${
                   timeMinutes === value
-                    ? 'bg-[#2D7A4F]/22 text-white border-[#2D7A4F]/70 shadow-[0_0_0_1px_rgba(45,122,79,0.35)_inset]'
+                    ? 'bg-[#555ab9]/22 text-white border-[#555ab9]/70 shadow-[0_0_0_1px_rgba(45,122,79,0.35)_inset]'
                     : 'btn-client-preset text-white/90 border-white/15'
                 }`}
               >
@@ -82,7 +82,7 @@ export const RoomTimeModal = ({
                   disabled={isCreating}
                   className={`btn-client h-11 rounded-lg border transition-all duration-200 active:scale-[0.98] focus:outline-none touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed ${
                     incrementSeconds === value
-                      ? 'bg-[#2D7A4F]/22 text-white border-[#2D7A4F]/70 shadow-[0_0_0_1px_rgba(45,122,79,0.35)_inset]'
+                      ? 'bg-[#555ab9]/22 text-white border-[#555ab9]/70 shadow-[0_0_0_1px_rgba(45,122,79,0.35)_inset]'
                       : 'btn-client-preset text-white/90 border-white/15'
                   }`}
                 >
@@ -102,7 +102,7 @@ export const RoomTimeModal = ({
               checked={withAIhints}
               onChange={(event) => onChangeWithAIhints(event.target.checked)}
               disabled={isCreating}
-              className="h-4 w-4 accent-[#2D7A4F] cursor-pointer"
+              className="h-4 w-4 accent-[#555ab9] cursor-pointer"
             />
             <div className="flex flex-col">
               <span className="text-white font-medium leading-tight">
@@ -130,7 +130,7 @@ export const RoomTimeModal = ({
             type="button"
             onClick={onConfirm}
             disabled={isCreating}
-            className="btn-client bg-[#2D7A4F] text-white font-semibold text-[18px] hover:bg-[#266944] transition-all duration-200 active:scale-[0.98] focus:outline-none touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn-client bg-[#555ab9] text-white font-semibold text-[18px] hover:bg-[#555ab9] transition-all duration-200 active:scale-[0.98] focus:outline-none touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ borderRadius: 20, minHeight: 66, padding: '14px 20px' }}
           >
             {isCreating ? 'Creating...' : 'Create'}

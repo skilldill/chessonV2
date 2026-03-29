@@ -54,7 +54,7 @@ export const ChessboardThemeModal = ({
               disabled={isSaving}
               className={`w-full rounded-xl px-4 py-3 text-left border transition-all duration-200 active:scale-[0.98] focus:outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
                 selectedTheme === theme
-                  ? "bg-[#2D7A4F]/20 text-white border-[#2D7A4F]/70"
+                  ? "bg-[#555ab9]/20 text-white border-[#555ab9]/70"
                   : "bg-white/5 text-white/90 border-white/15 hover:border-white/35"
               }`}
             >
@@ -82,7 +82,7 @@ export const ChessboardThemeModal = ({
             type="button"
             onClick={onConfirm}
             disabled={isSaving}
-            className="rounded-xl px-4 py-3 bg-[#2D7A4F] text-white font-semibold hover:bg-[#266944] transition-all duration-200 active:scale-[0.98] focus:outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-xl px-4 py-3 bg-[#555ab9] text-white font-semibold hover:bg-[#555ab9] transition-all duration-200 active:scale-[0.98] focus:outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSaving ? "Saving..." : "Save"}
           </button>

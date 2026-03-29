@@ -76,7 +76,7 @@ const CreateRoomScreen: React.FC = () => {
                                 type="button"
                                 onClick={() => setIsBotModalOpen(true)}
                                 disabled={isCreating}
-                                className="btn-client btn-client-preset w-full rounded-xl px-4 py-5 min-h-[64px] text-white/90 font-semibold transition-all duration-200 active:scale-[0.98] focus:outline-none touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed border border-[#2D7A4F]/60 bg-[#2D7A4F]/20"
+                                className="btn-client btn-client-preset w-full rounded-xl px-4 py-5 min-h-[64px] text-white/90 font-semibold transition-all duration-200 active:scale-[0.98] focus:outline-none touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed border border-[#555ab9]/60 bg-[#555ab9]/20"
                             >
                                 <div className="flex flex-col items-center gap-1">
                                     <div className="flex items-center gap-2">
@@ -91,7 +91,7 @@ const CreateRoomScreen: React.FC = () => {
                                 type="button"
                                 onClick={() => setIsTimeModalOpen(true)}
                                 disabled={isCreating}
-                                className="btn-client btn-client-preset w-full rounded-xl px-4 py-5 min-h-[64px] text-white/90 font-semibold transition-all duration-200 active:scale-[0.98] focus:outline-none touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed border border-[#2D7A4F]/60 bg-[#2D7A4F]/20"
+                                className="btn-client btn-client-preset w-full rounded-xl px-4 py-5 min-h-[64px] text-white/90 font-semibold transition-all duration-200 active:scale-[0.98] focus:outline-none touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed border border-[#555ab9]/60 bg-[#555ab9]/20"
                             >
                                 <div className="flex flex-col items-center gap-1">
                                     <div className="flex items-center gap-2">

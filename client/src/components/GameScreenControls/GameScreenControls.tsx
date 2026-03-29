@@ -207,6 +207,7 @@ export const GameScreenControls: FC<GameScreenControlsProps> = ({
                             onClick={() => handleNotActiveClick(1)}
                             onActiveClick={handleDrawOffer}
                             active={activeActionIndex === 1}
+                            iconSize={20}
                         />
                         <RoundedControlButton
                             icon={WhiteFlagPNG} 

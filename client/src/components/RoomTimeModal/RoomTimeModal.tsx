@@ -59,7 +59,7 @@ export const RoomTimeModal = ({
                 disabled={isCreating}
                 className={`h-11 rounded-lg border transition-all duration-200 active:scale-[0.98] focus:outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
                   timeMinutes === value
-                    ? 'bg-[#2D7A4F]/20 text-white border-[#2D7A4F]/70'
+                    ? 'bg-[#555ab9]/20 text-white border-[#555ab9]/70'
                     : 'bg-white/5 text-white/90 border-white/15 hover:border-white/35'
                 }`}
               >
@@ -80,7 +80,7 @@ export const RoomTimeModal = ({
                   disabled={isCreating}
                   className={`h-11 rounded-lg border transition-all duration-200 active:scale-[0.98] focus:outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
                     incrementSeconds === value
-                      ? 'bg-[#2D7A4F]/20 text-white border-[#2D7A4F]/70'
+                      ? 'bg-[#555ab9]/20 text-white border-[#555ab9]/70'
                       : 'bg-white/5 text-white/90 border-white/15 hover:border-white/35'
                   }`}
                 >
@@ -100,7 +100,7 @@ export const RoomTimeModal = ({
               checked={withAIhints}
               onChange={(event) => onChangeWithAIhints(event.target.checked)}
               disabled={isCreating}
-              className="h-4 w-4 accent-[#2D7A4F] cursor-pointer"
+              className="h-4 w-4 accent-[#555ab9] cursor-pointer"
             />
             <div className="flex flex-col">
               <span className="text-white font-medium leading-tight">
@@ -127,7 +127,7 @@ export const RoomTimeModal = ({
             type="button"
             onClick={onConfirm}
             disabled={isCreating}
-            className="rounded-xl px-4 py-3 bg-[#2D7A4F] text-white font-semibold hover:bg-[#266944] transition-all duration-200 active:scale-[0.98] focus:outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-xl px-4 py-3 bg-[#555ab9] text-white font-semibold hover:bg-[#555ab9] transition-all duration-200 active:scale-[0.98] focus:outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isCreating ? 'Creating...' : 'Create'}
           </button>
