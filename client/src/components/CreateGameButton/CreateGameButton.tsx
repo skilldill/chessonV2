@@ -4,7 +4,7 @@ type CreateGameButtonTheme = "success" | "primary" | "neutral";
 
 type CreateGameButtonProps = {
     title: React.ReactNode;
-    subtitle: string;
+    subtitle: React.ReactNode;
     onClick: () => void;
     theme?: CreateGameButtonTheme;
     disabled?: boolean;

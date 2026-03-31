@@ -31,7 +31,7 @@ export const CreateRoomScreen = () => {
     }, [timeMinutes, incrementSeconds]);
 
     const availableThemes = useMemo(() => Object.keys(CHESSBOARD_THEMES), []);
-    const activeThemeLabel = activeTheme === "magic" ? "Magic" : "Default";
+    const activeThemeLabel = activeTheme.charAt(0).toUpperCase() + activeTheme.slice(1);
 
     const handleCreateBotRoom = () => {
         createRoom({
@@ -70,7 +70,7 @@ export const CreateRoomScreen = () => {
                                 </span>
                             </span>
                         )}
-                        subtitle={activeThemeLabel}
+                        subtitle={<span>Active theme: <span className="font-bold">{activeThemeLabel}</span></span>}
                         onClick={() => {
                             setSelectedTheme(activeTheme);
                             setIsThemeModalOpen(true);
