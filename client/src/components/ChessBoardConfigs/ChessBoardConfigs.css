@@ -64,6 +64,18 @@
     filter: grayscale(70%);
 }
 
+.dagestanLightSquare {
+  background-image: url(../../assets/pieces/dagestanPieces/square-light.png);
+  background-size: cover;
+}
+
+.dagestanDarkSquare {
+  background-image: url(../../assets/pieces/dagestanPieces/square-dark.png);
+  background-size: cover;
+  filter: grayscale(10%);
+  opacity: .8;
+}
+
 .hideFigureEffectWithLight {
   position: relative;
   overflow: visible;

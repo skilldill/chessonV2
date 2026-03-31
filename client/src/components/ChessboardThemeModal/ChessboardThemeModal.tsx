@@ -16,6 +16,9 @@ const THEME_LABELS: Record<string, ReactNode> = {
   magic: <span>Magic <span className="font-extrabold bg-gradient-to-r from-[#10D6E8] to-[#D079DF] bg-clip-text text-transparent">
     New theme
   </span></span>,
+  dagestan: <span>Legend's of Dagestan <span className="font-extrabold bg-gradient-to-r from-[#10D6E8] to-[#D079DF] bg-clip-text text-transparent">
+    New theme
+  </span></span>,
 };
 
 export const ChessboardThemeModal = ({
