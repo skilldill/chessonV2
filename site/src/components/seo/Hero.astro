@@ -67,17 +67,17 @@ const { hero } = Astro.props as { hero: HeroData };
   }
 
   .btn-primary {
-    color: #111111;
-    background: #ffffff;
-    border-color: #ffffff;
-    box-shadow: none;
-  }
-
-  .btn-secondary {
     color: #ffffff;
     background: #4f39f6;
     border-color: #6d5bff;
     box-shadow: 0 8px 24px rgba(79, 57, 246, 0.45);
+  }
+
+  .btn-secondary {
+    color: #b8aeff;
+    background: transparent;
+    border-color: rgba(109, 91, 255, 0.45);
+    box-shadow: none;
   }
 
   .btn-ghost {
@@ -87,11 +87,11 @@ const { hero } = Astro.props as { hero: HeroData };
   }
 
   .btn-primary:hover {
-    background: #ececec;
+    background: #5c47ff;
   }
 
   .btn-secondary:hover {
-    background: #5c47ff;
+    background: rgba(109, 91, 255, 0.1);
   }
 
   @media (max-width: 640px) {

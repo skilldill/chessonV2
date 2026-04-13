@@ -20,6 +20,7 @@ const {
   breadcrumbs = [],
   faq = [],
   ogImage = "https://chesson.me/og.png",
+  alternates = [],
 } = Astro.props as {
   lang: string;
   title: string;
@@ -29,6 +30,7 @@ const {
   breadcrumbs?: Breadcrumb[];
   faq?: FaqItem[];
   ogImage?: string;
+  alternates?: { lang: string; url: string }[];
 };
 
 const websiteJsonLd = JSON.stringify({
@@ -72,6 +74,9 @@ const faqJsonLd = JSON.stringify({
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonicalUrl} />
+    {alternates.map((alternate) => (
+      <link rel="alternate" hreflang={alternate.lang} href={alternate.url} />
+    ))}
     <meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1" />
 
     <meta property="og:type" content="website" />
