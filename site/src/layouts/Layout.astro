@@ -8,6 +8,7 @@ const {
 	canonicalUrl,
 	ogImage,
 	locale,
+	alternates = [],
 } = Astro.props;
 ---
 
@@ -22,8 +23,12 @@ const {
 			name="description"
 			content={description}
 		/>
+		<meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<link rel="canonical" href={canonicalUrl} />
+		{alternates.map((alternate: { lang: string; url: string }) => (
+			<link rel="alternate" hreflang={alternate.lang} href={alternate.url} />
+		))}
 
 		<link rel="icon" href="/favicon.png" sizes="64x64" type="image/png">
 		<meta name="theme-color" content="#000000">
@@ -31,10 +36,6 @@ const {
 
 		<!-- Open Graph -->
 		<meta property="og:title" content={title} />
-		<meta
-			property="og:image"
-			content="https://chesson.me/og.png"
-		/>
 		<meta
 			property="og:description"
 			content={description}
@@ -45,7 +46,7 @@ const {
 			property="og:image"
 			content={ogImage}
 		/>
-		<meta property="og:site_name" content={title} />
+		<meta property="og:site_name" content="Chesson" />
 		<meta property="og:locale" content={locale} />
 
 		<!-- Twitter -->
