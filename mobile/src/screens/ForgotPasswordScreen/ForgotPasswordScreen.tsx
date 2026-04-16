@@ -40,7 +40,7 @@ const ForgotPasswordScreen: React.FC = () => {
 
   return (
     <IonPage>
-      <IonContent className="ion-padding auth-screen-bg" fullscreen>
+      <IonContent className="ion-padding" fullscreen>
         <div className="w-full min-h-full flex flex-col justify-center items-center py-6 px-4">
           <div className="auth-card relative flex flex-col items-center fadeIn" style={{ minHeight: 320 }}>
             <div className="auth-card-blur" />

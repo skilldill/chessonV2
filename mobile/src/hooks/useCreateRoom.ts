@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { API_PREFIX } from "../constants/api";
-import { useHistory } from "react-router-dom";
 import { CapacitorHttp } from '@capacitor/core';
 
 const BOT_GUEST_PROFILE_KEY = "botGuestProfile";
@@ -17,9 +16,8 @@ type CreateRoomData = {
 export const useCreateRoom = () => {
     const [isCreating, setIsCreating] = useState(false);
     const [roomCreatingError, setRoomCreatingError] = useState<string | null>(null);
-    const history = useHistory();
 
-    const createRoom = async (roomData: CreateRoomData) => {
+    const createRoom = async (roomData: CreateRoomData, onSuccess?: () => void) => {
         try {
             setIsCreating(true);
             setRoomCreatingError(null);
@@ -54,8 +52,10 @@ export const useCreateRoom = () => {
                         })
                     );
                 }
+                onSuccess?.();
+
                 // Редирект на созданную комнату
-                history.push(`/game/${data.roomId}`);
+                window.location.href = `/game/${data.roomId}`;
             } else {
                 throw new Error('Invalid response from server');
             }

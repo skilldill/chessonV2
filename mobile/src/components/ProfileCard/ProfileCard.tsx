@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useHistory } from 'react-router-dom';
 import { useProfileData } from '../../hooks/useProfileData';
 import { MEM_AVATARS } from '../../constants/avatars';
 import { useUserGames } from '../../hooks/useUserGames';
@@ -9,7 +8,6 @@ import { API_PREFIX } from '../../constants/api';
 import { setChessboardThemeToStorage } from '../../utils/appearanceStorage';
 
 export const ProfileCard: React.FC = () => {
-  const history = useHistory();
   const { name, avatarIndex, chessboardTheme, loading } = useProfileData();
   const { loadTotalGames, totalGames } = useUserGames();
   const [isThemeModalOpen, setIsThemeModalOpen] = useState(false);
@@ -72,7 +70,9 @@ export const ProfileCard: React.FC = () => {
     <div className="w-full flex flex-col items-center gap-6">
       <h2
         className="text-white text-lg font-semibold text-center cursor-pointer"
-        onClick={() => history.push('/profile')}
+        onClick={() => {
+          window.location.href = '/profile';
+        }}
       >
         @{name}
       </h2>

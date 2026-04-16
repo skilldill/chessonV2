@@ -40,7 +40,7 @@ const ProfileScreen: React.FC = () => {
   if (loading) {
     return (
       <IonPage>
-        <IonContent className="ion-padding" style={{ '--background': 'linear-gradient(150deg, #282828 0%, #000 50%, #2b1565 100%)' } as React.CSSProperties}>
+        <IonContent className="ion-padding">
           <div className="flex justify-center items-center min-h-full">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#4F39F6] border-t-transparent" />
           </div>
@@ -51,10 +51,7 @@ const ProfileScreen: React.FC = () => {
 
   return (
     <IonPage>
-      <IonContent
-        className="ion-padding"
-        style={{ '--background': 'linear-gradient(150deg, #282828 0%, #000 50%, #2b1565 100%)' } as React.CSSProperties}
-      >
+      <IonContent className="ion-padding">
         <div className="w-full min-h-full flex justify-center overflow-y-auto px-4 py-6">
           <div className="max-w-[420px] w-full">
             <div className="py-2 -ml-1">

@@ -1,15 +1,11 @@
-import { useHistory } from 'react-router-dom';
-
 type BackButtonProps = {
   to?: string;
   label?: string;
 };
 
 export const BackButton: React.FC<BackButtonProps> = ({ to = "/main", label = "Back" }) => {
-  const history = useHistory();
-
   const handleClick = () => {
-    history.push(to);
+    window.location.href = to;
   };
 
   return (

@@ -12,7 +12,6 @@ import { INITIAL_FEN } from '../../constants/chess';
 import { useTimers } from '../../hooks/useTimers';
 import { debounce } from '../../utils/debounce';
 import { MEM_AVATARS } from '../../constants/avatars';
-import { useHistory } from 'react-router-dom';
 import { useGameStorage } from '../../hooks/useGameStorage';
 import { useAppearance } from '../../hooks/useAppearance';
 import { ConnectionNotification } from '../../components/ConnectionNotification/ConnectionNotification';
@@ -59,7 +58,6 @@ const GameScreen: React.FC<GameScreenProps> = ({
 }) => {
   const screenSize = useScreenSize();
   const cellSize = useCellSize();
-  const history = useHistory();
   const { removeGameData } = useGameStorage();
   const { chessboardTheme } = useAppearance();
   const themeConfig = CHESSBOARD_THEMES[chessboardTheme];
@@ -107,7 +105,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
   const handleQuitGame = () => {
     onSendResignation();
     removeGameData();
-    history.push('/');
+    window.location.href = '/';
   };
 
   useEffect(() => {

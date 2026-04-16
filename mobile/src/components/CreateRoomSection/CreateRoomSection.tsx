@@ -28,6 +28,8 @@ export const CreateRoomSection: React.FC = () => {
       vsBot: true,
       botDifficulty,
       botMoveTimeMs: 800,
+    }, () => {
+      setIsBotModalOpen(false);
     });
   };
 
@@ -36,6 +38,8 @@ export const CreateRoomSection: React.FC = () => {
       timeMinutes,
       incrementSeconds,
       withAIhints,
+    }, () => {
+      setIsTimeModalOpen(false);
     });
   };
 
