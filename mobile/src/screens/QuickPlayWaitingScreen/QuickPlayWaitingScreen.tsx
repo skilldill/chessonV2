@@ -167,7 +167,7 @@ const QuickPlayWaitingScreen: React.FC = () => {
 
   const leave = async () => {
     await leaveQueue();
-    history.push("/main");
+    window.location.href = "/main";
   }
 
   return (

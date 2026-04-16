@@ -1,10 +1,9 @@
 import { IonPage, IonContent } from '@ionic/react';
 import { useState, useEffect } from 'react';
-import { useHistory, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { API_PREFIX } from '../../constants/api';
 
 const ResetPasswordScreen: React.FC = () => {
-  const history = useHistory();
   const location = useLocation();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -52,7 +51,7 @@ const ResetPasswordScreen: React.FC = () => {
 
       if (data.success) {
         setSuccess(true);
-        setTimeout(() => history.push("/login"), 2000);
+        setTimeout(() => window.location.href = "/login", 2000);
       } else {
         setError(data.error || "Error resetting password");
       }
@@ -121,7 +120,7 @@ const ResetPasswordScreen: React.FC = () => {
 
                   <button
                     type="button"
-                    onClick={() => history.push("/login")}
+                    onClick={() => window.location.href = "/login"}
                     className="text-white/70 active:text-white text-sm py-2 touch-manipulation"
                   >
                     Back to sign in

@@ -1,9 +1,6 @@
 import { IonPage, IonContent } from '@ionic/react';
-import { useHistory } from 'react-router-dom';
 
 const SignupSuccessScreen: React.FC = () => {
-  const history = useHistory();
-
   return (
     <IonPage>
       <IonContent className="ion-padding auth-screen-bg" fullscreen>
@@ -24,7 +21,7 @@ const SignupSuccessScreen: React.FC = () => {
               </p>
               <button
                 type="button"
-                onClick={() => history.push("/login")}
+                onClick={() => window.location.href = "/login"}
                 className="auth-btn-primary w-full"
               >
                 Go to sign in

@@ -1,10 +1,8 @@
 import { IonPage, IonContent } from '@ionic/react';
 import { useState, useEffect } from 'react';
-import { useHistory } from 'react-router-dom';
 import { API_PREFIX } from '../../constants/api';
 
 const SignupScreen: React.FC = () => {
-  const history = useHistory();
   const [login, setLogin] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -20,14 +18,14 @@ const SignupScreen: React.FC = () => {
         });
         const data = await response.json();
         if (data.success) {
-          history.push("/");
+          window.location.href = "/";
         }
       } catch {
         // Не авторизован
       }
     };
     checkAuth();
-  }, [history]);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,7 +51,7 @@ const SignupScreen: React.FC = () => {
       const data = await response.json();
 
       if (data.success) {
-        history.push("/signup-success");
+        window.location.href = "/signup-success";
       } else {
         setError(data.error || "Sign-up error");
       }
@@ -134,7 +132,7 @@ const SignupScreen: React.FC = () => {
 
               <button
                 type="button"
-                onClick={() => history.push("/login")}
+                onClick={() => window.location.href = "/login"}
                 className="text-white/70 active:text-white text-sm py-2 touch-manipulation"
               >
                 Already have an account? Sign in

@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
-import { useHistory, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { API_PREFIX } from '../constants/api';
 
 export type VerifyEmailStatus = 'loading' | 'success' | 'error';
 
 export const useVerifyEmail = () => {
-  const history = useHistory();
   const location = useLocation();
   const [status, setStatus] = useState<VerifyEmailStatus>('loading');
   const [message, setMessage] = useState('');
@@ -39,7 +38,7 @@ export const useVerifyEmail = () => {
           
           // Редирект на экран профиля через 3 секунды
           setTimeout(() => {
-            history.push('/profile');
+            window.location.href = '/profile';
           }, 3000);
         } else {
           setStatus('error');
@@ -53,10 +52,10 @@ export const useVerifyEmail = () => {
     };
 
     verifyEmail();
-  }, [location.search, history]);
+  }, [location.search]);
 
   const goToProfile = () => {
-    history.push('/profile');
+    window.location.href = '/profile';
   };
 
   return {

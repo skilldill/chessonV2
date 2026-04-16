@@ -6,7 +6,6 @@ import { useParams } from 'react-router';
 import cn from 'classnames';
 import { useState } from 'react';
 import { Share } from '@capacitor/share';
-import { useHistory } from 'react-router-dom';
 
 const SITE_BASE_URL = import.meta.env.VITE_TEST_MODE ? 'http://localhost:' + window.location.port : import.meta.env.VITE_MAIN_SITE;
 
@@ -16,7 +15,6 @@ type WaitingScreenProps = {
 
 const WaitingScreen: React.FC<WaitingScreenProps> = ({ onLeave }) => {
   const { roomId } = useParams<{ roomId: string }>();
-  const history = useHistory();
 
   const [copied, setCopied] = useState(false);
 
@@ -52,7 +50,7 @@ const WaitingScreen: React.FC<WaitingScreenProps> = ({ onLeave }) => {
 
   const handleLeave = () => {
       onLeave?.();
-      history.push('/main');
+      window.location.href = '/main';
   };
 
   return (

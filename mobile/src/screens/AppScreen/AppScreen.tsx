@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useHistory, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useRoomWS } from '../../hooks/useRoomWS';
 import { useUserData } from '../../hooks/useUserData';
 import SetProfileScreen from '../SetProfileScreen/SetProfileScreen';
@@ -13,7 +13,6 @@ const QUICK_PLAY_ROOM_ID_KEY = "quickPlayRoomId";
 const LEAVE_DELAY_MS = 3000;
 
 function ConnectingToGameOverlay({ onLeave }: { onLeave: () => void }) {
-  const history = useHistory();
   const [showLeaveOption, setShowLeaveOption] = useState(false);
 
   useEffect(() => {
@@ -23,7 +22,7 @@ function ConnectingToGameOverlay({ onLeave }: { onLeave: () => void }) {
 
   const handleLeave = () => {
     onLeave();
-    history.push("/main");
+    window.location.href = "/main";
   };
 
   return (

@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useHistory } from 'react-router-dom';
 import { API_PREFIX } from '../constants/api';
 import { setChessboardThemeToStorage } from '../utils/appearanceStorage';
 
 export const useProfile = () => {
-  const history = useHistory();
   const [name, setName] = useState("");
   const [avatarIndex, setAvatarIndex] = useState(0);
   const [chessboardTheme, setChessboardTheme] = useState("default");
@@ -29,18 +27,18 @@ export const useProfile = () => {
           setChessboardTheme(theme);
           setChessboardThemeToStorage(theme);
         } else {
-          history.push("/login");
+          window.location.href = "/login";
         }
       } catch (err) {
         console.error("Error loading profile:", err);
-        history.push("/login");
+        window.location.href = "/login";
       } finally {
         setLoading(false);
       }
     };
 
     loadProfile();
-  }, [history]);
+  }, []);
 
   const saveProfile = async (newAvatar?: number) => {
     setError("");
@@ -126,7 +124,7 @@ export const useProfile = () => {
         method: "POST",
         credentials: "include",
       });
-      history.push("/login");
+      window.location.href = "/login";
     } catch (err) {
       console.error("Logout error:", err);
     }

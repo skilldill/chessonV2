@@ -1,5 +1,4 @@
 import { type FC, useEffect, useState, useRef } from "react";
-import { useHistory } from "react-router-dom";
 import { API_PREFIX } from "../../constants/api";
 import styles from "./ResultsActions.module.css";
 import { ChessButton } from "../ChessButton/ChessButton";
@@ -13,7 +12,6 @@ export const ResultsActions: FC<ResultsActionsProps> = ({
     message,
     onClose
 }) => {
-    const history = useHistory();
     const [isClosing, setIsClosing] = useState(false);
     const [shouldRender, setShouldRender] = useState<boolean>(false);
     const [isDismissed, setIsDismissed] = useState<boolean>(false);
@@ -78,17 +76,17 @@ export const ResultsActions: FC<ResultsActionsProps> = ({
     const handleCloseButton = () => {
         onClose();
         const url = isAuthenticated ? '/main' : '/';
-        history.push(url);
+        window.location.href = url;
     };
 
     const handleSignup = () => {
         onClose();
-        history.push("/signup");
+        window.location.href = "/signup";
     };
 
     const handleLogin = () => {
         onClose();
-        history.push("/login");
+        window.location.href = "/login";
     };
 
     if (!shouldRender) {

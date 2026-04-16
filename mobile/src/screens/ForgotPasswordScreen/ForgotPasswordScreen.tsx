@@ -1,10 +1,8 @@
 import { IonPage, IonContent } from '@ionic/react';
 import { useState } from 'react';
-import { useHistory } from 'react-router-dom';
 import { API_PREFIX } from '../../constants/api';
 
 const ForgotPasswordScreen: React.FC = () => {
-  const history = useHistory();
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -56,7 +54,7 @@ const ForgotPasswordScreen: React.FC = () => {
                   </div>
                   <button
                     type="button"
-                    onClick={() => history.push("/login")}
+                    onClick={() => window.location.href = "/login"}
                     className="text-white/70 active:text-white text-sm py-3 touch-manipulation"
                   >
                     Back to sign in
@@ -92,7 +90,7 @@ const ForgotPasswordScreen: React.FC = () => {
 
                   <button
                     type="button"
-                    onClick={() => history.push("/login")}
+                    onClick={() => window.location.href = "/login"}
                     className="text-white/70 active:text-white text-sm py-2 touch-manipulation"
                   >
                     Back to sign in

@@ -3,11 +3,9 @@ import { API_PREFIX } from '../constants/api';
 import { GameState } from '../types';
 import { useGameStorage } from './useGameStorage';
 import { useEffect } from 'react';
-import { useHistory } from 'react-router-dom';
 
 export const useRestoreGame = () => {
     const { storageGameData, removeGameData } = useGameStorage();
-    const history = useHistory();
 
     const fetchGameState = async (gameId: string) => {
         try {
@@ -37,13 +35,12 @@ export const useRestoreGame = () => {
 
         if (gameState.gameEnded) return; // Игра закончилась, показать экран, что игры больше нет
 
-        if (!history) return;
-        history.push('/game/' + storageGameData.gameId);
+        window.location.href = '/game/' + storageGameData.gameId;
     }
 
     useEffect(() => {
         if (!storageGameData) return;
 
         checkStartedGame();
-    }, [storageGameData, history])
+    }, [storageGameData])
 }

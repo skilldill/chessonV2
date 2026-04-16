@@ -1,12 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { useHistory } from "react-router-dom";
 import { API_PREFIX } from "../constants/api";
 
 const DEFAULT_TIME_MINUTES = 10;
 const DEFAULT_INCREMENT_SECONDS = 0;
 
 export const useQuickPlayEntry = () => {
-  const history = useHistory();
   const [realPlayersInRandomQueue, setRealPlayersInRandomQueue] = useState(0);
 
   const quickPlayPath = `/quick-play?timeMinutes=${DEFAULT_TIME_MINUTES}&incrementSeconds=${DEFAULT_INCREMENT_SECONDS}`;
@@ -55,7 +53,7 @@ export const useQuickPlayEntry = () => {
 
   const openQuickPlay = () => {
     clearLocalStorageQuickPlay();
-    history.push(quickPlayPath);
+    window.location.href = quickPlayPath;
   };
 
   const playersInRandomQueue = useMemo(() => {

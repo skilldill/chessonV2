@@ -1,10 +1,8 @@
 import { IonPage, IonContent } from '@ionic/react';
 import { useState, useEffect } from 'react';
-import { useHistory } from 'react-router-dom';
 import { API_PREFIX } from '../../constants/api';
 
 const LoginScreen: React.FC = () => {
-  const history = useHistory();
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -18,14 +16,14 @@ const LoginScreen: React.FC = () => {
         });
         const data = await response.json();
         if (data.success) {
-          history.push("/main");
+          window.location.href = "/main";
         }
       } catch {
         // Не авторизован, продолжаем показывать форму
       }
     };
     checkAuth();
-  }, [history]);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,7 +40,7 @@ const LoginScreen: React.FC = () => {
       const data = await response.json();
 
       if (data.success) {
-        history.push("/main");
+        window.location.href = "/main";
       } else {
         setError(data.error || "Login error");
       }
@@ -107,14 +105,14 @@ const LoginScreen: React.FC = () => {
               <div className="flex flex-col items-center gap-1 text-sm">
                 <button
                   type="button"
-                  onClick={() => history.push("/signup")}
+                  onClick={() => window.location.href = "/signup"}
                   className="text-white/70 active:text-white py-2 touch-manipulation"
                 >
                   Don't have an account? Sign up
                 </button>
                 <button
                   type="button"
-                  onClick={() => history.push("/forgot-password")}
+                  onClick={() => window.location.href = "/forgot-password"}
                   className="text-white/50 active:text-white/70 py-2 touch-manipulation"
                 >
                   Forgot password?
