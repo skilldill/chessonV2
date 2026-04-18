@@ -35,7 +35,11 @@ export const useRestoreGame = () => {
 
         if (gameState.gameEnded) return; // Игра закончилась, показать экран, что игры больше нет
 
-        window.location.href = '/game/' + storageGameData.gameId;
+        const targetPath = '/game/' + storageGameData.gameId;
+
+        if (window.location.pathname === targetPath) return;
+
+        window.location.href = targetPath;
     }
 
     useEffect(() => {
