@@ -147,6 +147,44 @@ const breadcrumbSchema = {
 	<body>
 		<noscript><div><img src="https://mc.yandex.ru/watch/105020689" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
 		<slot />
+		<div id="cookie-banner" class="cookie-banner" hidden>
+			<div class="cookie-content">
+				<p class="cookie-text">
+					{lang === "en"
+						? "By continuing to use this site, you agree to the use of cookies and anonymized data processing for analytics and service improvements."
+						: "Продолжая оставаться на сайте, вы соглашаетесь на использование cookie-файлов и обработку обезличенных данных для аналитики и улучшения сервиса."}
+				</p>
+				<button id="cookie-ok" type="button" class="cookie-btn">Ок</button>
+			</div>
+		</div>
+		<script>
+			(function () {
+				const COOKIE_KEY = "chesson_cookie_banner_accepted_v1";
+				const banner = document.getElementById("cookie-banner");
+				const okBtn = document.getElementById("cookie-ok");
+				if (!banner || !okBtn) return;
+
+				try {
+					if (localStorage.getItem(COOKIE_KEY) === "1") {
+						banner.hidden = true;
+						return;
+					}
+				} catch (e) {
+					// localStorage may be unavailable
+				}
+
+				banner.hidden = false;
+
+				okBtn.addEventListener("click", function () {
+					try {
+						localStorage.setItem(COOKIE_KEY, "1");
+					} catch (e) {
+						// localStorage may be unavailable
+					}
+					banner.hidden = true;
+				});
+			})();
+		</script>
 	</body>
 </html>
 
@@ -161,5 +199,56 @@ const breadcrumbSchema = {
 	body {
 		padding-top: env(safe-area-inset-top);
 		padding-bottom: env(safe-area-inset-bottom);
+	}
+	.cookie-banner {
+		position: fixed;
+		left: 16px;
+		right: 16px;
+		bottom: calc(16px + env(safe-area-inset-bottom));
+		z-index: 9999;
+		border: 1px solid #2a2a2a;
+		border-radius: 12px;
+		background: rgba(14, 14, 14, 0.98);
+		box-shadow: 0 14px 30px rgba(0, 0, 0, 0.45);
+	}
+	.cookie-content {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+		padding: 14px;
+	}
+	.cookie-text {
+		margin: 0;
+		font-size: 13px;
+		line-height: 1.45;
+		color: #d0d0d0;
+	}
+	.cookie-btn {
+		height: 36px;
+		align-self: flex-end;
+		padding: 0 16px;
+		border: 1px solid #ffffff;
+		border-radius: 8px;
+		background: #ffffff;
+		color: #111111;
+		font-size: 13px;
+		font-weight: 600;
+		cursor: pointer;
+	}
+	@media (min-width: 768px) {
+		.cookie-banner {
+			left: 24px;
+			right: 24px;
+		}
+		.cookie-content {
+			flex-direction: row;
+			align-items: center;
+			justify-content: space-between;
+			gap: 20px;
+		}
+		.cookie-text {
+			max-width: 840px;
+			font-size: 14px;
+		}
 	}
 </style>

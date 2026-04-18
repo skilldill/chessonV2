@@ -65,7 +65,7 @@ const faqSchema = {
 				</nav>
 			</header>
 			<div
-				class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 text-center w-[calc(100%-2rem)] max-w-4xl  flex flex-col justify-center items-center h-full"
+				class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 text-center w-[calc(100%-2rem)] max-w-4xl flex flex-col justify-center items-center h-full"
 			>
 				<h1 class="font-bold mb-8 max-w-4xl mx-auto text-3xl sm:text-4xl md:text-5xl lg:text-7xl">
 					Играй в шахматы онлайн бесплатно <br> с соперниками и ботом
@@ -93,69 +93,81 @@ const faqSchema = {
 			</div>
 		</section>
 
-		<section class="mx-auto w-[calc(100%-2rem)] max-w-5xl py-16 sm:py-20">
-			<div class="rounded-2xl border border-[#2A2A2A] bg-[#0F0F0F] p-6 sm:p-10 text-center">
-				<h2 class="text-2xl sm:text-3xl md:text-4xl font-bold">Создать турнирную сетку для оффлайн-игры</h2>
-				<p class="mt-4 text-sm sm:text-lg text-white/80">
-					Используй инструмент сетки, чтобы организовать оффлайн-турнир, вести раунды и фиксировать победителей в одном месте.
-				</p>
-				<a
-					href="/tournaments"
-					class="relative mt-8 inline-block w-full sm:w-auto bg-[#1f2937] text-white border border-[#374151] font-bold py-3 px-6 rounded-md hover:bg-[#111827] transition duration-300 text-lg text-center"
-				>
-					Создать турнирную сетку
-				</a>
+		<section class="mx-auto w-[calc(100%-2rem)] max-w-6xl py-16 sm:py-20">
+			<div class="mb-8 sm:mb-10">
+				<h2 class="mt-3 text-2xl sm:text-3xl md:text-4xl font-semibold">Все, чтобы быстро начать шахматную партию</h2>
+			</div>
+
+			<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+				<article class="rounded-2xl border border-[#252525] bg-[#0F0F0F] p-6 sm:p-7 lg:col-span-2">
+					<h3 class="text-xl sm:text-2xl font-semibold">Создать турнирную сетку для оффлайн-игры</h3>
+					<p class="mt-3 text-white/75 leading-relaxed">
+						Используй инструмент сетки, чтобы организовать оффлайн-турнир, вести раунды и фиксировать победителей в одном месте.
+					</p>
+					<a
+						href="/tournaments"
+						class="mt-6 inline-flex w-full items-center justify-center rounded-md bg-white px-5 py-2.5 font-semibold text-black hover:bg-gray-200 transition-colors"
+					>
+						Создать турнирную сетку
+					</a>
+				</article>
+
+				<article class="rounded-2xl border border-[#252525] bg-[#0F0F0F] p-6 sm:p-7">
+					<h3 class="text-xl font-semibold">Быстрый старт игры</h3>
+					<p class="mt-3 text-white/75">Без регистрации. Случайные соперники, игра с ботом и подсказки от AI.</p>
+					<a
+						id="cta-play-now-btn"
+						href="https://game.chesson.me/"
+						class="mt-6 inline-flex w-full items-center justify-center rounded-md bg-white px-5 py-2.5 font-semibold text-black hover:bg-gray-200 transition-colors"
+					>
+						Играть сейчас
+					</a>
+				</article>
+
+				<article class="rounded-2xl border border-[#252525] bg-[#0F0F0F] p-6 sm:p-7">
+					<h3 class="text-xl font-semibold">Случайный соперник онлайн</h3>
+					<p class="mt-3 text-white/75">Быстро подключайся к живой партии и начинай игру за секунды.</p>
+				</article>
+
+				<article class="rounded-2xl border border-[#252525] bg-[#0F0F0F] p-6 sm:p-7">
+					<h3 class="text-xl font-semibold">Игра с ботом</h3>
+					<p class="mt-3 text-white/75">Тренируйся на 3 уровнях сложности в удобном темпе.</p>
+				</article>
+
+				<article class="rounded-2xl border border-[#252525] bg-[#0F0F0F] p-6 sm:p-7">
+					<h3 class="text-xl font-semibold">Подсказки от AI</h3>
+					<p class="mt-3 text-white/75">Получай полезные подсказки и развивай шахматное мышление.</p>
+				</article>
+
+				<article class="rounded-2xl border border-[#252525] bg-[#0F0F0F] p-6 sm:p-7 lg:col-span-3">
+					<h3 class="text-xl sm:text-2xl font-semibold">Почему chesson?</h3>
+					<div class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 text-sm">
+						<p class="rounded-xl border border-[#222] bg-[#121212] px-4 py-3">Играй без регистрации</p>
+						<p class="rounded-xl border border-[#222] bg-[#121212] px-4 py-3">Быстрый старт игры</p>
+						<p class="rounded-xl border border-[#222] bg-[#121212] px-4 py-3">Работает на телефоне и ПК</p>
+						<p class="rounded-xl border border-[#222] bg-[#121212] px-4 py-3">Бесплатно и без ограничений</p>
+					</div>
+				</article>
 			</div>
 		</section>
 
-		<section class="mx-auto w-[calc(100%-2rem)] max-w-5xl py-16 sm:py-20">
-			<div class="rounded-2xl border border-[#2A2A2A] bg-[#111111] p-6 sm:p-10 text-center">
-				<h2 class="text-2xl sm:text-3xl md:text-4xl font-bold">Играй в шахматы онлайн бесплатно</h2>
-				<p class="mt-4 text-sm sm:text-lg text-white/80">Без регистрации. Случайные соперники и игра с ботом.</p>
-				<a
-					id="cta-play-now-btn"
-					href="https://game.chesson.me/"
-					class="mt-8 w-full sm:w-auto bg-white text-black font-bold py-3 px-7 rounded-md hover:bg-gray-200 transition duration-300 text-lg cursor-pointer"
-				>
-					Играть сейчас
-				</a>
-				<ul class="mt-8 space-y-2 text-sm sm:text-base text-white/90">
-					<li>Случайный соперник онлайн</li>
-					<li>Игра с ботом (3 уровня сложности)</li>
-					<li>Подсказки от AI</li>
-				</ul>
-			</div>
-		</section>
-
-		<section class="mx-auto w-[calc(100%-2rem)] max-w-5xl pb-16 sm:pb-20">
-			<div class="rounded-2xl border border-[#2A2A2A] bg-[#0D0D0D] p-6 sm:p-10">
-				<h2 class="text-2xl sm:text-3xl font-bold text-center">Почему chesson?</h2>
-				<ul class="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm sm:text-base">
-					<li class="rounded-xl border border-[#222222] bg-[#121212] px-4 py-3">Играй без регистрации</li>
-					<li class="rounded-xl border border-[#222222] bg-[#121212] px-4 py-3">Быстрый старт игры</li>
-					<li class="rounded-xl border border-[#222222] bg-[#121212] px-4 py-3">Работает на телефоне и ПК</li>
-					<li class="rounded-xl border border-[#222222] bg-[#121212] px-4 py-3">Бесплатно и без ограничений</li>
-				</ul>
-			</div>
-		</section>
-
-		<section class="mx-auto w-[calc(100%-2rem)] max-w-5xl pb-16 sm:pb-20" aria-labelledby="faq-title">
-			<div class="rounded-2xl border border-[#2A2A2A] bg-[#111111] p-6 sm:p-10">
-				<h2 id="faq-title" class="text-2xl sm:text-3xl font-bold text-center">FAQ</h2>
-				<div class="mt-8 space-y-3">
-					<details class="rounded-xl border border-[#222222] bg-[#121212] px-4 py-3">
+		<section class="mx-auto w-[calc(100%-2rem)] max-w-6xl pb-16 sm:pb-20" aria-labelledby="faq-title">
+			<div class="rounded-2xl border border-[#252525] bg-[#0F0F0F] p-6 sm:p-8">
+				<h2 id="faq-title" class="text-2xl sm:text-3xl font-semibold">FAQ</h2>
+				<div class="mt-6 grid gap-3 md:grid-cols-2">
+					<details class="rounded-xl border border-[#222] bg-[#121212] px-4 py-3">
 						<summary class="cursor-pointer font-semibold">Можно ли играть в шахматы онлайн бесплатно?</summary>
 						<p class="mt-2 text-white/80">Да. На chesson.me можно играть в шахматы онлайн бесплатно прямо в браузере.</p>
 					</details>
-					<details class="rounded-xl border border-[#222222] bg-[#121212] px-4 py-3">
+					<details class="rounded-xl border border-[#222] bg-[#121212] px-4 py-3">
 						<summary class="cursor-pointer font-semibold">Нужна ли регистрация для старта?</summary>
 						<p class="mt-2 text-white/80">Нет. Игру можно начать без обязательной регистрации.</p>
 					</details>
-					<details class="rounded-xl border border-[#222222] bg-[#121212] px-4 py-3">
+					<details class="rounded-xl border border-[#222] bg-[#121212] px-4 py-3">
 						<summary class="cursor-pointer font-semibold">Можно ли играть против бота?</summary>
 						<p class="mt-2 text-white/80">Да. Доступны онлайн шахматы с компьютером и выбор подходящего уровня сложности.</p>
 					</details>
-					<details class="rounded-xl border border-[#222222] bg-[#121212] px-4 py-3">
+					<details class="rounded-xl border border-[#222] bg-[#121212] px-4 py-3">
 						<summary class="cursor-pointer font-semibold">Работает ли сервис на телефоне и ПК?</summary>
 						<p class="mt-2 text-white/80">Да. chesson.me стабильно работает в современных браузерах на мобильных устройствах и компьютерах.</p>
 					</details>
@@ -163,8 +175,8 @@ const faqSchema = {
 			</div>
 		</section>
 
-		<section class="mx-auto w-[calc(100%-2rem)] max-w-5xl pb-16 sm:pb-20" aria-labelledby="seo-text-title">
-			<div class="rounded-2xl border border-[#2A2A2A] bg-[#101010] p-6 sm:p-8 text-sm sm:text-base leading-relaxed text-white/85">
+		<section class="mx-auto w-[calc(100%-2rem)] max-w-6xl pb-16 sm:pb-20" aria-labelledby="seo-text-title">
+			<div class="rounded-2xl border border-[#252525] bg-[#0F0F0F] p-6 sm:p-8 text-sm sm:text-base leading-relaxed text-white/85">
 				<h2 id="seo-text-title" class="text-xl sm:text-2xl font-semibold text-white">Играть в шахматы онлайн легко</h2>
 				<p class="mt-4">
 					На chesson.me можно <strong>играть в шахматы онлайн</strong> прямо в браузере за пару кликов. Платформа подходит для быстрых партий в течение дня и для длинных матчей вечером.
@@ -178,14 +190,62 @@ const faqSchema = {
 			</div>
 		</section>
 
-		<footer class="mx-auto w-[calc(100%-2rem)] max-w-5xl pb-16 sm:pb-20" aria-label="Footer links">
-			<div class="rounded-2xl border border-[#2A2A2A] bg-[#0D0D0D] p-6 sm:p-8">
-				<p class="text-sm font-semibold text-white/90">Быстрые ссылки</p>
-				<div class="mt-4 flex flex-col sm:flex-row sm:flex-wrap gap-3 text-sm">
-					<a href="/ru/play-chess-online-free/" class="text-white/80 hover:text-white underline underline-offset-4 decoration-white/30">Играть в шахматы онлайн бесплатно</a>
-					<a href="/ru/play-chess-with-bot/" class="text-white/80 hover:text-white underline underline-offset-4 decoration-white/30">Играть в шахматы с ботом</a>
-					<a href="/ru/play-chess-with-friends-link/" class="text-white/80 hover:text-white underline underline-offset-4 decoration-white/30">Играть в шахматы с другом</a>
-					<a href="/" class="text-[#b2a8ff] hover:text-[#d1c9ff] underline underline-offset-4 decoration-[#6D5BFF]/50">en</a>
+		<footer class="border-t border-white/10" aria-label="Footer links">
+			<div class="mx-auto w-[calc(100%-2rem)] max-w-6xl py-12 sm:py-14">
+				<div class="grid gap-10 lg:grid-cols-6">
+					<div class="lg:col-span-2">
+						<div class="flex items-center gap-3">
+							<img src="/chesson-logo.svg" alt="Chesson" class="h-8 w-auto" />
+						</div>
+						<p class="mt-4 max-w-sm text-sm text-white/65">
+							Играй в шахматы онлайн бесплатно: случайные соперники, партии с ботом и инструмент оффлайн-турниров.
+						</p>
+					</div>
+
+					<div>
+						<h3 class="text-sm font-semibold text-white/90">Игра</h3>
+						<div class="mt-4 space-y-2 text-sm text-white/70">
+							<a href="/ru/play-chess-online-free/" class="block hover:text-white">Играть в шахматы онлайн бесплатно</a>
+							<a href="/ru/play-chess-with-bot/" class="block hover:text-white">Играть в шахматы с ботом</a>
+							<a href="/ru/play-chess-with-friends-link/" class="block hover:text-white">Играть в шахматы с другом</a>
+						</div>
+					</div>
+
+					<div>
+						<h3 class="text-sm font-semibold text-white/90">Шахматы</h3>
+						<div class="mt-4 space-y-2 text-sm text-white/70">
+							<a href="/tournaments" class="block hover:text-white">Турнирная сетка</a>
+							<a href="https://game.chesson.me/" class="block hover:text-white">Игровое приложение</a>
+							<a href="https://mobile.chesson.me/" class="block hover:text-white">Мобильная версия</a>
+						</div>
+					</div>
+
+					<div>
+						<h3 class="text-sm font-semibold text-white/90">Команда</h3>
+						<div class="mt-4 space-y-2 text-sm text-white/70">
+							<a href="https://t.me/chessonme" class="block hover:text-white">Telegram</a>
+							<a href="/" class="block hover:text-white">English</a>
+							<a href="/ru/" class="block hover:text-white">Русский</a>
+						</div>
+					</div>
+
+					<div>
+						<h3 class="text-sm font-semibold text-white/90">Правовая информация</h3>
+						<div class="mt-4 space-y-2 text-sm text-white/70">
+							<a href="/ru/privacy-policy/" class="block hover:text-white">Политика конфиденциальности</a>
+							<a href="/ru/terms-of-use/" class="block hover:text-white">Условия использования</a>
+							<a href="/sitemap-index.xml" class="block hover:text-white">Sitemap</a>
+							<a href="/404" class="block hover:text-white">Статус страниц</a>
+						</div>
+					</div>
+				</div>
+
+				<div class="mt-10 border-t border-white/10 pt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between text-sm text-white/50">
+					<p>© 2026 chesson.me</p>
+					<div class="flex items-center gap-4">
+						<a href="https://t.me/chessonme" class="hover:text-white">Telegram</a>
+						<a href="/" class="hover:text-white">EN</a>
+					</div>
 				</div>
 			</div>
 		</footer>

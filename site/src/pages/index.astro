@@ -65,7 +65,7 @@ const faqSchema = {
 				</nav>
 			</header>
 			<div
-				class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 text-center w-[calc(100%-2rem)] max-w-4xl"
+				class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 text-center w-[calc(100%-2rem)] max-w-4xl flex flex-col justify-center items-center h-full"
 			>
 				<h1 class="font-bold mb-8 max-w-4xl mx-auto text-3xl sm:text-4xl md:text-5xl lg:text-7xl">
 					Play chess online free <br> vs players or bot
@@ -93,69 +93,81 @@ const faqSchema = {
 			</div>
 		</section>
 
-		<section class="mx-auto w-[calc(100%-2rem)] max-w-5xl py-16 sm:py-20">
-			<div class="rounded-2xl border border-[#2A2A2A] bg-[#0F0F0F] p-6 sm:p-10 text-center">
-				<h2 class="text-2xl sm:text-3xl md:text-4xl font-bold">Create Tournament Bracket for Offline Play</h2>
-				<p class="mt-4 text-sm sm:text-lg text-white/80">
-					Use the bracket tool to organize offline chess games, track rounds, and manage winners in one place.
-				</p>
-				<a
-					href="/tournaments"
-					class="relative mt-8 inline-block w-full sm:w-auto bg-[#1f2937] text-white border border-[#374151] font-bold py-3 px-6 rounded-md hover:bg-[#111827] transition duration-300 text-lg text-center"
-				>
-					Create Tournament Bracket
-				</a>
+		<section class="mx-auto w-[calc(100%-2rem)] max-w-6xl py-16 sm:py-20">
+			<div class="mb-8 sm:mb-10">
+				<h2 class="mt-3 text-2xl sm:text-3xl md:text-4xl font-semibold">Everything to start a chess game fast</h2>
+			</div>
+
+			<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+				<article class="rounded-2xl border border-[#252525] bg-[#0F0F0F] p-6 sm:p-7 lg:col-span-2">
+					<h3 class="text-xl sm:text-2xl font-semibold">Create Tournament Bracket for Offline Play</h3>
+					<p class="mt-3 text-white/75 leading-relaxed">
+						Use the bracket tool to organize offline chess games, track rounds, and manage winners in one place.
+					</p>
+					<a
+						href="/tournaments"
+						class="mt-6 inline-flex w-full items-center justify-center rounded-md bg-white px-5 py-2.5 font-semibold text-black hover:bg-gray-200 transition-colors"
+					>
+						Create Tournament Bracket
+					</a>
+				</article>
+
+				<article class="rounded-2xl border border-[#252525] bg-[#0F0F0F] p-6 sm:p-7">
+					<h3 class="text-xl font-semibold">Play instantly</h3>
+					<p class="mt-3 text-white/75">No registration. Random opponents, bot games, and AI-powered hints.</p>
+					<a
+						id="cta-play-now-btn"
+						href="https://game.chesson.me/"
+						class="mt-6 inline-flex w-full items-center justify-center rounded-md bg-white px-5 py-2.5 font-semibold text-black hover:bg-gray-200 transition-colors"
+					>
+						Play now
+					</a>
+				</article>
+
+				<article class="rounded-2xl border border-[#252525] bg-[#0F0F0F] p-6 sm:p-7">
+					<h3 class="text-xl font-semibold">Random opponent online</h3>
+					<p class="mt-3 text-white/75">Jump into a live match and start playing in seconds.</p>
+				</article>
+
+				<article class="rounded-2xl border border-[#252525] bg-[#0F0F0F] p-6 sm:p-7">
+					<h3 class="text-xl font-semibold">Play with a bot</h3>
+					<p class="mt-3 text-white/75">Train against 3 difficulty levels and improve at your own pace.</p>
+				</article>
+
+				<article class="rounded-2xl border border-[#252525] bg-[#0F0F0F] p-6 sm:p-7">
+					<h3 class="text-xl font-semibold">AI-powered hints</h3>
+					<p class="mt-3 text-white/75">Get practical guidance during play and learn faster.</p>
+				</article>
+
+				<article class="rounded-2xl border border-[#252525] bg-[#0F0F0F] p-6 sm:p-7 lg:col-span-3">
+					<h3 class="text-xl sm:text-2xl font-semibold">Why chesson?</h3>
+					<div class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 text-sm">
+						<p class="rounded-xl border border-[#222] bg-[#121212] px-4 py-3">Play without registration</p>
+						<p class="rounded-xl border border-[#222] bg-[#121212] px-4 py-3">Start games instantly</p>
+						<p class="rounded-xl border border-[#222] bg-[#121212] px-4 py-3">Works on mobile and desktop</p>
+						<p class="rounded-xl border border-[#222] bg-[#121212] px-4 py-3">Free and unlimited</p>
+					</div>
+				</article>
 			</div>
 		</section>
 
-		<section class="mx-auto w-[calc(100%-2rem)] max-w-5xl py-16 sm:py-20">
-			<div class="rounded-2xl border border-[#2A2A2A] bg-[#111111] p-6 sm:p-10 text-center">
-				<h2 class="text-2xl sm:text-3xl md:text-4xl font-bold">Play Chess Online for Free</h2>
-				<p class="mt-4 text-sm sm:text-lg text-white/80">No registration. Random opponents and bot games.</p>
-				<a
-					id="cta-play-now-btn"
-					href="https://game.chesson.me/"
-					class="mt-8 w-full sm:w-auto bg-white text-black font-bold py-3 px-7 rounded-md hover:bg-gray-200 transition duration-300 text-lg cursor-pointer"
-				>
-					Play now
-				</a>
-				<ul class="mt-8 space-y-2 text-sm sm:text-base text-white/90">
-					<li>Random opponent online</li>
-					<li>Play with a bot (3 difficulty levels)</li>
-					<li>AI-powered hints</li>
-				</ul>
-			</div>
-		</section>
-
-		<section class="mx-auto w-[calc(100%-2rem)] max-w-5xl pb-16 sm:pb-20">
-			<div class="rounded-2xl border border-[#2A2A2A] bg-[#0D0D0D] p-6 sm:p-10">
-				<h2 class="text-2xl sm:text-3xl font-bold text-center">Why chesson?</h2>
-				<ul class="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm sm:text-base">
-					<li class="rounded-xl border border-[#222222] bg-[#121212] px-4 py-3">Play without registration</li>
-					<li class="rounded-xl border border-[#222222] bg-[#121212] px-4 py-3">Start games instantly</li>
-					<li class="rounded-xl border border-[#222222] bg-[#121212] px-4 py-3">Works on mobile and desktop</li>
-					<li class="rounded-xl border border-[#222222] bg-[#121212] px-4 py-3">Free and unlimited</li>
-				</ul>
-			</div>
-		</section>
-
-		<section class="mx-auto w-[calc(100%-2rem)] max-w-5xl pb-16 sm:pb-20" aria-labelledby="faq-title">
-			<div class="rounded-2xl border border-[#2A2A2A] bg-[#111111] p-6 sm:p-10">
-				<h2 id="faq-title" class="text-2xl sm:text-3xl font-bold text-center">FAQ</h2>
-				<div class="mt-8 space-y-3">
-					<details class="rounded-xl border border-[#222222] bg-[#121212] px-4 py-3">
+		<section class="mx-auto w-[calc(100%-2rem)] max-w-6xl pb-16 sm:pb-20" aria-labelledby="faq-title">
+			<div class="rounded-2xl border border-[#252525] bg-[#0F0F0F] p-6 sm:p-8">
+				<h2 id="faq-title" class="text-2xl sm:text-3xl font-semibold">FAQ</h2>
+				<div class="mt-6 grid gap-3 md:grid-cols-2">
+					<details class="rounded-xl border border-[#222] bg-[#121212] px-4 py-3">
 						<summary class="cursor-pointer font-semibold">Can I play chess online for free?</summary>
 						<p class="mt-2 text-white/80">Yes. You can start and play chess online for free on chesson.me.</p>
 					</details>
-					<details class="rounded-xl border border-[#222222] bg-[#121212] px-4 py-3">
+					<details class="rounded-xl border border-[#222] bg-[#121212] px-4 py-3">
 						<summary class="cursor-pointer font-semibold">Do I need registration to start?</summary>
 						<p class="mt-2 text-white/80">No. You can start a game without mandatory registration.</p>
 					</details>
-					<details class="rounded-xl border border-[#222222] bg-[#121212] px-4 py-3">
+					<details class="rounded-xl border border-[#222] bg-[#121212] px-4 py-3">
 						<summary class="cursor-pointer font-semibold">Can I play against a bot?</summary>
 						<p class="mt-2 text-white/80">Yes. You can play online chess with a computer and choose a suitable difficulty level.</p>
 					</details>
-					<details class="rounded-xl border border-[#222222] bg-[#121212] px-4 py-3">
+					<details class="rounded-xl border border-[#222] bg-[#121212] px-4 py-3">
 						<summary class="cursor-pointer font-semibold">Does it work on mobile and desktop?</summary>
 						<p class="mt-2 text-white/80">Yes. chesson.me works in modern mobile and desktop browsers.</p>
 					</details>
@@ -163,8 +175,8 @@ const faqSchema = {
 			</div>
 		</section>
 
-		<section class="mx-auto w-[calc(100%-2rem)] max-w-5xl pb-16 sm:pb-20" aria-labelledby="seo-text-title">
-			<div class="rounded-2xl border border-[#2A2A2A] bg-[#101010] p-6 sm:p-8 text-sm sm:text-base leading-relaxed text-white/85">
+		<section class="mx-auto w-[calc(100%-2rem)] max-w-6xl pb-16 sm:pb-20" aria-labelledby="seo-text-title">
+			<div class="rounded-2xl border border-[#252525] bg-[#0F0F0F] p-6 sm:p-8 text-sm sm:text-base leading-relaxed text-white/85">
 				<h2 id="seo-text-title" class="text-xl sm:text-2xl font-semibold text-white">Play Chess Online in Seconds</h2>
 				<p class="mt-4">
 					On chesson.me, you can <strong>play chess online</strong> right in your browser in just a few clicks. The platform is built for quick daily matches and longer evening games.
@@ -178,14 +190,62 @@ const faqSchema = {
 			</div>
 		</section>
 
-		<footer class="mx-auto w-[calc(100%-2rem)] max-w-5xl pb-16 sm:pb-20" aria-label="Footer links">
-			<div class="rounded-2xl border border-[#2A2A2A] bg-[#0D0D0D] p-6 sm:p-8">
-				<p class="text-sm font-semibold text-white/90">Quick links</p>
-				<div class="mt-4 flex flex-col sm:flex-row sm:flex-wrap gap-3 text-sm">
-					<a href="/play-chess-online-free/" class="text-white/80 hover:text-white underline underline-offset-4 decoration-white/30">Play chess online for free</a>
-					<a href="/play-chess-with-bot/" class="text-white/80 hover:text-white underline underline-offset-4 decoration-white/30">Play chess with a bot</a>
-					<a href="/play-chess-with-friends-link/" class="text-white/80 hover:text-white underline underline-offset-4 decoration-white/30">Play chess with friends</a>
-					<a href="/ru/" class="text-[#b2a8ff] hover:text-[#d1c9ff] underline underline-offset-4 decoration-[#6D5BFF]/50">ru</a>
+		<footer class="border-t border-white/10" aria-label="Footer links">
+			<div class="mx-auto w-[calc(100%-2rem)] max-w-6xl py-12 sm:py-14">
+				<div class="grid gap-10 lg:grid-cols-6">
+					<div class="lg:col-span-2">
+						<div class="flex items-center gap-3">
+							<img src="/chesson-logo.svg" alt="Chesson" class="h-8 w-auto" />
+						</div>
+						<p class="mt-4 max-w-sm text-sm text-white/65">
+							Play chess online for free: random opponents, bot matches, and offline tournament tools.
+						</p>
+					</div>
+
+					<div>
+						<h3 class="text-sm font-semibold text-white/90">Play</h3>
+						<div class="mt-4 space-y-2 text-sm text-white/70">
+							<a href="/play-chess-online-free/" class="block hover:text-white">Play chess online for free</a>
+							<a href="/play-chess-with-bot/" class="block hover:text-white">Play chess with a bot</a>
+							<a href="/play-chess-with-friends-link/" class="block hover:text-white">Play chess with friends</a>
+						</div>
+					</div>
+
+					<div>
+						<h3 class="text-sm font-semibold text-white/90">Chess</h3>
+						<div class="mt-4 space-y-2 text-sm text-white/70">
+							<a href="/tournaments" class="block hover:text-white">Tournament bracket</a>
+							<a href="https://game.chesson.me/" class="block hover:text-white">Game app</a>
+							<a href="https://mobile.chesson.me/" class="block hover:text-white">Mobile app</a>
+						</div>
+					</div>
+
+					<div>
+						<h3 class="text-sm font-semibold text-white/90">Team</h3>
+						<div class="mt-4 space-y-2 text-sm text-white/70">
+							<a href="https://t.me/chessonme" class="block hover:text-white">Telegram</a>
+							<a href="/" class="block hover:text-white">English</a>
+							<a href="/ru/" class="block hover:text-white">Russian</a>
+						</div>
+					</div>
+
+					<div>
+						<h3 class="text-sm font-semibold text-white/90">Legal</h3>
+						<div class="mt-4 space-y-2 text-sm text-white/70">
+							<a href="/privacy-policy/" class="block hover:text-white">Privacy Policy</a>
+							<a href="/terms-of-use/" class="block hover:text-white">Terms of Use</a>
+							<a href="/sitemap-index.xml" class="block hover:text-white">Sitemap</a>
+							<a href="/404" class="block hover:text-white">Status</a>
+						</div>
+					</div>
+				</div>
+
+				<div class="mt-10 border-t border-white/10 pt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between text-sm text-white/50">
+					<p>© 2026 chesson.me</p>
+					<div class="flex items-center gap-4">
+						<a href="https://t.me/chessonme" class="hover:text-white">Telegram</a>
+						<a href="/ru/" class="hover:text-white">RU</a>
+					</div>
 				</div>
 			</div>
 		</footer>
