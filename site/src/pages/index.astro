@@ -1,12 +1,51 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import { Chessboard3D } from "../components/Chessboard3D";
+
+const faqSchema = {
+	"@context": "https://schema.org",
+	"@type": "FAQPage",
+	mainEntity: [
+		{
+			"@type": "Question",
+			name: "Can I play chess online for free?",
+			acceptedAnswer: {
+				"@type": "Answer",
+				text: "Yes. You can start and play chess online for free on chesson.me.",
+			},
+		},
+		{
+			"@type": "Question",
+			name: "Do I need registration to start?",
+			acceptedAnswer: {
+				"@type": "Answer",
+				text: "No. You can start a game without mandatory registration.",
+			},
+		},
+		{
+			"@type": "Question",
+			name: "Can I play against a bot?",
+			acceptedAnswer: {
+				"@type": "Answer",
+				text: "Yes. You can play online chess with a computer and choose a suitable difficulty level.",
+			},
+		},
+		{
+			"@type": "Question",
+			name: "Does it work on mobile and desktop?",
+			acceptedAnswer: {
+				"@type": "Answer",
+				text: "Yes. chesson.me works in modern mobile and desktop browsers.",
+			},
+		},
+	],
+};
 ---
 
 <Layout 
 	lang="en" 
-	title="Chess Online — Play Free with Friends | Chesson"
-	description="Play chess online for free in your browser. Create a game room in seconds, invite a friend by link, or start a game with a bot."
+	title="Play Chess Online for Free — chesson.me"
+	description="Play chess online without registration. Random opponents, games vs bot, and AI-powered hints."
 	canonicalUrl="https://chesson.me/"
 	ogImage="https://chesson.me/og.png"
 	locale="en_US"
@@ -16,70 +55,143 @@ import { Chessboard3D } from "../components/Chessboard3D";
 		{ lang: "x-default", url: "https://chesson.me/" },
 	]}
 >
-	<div class="relative w-full h-screen bg-black text-white overflow-hidden">
-		<header class="absolute top-0 left-0 right-0 z-10 p-9">
-			<nav class="flex justify-between items-center max-w-6xl mx-auto">
-				<div class="flex items-center">
-					<img src="/chesson-logo.svg" alt="Chesson Logo" />
+	<main class="bg-[#070707] text-white">
+		<section class="relative w-full h-screen overflow-hidden">
+			<header class="absolute top-0 left-0 right-0 z-10 p-9">
+				<nav class="flex justify-between items-center max-w-6xl mx-auto">
+					<div class="flex items-center">
+						<img src="/chesson-logo.svg" alt="Chesson Logo" />
+					</div>
+				</nav>
+			</header>
+			<div
+				class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 text-center w-[calc(100%-2rem)] max-w-4xl"
+			>
+				<h1 class="font-bold mb-8 max-w-4xl mx-auto text-3xl sm:text-4xl md:text-5xl lg:text-7xl">
+					Play chess online free <br> vs players or bot
+				</h1>
+				<h2 class="mb-10 font-normal text-3xl">
+					Create a room in seconds and start a game without registration
+				</h2>
+				<div class="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 w-full sm:w-auto">
+					<a
+						id="create-room-btn"
+						href="https://game.chesson.me/"
+						class="w-full sm:w-auto bg-white text-black font-bold py-3 px-6 rounded-md hover:bg-gray-200 transition duration-300 text-lg cursor-pointer"
+					>
+						Play
+					</a>
 				</div>
-			</nav>
-		</header>
-		<div
-			class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 text-center w-[calc(100%-2rem)] max-w-4xl"
-		>
-			<h1 class="font-bold mb-8 max-w-4xl mx-auto text-3xl sm:text-4xl md:text-5xl lg:text-7xl">
-				Chess online <br> play free with friends
-			</h1>
-			<h2 class="mb-10 font-normal text-xl sm:text-2xl md:text-3xl lg:text-4xl">
-				Create a room in seconds and start a game without registration
-			</h2>
-			<div class="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 w-full sm:w-auto">
-				<button
-					id="create-room-btn"
-					class="w-full sm:w-auto bg-white text-black font-bold py-3 px-6 rounded-md hover:bg-gray-200 transition duration-300 text-lg cursor-pointer"
-				>
-					Play
-				</button>
-				<button
-					id="login-btn"
-					class="w-full sm:w-auto bg-[#4F39F6] text-white border border-[#6D5BFF] font-bold py-3 px-6 rounded-md hover:bg-[#5C47FF] shadow-[0_8px_24px_rgba(79,57,246,0.45)] transition duration-300 text-lg cursor-pointer"
-				>
-					Sign In / Sign Up
-				</button>
+			</div>
+			<Chessboard3D client:idle />
+			<div class="absolute left-0 bottom-[40px] right-0 z-[10]">
+				<div class="text-center text-xm opacity-70 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-[14px]">
+					<a href="https://t.me/chessonme" target="_blank" rel="noopener noreferrer" class="hover:opacity-100 transition-opacity order-1 md:order-3">
+						<span class="order-2 md:order-1">v0.12.1 + <span class="font-extrabold bg-gradient-to-r from-[#E810A7] to-[#FFE600] bg-clip-text text-transparent italic">AI features</span></span>
+					</a>
+				</div>
+			</div>
+		</section>
+
+		<section class="mx-auto w-[calc(100%-2rem)] max-w-5xl py-16 sm:py-20">
+			<div class="rounded-2xl border border-[#2A2A2A] bg-[#0F0F0F] p-6 sm:p-10 text-center">
+				<h2 class="text-2xl sm:text-3xl md:text-4xl font-bold">Create Tournament Bracket for Offline Play</h2>
+				<p class="mt-4 text-sm sm:text-lg text-white/80">
+					Use the bracket tool to organize offline chess games, track rounds, and manage winners in one place.
+				</p>
 				<a
 					href="/tournaments"
-					class="relative w-full sm:w-auto bg-[#1f2937] text-white border border-[#374151] font-bold py-3 px-6 rounded-md hover:bg-[#111827] transition duration-300 text-lg text-center"
+					class="relative mt-8 inline-block w-full sm:w-auto bg-[#1f2937] text-white border border-[#374151] font-bold py-3 px-6 rounded-md hover:bg-[#111827] transition duration-300 text-lg text-center"
 				>
 					Create Tournament Bracket
 					<span class="absolute -top-2 -right-2 inline-block rounded bg-[#4F39F6] px-2 py-0.5 text-[10px] leading-none uppercase rotate-12 shadow-[0_4px_14px_rgba(79,57,246,0.55)]">beta</span>
 				</a>
 			</div>
-		</div>
-		<Chessboard3D client:only />
-		<nav aria-label="Key chess pages" class="absolute left-0 right-0 bottom-[86px] sm:bottom-[106px] z-10">
-			<div class="mx-auto grid w-[calc(100%-2rem)] max-w-[360px] grid-cols-2 gap-x-3 gap-y-1 sm:flex sm:max-w-5xl sm:flex-wrap sm:items-center sm:justify-center sm:gap-3">
-				<a href="/play-chess-online-free/" class="col-span-2 sm:col-span-1 text-xs text-white/90 text-center underline underline-offset-4 decoration-white/30 hover:text-white sm:rounded-md sm:border sm:border-[#374151] sm:bg-[#111827]/90 sm:px-3 sm:py-2 sm:text-sm sm:no-underline sm:leading-tight sm:min-h-[42px] sm:flex sm:items-center sm:justify-center sm:hover:bg-[#1f2937]">
-					Play chess online for free
+		</section>
+
+		<section class="mx-auto w-[calc(100%-2rem)] max-w-5xl py-16 sm:py-20">
+			<div class="rounded-2xl border border-[#2A2A2A] bg-[#111111] p-6 sm:p-10 text-center">
+				<h2 class="text-2xl sm:text-3xl md:text-4xl font-bold">Play Chess Online for Free</h2>
+				<p class="mt-4 text-sm sm:text-lg text-white/80">No registration. Random opponents and bot games.</p>
+				<a
+					id="cta-play-now-btn"
+					href="https://game.chesson.me/"
+					class="mt-8 w-full sm:w-auto bg-white text-black font-bold py-3 px-7 rounded-md hover:bg-gray-200 transition duration-300 text-lg cursor-pointer"
+				>
+					Play now
 				</a>
-				<a href="/play-chess-with-bot/" class="col-span-2 sm:col-span-1 text-xs text-white/90 text-center underline underline-offset-4 decoration-white/30 hover:text-white sm:rounded-md sm:border sm:border-[#374151] sm:bg-[#111827]/90 sm:px-3 sm:py-2 sm:text-sm sm:no-underline sm:leading-tight sm:min-h-[42px] sm:flex sm:items-center sm:justify-center sm:hover:bg-[#1f2937]">
-					Play chess with a bot
-				</a>
-				<a href="/play-chess-with-friends-link/" class="text-xs text-white/90 text-center underline underline-offset-4 decoration-white/30 hover:text-white sm:rounded-md sm:border sm:border-[#374151] sm:bg-[#111827]/90 sm:px-3 sm:py-2 sm:text-sm sm:no-underline sm:leading-tight sm:min-h-[42px] sm:flex sm:items-center sm:justify-center sm:hover:bg-[#1f2937]">
-					Play chess with friends
-				</a>
-				<a href="/ru/" class="text-xs text-[#9f90ff] text-center underline underline-offset-4 decoration-[#6D5BFF]/50 hover:text-[#c9c0ff] sm:rounded-md sm:border sm:border-[#6D5BFF] sm:bg-[#4F39F6]/90 sm:px-3 sm:py-2 sm:text-sm sm:text-white sm:no-underline sm:leading-tight sm:min-h-[42px] sm:flex sm:items-center sm:justify-center sm:hover:bg-[#5C47FF]">
-					ru
-				</a>
+				<ul class="mt-8 space-y-2 text-sm sm:text-base text-white/90">
+					<li>Random opponent online</li>
+					<li>Play with a bot (3 difficulty levels)</li>
+					<li>AI-powered hints</li>
+				</ul>
 			</div>
-		</nav>
-		<div class="absolute left-0 bottom-[40px] right-0">
-			<div class="text-center text-xm opacity-70 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-[14px]">
-				<a href="https://t.me/chessonme" target="_blank" rel="noopener noreferrer" class="hover:opacity-100 transition-opacity order-1 md:order-3">
-					<span class="order-2 md:order-1">v0.12.1 + <span class="font-extrabold bg-gradient-to-r from-[#E810A7] to-[#FFE600] bg-clip-text text-transparent italic">AI features</span></span>
-				</a>
+		</section>
+
+		<section class="mx-auto w-[calc(100%-2rem)] max-w-5xl pb-16 sm:pb-20">
+			<div class="rounded-2xl border border-[#2A2A2A] bg-[#0D0D0D] p-6 sm:p-10">
+				<h2 class="text-2xl sm:text-3xl font-bold text-center">Why chesson?</h2>
+				<ul class="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm sm:text-base">
+					<li class="rounded-xl border border-[#222222] bg-[#121212] px-4 py-3">Play without registration</li>
+					<li class="rounded-xl border border-[#222222] bg-[#121212] px-4 py-3">Start games instantly</li>
+					<li class="rounded-xl border border-[#222222] bg-[#121212] px-4 py-3">Works on mobile and desktop</li>
+					<li class="rounded-xl border border-[#222222] bg-[#121212] px-4 py-3">Free and unlimited</li>
+				</ul>
 			</div>
-		</div>
-	</div>
+		</section>
+
+		<section class="mx-auto w-[calc(100%-2rem)] max-w-5xl pb-16 sm:pb-20" aria-labelledby="faq-title">
+			<div class="rounded-2xl border border-[#2A2A2A] bg-[#111111] p-6 sm:p-10">
+				<h2 id="faq-title" class="text-2xl sm:text-3xl font-bold text-center">FAQ</h2>
+				<div class="mt-8 space-y-3">
+					<details class="rounded-xl border border-[#222222] bg-[#121212] px-4 py-3">
+						<summary class="cursor-pointer font-semibold">Can I play chess online for free?</summary>
+						<p class="mt-2 text-white/80">Yes. You can start and play chess online for free on chesson.me.</p>
+					</details>
+					<details class="rounded-xl border border-[#222222] bg-[#121212] px-4 py-3">
+						<summary class="cursor-pointer font-semibold">Do I need registration to start?</summary>
+						<p class="mt-2 text-white/80">No. You can start a game without mandatory registration.</p>
+					</details>
+					<details class="rounded-xl border border-[#222222] bg-[#121212] px-4 py-3">
+						<summary class="cursor-pointer font-semibold">Can I play against a bot?</summary>
+						<p class="mt-2 text-white/80">Yes. You can play online chess with a computer and choose a suitable difficulty level.</p>
+					</details>
+					<details class="rounded-xl border border-[#222222] bg-[#121212] px-4 py-3">
+						<summary class="cursor-pointer font-semibold">Does it work on mobile and desktop?</summary>
+						<p class="mt-2 text-white/80">Yes. chesson.me works in modern mobile and desktop browsers.</p>
+					</details>
+				</div>
+			</div>
+		</section>
+
+		<section class="mx-auto w-[calc(100%-2rem)] max-w-5xl pb-16 sm:pb-20" aria-labelledby="seo-text-title">
+			<div class="rounded-2xl border border-[#2A2A2A] bg-[#101010] p-6 sm:p-8 text-sm sm:text-base leading-relaxed text-white/85">
+				<h2 id="seo-text-title" class="text-xl sm:text-2xl font-semibold text-white">Play Chess Online in Seconds</h2>
+				<p class="mt-4">
+					On chesson.me, you can <strong>play chess online</strong> right in your browser in just a few clicks. The platform is built for quick daily matches and longer evening games.
+				</p>
+				<p class="mt-4">
+					If you are looking for <strong>online chess for free</strong>, you can jump straight into a game: create a room, find an opponent, or start a match versus a bot. It is a simple <strong>chess game without registration</strong> and no unnecessary setup.
+				</p>
+				<p class="mt-4">
+					You can also play <strong>online chess with a computer</strong> to train tactics and practice at your own pace. The service works smoothly on both mobile and desktop, so you can play anywhere.
+				</p>
+			</div>
+		</section>
+
+		<footer class="mx-auto w-[calc(100%-2rem)] max-w-5xl pb-16 sm:pb-20" aria-label="Footer links">
+			<div class="rounded-2xl border border-[#2A2A2A] bg-[#0D0D0D] p-6 sm:p-8">
+				<p class="text-sm font-semibold text-white/90">Quick links</p>
+				<div class="mt-4 flex flex-col sm:flex-row sm:flex-wrap gap-3 text-sm">
+					<a href="/play-chess-online-free/" class="text-white/80 hover:text-white underline underline-offset-4 decoration-white/30">Play chess online for free</a>
+					<a href="/play-chess-with-bot/" class="text-white/80 hover:text-white underline underline-offset-4 decoration-white/30">Play chess with a bot</a>
+					<a href="/play-chess-with-friends-link/" class="text-white/80 hover:text-white underline underline-offset-4 decoration-white/30">Play chess with friends</a>
+					<a href="/ru/" class="text-[#b2a8ff] hover:text-[#d1c9ff] underline underline-offset-4 decoration-[#6D5BFF]/50">ru</a>
+				</div>
+			</div>
+		</footer>
+	</main>
+	<script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
 	<script>
 		// Redirect based on screen size
 		function redirectBasedOnScreenSize() {
@@ -92,19 +204,21 @@ import { Chessboard3D } from "../components/Chessboard3D";
 			}
 		}
 
-		function redirectToLogin() {
-			window.location.href = '/login';
-		}
-		
 		// Add click handler to button
 		document.addEventListener('DOMContentLoaded', () => {
 			const createRoomBtn = document.getElementById('create-room-btn');
-			const loginBtn = document.getElementById('login-btn');
+			const ctaPlayNowBtn = document.getElementById('cta-play-now-btn');
 			if (createRoomBtn) {
-				createRoomBtn.addEventListener('click', redirectBasedOnScreenSize);
+				createRoomBtn.addEventListener('click', (event) => {
+					event.preventDefault();
+					redirectBasedOnScreenSize();
+				});
 			}
-			if (loginBtn) {
-				loginBtn.addEventListener('click', redirectToLogin);
+			if (ctaPlayNowBtn) {
+				ctaPlayNowBtn.addEventListener('click', (event) => {
+					event.preventDefault();
+					redirectBasedOnScreenSize();
+				});
 			}
 		});
 	</script>
