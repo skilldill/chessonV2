@@ -18,12 +18,12 @@ const COPY = {
 export const QuickPlayButton: React.FC<QuickPlayButtonProps> = ({
   onClick,
   timeLabel,
-  playersInQueue,
+  // playersInQueue,
   className = "",
   variant = "quick",
 }) => {
   const { title, sub } = COPY[variant];
-  const waitingInfo = playersInQueue > 0 ? `Now in game ${playersInQueue} players` : "";
+  // const waitingInfo = playersInQueue > 0 ? `Now in game ${playersInQueue} players` : "";
 
   return (
     <CreateGameButton 

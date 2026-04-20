@@ -26,7 +26,7 @@ export const CreateRoomScreen = () => {
     const [botDifficulty, setBotDifficulty] = useState<BotDifficulty>("medium");
     const [timeMinutes, setTimeMinutes] = useState(initialRoomTime.timeMinutes);
     const [incrementSeconds, setIncrementSeconds] = useState(initialRoomTime.incrementSeconds);
-    const [activeTheme, setActiveTheme] = useState(getChessboardThemeFromStorage());
+    const [_, setActiveTheme] = useState(getChessboardThemeFromStorage());
     const [selectedTheme, setSelectedTheme] = useState(getChessboardThemeFromStorage());
     const [withAIhints, setWithAIhints] = useState(false);
 
