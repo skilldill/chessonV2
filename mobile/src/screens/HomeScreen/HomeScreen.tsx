@@ -3,6 +3,8 @@ import { ProfileCard } from '../../components/ProfileCard/ProfileCard';
 import { CreateRoomSection } from '../../components/CreateRoomSection/CreateRoomSection';
 import { QuickPlayButton } from '../../components/QuickPlayButton/QuickPlayButton';
 import { useQuickPlayEntry } from '../../hooks/useQuickPlayEntry';
+import { AppVersionCaption } from '../../components/AppVersionCaption/AppVersionCaption';
+import { AppTopBar } from '../../components/AppTopBar/AppTopBar';
 
 const HomeScreen: React.FC = () => {
   const { playersInRandomQueue, quickPlayLabel, openQuickPlay } = useQuickPlayEntry();
@@ -10,7 +12,10 @@ const HomeScreen: React.FC = () => {
   return (
     <IonPage>
       <IonContent className="ion-padding">
-        <div className="w-full min-h-full flex justify-center items-center overflow-y-auto py-4">
+        <div className="relative w-full min-h-full flex justify-center items-center overflow-y-auto">
+          <div className="fixed top-0 left-0 right-0 z-1">
+            <AppTopBar />
+          </div>
           <div className="max-w-[432px] w-full flex flex-col items-center gap-6 px-4">
             <ProfileCard />
             <QuickPlayButton
@@ -19,6 +24,7 @@ const HomeScreen: React.FC = () => {
               playersInQueue={playersInRandomQueue}
             />
             <CreateRoomSection />
+            <AppVersionCaption />
           </div>
         </div>
       </IonContent>

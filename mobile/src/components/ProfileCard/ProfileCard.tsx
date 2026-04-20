@@ -69,10 +69,11 @@ export const ProfileCard: React.FC = () => {
   return (
     <div className="w-full flex flex-col items-center gap-6">
       <h2
-        className="text-white text-lg font-semibold text-center cursor-pointer"
+        className="text-white text-lg font-semibold text-center cursor-pointer mb-[0px]"
         onClick={() => {
           window.location.href = '/profile';
         }}
+        style={{ margin: 0, marginTop: '40px' }}
       >
         @{name}
       </h2>

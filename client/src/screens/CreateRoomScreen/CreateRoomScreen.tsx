@@ -9,7 +9,11 @@ import { ChessboardThemeModal } from "../../components/ChessboardThemeModal/Ches
 import { CHESSBOARD_THEMES } from "../../components/ChessBoardConfigs/ChessBoardConfigs";
 import { getChessboardThemeFromStorage, setChessboardThemeToStorage } from "../../utils/appearanceStorage";
 import { getRoomTimeSettingsFromStorage, setRoomTimeSettingsToStorage } from "../../utils/roomTimeStorage";
+import { Link } from "react-router-dom";
+import { AppVersionCaption } from "../../components/AppVersionCaption/AppVersionCaption";
+import { AppTopBar } from "../../components/AppTopBar/AppTopBar";
 import AIiconPNG from '../../assets/ai-icon.png';
+import SigninSVG from '../../assets/signin.svg';
 
 const initialRoomTime = getRoomTimeSettingsFromStorage();
 
@@ -31,7 +35,7 @@ export const CreateRoomScreen = () => {
     }, [timeMinutes, incrementSeconds]);
 
     const availableThemes = useMemo(() => Object.keys(CHESSBOARD_THEMES), []);
-    const activeThemeLabel = activeTheme.charAt(0).toUpperCase() + activeTheme.slice(1);
+    // const activeThemeLabel = activeTheme.charAt(0).toUpperCase() + activeTheme.slice(1);
 
     const handleCreateBotRoom = () => {
         createRoom({
@@ -58,10 +62,18 @@ export const CreateRoomScreen = () => {
     };
 
     return (
-        <div className="w-full h-[100vh] flex justify-center items-center overflow-y-auto py-4">
-            <div className="max-w-[432px] flex flex-col m-auto items-center gap-[32px] py-[32px]">
+        <div className="relative w-full h-[100vh] flex justify-center items-center overflow-y-auto py-4">
+            <AppTopBar />
+            <div className="w-[100%] max-w-[432px] flex flex-col m-auto items-center gap-[32px] py-[32px]">
                 <div className="w-full flex flex-col gap-6">
-                    <CreateGameButton
+                    <Link
+                        to="/login"
+                        className="flex justify-center items-center gap-[8px] w-full h-[48px] rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition-colors duration-200 text-white text-[18px] flex items-center justify-center"
+                    >
+                        Sign in <img src={SigninSVG} alt="signin" />
+                    </Link>
+
+                    {/* <CreateGameButton
                         title={(
                             <span className="flex gap-[4px]">
                                 Chessboard theme
@@ -76,7 +88,7 @@ export const CreateRoomScreen = () => {
                             setIsThemeModalOpen(true);
                         }}
                         theme="neutral"
-                    />
+                    /> */}
 
                     <div className="flex flex-col gap-1">
                         <QuickPlayButton
@@ -121,6 +133,8 @@ export const CreateRoomScreen = () => {
                             {roomCreatingError}
                         </div>
                     )}
+
+                    <AppVersionCaption />
                 </div>
             </div>
 

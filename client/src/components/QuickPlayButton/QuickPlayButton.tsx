@@ -23,12 +23,12 @@ export const QuickPlayButton: React.FC<QuickPlayButtonProps> = ({
   variant = "quick",
 }) => {
   const { title, sub } = COPY[variant];
-  const waitingInfo = playersInQueue > 0 ? ` · ${playersInQueue} players` : "";
+  const waitingInfo = playersInQueue > 0 ? `Now in game ${playersInQueue} players` : "";
 
   return (
     <CreateGameButton 
       title={title}
-      subtitle={`${sub} · ${timeLabel}${waitingInfo}`}
+      subtitle={<div>{sub} · {timeLabel}</div>} // <br/>{waitingInfo}
       onClick={onClick}
       theme="primary"
       className={className}

@@ -27,7 +27,7 @@ export const QuickPlayButton: React.FC<QuickPlayButtonProps> = ({
   return (
     <CreateGameButton 
       title={`${title} · ${sub}`}
-      subtitle={`${timeLabel} ${playersInQueue > 0 && ` · ${playersInQueue} waiting`}`}
+      subtitle={`${timeLabel}`} // ${playersInQueue > 0 && ` · ${playersInQueue} waiting`}
       onClick={onClick}
     />
   );

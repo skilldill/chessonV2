@@ -57,7 +57,7 @@ export const BotDifficultyModal = ({
               disabled={isCreating}
               className={`w-full rounded-xl px-4 py-3 text-left border transition-all duration-200 active:scale-[0.98] focus:outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
                 difficulty === level.key
-                  ? 'bg-[#555ab9]/20 text-white border-[#555ab9]/70'
+                  ? 'bg-[#4F39F6]/20 text-white border-[#555ab9]/70'
                   : 'bg-white/5 text-white/90 border-white/15 hover:border-white/35'
               }`}
             >
@@ -80,7 +80,7 @@ export const BotDifficultyModal = ({
             type="button"
             onClick={onConfirm}
             disabled={isCreating}
-            className="rounded-xl px-4 py-3 bg-[#555ab9] text-white font-semibold hover:bg-[#555ab9] transition-all duration-200 active:scale-[0.98] focus:outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-xl px-4 py-3 bg-[#4F39F6] text-white font-semibold hover:bg-[#4F39F6] transition-all duration-200 active:scale-[0.98] focus:outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isCreating ? 'Creating...' : 'Play'}
           </button>

@@ -41,7 +41,6 @@ import './theme/variables.css';
 
 // Custom screens
 import CreateRoomScreen from './screens/CreateRoomScreen/CreateRoomScreen';
-import HomeScreen from './screens/HomeScreen/HomeScreen';
 import QuickPlayWaitingScreen from './screens/QuickPlayWaitingScreen/QuickPlayWaitingScreen';
 import AppScreen from './screens/AppScreen/AppScreen';
 import GameScreen from './screens/GameScreen/GameScreen';
@@ -53,6 +52,7 @@ import ForgotPasswordScreen from './screens/ForgotPasswordScreen/ForgotPasswordS
 import ResetPasswordScreen from './screens/ResetPasswordScreen/ResetPasswordScreen';
 import ProfileScreen from './screens/ProfileScreen/ProfileScreen';
 import { HomeRedirect } from './components/HomeRedirect/HomeRedirect';
+import { MainAuthGuard } from './components/HomeRedirect/MainAuthGuard';
 import { useRestoreGame } from './hooks/useRestoreGame';
 import { useUserAppearancePreload } from './hooks/useUserAppearancePreload';
 
@@ -73,7 +73,7 @@ const App: React.FC = () => {
             <HomeRedirect />
           </Route>
           <Route exact path="/main">
-            <HomeScreen />
+            <MainAuthGuard />
           </Route>
           <Route exact path="/quick-play">
             <QuickPlayWaitingScreen />

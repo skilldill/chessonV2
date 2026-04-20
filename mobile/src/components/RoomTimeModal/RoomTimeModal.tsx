@@ -59,7 +59,7 @@ export const RoomTimeModal = ({
                 onClick={() => onChangeTimeMinutes(value)}
                 className={`flex items-center justify-center btn-client h-11 rounded-lg border transition-all duration-200 active:scale-[0.98] focus:outline-none touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed ${
                   timeMinutes === value
-                    ? 'bg-[#555ab9]/22 text-white border-[#555ab9]/70 shadow-[0_0_0_1px_rgba(45,122,79,0.35)_inset]'
+                    ? 'bg-[#4F39F6]/22 text-white border-[#555ab9]/70 shadow-[0_0_0_1px_rgba(45,122,79,0.35)_inset]'
                     : 'btn-client-preset text-white/90 border-white/15'
                 }`}
               >
@@ -78,7 +78,7 @@ export const RoomTimeModal = ({
                   onClick={() => onChangeIncrementSeconds(value)}
                   className={`flex items-center justify-center btn-client h-11 rounded-lg border transition-all duration-200 active:scale-[0.98] focus:outline-none touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed ${
                     incrementSeconds === value
-                      ? 'bg-[#555ab9]/22 text-white border-[#555ab9]/70 shadow-[0_0_0_1px_rgba(45,122,79,0.35)_inset]'
+                      ? 'bg-[#4F39F6]/22 text-white border-[#555ab9]/70 shadow-[0_0_0_1px_rgba(45,122,79,0.35)_inset]'
                       : 'btn-client-preset text-white/90 border-white/15'
                   }`}
                 >
@@ -126,7 +126,7 @@ export const RoomTimeModal = ({
             type="button"
             onClick={onConfirm}
             disabled={isCreating}
-            className="btn-client bg-[#555ab9] text-white font-semibold text-[18px] hover:bg-[#555ab9] transition-all duration-200 active:scale-[0.98] focus:outline-none touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn-client bg-[#4F39F6] text-white font-semibold text-[18px] hover:bg-[#4F39F6] transition-all duration-200 active:scale-[0.98] focus:outline-none touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ borderRadius: 20, minHeight: 66, padding: '14px 20px' }}
           >
             {isCreating ? 'Creating...' : 'Create'}

@@ -104,9 +104,18 @@ export const LoginScreen = () => {
             >
               {loading ? "Signing in..." : "Sign in"}
             </button>
+
+            
           </form>
 
           <div className="flex flex-col items-center gap-2 text-sm">
+            <button
+              type="button"
+              onClick={() => history.push("/")}
+              className="w-full rounded-md text-sm bg-transparent text-white/90 cursor-pointer transition-all"
+            >
+              Continue without signing in
+            </button>
             <Link
               to="/signup"
               className="text-white/70 hover:text-white transition-colors"

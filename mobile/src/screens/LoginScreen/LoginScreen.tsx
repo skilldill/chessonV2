@@ -100,6 +100,14 @@ const LoginScreen: React.FC = () => {
                 >
                   {loading ? "Signing in..." : "Sign in"}
                 </button>
+
+                <button
+                  type="button"
+                  onClick={() => window.location.href = "/"}
+                  className="w-full rounded-md text-sm font-semibold px-4 py-2 border border-white/20 bg-transparent text-white/90 active:bg-white/5 transition-colors duration-200 touch-manipulation"
+                >
+                  Continue without signing in
+                </button>
               </form>
 
               <div className="flex flex-col items-center gap-1 text-sm">

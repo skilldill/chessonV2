@@ -10,7 +10,10 @@ import { ChessboardThemeModal } from '../../components/ChessboardThemeModal/Ches
 import { getChessboardThemeFromStorage, setChessboardThemeToStorage } from '../../utils/appearanceStorage';
 import { getRoomTimeSettingsFromStorage, setRoomTimeSettingsToStorage } from '../../utils/roomTimeStorage';
 import { CreateGameButton } from '../../components/CreateGameButton/CreateGameButton';
+import { AppVersionCaption } from '../../components/AppVersionCaption/AppVersionCaption';
+import { AppTopBar } from '../../components/AppTopBar/AppTopBar';
 import AIiconPNG from '../../assets/ai-icon.png';
+import SigninSVG from '../../assets/signin.svg';
 
 const initialRoomTime = getRoomTimeSettingsFromStorage();
 
@@ -62,10 +65,19 @@ const CreateRoomScreen: React.FC = () => {
     return (
         <IonPage>
             <IonContent>
-                <div className="w-full min-h-full flex justify-center items-center overflow-y-auto py-4">
+                <div className="relative w-full min-h-full flex justify-center items-center overflow-y-auto py-4">
+                    <AppTopBar />
                     <div className="max-w-[432px] w-full flex flex-col items-center gap-6 px-4">
                         <div className='w-full flex flex-col gap-6'>
-                            <CreateGameButton
+                            <div
+                                onClick={() => { window.location.href = '/login' }}
+                                className="flex justify-center items-center w-full h-[48px] gap-[8px] rounded-xl border border-white/15 bg-white/5 active:bg-white/10 transition-colors duration-200 text-white text-[18px] font-semibold"
+                            >
+                                Sign in <img src={SigninSVG} alt="signin" />
+                            </div>
+
+                            {/* Временно заблокирую, потому что не знаю насколько актуально */}
+                            {/* <CreateGameButton
                                 title={(
                                     <span className="flex gap-[4px]">
                                         Chessboard theme
@@ -80,7 +92,7 @@ const CreateRoomScreen: React.FC = () => {
                                     setIsThemeModalOpen(true);
                                 }}
                                 theme="neutral"
-                            />
+                            /> */}
 
                             <QuickPlayButton
                                 onClick={openQuickPlay}
@@ -117,6 +129,8 @@ const CreateRoomScreen: React.FC = () => {
                                 theme="success"
                                 disabled={isCreating}
                             />
+
+                            <AppVersionCaption />
                         </div>
                     </div>
                 </div>
