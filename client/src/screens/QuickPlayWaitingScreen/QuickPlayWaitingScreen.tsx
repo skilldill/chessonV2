@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useHistory, useLocation } from "react-router-dom";
 import { API_PREFIX } from "../../constants/api";
+import { useTranslation } from "react-i18next";
 
 const QUICK_PLAY_GUEST_ID_KEY = "quickPlayGuestId";
 const QUICK_PLAY_PROFILE_KEY = "quickPlayProfile";
@@ -91,6 +92,7 @@ function getOrCreateQuickPlayGuestNickname(guestId: string) {
 }
 
 export const QuickPlayWaitingScreen = () => {
+  const { t } = useTranslation();
   const history = useHistory();
   const { timeMinutes, incrementSeconds } = useTimeControlFromQuery();
   const guestIdRef = useRef<string>(getOrCreateQuickPlayGuestId());
@@ -167,7 +169,7 @@ export const QuickPlayWaitingScreen = () => {
         if (!isMounted) return;
 
         if (!joinData.success) {
-          setError(joinData.error || "Failed to join the queue");
+          setError(joinData.error || t("quick.failedJoinQueue"));
           return;
         }
 
@@ -185,7 +187,7 @@ export const QuickPlayWaitingScreen = () => {
       } catch (joinError) {
         console.error("Failed to join random queue:", joinError);
         if (isMounted) {
-          setError("Failed to connect to the queue");
+          setError(t("quick.failedConnectQueue"));
         }
       } finally {
         if (isMounted) {
@@ -205,14 +207,14 @@ export const QuickPlayWaitingScreen = () => {
         leaveQueue();
       }
     };
-  }, [history, incrementSeconds, timeMinutes]);
+  }, [history, incrementSeconds, t, timeMinutes]);
 
   return (
     <div className="w-full h-[100vh] flex justify-center items-center overflow-y-auto py-4">
       <div className="max-w-[432px] w-full flex flex-col items-center gap-6 px-4">
         <div className="flex items-center gap-2">
           <h2 className="text-white text-3xl font-semibold text-center">
-            Finding an opponent
+            {t("quick.findingOpponent")}
           </h2>
           <span
             className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-amber-400/90 text-amber-950"
@@ -223,9 +225,9 @@ export const QuickPlayWaitingScreen = () => {
         </div>
 
         <div className="w-full rounded-xl border border-white/10 bg-white/5 px-6 py-5 text-white/90 text-center">
-          <p className="text-lg font-semibold">Time control: {timeMinutes} + {incrementSeconds}</p>
-          <p className="mt-2 text-sm text-white/70">Players in matchmaking: {playersInRandomQueue}</p>
-          <p className="mt-1 text-sm text-white/70">In this queue: {playersInCurrentTimeControl}</p>
+          <p className="text-lg font-semibold">{t("quick.timeControl", { timeMinutes, incrementSeconds })}</p>
+          <p className="mt-2 text-sm text-white/70">{t("quick.playersMatchmaking", { count: playersInRandomQueue })}</p>
+          <p className="mt-1 text-sm text-white/70">{t("quick.inThisQueue", { count: playersInCurrentTimeControl })}</p>
         </div>
 
         {error ? (
@@ -234,7 +236,7 @@ export const QuickPlayWaitingScreen = () => {
           </div>
         ) : (
           <div className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white/80 text-sm text-center">
-            {isJoining ? "Joining queue..." : "Waiting for opponent..."}
+            {isJoining ? t("quick.joiningQueue") : t("quick.waitingOpponent")}
           </div>
         )}
 
@@ -246,7 +248,7 @@ export const QuickPlayWaitingScreen = () => {
           }}
           className="w-full rounded-xl px-6 py-4 bg-white/10 border border-white/15 text-white font-semibold hover:bg-white/15 transition-all duration-200 active:scale-[0.98] focus:outline-none cursor-pointer"
         >
-          Leave queue
+          {t("quick.leaveQueue")}
         </button>
       </div>
     </div>

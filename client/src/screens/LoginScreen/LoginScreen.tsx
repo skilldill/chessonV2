@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { useHistory, Link } from "react-router-dom";
 import { API_PREFIX } from "../../constants/api";
+import { useTranslation } from "react-i18next";
 
 export const LoginScreen = () => {
+  const { t } = useTranslation();
   const history = useHistory();
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
@@ -48,11 +50,11 @@ export const LoginScreen = () => {
         // Редирект на главную страницу
         history.push("/main");
       } else {
-        setError(data.error || "Login error");
+        setError(data.error || t("auth.loginErrorDefault"));
       }
     } catch (err) {
       console.error("Login error:", err);
-      setError("An error occurred while signing in");
+      setError(t("auth.loginErrorGeneric"));
     } finally {
       setLoading(false);
     }
@@ -65,7 +67,7 @@ export const LoginScreen = () => {
         
         <div className="w-full flex flex-col items-center relative gap-[32px] z-40 py-[32px]">
           <h3 className="text-white text-center text-3xl font-semibold">
-            Login
+            {t("auth.loginTitle")}
           </h3>
 
           <form onSubmit={handleSubmit} className="w-full flex flex-col items-center gap-[24px] px-[32px]">
@@ -75,7 +77,7 @@ export const LoginScreen = () => {
                 value={login}
                 onChange={(e) => setLogin(e.target.value)}
                 required
-                placeholder="Username"
+                placeholder={t("auth.usernamePlaceholder")}
                 className="bg-white/4 w-full h-[40px] px-[12px] py-[10px] border border-white/10 border-solid rounded-md focus:border-indigo-700 focus:outline-none transition-all duration-200 placeholder-[#99A1AF] text-white"
               />
             </div>
@@ -86,7 +88,7 @@ export const LoginScreen = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                placeholder="Password"
+                placeholder={t("auth.passwordPlaceholder")}
                 className="bg-white/4 w-full h-[40px] px-[12px] py-[10px] border border-white/10 border-solid rounded-md focus:border-indigo-700 focus:outline-none transition-all duration-200 placeholder-[#99A1AF] text-white"
               />
             </div>
@@ -102,7 +104,7 @@ export const LoginScreen = () => {
               disabled={loading}
               className="rounded-md text-sm font-semibold px-4 py-2 bg-[#4F39F6] text-white min-w-[126px] cursor-pointer transition-all duration-300 active:scale-95 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? "Signing in..." : "Sign in"}
+              {loading ? t("auth.signingIn") : t("auth.signIn")}
             </button>
 
             
@@ -114,19 +116,19 @@ export const LoginScreen = () => {
               onClick={() => history.push("/")}
               className="w-full rounded-md text-sm bg-transparent text-white/90 cursor-pointer transition-all"
             >
-              Continue without signing in
+              {t("auth.continueGuest")}
             </button>
             <Link
               to="/signup"
               className="text-white/70 hover:text-white transition-colors"
             >
-              Don't have an account? Sign up
+              {t("auth.noAccount")}
             </Link>
             <Link
               to="/forgot-password"
               className="text-white/50 hover:text-white/70 transition-colors"
             >
-              Forgot password?
+              {t("auth.forgotPassword")}
             </Link>
           </div>
         </div>

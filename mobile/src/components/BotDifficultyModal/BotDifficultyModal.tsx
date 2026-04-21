@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+
 export type BotDifficulty = 'super_easy' | 'easy' | 'medium' | 'hard';
 
 type BotDifficultyModalProps = {
@@ -9,17 +11,6 @@ type BotDifficultyModalProps = {
   onConfirm: () => void;
 };
 
-const BOT_LEVELS: Array<{
-  key: BotDifficulty;
-  label: string;
-  subtitle: string;
-}> = [
-  { key: 'super_easy', label: 'Super Easy', subtitle: 'Very simple play (~900-1200 Elo)' },
-  { key: 'easy', label: 'Easy', subtitle: 'Makes more inaccuracies (~1200-1600 Elo)' },
-  { key: 'medium', label: 'Medium', subtitle: 'Balanced play style (~1700-2200 Elo)' },
-  { key: 'hard', label: 'Hard', subtitle: 'Plays significantly stronger (~2300+ Elo)' },
-];
-
 export const BotDifficultyModal = ({
   isOpen,
   isCreating,
@@ -28,6 +19,13 @@ export const BotDifficultyModal = ({
   onClose,
   onConfirm,
 }: BotDifficultyModalProps) => {
+  const { t } = useTranslation();
+  const levels = [
+    { key: 'super_easy' as const, label: t("bot.super_easy.label"), subtitle: t("bot.super_easy.subtitle") },
+    { key: 'easy' as const, label: t("bot.easy.label"), subtitle: t("bot.easy.subtitle") },
+    { key: 'medium' as const, label: t("bot.medium.label"), subtitle: t("bot.medium.subtitle") },
+    { key: 'hard' as const, label: t("bot.hard.label"), subtitle: t("bot.hard.subtitle") },
+  ];
   if (!isOpen) {
     return null;
   }
@@ -36,7 +34,7 @@ export const BotDifficultyModal = ({
     <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
       <button
         type="button"
-        aria-label="Close modal"
+        aria-label={t("common.close")}
         onClick={() => !isCreating && onClose()}
         className="absolute inset-0 bg-black/70 backdrop-blur-[2px] cursor-default"
       />
@@ -45,14 +43,14 @@ export const BotDifficultyModal = ({
         style={{ borderRadius: 28, padding: 32 }}
       >
         <h4 className="text-white text-xl font-semibold text-center">
-          Choose Bot Difficulty
+          {t("bot.title")}
         </h4>
         <p className="text-white/60 text-sm text-center mt-2">
-          Time control: 30 minutes
+          {t("bot.timeControlStatic")}
         </p>
 
         <div className="mt-8 grid grid-cols-1 gap-4">
-          {BOT_LEVELS.map((level) => (
+          {levels.map((level) => (
             <button
               key={level.key}
               type="button"
@@ -79,7 +77,7 @@ export const BotDifficultyModal = ({
             className="btn-client btn-client-preset text-white font-semibold text-[18px] transition-all duration-200 active:scale-[0.98] focus:outline-none touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ borderRadius: 20, minHeight: 66, padding: '14px 20px' }}
           >
-            Cancel
+            {t("common.cancel")}
           </button>
           <button
             type="button"
@@ -88,7 +86,7 @@ export const BotDifficultyModal = ({
             className="btn-client bg-[#4F39F6] text-white font-semibold text-[18px] hover:bg-[#4F39F6] transition-all duration-200 active:scale-[0.98] focus:outline-none touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ borderRadius: 20, minHeight: 66, padding: '14px 20px' }}
           >
-            {isCreating ? 'Creating...' : 'Play'}
+            {isCreating ? t("common.creating") : t("common.play")}
           </button>
         </div>
       </div>

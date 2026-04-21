@@ -8,11 +8,13 @@ import WaitingScreen from '../WaitingScreen/WaitingScreen';
 import { useGameStorage } from '../../hooks/useGameStorage';
 import { useAutoConnect } from '../../hooks/useAutoConnect';
 import { IonPage, IonContent, IonSpinner } from '@ionic/react';
+import { useTranslation } from 'react-i18next';
 
 const QUICK_PLAY_ROOM_ID_KEY = "quickPlayRoomId";
 const LEAVE_DELAY_MS = 3000;
 
 function ConnectingToGameOverlay({ onLeave }: { onLeave: () => void }) {
+  const { t } = useTranslation();
   const [showLeaveOption, setShowLeaveOption] = useState(false);
 
   useEffect(() => {
@@ -31,19 +33,19 @@ function ConnectingToGameOverlay({ onLeave }: { onLeave: () => void }) {
         <div className="flex flex-col justify-center items-center h-full gap-6 px-4">
           <div className="flex flex-col items-center gap-4">
             <IonSpinner name="crescent" />
-            <p className="text-white/85 text-sm">Connecting to game...</p>
+            <p className="text-white/85 text-sm">{t("app.connectingToGame")}</p>
           </div>
           {showLeaveOption && (
             <div className="w-full max-w-sm flex flex-col items-center gap-3">
               <p className="text-white/70 text-sm text-center">
-                Connection is taking longer than expected. You can leave and try again.
+                {t("app.connectionSlow")}
               </p>
               <button
                 type="button"
                 onClick={handleLeave}
                 className="btn-client w-full rounded-xl px-6 py-4 bg-white/10 border border-white/15 text-white font-semibold active:bg-white/15 transition-all duration-200 active:scale-[0.98] touch-manipulation -webkit-tap-highlight-color: transparent"
               >
-                Leave
+                {t("common.leave")}
               </button>
             </div>
           )}

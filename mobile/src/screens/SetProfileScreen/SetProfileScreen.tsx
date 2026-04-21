@@ -2,6 +2,7 @@ import { IonPage, IonContent, IonText } from '@ionic/react';
 import { useEffect, useState } from 'react';
 import { MemAvatarSelect } from '../../components/MemAvatarSelect/MemAvatarSelect';
 import { ChessButton } from '../../components/ChessButton/ChessButton';
+import { useTranslation } from 'react-i18next';
 
 const MAX_NICKNAME_LENGTH = 16;
 const GUEST_CREATE_PROFILE_KEY = "guestCreateProfile";
@@ -11,6 +12,7 @@ type SetProfileScreenProps = {
 }
 
 const SetProfileScreen: React.FC<SetProfileScreenProps> = ({ onSetUserName }) => {
+  const { t } = useTranslation();
   const [nickname, setNickname] = useState("");
   const [avatarIndex, setSelectedAvatarIndex] = useState(0);
 
@@ -89,7 +91,7 @@ const SetProfileScreen: React.FC<SetProfileScreenProps> = ({ onSetUserName }) =>
                 className="text-white text-center" 
                 style={{ fontSize: 30, margin: 0, fontWeight: 600 }}
               >
-                Input your name <br /> and choice avatar
+                {t("setProfile.title")}
               </h1>
             </IonText>
             <div className="w-full px-[36px] py-[20px]">
@@ -97,7 +99,7 @@ const SetProfileScreen: React.FC<SetProfileScreenProps> = ({ onSetUserName }) =>
                 type="text"
                 value={nickname}
                 onChange={handleChangeNickname}
-                placeholder="Your name"
+                placeholder={t("setProfile.yourName")}
                 className="bg-white/4 w-full h-[46px] px-[12px] py-[11px] text-base leading-[24px] placeholder-[#99A1AF] rounded-md focus:border-indigo-700 focus:outline-none focus:border-[2px] focus:border-[#615FFF] focus:px-[10px] focus:bg-black"
               />
             </div>
@@ -106,7 +108,7 @@ const SetProfileScreen: React.FC<SetProfileScreenProps> = ({ onSetUserName }) =>
             </div>
           </div>
           <div className="w-full px-[36px] py-[20px]">
-            <ChessButton onClick={hanleToPlay}>To play</ChessButton>
+            <ChessButton onClick={hanleToPlay}>{t("setProfile.toPlay")}</ChessButton>
           </div>
         </form>
       </IonContent>

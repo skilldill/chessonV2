@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { useHistory, Link } from "react-router-dom";
 import { API_PREFIX } from "../../constants/api";
+import { useTranslation } from "react-i18next";
 
 export const SignupScreen = () => {
+  const { t } = useTranslation();
   const history = useHistory();
   const [login, setLogin] = useState("");
   const [email, setEmail] = useState("");
@@ -34,12 +36,12 @@ export const SignupScreen = () => {
     setError("");
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      setError(t("auth.passwordsDontMatch"));
       return;
     }
 
     if (password.length < 6) {
-      setError("Password must be at least 6 characters");
+      setError(t("auth.passwordMinLength"));
       return;
     }
 
@@ -61,11 +63,11 @@ export const SignupScreen = () => {
         // Редирект на страницу с сообщением о подтверждении email
         history.push("/signup-success");
       } else {
-        setError(data.error || "Sign-up error");
+        setError(data.error || t("auth.signupErrorDefault"));
       }
     } catch (err) {
       console.error("Signup error:", err);
-      setError("An error occurred during sign-up");
+      setError(t("auth.signupErrorGeneric"));
     } finally {
       setLoading(false);
     }
@@ -78,7 +80,7 @@ export const SignupScreen = () => {
         
         <div className="w-full flex flex-col items-center relative gap-[24px] z-40 py-[32px]">
           <h3 className="text-white text-center text-3xl font-semibold">
-            Sign up
+            {t("auth.signupTitle")}
           </h3>
 
           <form onSubmit={handleSubmit} className="w-full flex flex-col items-center gap-[20px] px-[32px]">
@@ -90,7 +92,7 @@ export const SignupScreen = () => {
                 required
                 minLength={3}
                 maxLength={20}
-                placeholder="Username (3-20 characters)"
+                placeholder={t("auth.usernamePlaceholder")}
                 className="bg-white/4 w-full h-[40px] px-[12px] py-[10px] border border-white/10 border-solid rounded-md focus:border-indigo-700 focus:outline-none transition-all duration-200 placeholder-[#99A1AF] text-white"
               />
             </div>
@@ -101,7 +103,7 @@ export const SignupScreen = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                placeholder="Email"
+                placeholder={t("auth.emailPlaceholder")}
                 className="bg-white/4 w-full h-[40px] px-[12px] py-[10px] border border-white/10 border-solid rounded-md focus:border-indigo-700 focus:outline-none transition-all duration-200 placeholder-[#99A1AF] text-white"
               />
             </div>
@@ -113,7 +115,7 @@ export const SignupScreen = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
-                placeholder="Password (minimum 6 characters)"
+                placeholder={t("auth.newPasswordPlaceholder")}
                 className="bg-white/4 w-full h-[40px] px-[12px] py-[10px] border border-white/10 border-solid rounded-md focus:border-indigo-700 focus:outline-none transition-all duration-200 placeholder-[#99A1AF] text-white"
               />
             </div>
@@ -124,7 +126,7 @@ export const SignupScreen = () => {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                placeholder="Confirm password"
+                placeholder={t("auth.confirmPasswordPlaceholder")}
                 className="bg-white/4 w-full h-[40px] px-[12px] py-[10px] border border-white/10 border-solid rounded-md focus:border-indigo-700 focus:outline-none transition-all duration-200 placeholder-[#99A1AF] text-white"
               />
             </div>
@@ -140,7 +142,7 @@ export const SignupScreen = () => {
               disabled={loading}
               className="rounded-md text-sm font-semibold px-4 py-2 bg-[#4F39F6] text-white min-w-[126px] cursor-pointer transition-all duration-300 active:scale-95 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? "Signing up..." : "Sign up"}
+              {loading ? t("auth.signingUp") : t("auth.signUp")}
             </button>
           </form>
 
@@ -149,7 +151,7 @@ export const SignupScreen = () => {
               to="/login"
               className="text-white/70 hover:text-white transition-colors text-sm"
             >
-              Already have an account? Sign in
+              {t("auth.haveAccount")}
             </Link>
           </div>
         </div>

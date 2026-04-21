@@ -6,6 +6,7 @@ import { useParams } from 'react-router';
 import cn from 'classnames';
 import { useState } from 'react';
 import { Share } from '@capacitor/share';
+import { useTranslation } from 'react-i18next';
 
 const SITE_BASE_URL = import.meta.env.VITE_TEST_MODE ? 'http://localhost:' + window.location.port : import.meta.env.VITE_MAIN_SITE;
 
@@ -14,6 +15,7 @@ type WaitingScreenProps = {
 };
 
 const WaitingScreen: React.FC<WaitingScreenProps> = ({ onLeave }) => {
+  const { t } = useTranslation();
   const { roomId } = useParams<{ roomId: string }>();
 
   const [copied, setCopied] = useState(false);
@@ -34,9 +36,9 @@ const WaitingScreen: React.FC<WaitingScreenProps> = ({ onLeave }) => {
       try {
           await Share.share({
               title: 'Chess Game Invite',
-              text: `Join my chess game! Room ID: ${roomId}`,
+              text: `${t("share.title")}: ${roomId}`,
               url: linkForShare,
-              dialogTitle: 'Share with friends',
+              dialogTitle: t("share.title"),
           });
       } catch (err) {
           // Пользователь отменил шаринг или произошла ошибка
@@ -67,7 +69,7 @@ const WaitingScreen: React.FC<WaitingScreenProps> = ({ onLeave }) => {
                 className="text-white text-center" 
                 style={{ fontSize: 30, margin: 0, fontWeight: 600 }}
               >
-                Copy and send invite <br /> to friend
+                {t("share.title")}
               </h1>
             </IonText>
 
@@ -83,7 +85,7 @@ const WaitingScreen: React.FC<WaitingScreenProps> = ({ onLeave }) => {
               <div className="flex flex-1 items-center justify-center gap-[4px]">
                 <IonIcon src={ShareIconSVG} />
                 <span>
-                  Share
+                  {t("share.copyLink")}
                 </span>
               </div>
             </ChessButton>
@@ -100,7 +102,7 @@ const WaitingScreen: React.FC<WaitingScreenProps> = ({ onLeave }) => {
                       <path fill-rule="evenodd" clip-rule="evenodd" d="M13.6853 0.152545C13.7638 0.212172 13.8298 0.286703 13.8796 0.371871C13.9293 0.45704 13.9617 0.551175 13.975 0.648889C13.9882 0.746602 13.9821 0.845976 13.957 0.941322C13.9318 1.03667 13.8881 1.12612 13.8283 1.20455L5.82829 11.7045C5.7634 11.7896 5.68106 11.8598 5.58681 11.9104C5.49256 11.961 5.38857 11.9909 5.28182 11.998C5.17508 12.0051 5.06805 11.9892 4.96792 11.9516C4.86779 11.9139 4.77688 11.8552 4.70129 11.7795L0.201292 7.27954C0.0688118 7.13737 -0.00331137 6.94932 0.000116847 6.75502C0.00354506 6.56072 0.0822571 6.37534 0.21967 6.23792C0.357083 6.10051 0.542468 6.0218 0.736769 6.01837C0.93107 6.01494 1.11912 6.08707 1.26129 6.21955L5.15529 10.1125L12.6353 0.295545C12.7557 0.137497 12.9339 0.0336733 13.1307 0.00686313C13.3276 -0.0199471 13.527 0.0324471 13.6853 0.152545Z" fill="#F3F4F6" />
                   </svg>
               </div>
-              <span>Link copied!</span>
+              <span>{t("share.linkCopied")}</span>
           </div>
         </div>
       </IonContent>

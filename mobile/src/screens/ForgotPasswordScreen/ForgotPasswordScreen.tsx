@@ -1,8 +1,10 @@
 import { IonPage, IonContent } from '@ionic/react';
 import { useState } from 'react';
 import { API_PREFIX } from '../../constants/api';
+import { useTranslation } from 'react-i18next';
 
 const ForgotPasswordScreen: React.FC = () => {
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -26,11 +28,11 @@ const ForgotPasswordScreen: React.FC = () => {
       if (data.success) {
         setSuccess(true);
       } else {
-        setError(data.error || "Error sending request");
+        setError(data.error || t("auth.forgotErrorDefault"));
       }
     } catch (err) {
       console.error("Forgot password error:", err);
-      setError("An error occurred while sending request");
+      setError(t("auth.forgotErrorGeneric"));
     } finally {
       setLoading(false);
     }
@@ -44,20 +46,20 @@ const ForgotPasswordScreen: React.FC = () => {
             <div className="auth-card-blur" />
             <div className="w-full flex flex-col items-center relative z-10 gap-6 py-8 px-5">
               <h3 className="text-white text-center text-2xl font-semibold">
-                Password recovery
+                {t("auth.passwordRecoveryTitle")}
               </h3>
 
               {success ? (
                 <div className="w-full flex flex-col items-center gap-4">
                   <div className="bg-green-500/20 border border-green-500 text-green-300 px-4 py-3 rounded-lg text-sm w-full text-center">
-                    If a user with this email exists, a password recovery link has been sent.
+                    {t("auth.forgotSuccessMessage")}
                   </div>
                   <button
                     type="button"
                     onClick={() => window.location.href = "/login"}
                     className="text-white/70 active:text-white text-sm py-3 touch-manipulation"
                   >
-                    Back to sign in
+                    {t("auth.backToSignIn")}
                   </button>
                 </div>
               ) : (
@@ -68,7 +70,7 @@ const ForgotPasswordScreen: React.FC = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      placeholder="Email"
+                      placeholder={t("auth.emailPlaceholder")}
                       className="auth-input"
                       autoComplete="email"
                     />
@@ -84,7 +86,7 @@ const ForgotPasswordScreen: React.FC = () => {
                       disabled={loading}
                       className="auth-btn-primary w-full"
                     >
-                      {loading ? "Sending..." : "Send"}
+                      {loading ? t("auth.sending") : t("auth.send")}
                     </button>
                   </form>
 
@@ -93,7 +95,7 @@ const ForgotPasswordScreen: React.FC = () => {
                     onClick={() => window.location.href = "/login"}
                     className="text-white/70 active:text-white text-sm py-2 touch-manipulation"
                   >
-                    Back to sign in
+                    {t("auth.backToSignIn")}
                   </button>
                 </>
               )}

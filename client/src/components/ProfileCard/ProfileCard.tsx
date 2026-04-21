@@ -7,8 +7,10 @@ import { ChessboardThemeModal } from "../ChessboardThemeModal/ChessboardThemeMod
 import { API_PREFIX } from "../../constants/api";
 import { setChessboardThemeToStorage } from "../../utils/appearanceStorage";
 import { useHistory } from "react-router";
+import { useTranslation } from "react-i18next";
 
 export const ProfileCard = () => {
+  const { t } = useTranslation();
   const history = useHistory();
   const { name, avatarIndex, chessboardTheme, loading } = useProfileData();
   const {
@@ -68,7 +70,7 @@ export const ProfileCard = () => {
     }
   };
 
-  const activeThemeLabel = activeTheme === "magic" ? "Magic" : "Default";
+  const activeThemeLabel = activeTheme === "magic" ? t("profile.magicTheme") : t("profile.defaultTheme");
 
   if (loading) {
     return (
@@ -89,7 +91,7 @@ export const ProfileCard = () => {
 
       <div className="w-full flex gap-3">
         <div className="flex-1 rounded-xl border border-white/10 bg-white/4 px-4 py-3">
-          <div className="text-white/50 text-xs">Games played</div>
+          <div className="text-white/50 text-xs">{t("profile.gamesPlayed")}</div>
           <div className="text-white/90 text-xl font-semibold mt-1">
             {totalGames}
           </div>
@@ -103,7 +105,7 @@ export const ProfileCard = () => {
           }}
           className="flex-1 rounded-xl border border-white/10 bg-white/4 px-4 py-3 text-left hover:bg-white/8 transition-all duration-200 active:scale-[0.98]"
         >
-          <div className="text-white/50 text-xs">Chessboard theme</div>
+          <div className="text-white/50 text-xs">{t("profile.chessboardTheme")}</div>
           <div className="text-white/80 text-sm font-medium mt-1">
             {activeThemeLabel}
           </div>

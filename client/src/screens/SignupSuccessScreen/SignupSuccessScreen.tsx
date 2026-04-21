@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 export const SignupSuccessScreen = () => {
+  const { t } = useTranslation();
   return (
     <div className="w-full h-[100vh] flex justify-center items-center bg-gradient-to-br from-green-50 to-blue-50">
       <div className="max-w-md w-full mx-4 bg-white rounded-lg shadow-lg p-8 text-center">
@@ -11,15 +13,15 @@ export const SignupSuccessScreen = () => {
             </svg>
           </div>
         </div>
-        <h1 className="text-2xl font-bold text-gray-800 mb-4">Registration successful!</h1>
+        <h1 className="text-2xl font-bold text-gray-800 mb-4">{t("auth.signupSuccessTitle")}</h1>
         <p className="text-gray-600 mb-6">
-          We sent a confirmation email to your address. Please check your inbox and follow the link to activate your account.
+          {t("auth.signupSuccessDescription")}
         </p>
         <Link
           to="/login"
           className="inline-block bg-green-500 text-white py-2 px-6 rounded-lg hover:bg-green-600 transition-colors"
         >
-          Go to sign in
+          {t("auth.goToSignIn")}
         </Link>
       </div>
     </div>

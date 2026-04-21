@@ -14,10 +14,12 @@ import { AppVersionCaption } from '../../components/AppVersionCaption/AppVersion
 import { AppTopBar } from '../../components/AppTopBar/AppTopBar';
 import AIiconPNG from '../../assets/ai-icon.png';
 import SigninSVG from '../../assets/signin.svg';
+import { useTranslation } from 'react-i18next';
 
 const initialRoomTime = getRoomTimeSettingsFromStorage();
 
 const CreateRoomScreen: React.FC = () => {
+    const { t } = useTranslation();
     const [isBotModalOpen, setIsBotModalOpen] = useState(false);
     const [isTimeModalOpen, setIsTimeModalOpen] = useState(false);
     const [isThemeModalOpen, setIsThemeModalOpen] = useState(false);
@@ -36,7 +38,7 @@ const CreateRoomScreen: React.FC = () => {
     const { openQuickPlay, quickPlayLabel, playersInRandomQueue } = useQuickPlayEntry();
 
     const availableThemes = Object.keys(CHESSBOARD_THEMES);
-    const activeThemeLabel = activeTheme === 'magic' ? 'Magic' : 'Default';
+    const activeThemeLabel = activeTheme === 'magic' ? t("profile.magicTheme") : t("profile.defaultTheme");
 
     const handleCreateBotRoom = () => {
         createRoom({
@@ -73,7 +75,7 @@ const CreateRoomScreen: React.FC = () => {
                                 onClick={() => { window.location.href = '/login' }}
                                 className="flex justify-center items-center w-full h-[48px] gap-[8px] rounded-xl border border-white/15 bg-white/5 active:bg-white/10 transition-colors duration-200 text-white text-[18px] font-semibold"
                             >
-                                Sign in <img src={SigninSVG} alt="signin" />
+                                {t("room.signIn")} <img src={SigninSVG} alt="signin" />
                             </div>
 
                             {/* Временно заблокирую, потому что не знаю насколько актуально */}
@@ -103,13 +105,13 @@ const CreateRoomScreen: React.FC = () => {
                             <CreateGameButton
                                 title={(
                                     <span className="flex gap-[4px]">
-                                        Play vs Bot
+                                        {t("room.playVsBot")}
                                         <span className="flex font-extrabold bg-gradient-to-r from-[#E810A7] to-[#FFE600] bg-clip-text text-transparent">
-                                            + AI hints <img className="w-[14px] h-[14px]" src={AIiconPNG} />
+                                            + {t("room.aiHints")} <img className="w-[14px] h-[14px]" src={AIiconPNG} />
                                         </span>
                                     </span>
                                 )}
-                                subtitle="30 min, choose difficulty"
+                                subtitle={t("room.botSubtitle")}
                                 onClick={() => setIsBotModalOpen(true)}
                                 theme="success"
                                 disabled={isCreating}
@@ -118,13 +120,13 @@ const CreateRoomScreen: React.FC = () => {
                             <CreateGameButton
                                 title={(
                                     <span className="flex gap-[4px]">
-                                        Create room
+                                        {t("room.createRoom")}
                                         <span className="flex font-extrabold bg-gradient-to-r from-[#E810A7] to-[#FFE600] bg-clip-text text-transparent">
-                                            + AI hints <img className="w-[14px] h-[14px]" src={AIiconPNG} />
+                                            + {t("room.aiHints")} <img className="w-[14px] h-[14px]" src={AIiconPNG} />
                                         </span>
                                     </span>
                                 )}
-                                subtitle={`${timeMinutes} min + ${incrementSeconds} sec`}
+                                subtitle={t("room.timeSummary", { timeMinutes, incrementSeconds })}
                                 onClick={() => setIsTimeModalOpen(true)}
                                 theme="success"
                                 disabled={isCreating}

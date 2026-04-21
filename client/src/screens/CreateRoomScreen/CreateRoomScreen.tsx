@@ -14,10 +14,12 @@ import { AppVersionCaption } from "../../components/AppVersionCaption/AppVersion
 import { AppTopBar } from "../../components/AppTopBar/AppTopBar";
 import AIiconPNG from '../../assets/ai-icon.png';
 import SigninSVG from '../../assets/signin.svg';
+import { useTranslation } from "react-i18next";
 
 const initialRoomTime = getRoomTimeSettingsFromStorage();
 
 export const CreateRoomScreen = () => {
+    const { t } = useTranslation();
     const { openQuickPlay, quickPlayLabel, playersInRandomQueue } = useQuickPlayEntry();
     const { createRoom, isCreating, roomCreatingError } = useCreateRoom();
     const [isBotModalOpen, setIsBotModalOpen] = useState(false);
@@ -70,7 +72,7 @@ export const CreateRoomScreen = () => {
                         to="/login"
                         className="flex justify-center items-center gap-[8px] w-full h-[48px] rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 transition-colors duration-200 text-white text-[18px] flex items-center justify-center"
                     >
-                        Sign in <img src={SigninSVG} alt="signin" />
+                        {t("room.signIn")} <img src={SigninSVG} alt="signin" />
                     </Link>
 
                     {/* <CreateGameButton
@@ -101,13 +103,13 @@ export const CreateRoomScreen = () => {
                     <CreateGameButton
                         title={(
                             <span className="flex gap-[4px]">
-                                Play vs Bot
+                                {t("room.playVsBot")}
                                 <span className="flex font-extrabold bg-gradient-to-r from-[#E810A7] to-[#FFE600] bg-clip-text text-transparent">
-                                    + AI hints <img className="w-[14px] h-[14px]" src={AIiconPNG} />
+                                    + {t("room.aiHints")} <img className="w-[14px] h-[14px]" src={AIiconPNG} />
                                 </span>
                             </span>
                          )}
-                        subtitle="30 min, choose difficulty"
+                        subtitle={t("room.botSubtitle")}
                         onClick={() => setIsBotModalOpen(true)}
                         theme="success"
                         disabled={isCreating}
@@ -116,13 +118,13 @@ export const CreateRoomScreen = () => {
                     <CreateGameButton
                         title={(
                             <span className="flex gap-[4px]">
-                                Create room
+                                {t("room.createRoom")}
                                 <span className="flex font-extrabold bg-gradient-to-r from-[#E810A7] to-[#FFE600] bg-clip-text text-transparent">
-                                    + AI hints <img className="w-[14px] h-[14px]" src={AIiconPNG} />
+                                    + {t("room.aiHints")} <img className="w-[14px] h-[14px]" src={AIiconPNG} />
                                 </span>
                             </span>
                           )}
-                        subtitle={`${timeMinutes} min + ${incrementSeconds} sec`}
+                        subtitle={t("room.timeSummary", { timeMinutes, incrementSeconds })}
                         onClick={() => setIsTimeModalOpen(true)}
                         theme="success"
                         disabled={isCreating}

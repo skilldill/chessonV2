@@ -7,10 +7,12 @@ import { GameScreen } from "../GameScreen/GameScreen";
 import { SetProfileScreen } from "../SetProfileScreen/SetProfileScreen";
 import { useGameStorage } from "../../hooks/useGameStorage";
 import { useAutoConnect } from "../../hooks/useAutoConnect";
+import { useTranslation } from "react-i18next";
 const QUICK_PLAY_ROOM_ID_KEY = "quickPlayRoomId";
 const LEAVE_DELAY_MS = 3000;
 
 function ConnectingToGameOverlay({ onLeave }: { onLeave: () => void }) {
+    const { t } = useTranslation();
     const history = useHistory();
     const [showLeaveOption, setShowLeaveOption] = useState(false);
 
@@ -28,19 +30,19 @@ function ConnectingToGameOverlay({ onLeave }: { onLeave: () => void }) {
         <div className="w-full h-[100vh] flex flex-col justify-center items-center gap-6 px-4">
             <div className="text-center text-white/85">
                 <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#4F39F6] border-t-transparent mx-auto" />
-                <p className="mt-4 text-sm">Connecting to game...</p>
+                <p className="mt-4 text-sm">{t("app.connectingToGame")}</p>
             </div>
             {showLeaveOption && (
                 <div className="w-full max-w-sm flex flex-col items-center gap-3">
                     <p className="text-white/70 text-sm text-center">
-                        Connection is taking longer than expected. You can leave and try again.
+                        {t("app.connectionSlow")}
                     </p>
                     <button
                         type="button"
                         onClick={handleLeave}
                         className="w-full rounded-xl px-6 py-4 bg-white/10 border border-white/15 text-white font-semibold hover:bg-white/15 transition-all duration-200 active:scale-[0.98] focus:outline-none cursor-pointer"
                     >
-                        Leave
+                        {t("common.leave")}
                     </button>
                 </div>
             )}

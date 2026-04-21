@@ -1,7 +1,9 @@
 import { IonPage, IonContent, IonText, IonSpinner } from '@ionic/react';
 import { useVerifyEmail } from '../../hooks/useVerifyEmail';
+import { useTranslation } from 'react-i18next';
 
 const VerifyEmailScreen: React.FC = () => {
+  const { t } = useTranslation();
   const { status, message, goToProfile } = useVerifyEmail();
 
   return (
@@ -12,8 +14,8 @@ const VerifyEmailScreen: React.FC = () => {
             <>
               <IonSpinner name="crescent" className="mb-4" style={{ width: '48px', height: '48px' }} />
               <IonText>
-                <h1 className="text-2xl font-bold text-white mb-2 text-center">Email verification</h1>
-                <p className="text-gray-400 text-center">Please wait...</p>
+                <h1 className="text-2xl font-bold text-white mb-2 text-center">{t("auth.verifyTitle")}</h1>
+                <p className="text-gray-400 text-center">{t("auth.pleaseWait")}</p>
               </IonText>
             </>
           )}
@@ -28,9 +30,9 @@ const VerifyEmailScreen: React.FC = () => {
                 </div>
               </div>
               <IonText>
-                <h1 className="text-2xl font-bold text-white mb-2 text-center">Success!</h1>
+                <h1 className="text-2xl font-bold text-white mb-2 text-center">{t("auth.success")}</h1>
                 <p className="text-gray-300 mb-4 text-center">{message}</p>
-                <p className="text-sm text-gray-400 text-center">You will be redirected to your profile page...</p>
+                <p className="text-sm text-gray-400 text-center">{t("auth.redirectToProfile")}</p>
               </IonText>
             </>
           )}
@@ -45,14 +47,14 @@ const VerifyEmailScreen: React.FC = () => {
                 </div>
               </div>
               <IonText>
-                <h1 className="text-2xl font-bold text-white mb-2 text-center">Error</h1>
+                <h1 className="text-2xl font-bold text-white mb-2 text-center">{t("auth.error")}</h1>
                 <p className="text-gray-300 mb-4 text-center">{message}</p>
               </IonText>
               <button
                 onClick={goToProfile}
                 className="mt-4 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
               >
-                Go to profile
+                {t("auth.goToProfile")}
               </button>
             </>
           )}

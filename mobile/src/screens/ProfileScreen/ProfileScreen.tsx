@@ -6,8 +6,10 @@ import { MEM_AVATARS } from '../../constants/avatars';
 import { useProfile } from '../../hooks/useProfile';
 import { useUserGames } from '../../hooks/useUserGames';
 import { CHESSBOARD_THEMES } from '../../components/ChessBoardConfigs/ChessBoardConfigs';
+import { useTranslation } from 'react-i18next';
 
 const ProfileScreen: React.FC = () => {
+  const { t } = useTranslation();
   const {
     name,
     avatarIndex,
@@ -76,7 +78,7 @@ const ProfileScreen: React.FC = () => {
                 </button>
                 <div>
                   <div className="text-white/50 text-xs uppercase tracking-[0.2em]">
-                    Profile
+                    {t("profile.title")}
                   </div>
                   <h3 className="text-white/90 text-2xl font-semibold mt-1">
                     {name}
@@ -87,22 +89,22 @@ const ProfileScreen: React.FC = () => {
               {/* Статистика */}
               <div className="grid grid-cols-2 gap-3 mb-6">
                 <div className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3">
-                  <div className="text-white/50 text-xs">Games played</div>
+                  <div className="text-white/50 text-xs">{t("profile.gamesPlayed")}</div>
                   <div className="text-white/90 text-xl font-semibold mt-1">
                     {totalGames}
                   </div>
                 </div>
                 <div className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3">
-                  <div className="text-white/50 text-xs">Status</div>
+                  <div className="text-white/50 text-xs">{t("profile.status")}</div>
                   <div className="text-white/80 text-sm font-medium mt-1">
-                    Active
+                    {t("profile.active")}
                   </div>
                 </div>
               </div>
 
               {/* Тема доски */}
               <div className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-4 mb-6">
-                <div className="text-white/70 text-sm mb-3">Chessboard theme</div>
+                <div className="text-white/70 text-sm mb-3">{t("profile.chessboardTheme")}</div>
                 <div className="flex flex-wrap gap-2">
                   {Object.keys(CHESSBOARD_THEMES).map((themeKey) => (
                     <IonButton
@@ -120,7 +122,7 @@ const ProfileScreen: React.FC = () => {
                           : "bg-white/5 text-white/80 border border-white/10"
                       }`}
                     >
-                      {themeKey === "default" ? "Default" : themeKey === "green" ? "Green" : themeKey === "brown" ? "Wood" : themeKey === "blue" ? "Blue" : themeKey}
+                      {themeKey === "default" ? t("profile.defaultTheme") : themeKey === "green" ? t("profile.greenTheme") : themeKey === "brown" ? t("profile.woodTheme") : themeKey === "blue" ? t("profile.blueTheme") : themeKey}
                     </IonButton>
                   ))}
                 </div>
@@ -129,7 +131,7 @@ const ProfileScreen: React.FC = () => {
               {showAvatarSelect && (
                 <div className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-4 mb-6">
                   <div className="text-white/70 text-sm mb-4">
-                    Choose avatar
+                    {t("profile.chooseAvatar")}
                   </div>
                   <MemAvatarSelect
                     initialSelected={selectedAvatarIndex}
@@ -145,7 +147,7 @@ const ProfileScreen: React.FC = () => {
                       }}
                       className="flex-1 rounded-lg text-sm font-semibold bg-white/5 text-white/80 cursor-pointer transition-all duration-200 active:scale-[0.98] focus:outline-none border border-white/10 touch-manipulation min-h-[44px]"
                     >
-                      Cancel
+                      {t("common.cancel")}
                     </IonButton>
                     <IonButton
                       type="button"
@@ -161,7 +163,7 @@ const ProfileScreen: React.FC = () => {
                       }}
                       className="flex-1 rounded-lg text-sm font-semibold bg-[#4F39F6] text-white cursor-pointer transition-all duration-200 active:scale-[0.98] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[44px]"
                     >
-                      {saving ? "Saving..." : "Save"}
+                      {saving ? t("common.saving") : t("common.save")}
                     </IonButton>
                   </div>
                 </div>
@@ -187,7 +189,7 @@ const ProfileScreen: React.FC = () => {
                   color="danger"
                   className="flex-1 rounded-lg text-sm font-semibold bg-white/5 text-white/80 cursor-pointer transition-all duration-200 active:scale-[0.98] focus:outline-none border border-white/10 touch-manipulation min-h-[44px]"
                 >
-                  Sign out
+                  {t("profile.signOut")}
                 </IonButton>
               </div>
             </div>

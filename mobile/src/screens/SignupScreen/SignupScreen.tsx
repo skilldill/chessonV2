@@ -1,8 +1,10 @@
 import { IonPage, IonContent } from '@ionic/react';
 import { useState, useEffect } from 'react';
 import { API_PREFIX } from '../../constants/api';
+import { useTranslation } from 'react-i18next';
 
 const SignupScreen: React.FC = () => {
+  const { t } = useTranslation();
   const [login, setLogin] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -32,11 +34,11 @@ const SignupScreen: React.FC = () => {
     setError("");
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      setError(t("auth.passwordsDontMatch"));
       return;
     }
     if (password.length < 6) {
-      setError("Password must be at least 6 characters");
+      setError(t("auth.passwordMinLength"));
       return;
     }
 
@@ -53,11 +55,11 @@ const SignupScreen: React.FC = () => {
       if (data.success) {
         window.location.href = "/signup-success";
       } else {
-        setError(data.error || "Sign-up error");
+        setError(data.error || t("auth.signupErrorDefault"));
       }
     } catch (err) {
       console.error("Signup error:", err);
-      setError("An error occurred during sign-up");
+      setError(t("auth.signupErrorGeneric"));
     } finally {
       setLoading(false);
     }
@@ -71,7 +73,7 @@ const SignupScreen: React.FC = () => {
             <div className="auth-card-blur" />
             <div className="w-full flex flex-col items-center relative z-10 gap-5 py-8 px-5">
               <h3 className="text-white text-center text-2xl font-semibold">
-                Sign up
+                {t("auth.signupTitle")}
               </h3>
 
               <form onSubmit={handleSubmit} className="w-full flex flex-col items-center gap-4">
@@ -82,7 +84,7 @@ const SignupScreen: React.FC = () => {
                   required
                   minLength={3}
                   maxLength={20}
-                  placeholder="Username (3-20 characters)"
+                  placeholder={t("auth.usernamePlaceholder")}
                   className="auth-input"
                   autoComplete="username"
                 />
@@ -91,7 +93,7 @@ const SignupScreen: React.FC = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  placeholder="Email"
+                  placeholder={t("auth.emailPlaceholder")}
                   className="auth-input"
                   autoComplete="email"
                 />
@@ -101,7 +103,7 @@ const SignupScreen: React.FC = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   minLength={6}
-                  placeholder="Password (minimum 6 characters)"
+                  placeholder={t("auth.newPasswordPlaceholder")}
                   className="auth-input"
                   autoComplete="new-password"
                 />
@@ -110,7 +112,7 @@ const SignupScreen: React.FC = () => {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
-                  placeholder="Confirm password"
+                  placeholder={t("auth.confirmPasswordPlaceholder")}
                   className="auth-input"
                   autoComplete="new-password"
                 />
@@ -126,7 +128,7 @@ const SignupScreen: React.FC = () => {
                   disabled={loading}
                   className="auth-btn-primary w-full"
                 >
-                  {loading ? "Signing up..." : "Sign up"}
+                  {loading ? t("auth.signingUp") : t("auth.signUp")}
                 </button>
               </form>
 
@@ -135,7 +137,7 @@ const SignupScreen: React.FC = () => {
                 onClick={() => window.location.href = "/login"}
                 className="text-white/70 active:text-white text-sm py-2 touch-manipulation"
               >
-                Already have an account? Sign in
+                {t("auth.haveAccount")}
               </button>
             </div>
           </div>

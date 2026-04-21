@@ -1,12 +1,14 @@
 import type { FC } from "react";
 import { useHistory } from "react-router-dom";
 import { ShareLinkBlock } from "../../components/ShareLinkBlock/ShareLinkBlock";
+import { useTranslation } from "react-i18next";
 
 type WaitingScreenProps = {
     onLeave?: () => void;
 };
 
 export const WaitingScreen: FC<WaitingScreenProps> = ({ onLeave }) => {
+    const { t } = useTranslation();
     const history = useHistory();
 
     const handleLeave = () => {
@@ -22,7 +24,7 @@ export const WaitingScreen: FC<WaitingScreenProps> = ({ onLeave }) => {
                 onClick={handleLeave}
                 className="w-full max-w-[430px] rounded-xl px-6 py-2 bg-white/10 border border-white/15 text-white font-semibold hover:bg-white/15 transition-all duration-200 active:scale-[0.98] focus:outline-none cursor-pointer fadeIn"
             >
-                Leave
+                {t("common.leave")}
             </button>
         </div>
     );

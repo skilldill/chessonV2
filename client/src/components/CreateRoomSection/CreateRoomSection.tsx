@@ -5,10 +5,12 @@ import { RoomTimeModal } from "../RoomTimeModal/RoomTimeModal";
 import { CreateGameButton } from "../CreateGameButton/CreateGameButton";
 import { getRoomTimeSettingsFromStorage, setRoomTimeSettingsToStorage } from "../../utils/roomTimeStorage";
 import AIiconPNG from '../../assets/ai-icon.png';
+import { useTranslation } from "react-i18next";
 
 const initialRoomTime = getRoomTimeSettingsFromStorage();
 
 export const CreateRoomSection = () => {
+  const { t } = useTranslation();
   const { createRoom, isCreating } = useCreateRoom();
   const [isBotModalOpen, setIsBotModalOpen] = useState(false);
   const [isTimeModalOpen, setIsTimeModalOpen] = useState(false);
@@ -45,13 +47,13 @@ export const CreateRoomSection = () => {
         <CreateGameButton 
           title={(
             <span className="flex gap-[4px]">
-                Play vs Bot
+                {t("room.playVsBot")}
                 <span className="flex font-extrabold bg-gradient-to-r from-[#E810A7] to-[#FFE600] bg-clip-text text-transparent">
-                    + AI hints <img className="w-[14px] h-[14px]" src={AIiconPNG} />
+                    + {t("room.aiHints")} <img className="w-[14px] h-[14px]" src={AIiconPNG} />
                 </span>
             </span>
           )}
-          subtitle="30 min, choose difficulty"
+          subtitle={t("room.botSubtitle")}
           onClick={() => setIsBotModalOpen(true)}
           theme="success"
           disabled={isCreating}
@@ -59,13 +61,13 @@ export const CreateRoomSection = () => {
         <CreateGameButton 
           title={(
             <span className="flex gap-[4px]">
-                Create room
+                {t("room.createRoom")}
                 <span className="flex font-extrabold bg-gradient-to-r from-[#E810A7] to-[#FFE600] bg-clip-text text-transparent">
-                    + AI hints <img className="w-[14px] h-[14px]" src={AIiconPNG} />
+                    + {t("room.aiHints")} <img className="w-[14px] h-[14px]" src={AIiconPNG} />
                 </span>
             </span>
           )}
-          subtitle={`${timeMinutes} min + ${incrementSeconds} sec`}
+          subtitle={t("room.timeSummary", { timeMinutes, incrementSeconds })}
           onClick={() => setIsTimeModalOpen(true)}
           theme="success"
           disabled={isCreating}

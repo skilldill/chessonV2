@@ -2,6 +2,7 @@ import { type FC, useEffect, useState, useRef } from "react";
 import { useHistory } from "react-router-dom";
 import { API_PREFIX } from "../../constants/api";
 import styles from "./ResultsActions.module.css";
+import { useTranslation } from "react-i18next";
 
 type ResultsActionsProps = {
     message?: string;
@@ -12,6 +13,7 @@ export const ResultsActions: FC<ResultsActionsProps> = ({
     message,
     onClose
 }) => {
+    const { t } = useTranslation();
     const history = useHistory();
     const [isClosing, setIsClosing] = useState(false);
     const [shouldRender, setShouldRender] = useState<boolean>(false);
@@ -105,30 +107,30 @@ export const ResultsActions: FC<ResultsActionsProps> = ({
                 onClick={handleModalClick}
             >
                 <h2 className="text-white text-xl font-semibold mb-2">
-                    Game Result
+                    {t("results.title")}
                 </h2>
                 <p className="text-gray-300 text-sm mb-4 text-center">
-                    {message || 'Game over'}
+                    {message || t("results.gameOver")}
                 </p>
 
                 {/* Предложение регистрации для неавторизованных */}
                 {isAuthenticated === false && (
                     <div className="w-full bg-gradient-to-r from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 rounded-lg p-4 mb-2">
                         <p className="text-white text-sm text-center mb-3">
-                            Sign up to save game history and track your stats!
+                            {t("results.signUpPrompt")}
                         </p>
                         <div className="flex flex-col gap-2">
                             <button 
                                 className="rounded-md text-sm font-semibold px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white cursor-pointer transition-all duration-300 active:scale-95 focus:outline-none hover:from-indigo-700 hover:to-purple-700"
                                 onClick={handleSignup}
                             >
-                                Sign up
+                                {t("auth.signUp")}
                             </button>
                             <button 
                                 className="rounded-md text-sm font-semibold px-4 py-2 bg-white/10 text-white border border-white/20 cursor-pointer transition-all duration-300 active:scale-95 focus:outline-none hover:bg-white/20"
                                 onClick={handleLogin}
                             >
-                                Sign in
+                                {t("auth.signIn")}
                             </button>
                         </div>
                     </div>
@@ -139,7 +141,7 @@ export const ResultsActions: FC<ResultsActionsProps> = ({
                         className="flex-1 rounded-md text-sm font-semibold px-4 py-2 bg-[#4F39F6] text-white cursor-pointer transition-all duration-300 active:scale-95 focus:outline-none"
                         onClick={handleCloseButton}
                     >
-                        {isAuthenticated === false ? "Continue without registration" : "Return to the main"}
+                        {isAuthenticated === false ? t("results.continueWithoutRegistration") : t("results.returnToMain")}
                     </button>
                 </div>
             </div>

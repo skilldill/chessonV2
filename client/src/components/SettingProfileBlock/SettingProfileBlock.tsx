@@ -1,5 +1,6 @@
 import { useEffect, useState, type FC } from "react";
 import { MemAvatarSelect } from "../MemAvatarSelect/MemAvatarSelect";
+import { useTranslation } from "react-i18next";
 
 const MAX_NICKNAME_LENGTH = 10;
 const GUEST_CREATE_PROFILE_KEY = "guestCreateProfile";
@@ -10,6 +11,7 @@ type SettingProfileBlockProps = {
 }
 
 export const SettingProfileBlock: FC<SettingProfileBlockProps> = ({ onToPlay, onClose }) => {
+    const { t } = useTranslation();
     const [nickname, setNickname] = useState("");
     const [avatarIndex, setSelectedAvatarIndex] = useState(0);
 
@@ -90,7 +92,7 @@ export const SettingProfileBlock: FC<SettingProfileBlockProps> = ({ onToPlay, on
                 <div className="w-full flex justify-end px-[32px]">
                     <button 
                         type="button"
-                        aria-label="Close"
+                        aria-label={t("common.close")}
                         className="w-[24px] h-[24px] flex items-center justify-center bg-transparent border-none p-0 m-0 cursor-pointer active:scale-95 active:opacity-80 transition-all duration-300"
                         style={{ outline: "none" }}
                         onClick={handleClose}
@@ -119,7 +121,7 @@ export const SettingProfileBlock: FC<SettingProfileBlockProps> = ({ onToPlay, on
                 </div>
 
                 <h3 className="text-white text-center text-3xl font-semibold">
-                    Input your name <br/> and choice avatar
+                    {t("setProfile.title")}
                 </h3>
                 <form onSubmit={(event) => event.preventDefault()}>
                     <div className="relative w-[328px]">
@@ -127,13 +129,13 @@ export const SettingProfileBlock: FC<SettingProfileBlockProps> = ({ onToPlay, on
                             type="text"
                             value={nickname}
                             onChange={handleChangeNickname}
-                            placeholder="Your name"
+                            placeholder={t("setProfile.yourName")}
                             className="bg-white/4 w-full h-[40px] px-[12px] py-[10px] border border-white/10 border-solid rounded-md focus:border-indigo-700 focus:outline-none transition-all duration-200 pr-10 placeholder-[#99A1AF]"
                         />
                         {nickname && (
                             <button
                                 type="button"
-                                aria-label="Clear"
+                                aria-label={t("common.close")}
                                 onClick={() => handleChangeNickname({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>)}
                                 className="absolute top-1/2 right-3 transform -translate-y-1/2 w-4 h-4 flex items-center justify-center bg-transparent border-none p-0 m-0 cursor-pointer active:scale-95 active:opacity-80 transition-all duration-300"
                                 tabIndex={-1}
@@ -153,7 +155,7 @@ export const SettingProfileBlock: FC<SettingProfileBlockProps> = ({ onToPlay, on
                     className="rounded-md text-sm font-semibold px-4 py-2 bg-[#4F39F6] text-white min-w-[126px] cursor-pointer transition-all duration-300 active:scale-95 focus:outline-none"
                     onClick={hanleToPlay}
                 >
-                    To play
+                    {t("setProfile.toPlay")}
                 </button>
             </div>
         </div>

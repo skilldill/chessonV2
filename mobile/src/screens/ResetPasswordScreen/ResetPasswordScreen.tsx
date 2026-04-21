@@ -2,8 +2,10 @@ import { IonPage, IonContent } from '@ionic/react';
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { API_PREFIX } from '../../constants/api';
+import { useTranslation } from 'react-i18next';
 
 const ResetPasswordScreen: React.FC = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -16,26 +18,26 @@ const ResetPasswordScreen: React.FC = () => {
     const params = new URLSearchParams(location.search);
     const tokenParam = params.get("token");
     if (!tokenParam) {
-      setError("Reset token not found");
+      setError(t("auth.resetTokenNotFound"));
     } else {
       setToken(tokenParam);
     }
-  }, [location]);
+  }, [location, t]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
     if (!token) {
-      setError("Reset token not found");
+      setError(t("auth.resetTokenNotFound"));
       return;
     }
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      setError(t("auth.passwordsDontMatch"));
       return;
     }
     if (password.length < 6) {
-      setError("Password must be at least 6 characters");
+      setError(t("auth.passwordMinLength"));
       return;
     }
 
@@ -53,11 +55,11 @@ const ResetPasswordScreen: React.FC = () => {
         setSuccess(true);
         setTimeout(() => window.location.href = "/login", 2000);
       } else {
-        setError(data.error || "Error resetting password");
+        setError(data.error || t("auth.resetErrorDefault"));
       }
     } catch (err) {
       console.error("Reset password error:", err);
-      setError("An error occurred while resetting password");
+      setError(t("auth.resetErrorGeneric"));
     } finally {
       setLoading(false);
     }
@@ -71,13 +73,13 @@ const ResetPasswordScreen: React.FC = () => {
             <div className="auth-card-blur" />
             <div className="w-full flex flex-col items-center relative z-10 gap-6 py-8 px-5">
               <h3 className="text-white text-center text-2xl font-semibold">
-                Password reset
+                {t("auth.resetTitle")}
               </h3>
 
               {success ? (
                 <div className="w-full flex flex-col items-center gap-4">
                   <div className="bg-green-500/20 border border-green-500 text-green-300 px-4 py-3 rounded-lg text-sm w-full text-center">
-                    Password changed successfully. Redirecting to sign-in page...
+                    {t("auth.resetSuccessMessage")}
                   </div>
                 </div>
               ) : (
@@ -89,7 +91,7 @@ const ResetPasswordScreen: React.FC = () => {
                       onChange={(e) => setPassword(e.target.value)}
                       required
                       minLength={6}
-                      placeholder="New password (minimum 6 characters)"
+                      placeholder={t("auth.newPasswordPlaceholder")}
                       className="auth-input"
                       autoComplete="new-password"
                     />
@@ -98,7 +100,7 @@ const ResetPasswordScreen: React.FC = () => {
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       required
-                      placeholder="Confirm password"
+                      placeholder={t("auth.confirmPasswordPlaceholder")}
                       className="auth-input"
                       autoComplete="new-password"
                     />
@@ -114,7 +116,7 @@ const ResetPasswordScreen: React.FC = () => {
                       disabled={loading || !token}
                       className="auth-btn-primary w-full"
                     >
-                      {loading ? "Resetting..." : "Reset password"}
+                      {loading ? t("auth.resetting") : t("auth.resetPassword")}
                     </button>
                   </form>
 
@@ -123,7 +125,7 @@ const ResetPasswordScreen: React.FC = () => {
                     onClick={() => window.location.href = "/login"}
                     className="text-white/70 active:text-white text-sm py-2 touch-manipulation"
                   >
-                    Back to sign in
+                    {t("auth.backToSignIn")}
                   </button>
                 </>
               )}

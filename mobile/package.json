@@ -32,10 +32,12 @@
     "@types/react-router-dom": "^5.3.3",
     "@vitest/browser-playwright": "^4.0.15",
     "classnames": "^2.5.1",
+    "i18next": "^26.0.6",
     "ionicons": "^7.4.0",
     "react": "19.0.0",
     "react-chessboard-ui": "2.4.2",
     "react-dom": "19.0.0",
+    "react-i18next": "^17.0.4",
     "react-router": "^5.3.4",
     "react-router-dom": "^5.3.4",
     "tailwindcss": "^4.1.18"

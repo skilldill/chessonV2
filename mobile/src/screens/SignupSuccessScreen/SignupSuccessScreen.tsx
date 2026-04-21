@@ -1,6 +1,8 @@
 import { IonPage, IonContent } from '@ionic/react';
+import { useTranslation } from 'react-i18next';
 
 const SignupSuccessScreen: React.FC = () => {
+  const { t } = useTranslation();
   return (
     <IonPage>
       <IonContent className="ion-padding auth-screen-bg" fullscreen>
@@ -14,17 +16,17 @@ const SignupSuccessScreen: React.FC = () => {
                 </svg>
               </div>
               <h1 className="text-2xl font-bold text-white text-center">
-                Registration successful!
+                {t("auth.signupSuccessTitle")}
               </h1>
               <p className="text-white/70 text-center text-sm leading-relaxed">
-                We sent a confirmation email to your address. Please check your inbox and follow the link to activate your account.
+                {t("auth.signupSuccessDescription")}
               </p>
               <button
                 type="button"
                 onClick={() => window.location.href = "/login"}
                 className="auth-btn-primary w-full"
               >
-                Go to sign in
+                {t("auth.goToSignIn")}
               </button>
             </div>
           </div>

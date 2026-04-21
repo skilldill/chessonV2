@@ -1,8 +1,10 @@
 import { IonPage, IonContent } from '@ionic/react';
 import { useState, useEffect } from 'react';
 import { API_PREFIX } from '../../constants/api';
+import { useTranslation } from 'react-i18next';
 
 const LoginScreen: React.FC = () => {
+  const { t } = useTranslation();
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -42,11 +44,11 @@ const LoginScreen: React.FC = () => {
       if (data.success) {
         window.location.href = "/main";
       } else {
-        setError(data.error || "Login error");
+        setError(data.error || t("auth.loginErrorDefault"));
       }
     } catch (err) {
       console.error("Login error:", err);
-      setError("An error occurred while signing in");
+      setError(t("auth.loginErrorGeneric"));
     } finally {
       setLoading(false);
     }
@@ -60,7 +62,7 @@ const LoginScreen: React.FC = () => {
             <div className="auth-card-blur" />
             <div className="w-full flex flex-col items-center relative z-10 gap-6 py-8 px-5">
               <h3 className="text-white text-center text-2xl font-semibold">
-                Login
+                {t("auth.loginTitle")}
               </h3>
 
               <form onSubmit={handleSubmit} className="w-full flex flex-col items-center gap-4">
@@ -70,7 +72,7 @@ const LoginScreen: React.FC = () => {
                     value={login}
                     onChange={(e) => setLogin(e.target.value)}
                     required
-                    placeholder="Username"
+                    placeholder={t("auth.usernamePlaceholder")}
                     className="auth-input"
                     autoComplete="username"
                   />
@@ -81,7 +83,7 @@ const LoginScreen: React.FC = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    placeholder="Password"
+                    placeholder={t("auth.passwordPlaceholder")}
                     className="auth-input"
                     autoComplete="current-password"
                   />
@@ -98,7 +100,7 @@ const LoginScreen: React.FC = () => {
                   disabled={loading}
                   className="auth-btn-primary w-full"
                 >
-                  {loading ? "Signing in..." : "Sign in"}
+                  {loading ? t("auth.signingIn") : t("auth.signIn")}
                 </button>
 
                 <button
@@ -106,7 +108,7 @@ const LoginScreen: React.FC = () => {
                   onClick={() => window.location.href = "/"}
                   className="w-full rounded-md text-sm font-semibold px-4 py-2 border border-white/20 bg-transparent text-white/90 active:bg-white/5 transition-colors duration-200 touch-manipulation"
                 >
-                  Continue without signing in
+                  {t("auth.continueGuest")}
                 </button>
               </form>
 
@@ -116,14 +118,14 @@ const LoginScreen: React.FC = () => {
                   onClick={() => window.location.href = "/signup"}
                   className="text-white/70 active:text-white py-2 touch-manipulation"
                 >
-                  Don't have an account? Sign up
+                  {t("auth.noAccount")}
                 </button>
                 <button
                   type="button"
                   onClick={() => window.location.href = "/forgot-password"}
                   className="text-white/50 active:text-white/70 py-2 touch-manipulation"
                 >
-                  Forgot password?
+                  {t("auth.forgotPassword")}
                 </button>
               </div>
             </div>

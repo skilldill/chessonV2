@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 
 type ChessboardThemeModalProps = {
   isOpen: boolean;
@@ -9,13 +10,6 @@ type ChessboardThemeModalProps = {
   onConfirm: () => void;
 };
 
-const THEME_LABELS: Record<string, ReactNode> = {
-  default: 'Default',
-  magic: <span>Magic <span className="font-extrabold bg-gradient-to-r from-[#10D6E8] to-[#D079DF] bg-clip-text text-transparent">
-    New theme
-  </span></span>,
-};
-
 export const ChessboardThemeModal = ({
   isOpen,
   selectedTheme,
@@ -24,6 +18,16 @@ export const ChessboardThemeModal = ({
   onClose,
   onConfirm,
 }: ChessboardThemeModalProps) => {
+  const { t } = useTranslation();
+  const themeLabels: Record<string, ReactNode> = {
+    default: t("profile.defaultTheme"),
+    green: t("profile.greenTheme"),
+    brown: t("profile.woodTheme"),
+    blue: t("profile.blueTheme"),
+    magic: <span>{t("profile.magicTheme")} <span className="font-extrabold bg-gradient-to-r from-[#10D6E8] to-[#D079DF] bg-clip-text text-transparent">
+      {t("theme.newTheme")}
+    </span></span>,
+  };
   if (!isOpen) {
     return null;
   }
@@ -32,7 +36,7 @@ export const ChessboardThemeModal = ({
     <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
       <button
         type="button"
-        aria-label="Close modal"
+        aria-label={t("common.close")}
         onClick={onClose}
         className="absolute inset-0 bg-black/70 backdrop-blur-[2px] cursor-default"
       />
@@ -41,10 +45,10 @@ export const ChessboardThemeModal = ({
         style={{ borderRadius: 28, padding: 32 }}
       >
         <h4 className="text-white text-xl font-semibold text-center">
-          Choose Chessboard Theme
+          {t("theme.title")}
         </h4>
         <p className="text-white/60 text-sm text-center mt-2">
-          Theme will apply to your next game
+          {t("theme.nextGame")}
         </p>
 
         <div className="mt-8 grid grid-cols-1 gap-4">
@@ -59,7 +63,7 @@ export const ChessboardThemeModal = ({
                 }`}
               style={{ borderRadius: 20, padding: '18px 20px', minHeight: 86 }}
             >
-              <div className="font-semibold text-[18px] leading-tight">{THEME_LABELS[theme] ?? theme}</div>
+              <div className="font-semibold text-[18px] leading-tight">{themeLabels[theme] ?? theme}</div>
             </button>
           ))}
         </div>
@@ -71,7 +75,7 @@ export const ChessboardThemeModal = ({
             className="btn-client btn-client-preset text-white font-semibold text-[18px] transition-all duration-200 active:scale-[0.98] focus:outline-none touch-manipulation"
             style={{ borderRadius: 20, minHeight: 66, padding: '14px 20px' }}
           >
-            Cancel
+            {t("common.cancel")}
           </button>
           <button
             type="button"
@@ -79,7 +83,7 @@ export const ChessboardThemeModal = ({
             className="btn-client bg-[#4F39F6] #4F39F6 text-white font-semibold text-[18px] hover:bg-[#4F39F6] transition-all duration-200 active:scale-[0.98] focus:outline-none touch-manipulation"
             style={{ borderRadius: 20, minHeight: 66, padding: '14px 20px' }}
           >
-            Save
+            {t("common.save")}
           </button>
         </div>
       </div>

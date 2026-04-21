@@ -5,8 +5,10 @@ import { MEM_AVATARS } from "../../constants/avatars";
 import { useProfile } from "../../hooks/useProfile";
 import { useUserGames } from "../../hooks/useUserGames";
 import { CHESSBOARD_THEMES } from "../../components/ChessBoardConfigs/ChessBoardConfigs";
+import { useTranslation } from "react-i18next";
 
 export const ProfileScreen = () => {
+  const { t } = useTranslation();
   const {
     name,
     avatarIndex,
@@ -73,7 +75,7 @@ export const ProfileScreen = () => {
             </button>
             <div>
               <div className="text-white/50 text-xs uppercase tracking-[0.2em]">
-                Profile
+                {t("profile.title")}
               </div>
               <h3 className="text-white/90 text-2xl font-semibold mt-1">
                 {name}
@@ -84,22 +86,22 @@ export const ProfileScreen = () => {
           {/* Статистика */}
           <div className="grid grid-cols-2 gap-3 mb-6">
             <div className="rounded-xl border border-white/10 bg-white/4 px-4 py-3">
-              <div className="text-white/50 text-xs">Games played</div>
+              <div className="text-white/50 text-xs">{t("profile.gamesPlayed")}</div>
               <div className="text-white/90 text-xl font-semibold mt-1">
                 {totalGames}
               </div>
             </div>
             <div className="rounded-xl border border-white/10 bg-white/4 px-4 py-3">
-              <div className="text-white/50 text-xs">Status</div>
+              <div className="text-white/50 text-xs">{t("profile.status")}</div>
               <div className="text-white/80 text-sm font-medium mt-1">
-                Active
+                {t("profile.active")}
               </div>
             </div>
           </div>
 
           {/* Тема доски */}
           <div className="rounded-xl border border-white/10 bg-white/4 px-4 py-4 mb-6">
-            <div className="text-white/70 text-sm mb-3">Chessboard theme</div>
+            <div className="text-white/70 text-sm mb-3">{t("profile.chessboardTheme")}</div>
             <div className="flex flex-wrap gap-2">
               {Object.keys(CHESSBOARD_THEMES).map((themeKey) => (
                 <button
@@ -116,7 +118,7 @@ export const ProfileScreen = () => {
                       : "bg-white/5 text-white/80 border border-white/10 hover:bg-white/8"
                   }`}
                 >
-                  {themeKey === "default" ? "Default" : themeKey === "green" ? "Green" : themeKey === "brown" ? "Wood" : themeKey === "blue" ? "Blue" : themeKey}
+                  {themeKey === "default" ? t("profile.defaultTheme") : themeKey === "green" ? t("profile.greenTheme") : themeKey === "brown" ? t("profile.woodTheme") : themeKey === "blue" ? t("profile.blueTheme") : themeKey}
                 </button>
               ))}
             </div>
@@ -125,7 +127,7 @@ export const ProfileScreen = () => {
           {showAvatarSelect && (
             <div className="rounded-xl border border-white/10 bg-white/4 px-4 py-4 mb-6">
               <div className="text-white/70 text-sm mb-4">
-                Choose avatar
+                {t("profile.chooseAvatar")}
               </div>
               <MemAvatarSelect
                 initialSelected={selectedAvatarIndex}
@@ -141,7 +143,7 @@ export const ProfileScreen = () => {
                   }}
                   className="flex-1 rounded-lg text-sm font-semibold px-4 py-2 bg-white/5 text-white/80 cursor-pointer transition-all duration-200 active:scale-[0.98] focus:outline-none hover:bg-white/8 border border-white/10"
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </button>
                 <button
                   onClick={async () => {
@@ -156,7 +158,7 @@ export const ProfileScreen = () => {
                   disabled={saving || selectedAvatarIndex === avatarIndex}
                   className="flex-1 rounded-lg text-sm font-semibold px-4 py-2 bg-[#4F39F6] text-white cursor-pointer transition-all duration-200 active:scale-[0.98] focus:outline-none hover:bg-[#4332D7] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {saving ? "Saving..." : "Save"}
+                  {saving ? t("common.saving") : t("common.save")}
                 </button>
               </div>
             </div>
@@ -180,7 +182,7 @@ export const ProfileScreen = () => {
               onClick={logout}
               className="rounded-lg text-sm font-semibold px-4 py-2 bg-white/5 text-white/80 cursor-pointer transition-all duration-200 active:scale-[0.98] focus:outline-none hover:bg-white/8 border border-white/10 hover:border-red-500/40 hover:text-red-300"
             >
-              Sign out
+              {t("profile.signOut")}
             </button>
           </div>
         </div>
