@@ -1,6 +1,6 @@
 import { ChessBoard, JSChessEngine, type GameResult } from "react-chessboard-ui";
 import type { ChessColor, GameState, MoveData, TimerState, CursorPosition } from "../../types";
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { ChessboardWrap } from "../../components/ChessboardWrap/ChessboardWrap";
 import { GameScreenControls } from "../../components/GameScreenControls/GameScreenControls";
 import { CapturedPieces } from "../../components/CapturedPieces/CapturedPieces";
@@ -32,6 +32,7 @@ type GameScreenProps = {
     onSendGameResult: (gameResult: GameResult) => void;
     onSendDrawOffer: (action: 'offer' | 'accept' | 'decline') => void;
     onSendAIHintRequest: () => void;
+    onSendRollbackPlayerMove: () => void;
     aiHintArrow: { from: [number, number]; to: [number, number] } | null;
     
     resultMessage?: string;
@@ -52,6 +53,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
     onSendResignation,
     onSendGameResult,
     onSendAIHintRequest,
+    onSendRollbackPlayerMove,
     aiHintArrow,
 
     resultMessage,
@@ -65,10 +67,13 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
     const gridColsClass = useScreenHeightForChessboard();
 
     const [initialFEN, setInitialFEN] = useState(INITIAL_FEN);
+    const [boardResetVersion, setBoardResetVersion] = useState(0);
     const [isHistoryMode, setIsHistoryMode] = useState(false);
     const [selectedHistroyMove, setSelectedHistoryMove] = useState<MoveData>();
     const [waitAIhint, setWaitAIhint] = useState(false);
     const [gameControlsNotify, setGameControlsNotify] = useState<{ text: string }>();
+    const [externalChangeMove, setExternalChangeMove] = useState<any>(undefined);
+    const previousMovesCountRef = useRef<number>(movesHistory.length);
 
     const reversed = useMemo(() => playerColor === "black", [playerColor]);
     const { 
@@ -93,13 +98,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
         };
     }, []);
 
-    const externalChangeMove = useMemo(() => {
-        if (!currentMove) return undefined;
-        return {
-            move: currentMove,
-            withTransition: true
-        };
-    }, [currentMove]);
+    
 
     const handleMove = (moveData: MoveData) => {
         const move = reversed ? JSChessEngine.reverseMove(moveData) : moveData;
@@ -115,6 +114,38 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
     useEffect(() => {
         setInitialFEN(gameState.currentFEN);
     }, [])
+
+    // Контролируем внешние ходы
+    // через useEffect, так как 
+    // если сделать откат хода
+    // То старый внешний ход + обновленное состояние
+    // вызывают pat на доске
+    useEffect(() => {
+        if (!currentMove) {
+            setExternalChangeMove(undefined);
+            return;
+        };
+
+        setExternalChangeMove({
+            move: currentMove,
+            withTransition: true
+        });
+    }, [currentMove])
+
+    useEffect(() => {
+        const previousCount = previousMovesCountRef.current;
+        const nextCount = movesHistory.length;
+
+        if (nextCount < previousCount) {
+            setExternalChangeMove(undefined);
+            setInitialFEN(gameState.currentFEN);
+            setBoardResetVersion((prev) => prev + 1);
+            setIsHistoryMode(false);
+            setSelectedHistoryMove(undefined);
+        }
+
+        previousMovesCountRef.current = nextCount;
+    }, [movesHistory.length, gameState.currentFEN]);
 
     const handleCloseResults = () => {
         removeGameData();
@@ -249,7 +280,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                             )}
                             <div style={{ opacity: isHistoryMode ? 0 : 1 }}>
                                 <ChessBoard
-                                    key="gameBoard"
+                                    key={`gameBoard-${boardResetVersion}`}
                                     FEN={initialFEN}
                                     onChange={(moveData) => handleMove(moveData as MoveData)} 
                                     onEndGame={onSendGameResult}
@@ -270,9 +301,11 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                     <GameScreenControls
                         key={resultMessage}
                         withAIhints={gameState.withAIhints}
+                        rollbackInsteadOfDraw={gameState.manualBotRoom === true}
                         showOnboardingAIhint={gameState.withAIhints}
                         gameEnded={!!resultMessage} // Если есть сообщение об окончании игры, то игра закончилась
                         onDrawOffer={() => onSendDrawOffer('offer')}
+                        onRollbackPlayerMove={onSendRollbackPlayerMove}
                         onResignation={onSendResignation}
                         onQuitGame={handleQuitGame}
                         onAIhints={handleAIhints}

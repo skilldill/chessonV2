@@ -75,6 +75,7 @@ const AppScreen: React.FC = () => {
     connectToRoom,
     sendMove,
     sendDrawOffer,
+    sendRollbackPlayerMove,
     sendCursorPosition,
     sendResignation,
     sendGameResult,
@@ -130,6 +131,7 @@ const AppScreen: React.FC = () => {
         onSendResignation={sendResignation}
         onSendGameResult={sendGameResult}
         onSendAIHintRequest={sendAIHintRequest}
+        onSendRollbackPlayerMove={sendRollbackPlayerMove}
         aiHintArrow={aiHintArrow}
         resultMessage={resultMessage}
         onSendDrawOffer={sendDrawOffer}

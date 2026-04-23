@@ -7,7 +7,7 @@ import { GameScreenControls } from '../../components/GameScreenControls/GameScre
 import { ChessTimerWithProfile } from '../../components/ChessTimerWithProfile/ChessTimerWithProfile';
 import { useScreenSize } from '../../hooks/useScreenSize';
 import { GameState, ChessColor, TimerState, CursorPosition, MoveData } from '../../types';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { INITIAL_FEN } from '../../constants/chess';
 import { useTimers } from '../../hooks/useTimers';
 import { debounce } from '../../utils/debounce';
@@ -31,6 +31,7 @@ type GameScreenProps = {
   onSendGameResult: (gameResult: GameResult) => void;
   onSendDrawOffer: (action: 'offer' | 'accept' | 'decline') => void;
   onSendAIHintRequest: () => void;
+  onSendRollbackPlayerMove: () => void;
   aiHintArrow: { from: [number, number]; to: [number, number] } | null;
 
   resultMessage?: string;
@@ -50,6 +51,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
   onSendResignation,
   onSendGameResult,
   onSendAIHintRequest,
+  onSendRollbackPlayerMove,
   aiHintArrow,
 
   resultMessage,
@@ -63,8 +65,11 @@ const GameScreen: React.FC<GameScreenProps> = ({
   const themeConfig = CHESSBOARD_THEMES[chessboardTheme];
 
   const [initialFEN, setInitialFEN] = useState(INITIAL_FEN);
+  const [boardResetVersion, setBoardResetVersion] = useState(0);
   const [waitAIhint, setWaitAIhint] = useState(false);
   const [gameControlsNotify, setGameControlsNotify] = useState<{ text: string }>();
+  const [externalChangeMove, setExternalChangeMove] = useState<any>(undefined);
+  const previousMovesCountRef = useRef<number>(movesHistory.length);
 
   const reversed = useMemo(() => playerColor === "black", [playerColor]);
   const {
@@ -89,14 +94,6 @@ const GameScreen: React.FC<GameScreenProps> = ({
     };
   }, []);
 
-  const externalChangeMove = useMemo(() => {
-    if (!currentMove) return undefined;
-    return {
-      move: currentMove,
-      withTransition: true
-    };
-  }, [currentMove]);
-
   const handleMove = (moveData: MoveData) => {
     const move = reversed ? JSChessEngine.reverseMove(moveData) : moveData;
     onMove(move as MoveData);
@@ -111,6 +108,36 @@ const GameScreen: React.FC<GameScreenProps> = ({
   useEffect(() => {
     setInitialFEN(gameState.currentFEN);
   }, [])
+
+  // Контролируем внешние ходы
+    // через useEffect, так как 
+    // если сделать откат хода
+    // То старый внешний ход + обновленное состояние
+    // вызывают pat на доске
+    useEffect(() => {
+        if (!currentMove) {
+            setExternalChangeMove(undefined);
+            return;
+        };
+
+        setExternalChangeMove({
+            move: currentMove,
+            withTransition: true
+        });
+    }, [currentMove])
+
+    useEffect(() => {
+        const previousCount = previousMovesCountRef.current;
+        const nextCount = movesHistory.length;
+
+        if (nextCount < previousCount) {
+            setExternalChangeMove(undefined);
+            setInitialFEN(gameState.currentFEN);
+            setBoardResetVersion((prev) => prev + 1);
+        }
+
+        previousMovesCountRef.current = nextCount;
+    }, [movesHistory.length, gameState.currentFEN]);
 
   const handleCloseResults = () => {
     window.location.href = import.meta.env.VITE_MAIN_SITE;
@@ -210,6 +237,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
               />
             )}
             <ChessBoard
+              key={`gameBoard-${boardResetVersion}`}
               FEN={initialFEN}
               onChange={(moveData) => handleMove(moveData as MoveData)} 
               onEndGame={onSendGameResult}
@@ -247,11 +275,13 @@ const GameScreen: React.FC<GameScreenProps> = ({
             <GameScreenControls
               key={resultMessage}
               withAIhints={gameState.withAIhints}
+              rollbackInsteadOfDraw={gameState.manualBotRoom === true}
               showOnboardingAIhint={gameState.withAIhints}
               loading={waitAIhint}
               notify={gameControlsNotify}
               gameEnded={!!resultMessage} // Если есть сообщение об окончании игры, то игра закончилась
               onDrawOffer={() => onSendDrawOffer('offer')}
+              onRollbackPlayerMove={onSendRollbackPlayerMove}
               onResignation={onSendResignation}
               onQuitGame={handleQuitGame}
               onAIhints={handleAIhints}

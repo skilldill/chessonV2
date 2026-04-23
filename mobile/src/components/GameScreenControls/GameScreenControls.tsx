@@ -10,14 +10,15 @@ import styles from "./GameScreenControls.module.css";
 import { useScreenSize } from "../../hooks/useScreenSize";
 
 type RoundedControlButtonMobileProps = {
-    icon: string;
+    icon?: string;
+    emoji?: string;
     active: boolean;
     disabled?: boolean;
     onClick: () => void;
     onActiveClick: () => void;
 }
 
-const RoundedControlButtonMobile = ({ icon, active, disabled, onClick, onActiveClick }: RoundedControlButtonMobileProps) => {
+const RoundedControlButtonMobile = ({ icon, emoji, active, disabled, onClick, onActiveClick }: RoundedControlButtonMobileProps) => {
     const handleClick = (event: any) => {
         event.stopPropagation();
         if (disabled) return;
@@ -33,13 +34,18 @@ const RoundedControlButtonMobile = ({ icon, active, disabled, onClick, onActiveC
             )}
             onClick={handleClick}
         >
-            <img src={icon} alt="Control Button" height={22} width={22} />
+            {icon ? (
+                <img src={icon} alt="Control Button" height={22} width={22} />
+            ) : (
+                <span className="text-[26px] leading-none select-none">{emoji || '⬅️'}</span>
+            )}
         </div>
     );
 }
 
 type RoundedControlButtonProps = {
-    icon: string;
+    icon?: string;
+    emoji?: string;
     active: boolean;
     disabled?: boolean;
     className?: string;
@@ -49,7 +55,7 @@ type RoundedControlButtonProps = {
     onActiveClick: () => void;
 }
 
-const RoundedControlButton = ({ icon, active, disabled, onClick, onActiveClick, className = '', iconSize = 18 }: RoundedControlButtonProps) => {
+const RoundedControlButton = ({ icon, emoji, active, disabled, onClick, onActiveClick, className = '', iconSize = 18 }: RoundedControlButtonProps) => {
     const handleClick = (event: any) => {
         event.stopPropagation();
         if (disabled) return;
@@ -65,7 +71,11 @@ const RoundedControlButton = ({ icon, active, disabled, onClick, onActiveClick, 
             )}
             onClick={handleClick}
         >
-            <img src={icon} alt="Control Button" height={iconSize} width={iconSize} />
+            {icon ? (
+                <img src={icon} alt="Control Button" height={iconSize} width={iconSize} />
+            ) : (
+                <span className="text-[26px] leading-none select-none">{emoji || '⬅️'}</span>
+            )}
         </div>
     )
 }
@@ -73,11 +83,13 @@ const RoundedControlButton = ({ icon, active, disabled, onClick, onActiveClick, 
 type GameScreenControlsProps = {
     gameEnded: boolean;
     withAIhints: boolean;
+    rollbackInsteadOfDraw?: boolean;
     loading?: boolean;
     showOnboardingAIhint: boolean;
     notify?: { text: string };
 
     onDrawOffer: () => void;
+    onRollbackPlayerMove?: () => void;
     onResignation: () => void;
     onQuitGame: () => void;
     onAIhints: () => void;
@@ -86,11 +98,13 @@ type GameScreenControlsProps = {
 export const GameScreenControls: FC<GameScreenControlsProps> = ({ 
     gameEnded,
     withAIhints,
+    rollbackInsteadOfDraw = false,
     loading = false,
     showOnboardingAIhint = false,
     notify,
 
     onDrawOffer, 
+    onRollbackPlayerMove,
     onResignation, 
     onQuitGame,
     onAIhints,
@@ -137,6 +151,11 @@ export const GameScreenControls: FC<GameScreenControlsProps> = ({
 
     const handleDrawOffer = () => {
         onDrawOffer();
+        hideButtons();
+    }
+
+    const handleRollbackPlayerMove = () => {
+        onRollbackPlayerMove?.();
         hideButtons();
     }
 
@@ -230,13 +249,23 @@ export const GameScreenControls: FC<GameScreenControlsProps> = ({
                                 disabled={loading}
                             />
                         )}
-                        <RoundedControlButton
-                            icon={HandShakePNG} 
-                            onClick={() => handleNotActiveClick(1)}
-                            onActiveClick={handleDrawOffer}
-                            active={activeActionIndex === 1}
-                            iconSize={22}
-                        />
+                        {!rollbackInsteadOfDraw && (
+                            <RoundedControlButton
+                                icon={HandShakePNG} 
+                                onClick={() => handleNotActiveClick(1)}
+                                onActiveClick={handleDrawOffer}
+                                active={activeActionIndex === 1}
+                                iconSize={22}
+                            />
+                        )}
+                        {rollbackInsteadOfDraw && (
+                            <RoundedControlButton
+                                emoji="⬅️"
+                                onClick={() => handleNotActiveClick(1)}
+                                onActiveClick={handleRollbackPlayerMove}
+                                active={activeActionIndex === 1}
+                            />
+                        )}
                         <RoundedControlButton
                             icon={WhiteFlagPNG} 
                             onClick={() => handleNotActiveClick(2)}

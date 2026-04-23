@@ -9,7 +9,8 @@ import styles from "./GameScreenControls.module.css";
 import { useScreenSize } from "../../hooks/useScreenSize";
 
 type RoundedControlButtonProps = {
-    icon: string;
+    icon?: string;
+    emoji?: string;
     active: boolean;
     disabled?: boolean;
     className?: string;
@@ -19,7 +20,7 @@ type RoundedControlButtonProps = {
     onActiveClick: () => void;
 }
 
-const RoundedControlButton = ({ icon, active, disabled, onClick, onActiveClick, className = '', iconSize = 18 }: RoundedControlButtonProps) => {
+const RoundedControlButton = ({ icon, emoji, active, disabled, onClick, onActiveClick, className = '', iconSize = 18 }: RoundedControlButtonProps) => {
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
         event.stopPropagation();
         if (disabled) return;
@@ -37,7 +38,11 @@ const RoundedControlButton = ({ icon, active, disabled, onClick, onActiveClick, 
             onClick={handleClick}
             disabled={disabled}
         >
-            <img src={icon} alt="Control Button" height={iconSize} width={iconSize} />
+            {icon ? (
+                <img src={icon} alt="Control Button" height={iconSize} width={iconSize} />
+            ) : (
+                <span className="text-[22px] leading-none select-none">{emoji || '⬅️'}</span>
+            )}
         </button>
     )
 }
@@ -45,11 +50,13 @@ const RoundedControlButton = ({ icon, active, disabled, onClick, onActiveClick, 
 type GameScreenControlsProps = {
     gameEnded: boolean;
     withAIhints: boolean;
+    rollbackInsteadOfDraw?: boolean;
     loading?: boolean;
     showOnboardingAIhint: boolean;
     notify?: { text: string };
 
     onDrawOffer: () => void;
+    onRollbackPlayerMove?: () => void;
     onResignation: () => void;
     onQuitGame: () => void;
     onAIhints: () => void;
@@ -58,11 +65,13 @@ type GameScreenControlsProps = {
 export const GameScreenControls: FC<GameScreenControlsProps> = ({ 
     gameEnded,
     withAIhints,
+    rollbackInsteadOfDraw = false,
     loading = false,
     showOnboardingAIhint = false,
     notify,
 
     onDrawOffer, 
+    onRollbackPlayerMove,
     onResignation, 
     onQuitGame,
     onAIhints,
@@ -109,6 +118,13 @@ export const GameScreenControls: FC<GameScreenControlsProps> = ({
 
     const handleDrawOffer = () => {
         onDrawOffer();
+        hideButtons();
+    }
+
+    const handleRollbackPlayerMove = () => {
+        console.log('ROLLBACK');
+
+        onRollbackPlayerMove?.();
         hideButtons();
     }
 
@@ -202,13 +218,23 @@ export const GameScreenControls: FC<GameScreenControlsProps> = ({
                                 disabled={loading}
                             />
                         )}
-                        <RoundedControlButton
-                            icon={HandShakePNG} 
-                            onClick={() => handleNotActiveClick(1)}
-                            onActiveClick={handleDrawOffer}
-                            active={activeActionIndex === 1}
-                            iconSize={20}
-                        />
+                        {!rollbackInsteadOfDraw && (
+                            <RoundedControlButton
+                                icon={HandShakePNG} 
+                                onClick={() => handleNotActiveClick(1)}
+                                onActiveClick={handleDrawOffer}
+                                active={activeActionIndex === 1}
+                                iconSize={20}
+                            />
+                        )}
+                        {rollbackInsteadOfDraw && (
+                            <RoundedControlButton
+                                emoji="⬅️"
+                                onClick={() => handleNotActiveClick(1)}
+                                onActiveClick={handleRollbackPlayerMove}
+                                active={activeActionIndex === 1}
+                            />
+                        )}
                         <RoundedControlButton
                             icon={WhiteFlagPNG} 
                             onClick={() => handleNotActiveClick(2)}
