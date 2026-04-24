@@ -4,7 +4,11 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 COPY . .
 
-RUN npm install
+RUN npm ci \
+  --fetch-retries=5 \
+  --fetch-retry-mintimeout=20000 \
+  --fetch-retry-maxtimeout=120000 \
+  --fetch-timeout=300000
 RUN npm run build
 
 # --- Serve stage ---
@@ -13,7 +17,11 @@ FROM node:20-alpine
 WORKDIR /app
 
 # Install serve globally
-RUN npm install -g serve
+RUN npm install -g serve \
+  --fetch-retries=5 \
+  --fetch-retry-mintimeout=20000 \
+  --fetch-retry-maxtimeout=120000 \
+  --fetch-timeout=300000
 
 # Copy build artifacts
 COPY --from=builder /app/dist ./dist
