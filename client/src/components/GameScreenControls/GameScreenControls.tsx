@@ -138,7 +138,7 @@ export const GameScreenControls: FC<GameScreenControlsProps> = ({
                 </div>
             </div>
 
-            <div className={cn("absolute top-0 w-full z-10 flex items-center justify-center gap-[28px] scale-0 transition-all duration-300", {
+            <div className={cn("absolute top-0 w-full z-10 flex items-center justify-center gap-[36px] scale-0 transition-all duration-300", {
                 "scale-120": showOnboarding,
                 "top-[-54px]": showOnboarding,
                 [styles.bounce]: showOnboarding,
@@ -155,9 +155,9 @@ export const GameScreenControls: FC<GameScreenControlsProps> = ({
                 )}
             </div>
 
-            <div className={cn("absolute top-0 w-full z-10 flex items-center justify-center gap-[28px] scale-0 transition-all duration-300", {
+            <div className={cn("absolute top-0 w-full z-10 flex items-center justify-center gap-[36px] scale-0 transition-all duration-300", {
                 "scale-100": showButtons,
-                "top-[-44px]": showButtons,
+                "top-[-54px]": showButtons,
                 [styles.bounce]: showButtons,
             })}>
                 {isNotActive && notActiveControls.map(({ content, onClick, tooltip }, i) => 

@@ -236,7 +236,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
         {
             content: <img src={DoubleChevronesLeft} alt={t('game.controls.rollbackMove')} height={18} width={18} />,
             onClick: () => onSendRollbackPlayerMove(),
-            tooltip: t('game.controls.rollbackMove'),
+            tooltip: t('game.controls.rollbackAction'),
         },
         {
             content: <img src={CrossMarkRedPNG} alt={t('game.controls.quitGame')} height={18} width={18} />,
