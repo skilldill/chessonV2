@@ -62,6 +62,7 @@ export interface GameState {
   currentPlayer: ChessColor;
   currentColor: ChessColor; // чей ход
   withAIhints: boolean;
+  manualBotRoom?: boolean;
   gameStarted: boolean;
   gameEnded: boolean;
   gameResult?: GameResult;
@@ -84,6 +85,7 @@ export type WSClientMessage =
   | { type: "move"; moveData: MoveData }
   | { type: "cursor"; position: CursorPosition, screenSize: ScreenSize }
   | { type: "hintAI" }
+  | { type: "rollback"; steps: number }
   | { type: "gameResult"; gameResult: GameResult }
   | { type: "drawOffer"; action: "offer" | "accept" | "decline" }
   | { type: "resign" };

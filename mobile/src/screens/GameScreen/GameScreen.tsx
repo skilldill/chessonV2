@@ -7,7 +7,7 @@ import { GameScreenControls } from '../../components/GameScreenControls/GameScre
 import { ChessTimerWithProfile } from '../../components/ChessTimerWithProfile/ChessTimerWithProfile';
 import { useScreenSize } from '../../hooks/useScreenSize';
 import { GameState, ChessColor, TimerState, CursorPosition, MoveData } from '../../types';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { INITIAL_FEN } from '../../constants/chess';
 import { useTimers } from '../../hooks/useTimers';
 import { debounce } from '../../utils/debounce';
@@ -18,6 +18,13 @@ import { ConnectionNotification } from '../../components/ConnectionNotification/
 import { DrawOfferActions } from '../../components/DrawOfferActions/DrawOfferActions';
 import { ResultsActions } from '../../components/ResultsActions/ResultsActions';
 import { CHESSBOARD_THEMES } from '../../components/ChessBoardConfigs/ChessBoardConfigs';
+import { useTranslation } from 'react-i18next';
+
+import WhiteFlagPNG from "../../assets/white-flag.png";
+import CrossMarkRedPNG from "../../assets/cross-mark.png";
+import HandShakePNG from "../../assets/handshake.png";
+import AiIconPNG from "../../assets/ai-icon.png";
+import DoubleChevronesLeftSVG from '../../assets/double-chevrones-left.svg';
 
 type GameScreenProps = {
   gameState: GameState;
@@ -31,6 +38,7 @@ type GameScreenProps = {
   onSendGameResult: (gameResult: GameResult) => void;
   onSendDrawOffer: (action: 'offer' | 'accept' | 'decline') => void;
   onSendAIHintRequest: () => void;
+  onSendRollbackPlayerMove: () => void;
   aiHintArrow: { from: [number, number]; to: [number, number] } | null;
 
   resultMessage?: string;
@@ -50,12 +58,14 @@ const GameScreen: React.FC<GameScreenProps> = ({
   onSendResignation,
   onSendGameResult,
   onSendAIHintRequest,
+  onSendRollbackPlayerMove,
   aiHintArrow,
 
   resultMessage,
   offeredDraw,
   connectionLost = false,
 }) => {
+  const { t, i18n } = useTranslation();
   const screenSize = useScreenSize();
   const cellSize = useCellSize();
   const { removeGameData } = useGameStorage();
@@ -63,8 +73,11 @@ const GameScreen: React.FC<GameScreenProps> = ({
   const themeConfig = CHESSBOARD_THEMES[chessboardTheme];
 
   const [initialFEN, setInitialFEN] = useState(INITIAL_FEN);
+  const [boardResetVersion, setBoardResetVersion] = useState(0);
   const [waitAIhint, setWaitAIhint] = useState(false);
   const [gameControlsNotify, setGameControlsNotify] = useState<{ text: string }>();
+  const [externalChangeMove, setExternalChangeMove] = useState<any>(undefined);
+  const previousMovesCountRef = useRef<number>(movesHistory.length);
 
   const reversed = useMemo(() => playerColor === "black", [playerColor]);
   const {
@@ -89,14 +102,6 @@ const GameScreen: React.FC<GameScreenProps> = ({
     };
   }, []);
 
-  const externalChangeMove = useMemo(() => {
-    if (!currentMove) return undefined;
-    return {
-      move: currentMove,
-      withTransition: true
-    };
-  }, [currentMove]);
-
   const handleMove = (moveData: MoveData) => {
     const move = reversed ? JSChessEngine.reverseMove(moveData) : moveData;
     onMove(move as MoveData);
@@ -112,6 +117,36 @@ const GameScreen: React.FC<GameScreenProps> = ({
     setInitialFEN(gameState.currentFEN);
   }, [])
 
+  // Контролируем внешние ходы
+    // через useEffect, так как 
+    // если сделать откат хода
+    // То старый внешний ход + обновленное состояние
+    // вызывают pat на доске
+    useEffect(() => {
+        if (!currentMove) {
+            setExternalChangeMove(undefined);
+            return;
+        };
+
+        setExternalChangeMove({
+            move: currentMove,
+            withTransition: true
+        });
+    }, [currentMove])
+
+    useEffect(() => {
+        const previousCount = previousMovesCountRef.current;
+        const nextCount = movesHistory.length;
+
+        if (nextCount < previousCount) {
+            setExternalChangeMove(undefined);
+            setInitialFEN(gameState.currentFEN);
+            setBoardResetVersion((prev) => prev + 1);
+        }
+
+        previousMovesCountRef.current = nextCount;
+    }, [movesHistory.length, gameState.currentFEN]);
+
   const handleCloseResults = () => {
     window.location.href = import.meta.env.VITE_MAIN_SITE;
   };
@@ -122,7 +157,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
     }
 
     if (playerColor !== gameState.currentColor) {
-        setGameControlsNotify({ text: 'Only on your turn' });
+        setGameControlsNotify({ text: t('game.onlyYourTurn') });
         return;
     }
 
@@ -169,6 +204,79 @@ const GameScreen: React.FC<GameScreenProps> = ({
   const opponentAvatarIndex = gameState.opponent?.avatar ? parseInt(gameState.opponent.avatar) : undefined;
   const opponentAvatar = opponentAvatarIndex ? MEM_AVATARS[opponentAvatarIndex] : MEM_AVATARS[0];
 
+  const magicButtonControls = [
+    {
+      content: <img src={HandShakePNG} alt={t('game.controls.offerDraw')} height={18} width={18} />,
+      onClick: () => onSendDrawOffer('offer'),
+      tooltip: t('game.controls.offerDraw'),
+    },
+    {
+      content: <img src={WhiteFlagPNG} alt={t('game.controls.resign')} height={18} width={18} />,
+      onClick: () => onSendResignation(),
+      tooltip: t('game.controls.resign'),
+    },
+    {
+      content: <img src={CrossMarkRedPNG} alt={t('game.controls.quitGame')} height={18} width={18} />,
+      onClick: () => handleQuitGame(),
+      tooltip: t('game.controls.leave'),
+    },
+  ];
+
+  const forBotGameMagicButtonControls = [
+    {
+      content: <img src={AiIconPNG} alt={t('game.controls.aiHint')} height={18} width={18} />,
+      onClick: () => handleAIhints(),
+      tooltip: t('game.controls.aiHint'),
+    },
+    {
+      content: <img src={DoubleChevronesLeftSVG} alt={t('game.controls.rollbackMove')} height={26} width={26} />,
+      onClick: () => onSendRollbackPlayerMove(),
+      tooltip: t('game.controls.rollbackAction'),
+    },
+    {
+      content: <img src={CrossMarkRedPNG} alt={t('game.controls.quitGame')} height={18} width={18} />,
+      onClick: () => handleQuitGame(),
+      tooltip: t('game.controls.leave'),
+    },
+  ];
+
+  const withAIhintsMagicButtonControls = [
+    {
+      content: <img src={AiIconPNG} alt={t('game.controls.aiHint')} height={18} width={18} />,
+      onClick: () => handleAIhints(),
+      tooltip: t('game.controls.aiHint'),
+    },
+    {
+      content: <img src={HandShakePNG} alt={t('game.controls.offerDraw')} height={18} width={18} />,
+      onClick: () => onSendDrawOffer('offer'),
+      tooltip: t('game.controls.offerDraw'),
+    },
+    {
+      content: <img src={WhiteFlagPNG} alt={t('game.controls.resign')} height={18} width={18} />,
+      onClick: () => onSendResignation(),
+      tooltip: t('game.controls.resign'),
+    },
+    {
+      content: <img src={CrossMarkRedPNG} alt={t('game.controls.quitGame')} height={18} width={18} />,
+      onClick: () => handleQuitGame(),
+      tooltip: t('game.controls.leave'),
+    },
+  ];
+
+  const notActiveMagicButtonControls = [
+    {
+      content: <img src={CrossMarkRedPNG} alt={t('game.controls.quitGame')} height={18} width={18} />,
+      onClick: () => handleQuitGame(),
+      tooltip: t('game.controls.leave'),
+    },
+  ];
+
+  const actualMagicButtonControls = useMemo(() => {
+    if (gameState.manualBotRoom) return forBotGameMagicButtonControls;
+    if (gameState.withAIhints) return withAIhintsMagicButtonControls;
+    return magicButtonControls;
+  }, [gameState.withAIhints, gameState.manualBotRoom, i18n.language]);
+
   return (
     <IonPage>
       <IonContent scrollY={true}>
@@ -184,7 +292,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
                 onClose={handleCloseResults}
             />
             <ConnectionNotification
-                message="Connection lost"
+                message={t('game.connectionLost')}
                 show={connectionLost}
             />
 
@@ -210,6 +318,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
               />
             )}
             <ChessBoard
+              key={`gameBoard-${boardResetVersion}`}
               FEN={initialFEN}
               onChange={(moveData) => handleMove(moveData as MoveData)} 
               onEndGame={onSendGameResult}
@@ -246,15 +355,12 @@ const GameScreen: React.FC<GameScreenProps> = ({
           <div className="p-[12px] flex justify-center">
             <GameScreenControls
               key={resultMessage}
-              withAIhints={gameState.withAIhints}
-              showOnboardingAIhint={gameState.withAIhints}
+              isNotActive={!!resultMessage}
               loading={waitAIhint}
               notify={gameControlsNotify}
-              gameEnded={!!resultMessage} // Если есть сообщение об окончании игры, то игра закончилась
-              onDrawOffer={() => onSendDrawOffer('offer')}
-              onResignation={onSendResignation}
-              onQuitGame={handleQuitGame}
-              onAIhints={handleAIhints}
+              controls={actualMagicButtonControls}
+              notActiveControls={notActiveMagicButtonControls}
+              highlightsControls={actualMagicButtonControls}
             />
           </div>
         </div>

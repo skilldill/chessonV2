@@ -21,6 +21,7 @@ const INITIAL_GAME_STATE = {
     currentPlayer: "white" as ChessColor,
     currentColor: "white" as ChessColor,
     withAIhints: false,
+    manualBotRoom: false,
     gameStarted: false,
     gameEnded: false,
     gameResult: undefined,
@@ -417,6 +418,10 @@ export const useRoomWS = (roomId: string) => {
         sendMessage({ type: 'hintAI' });
     };
 
+    const sendRollbackPlayerMove = () => {
+        sendMessage({ type: 'rollback', steps: 2 });
+    };
+
     return {
         // Состояние
         isConnected,
@@ -447,6 +452,7 @@ export const useRoomWS = (roomId: string) => {
         sendDrawOffer,
         sendResignation,
         sendAIHintRequest,
+        sendRollbackPlayerMove,
         
         // Общая функция отправки
         sendMessage,

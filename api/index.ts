@@ -94,6 +94,7 @@ type GameState = {
     currentPlayer: "white" | "black";
     currentColor: "white" | "black"; // чей ход
     withAIhints: boolean;
+    manualBotRoom?: boolean;
     gameStarted: boolean;
     gameEnded: boolean;
     gameResult?: GameResult;
@@ -118,6 +119,7 @@ type UserData = {
 
 type Room = {
     users: Map<string, UserData>;
+    initialFEN: string;
     gameState: GameState;
     firstPlayerColor?: "white" | "black"; // Цвет для первого подключившегося игрока
     gameStartedAt?: Date; // Время начала игры
@@ -130,6 +132,7 @@ type Room = {
       name: string;
       avatar: string;
       allowAIhints?: boolean;
+      mode?: "manual" | "random_match";
     };
 };
 
@@ -431,15 +434,7 @@ async function saveGameToDatabase(room: Room, roomId: string) {
     // Получаем начальную FEN
     // Если есть история ходов, пытаемся определить начальную позицию
     // Для стандартной игры это INITIAL_FEN, для кастомной - позиция до первого хода
-    let initialFEN: string;
-    if (room.gameState.moveHistory.length > 0) {
-      // Если есть история, предполагаем стандартную игру с INITIAL_FEN
-      // (в будущем можно добавить поле initialFEN в Room для точности)
-      initialFEN = INITIAL_FEN;
-    } else {
-      // Если нет истории ходов, начальная позиция = текущая (игра завершилась без ходов)
-      initialFEN = room.gameState.currentFEN;
-    }
+    const initialFEN = room.initialFEN || INITIAL_FEN;
 
     // Фильтруем moveHistory, оставляя только нужные поля и убирая лишние из figure
     const filteredMoveHistory = room.gameState.moveHistory.map(move => ({
@@ -526,6 +521,33 @@ function getCurrentPlayerFromFEN(fen: string): "white" | "black" {
     }
     const activeColor = parts[1].toLowerCase();
     return activeColor === 'b' ? "black" : "white";
+}
+
+function rollbackRoomToMoveIndex(room: Room, moveCount: number) {
+  const clampedMoveCount = Math.max(0, Math.min(moveCount, room.gameState.moveHistory.length));
+  const nextHistory = room.gameState.moveHistory.slice(0, clampedMoveCount);
+  const nextFen = nextHistory.length > 0
+    ? nextHistory[nextHistory.length - 1]!.FEN
+    : room.initialFEN;
+
+  room.gameState.moveHistory = nextHistory;
+  room.gameState.currentFEN = nextFen;
+  room.gameState.currentPlayer = getCurrentPlayerFromFEN(nextFen);
+  syncCurrentColor(room);
+
+  room.gameState.gameEnded = false;
+  room.gameState.gameResult = undefined;
+  room.gameState.drawOffer = undefined;
+  room.gameState.drawOfferCount = {};
+
+  return {
+    moveCount: clampedMoveCount,
+    lastMove: nextHistory.length > 0 ? nextHistory[nextHistory.length - 1] : undefined
+  };
+}
+
+function isManualBotRoom(room: Room): boolean {
+  return room.botSettings?.enabled === true && room.botSettings.mode !== 'random_match';
 }
 
 function getRandomMatchTimeConfig(rawTimeMinutes?: unknown, rawIncrementSeconds?: unknown) {
@@ -694,6 +716,7 @@ function createRoomWithConfig(rawConfig: any) {
 
   const room: Room = {
     users: new Map(),
+    initialFEN: timerConfig.currentFEN,
     gameState: {
       currentFEN: timerConfig.currentFEN,
       moveHistory: [],
@@ -724,7 +747,8 @@ function createRoomWithConfig(rawConfig: any) {
         ? rawConfig.botName.trim()
         : 'Chesson Bot',
       avatar: '0',
-      allowAIhints: !timerConfig.forceDisableAIhints
+      allowAIhints: !timerConfig.forceDisableAIhints,
+      mode: rawConfig?.botRoomMode === 'random_match' ? 'random_match' : 'manual'
     } : undefined
   };
 
@@ -992,16 +1016,17 @@ function declareDrawByInsufficientMaterial(room: Room, roomId: string) {
 // Функция для получения персонализированного gameState для конкретного игрока
 function getPersonalizedGameState(room: Room, userId: string): GameState {
     const withAIhints = room.gameState.withAIhints === true;
+    const manualBotRoom = isManualBotRoom(room);
     const userData = room.users.get(userId);
     if (!userData) {
         // Если пользователь не найден, возвращаем базовый gameState без player/opponent
-        return { ...room.gameState, withAIhints };
+        return { ...room.gameState, withAIhints, manualBotRoom };
     }
 
     const userColor = userData.color;
     if (!userColor) {
         // Если у пользователя нет цвета, возвращаем базовый gameState
-        return { ...room.gameState, withAIhints };
+        return { ...room.gameState, withAIhints, manualBotRoom };
     }
 
     // Находим соперника
@@ -1014,6 +1039,7 @@ function getPersonalizedGameState(room: Room, userId: string): GameState {
             return {
                 ...room.gameState,
                 withAIhints,
+                manualBotRoom,
                 player: {
                     userId: userId,
                     userName: userData.userName,
@@ -1033,6 +1059,7 @@ function getPersonalizedGameState(room: Room, userId: string): GameState {
         return {
             ...room.gameState,
             withAIhints,
+            manualBotRoom,
             player: {
                 userId: userId,
                 userName: userData.userName,
@@ -1048,6 +1075,7 @@ function getPersonalizedGameState(room: Room, userId: string): GameState {
     return {
         ...room.gameState,
         withAIhints,
+        manualBotRoom,
         player: {
             userId: userId,
             userName: userData.userName,
@@ -2763,7 +2791,8 @@ app.post('/api/random-match/join', async ({ body, headers, set }) => {
       vsBot: true,
       botDifficulty: 'medium',
       botMoveTimeMs: 800,
-      botName
+      botName,
+      botRoomMode: 'random_match'
     });
 
     const assignment: RandomMatchAssignment = {
@@ -3255,6 +3284,10 @@ app.ws('/ws/room', {
       type: t.Literal("hintAI")
     }),
     t.Object({
+      type: t.Literal("rollback"),
+      steps: t.Number()
+    }),
+    t.Object({
       type: t.Literal("resign")
     }),
     t.Object({
@@ -3319,6 +3352,7 @@ app.ws('/ws/room', {
 
           room = {
             users: new Map(),
+            initialFEN: currentFEN,
             gameState: {
               currentFEN: currentFEN,
               moveHistory: [],
@@ -3722,6 +3756,66 @@ app.ws('/ws/room', {
                   });
               }
           })();
+      } else if (data.type === "rollback") {
+          if (!room.gameState.gameStarted) {
+              ws.send({ system: true, message: "Game has not started yet" });
+              return;
+          }
+
+          if (room.gameState.gameEnded) {
+              ws.send({ system: true, message: "Game is already finished" });
+              return;
+          }
+
+          if (botMoveInProgressRooms.has(roomId)) {
+              ws.send({ system: true, message: "Please wait for the current move calculation to finish" });
+              return;
+          }
+
+          const steps = Number(data.steps);
+          if (!Number.isInteger(steps) || steps <= 0) {
+              ws.send({ system: true, message: "Invalid rollback steps. Use a positive integer" });
+              return;
+          }
+
+          const maxSteps = room.gameState.moveHistory.length;
+          if (steps > maxSteps) {
+              ws.send({ system: true, message: `Invalid rollback steps. Use a number from 1 to ${maxSteps}` });
+              return;
+          }
+
+          const rollbackMoveCount = room.gameState.moveHistory.length - steps;
+          const { moveCount, lastMove } = rollbackRoomToMoveIndex(room, rollbackMoveCount);
+
+          if (room.gameState.gameStarted && !room.gameState.gameEnded && room.gameState.timer && !roomTimers.has(roomId)) {
+              createRoomTimer(roomId);
+          }
+
+          for (const [id, userData] of room.users) {
+              if (userData.isConnected && userData.ws) {
+                  userData.ws.send({
+                      type: "move",
+                      moveData: lastMove,
+                      from: senderUserData.userName,
+                      userId: senderUserId,
+                      gameState: getPersonalizedGameState(room, id),
+                      time: Date.now()
+                  });
+              }
+          }
+
+          for (const [_, userData] of room.users) {
+              if (userData.isConnected && userData.ws) {
+                  userData.ws.send({
+                      system: true,
+                      message: `${senderUserData.userName} rolled back ${steps} move(s). Current move index: ${moveCount}`
+                  });
+              }
+          }
+
+          if (room.botSettings?.enabled) {
+              void triggerBotMoveIfNeeded(roomId);
+          }
       } else if (data.type === "gameResult") {
           // Результат игры
           if (!room.gameState.gameStarted) {

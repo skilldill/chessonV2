@@ -1,6 +1,6 @@
 import { ChessBoard, JSChessEngine, type GameResult } from "react-chessboard-ui";
 import type { ChessColor, GameState, MoveData, TimerState, CursorPosition } from "../../types";
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { ChessboardWrap } from "../../components/ChessboardWrap/ChessboardWrap";
 import { GameScreenControls } from "../../components/GameScreenControls/GameScreenControls";
 import { CapturedPieces } from "../../components/CapturedPieces/CapturedPieces";
@@ -18,6 +18,13 @@ import { useGameStorage } from "../../hooks/useGameStorage";
 import { useScreenHeightForChessboard } from "../../hooks/useScreenHeightForChessboard";
 import { getChessboardConfig } from "../../components/ChessBoardConfigs/ChessBoardConfigs";
 import { useAppearance } from "../../hooks/useAppearance";
+import { useTranslation } from "react-i18next";
+
+import WhiteFlagPNG from "../../assets/white-flag.png";
+import CrossMarkRedPNG from "../../assets/cross-mark.png";
+import HandShakePNG from "../../assets/handshake.png";
+import AiIconPNG from "../../assets/ai-icon.png";
+import DoubleChevronesLeft from '../../assets/double-chevrones-left.svg';
 
 type GameScreenProps = {
     gameState: GameState;
@@ -32,14 +39,15 @@ type GameScreenProps = {
     onSendGameResult: (gameResult: GameResult) => void;
     onSendDrawOffer: (action: 'offer' | 'accept' | 'decline') => void;
     onSendAIHintRequest: () => void;
+    onSendRollbackPlayerMove: () => void;
     aiHintArrow: { from: [number, number]; to: [number, number] } | null;
-    
+
     resultMessage?: string;
     offeredDraw?: boolean;
     connectionLost?: boolean;
 }
 
-export const GameScreen: React.FC<GameScreenProps> = memo(({ 
+export const GameScreen: React.FC<GameScreenProps> = memo(({
     playerColor,
     gameState,
     currentMove,
@@ -52,12 +60,14 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
     onSendResignation,
     onSendGameResult,
     onSendAIHintRequest,
+    onSendRollbackPlayerMove,
     aiHintArrow,
 
     resultMessage,
     offeredDraw,
     connectionLost = false,
 }) => {
+    const { t, i18n } = useTranslation();
     const screenSize = useScreenSize();
     const { removeGameData } = useGameStorage();
     const { chessboardTheme } = useAppearance();
@@ -65,17 +75,20 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
     const gridColsClass = useScreenHeightForChessboard();
 
     const [initialFEN, setInitialFEN] = useState(INITIAL_FEN);
+    const [boardResetVersion, setBoardResetVersion] = useState(0);
     const [isHistoryMode, setIsHistoryMode] = useState(false);
     const [selectedHistroyMove, setSelectedHistoryMove] = useState<MoveData>();
     const [waitAIhint, setWaitAIhint] = useState(false);
     const [gameControlsNotify, setGameControlsNotify] = useState<{ text: string }>();
+    const [externalChangeMove, setExternalChangeMove] = useState<any>(undefined);
+    const previousMovesCountRef = useRef<number>(movesHistory.length);
 
     const reversed = useMemo(() => playerColor === "black", [playerColor]);
-    const { 
-        opponentTime, 
+    const {
+        opponentTime,
         playerTime,
         initialOpponentTime,
-        initialPlayerTime, 
+        initialPlayerTime,
     } = useTimers({ timer, playerColor, gameState });
 
     // Отслеживаем позицию курсора
@@ -93,13 +106,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
         };
     }, []);
 
-    const externalChangeMove = useMemo(() => {
-        if (!currentMove) return undefined;
-        return {
-            move: currentMove,
-            withTransition: true
-        };
-    }, [currentMove]);
+
 
     const handleMove = (moveData: MoveData) => {
         const move = reversed ? JSChessEngine.reverseMove(moveData) : moveData;
@@ -116,6 +123,38 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
         setInitialFEN(gameState.currentFEN);
     }, [])
 
+    // Контролируем внешние ходы
+    // через useEffect, так как 
+    // если сделать откат хода
+    // То старый внешний ход + обновленное состояние
+    // вызывают pat на доске
+    useEffect(() => {
+        if (!currentMove) {
+            setExternalChangeMove(undefined);
+            return;
+        };
+
+        setExternalChangeMove({
+            move: currentMove,
+            withTransition: true
+        });
+    }, [currentMove])
+
+    useEffect(() => {
+        const previousCount = previousMovesCountRef.current;
+        const nextCount = movesHistory.length;
+
+        if (nextCount < previousCount) {
+            setExternalChangeMove(undefined);
+            setInitialFEN(gameState.currentFEN);
+            setBoardResetVersion((prev) => prev + 1);
+            setIsHistoryMode(false);
+            setSelectedHistoryMove(undefined);
+        }
+
+        previousMovesCountRef.current = nextCount;
+    }, [movesHistory.length, gameState.currentFEN]);
+
     const handleCloseResults = () => {
         removeGameData();
     };
@@ -129,7 +168,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
         if (waitAIhint) return;
 
         if (playerColor !== gameState.currentColor) {
-            setGameControlsNotify({ text: 'Only on your turn' });
+            setGameControlsNotify({ text: t('game.onlyYourTurn') });
             return;
         }
 
@@ -170,6 +209,79 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
         return [{ start: reverseCoords(aiHintArrow.from), end: reverseCoords(aiHintArrow.to) }];
     }, [aiHintArrow, playerColor, isHistoryMode]);
 
+    const magicButtonControls = [
+        {
+            content: <img src={HandShakePNG} alt={t('game.controls.offerDraw')} height={18} width={18} />,
+            onClick: () => onSendDrawOffer('offer'),
+            tooltip: t('game.controls.offerDraw'),
+        },
+        {
+            content: <img src={WhiteFlagPNG} alt={t('game.controls.resign')} height={18} width={18} />,
+            onClick: () => onSendResignation(),
+            tooltip: t('game.controls.resign'),
+        },
+        {
+            content: <img src={CrossMarkRedPNG} alt={t('game.controls.quitGame')} height={18} width={18} />,
+            onClick: () => handleQuitGame(),
+            tooltip: t('game.controls.leave'),
+        },
+    ];
+
+    const forBotGameMagicButtonControls = [
+        {
+            content: <img src={AiIconPNG} alt={t('game.controls.aiHint')} height={18} width={18} />,
+            onClick: () => handleAIhints(),
+            tooltip: t('game.controls.aiHint'),
+        },
+        {
+            content: <img src={DoubleChevronesLeft} alt={t('game.controls.rollbackMove')} height={18} width={18} />,
+            onClick: () => onSendRollbackPlayerMove(),
+            tooltip: t('game.controls.rollbackAction'),
+        },
+        {
+            content: <img src={CrossMarkRedPNG} alt={t('game.controls.quitGame')} height={18} width={18} />,
+            onClick: () => handleQuitGame(),
+            tooltip: t('game.controls.leave'),
+        },
+    ];
+
+    const withAIhintsMagicButtonControls = [
+        {
+            content: <img src={AiIconPNG} alt={t('game.controls.aiHint')} height={18} width={18} />,
+            onClick: () => handleAIhints(),
+            tooltip: t('game.controls.aiHint'),
+        },
+        {
+            content: <img src={HandShakePNG} alt={t('game.controls.offerDraw')} height={18} width={18} />,
+            onClick: () => onSendDrawOffer('offer'),
+            tooltip: t('game.controls.offerDraw'),
+        },
+        {
+            content: <img src={WhiteFlagPNG} alt={t('game.controls.resign')} height={18} width={18} />,
+            onClick: () => onSendResignation(),
+            tooltip: t('game.controls.resign'),
+        },
+        {
+            content: <img src={CrossMarkRedPNG} alt={t('game.controls.quitGame')} height={18} width={18} />,
+            onClick: () => handleQuitGame(),
+            tooltip: t('game.controls.leave'),
+        },
+    ];
+
+    const notActiveMagicButtonControls = [
+        {
+            content: <img src={CrossMarkRedPNG} alt={t('game.controls.quitGame')} height={18} width={18} />,
+            onClick: () => handleQuitGame(),
+            tooltip: t('game.controls.leave'),
+        },
+    ];
+
+    const actualMagicButtonControls = useMemo(() => {
+        if (gameState.manualBotRoom) return forBotGameMagicButtonControls;
+        if (gameState.withAIhints) return withAIhintsMagicButtonControls;
+        return magicButtonControls;
+    }, [gameState.withAIhints, gameState.manualBotRoom, i18n.language])
+
     return (
         <div
             className={`bg-back-primary grid h-screen items-center relative ${gridColsClass}`}
@@ -184,7 +296,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                 onClose={handleCloseResults}
             />
             <ConnectionNotification
-                message="Connection lost"
+                message={t('game.connectionLost')}
                 show={connectionLost}
             />
             {!resultMessage && (
@@ -204,7 +316,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                             color: playerColor === "white" ? "black" : "white",
                         }}
                     />
-                    <CapturedPieces 
+                    <CapturedPieces
                         FEN={movesHistory.length > 0 ? movesHistory[movesHistory.length - 1].FEN : initialFEN}
                         color={playerColor}
                         figure={{
@@ -225,15 +337,15 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                                     <ChessBoard
                                         key="historyBoard"
                                         FEN={selectedHistroyMove?.FEN || initialFEN}
-                                        onChange={() => {}} 
-                                        onEndGame={() => {}}
+                                        onChange={() => { }}
+                                        onEndGame={() => { }}
                                         reversed={playerColor === "black"}
                                         viewOnly={true}
-                                        config={{ 
+                                        config={{
                                             squareSize: wrapWidth / 8,
                                             ...chessboardConfig,
                                         }}
-                                        moveHighlight={selectedHistroyMove ? 
+                                        moveHighlight={selectedHistroyMove ?
                                             // TODO: Небольшой костыль по переворачиванию хода для правильной подсветки
                                             (playerColor === "black" ? [
                                                 JSChessEngine.reverseMove(selectedHistroyMove).from,
@@ -241,7 +353,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                                             ] : [
                                                 selectedHistroyMove.from,
                                                 selectedHistroyMove.to
-                                            ]) : 
+                                            ]) :
                                             undefined
                                         }
                                     />
@@ -249,15 +361,15 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                             )}
                             <div style={{ opacity: isHistoryMode ? 0 : 1 }}>
                                 <ChessBoard
-                                    key="gameBoard"
+                                    key={`gameBoard-${boardResetVersion}`}
                                     FEN={initialFEN}
-                                    onChange={(moveData) => handleMove(moveData as MoveData)} 
+                                    onChange={(moveData) => handleMove(moveData as MoveData)}
                                     onEndGame={onSendGameResult}
                                     reversed={playerColor === "black"}
                                     change={externalChangeMove}
                                     playerColor={playerColor}
                                     moveArrows={mappedHintArrow}
-                                    config={{ 
+                                    config={{
                                         squareSize: wrapWidth / 8,
                                         ...chessboardConfig,
                                     }}
@@ -269,15 +381,12 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                 <div className={`absolute ${screenSize === "L" ? "bottom-[-100px]" : "bottom-[-86px]"} left-0 right-0 flex justify-center`}>
                     <GameScreenControls
                         key={resultMessage}
-                        withAIhints={gameState.withAIhints}
-                        showOnboardingAIhint={gameState.withAIhints}
-                        gameEnded={!!resultMessage} // Если есть сообщение об окончании игры, то игра закончилась
-                        onDrawOffer={() => onSendDrawOffer('offer')}
-                        onResignation={onSendResignation}
-                        onQuitGame={handleQuitGame}
-                        onAIhints={handleAIhints}
+                        isNotActive={!!resultMessage}
                         loading={waitAIhint}
                         notify={gameControlsNotify}
+                        controls={actualMagicButtonControls}
+                        notActiveControls={notActiveMagicButtonControls}
+                        highlightsControls={actualMagicButtonControls}
                     />
                 </div>
             </div>
