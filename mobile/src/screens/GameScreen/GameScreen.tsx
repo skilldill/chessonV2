@@ -18,12 +18,12 @@ import { ConnectionNotification } from '../../components/ConnectionNotification/
 import { DrawOfferActions } from '../../components/DrawOfferActions/DrawOfferActions';
 import { ResultsActions } from '../../components/ResultsActions/ResultsActions';
 import { CHESSBOARD_THEMES } from '../../components/ChessBoardConfigs/ChessBoardConfigs';
+import { useTranslation } from 'react-i18next';
 
 import WhiteFlagPNG from "../../assets/white-flag.png";
 import CrossMarkRedPNG from "../../assets/cross-mark.png";
 import HandShakePNG from "../../assets/handshake.png";
 import AiIconPNG from "../../assets/ai-icon.png";
-import ArrowLeftPNG from '../../assets/arrow-left.png';
 import DoubleChevronesLeftSVG from '../../assets/double-chevrones-left.svg';
 
 type GameScreenProps = {
@@ -65,6 +65,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
   offeredDraw,
   connectionLost = false,
 }) => {
+  const { t, i18n } = useTranslation();
   const screenSize = useScreenSize();
   const cellSize = useCellSize();
   const { removeGameData } = useGameStorage();
@@ -156,7 +157,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
     }
 
     if (playerColor !== gameState.currentColor) {
-        setGameControlsNotify({ text: 'Only on your turn' });
+        setGameControlsNotify({ text: t('game.onlyYourTurn') });
         return;
     }
 
@@ -205,68 +206,68 @@ const GameScreen: React.FC<GameScreenProps> = ({
 
   const magicButtonControls = [
     {
-      content: <img src={HandShakePNG} alt="Предложить ничью" height={18} width={18} />,
+      content: <img src={HandShakePNG} alt={t('game.controls.offerDraw')} height={18} width={18} />,
       onClick: () => onSendDrawOffer('offer'),
-      tooltip: 'Предложить ничью',
+      tooltip: t('game.controls.offerDraw'),
     },
     {
-      content: <img src={WhiteFlagPNG} alt="Сдаться" height={18} width={18} />,
+      content: <img src={WhiteFlagPNG} alt={t('game.controls.resign')} height={18} width={18} />,
       onClick: () => onSendResignation(),
-      tooltip: 'Сдаться',
+      tooltip: t('game.controls.resign'),
     },
     {
-      content: <img src={CrossMarkRedPNG} alt="Завершить игру" height={18} width={18} />,
+      content: <img src={CrossMarkRedPNG} alt={t('game.controls.quitGame')} height={18} width={18} />,
       onClick: () => handleQuitGame(),
-      tooltip: 'Уйти',
+      tooltip: t('game.controls.leave'),
     },
   ];
 
   const forBotGameMagicButtonControls = [
     {
-      content: <img src={AiIconPNG} alt="Подсказка от AI" height={18} width={18} />,
+      content: <img src={AiIconPNG} alt={t('game.controls.aiHint')} height={18} width={18} />,
       onClick: () => handleAIhints(),
-      tooltip: 'AI\u00A0подсказка',
+      tooltip: t('game.controls.aiHint'),
     },
     {
-      content: <img src={DoubleChevronesLeftSVG} alt="Вернуться к прошлому ходу" height={26} width={26} />,
+      content: <img src={DoubleChevronesLeftSVG} alt={t('game.controls.rollbackMove')} height={26} width={26} />,
       onClick: () => onSendRollbackPlayerMove(),
-      tooltip: 'Переходить',
+      tooltip: t('game.controls.rollbackAction'),
     },
     {
-      content: <img src={CrossMarkRedPNG} alt="Завершить игру" height={18} width={18} />,
+      content: <img src={CrossMarkRedPNG} alt={t('game.controls.quitGame')} height={18} width={18} />,
       onClick: () => handleQuitGame(),
-      tooltip: 'Уйти',
+      tooltip: t('game.controls.leave'),
     },
   ];
 
   const withAIhintsMagicButtonControls = [
     {
-      content: <img src={AiIconPNG} alt="Подсказка от AI" height={18} width={18} />,
+      content: <img src={AiIconPNG} alt={t('game.controls.aiHint')} height={18} width={18} />,
       onClick: () => handleAIhints(),
-      tooltip: 'AI\u00A0подсказка',
+      tooltip: t('game.controls.aiHint'),
     },
     {
-      content: <img src={HandShakePNG} alt="Предложить ничью" height={18} width={18} />,
+      content: <img src={HandShakePNG} alt={t('game.controls.offerDraw')} height={18} width={18} />,
       onClick: () => onSendDrawOffer('offer'),
-      tooltip: 'Предложить ничью',
+      tooltip: t('game.controls.offerDraw'),
     },
     {
-      content: <img src={WhiteFlagPNG} alt="Сдаться" height={18} width={18} />,
+      content: <img src={WhiteFlagPNG} alt={t('game.controls.resign')} height={18} width={18} />,
       onClick: () => onSendResignation(),
-      tooltip: 'Сдаться',
+      tooltip: t('game.controls.resign'),
     },
     {
-      content: <img src={CrossMarkRedPNG} alt="Завершить игру" height={18} width={18} />,
+      content: <img src={CrossMarkRedPNG} alt={t('game.controls.quitGame')} height={18} width={18} />,
       onClick: () => handleQuitGame(),
-      tooltip: 'Уйти',
+      tooltip: t('game.controls.leave'),
     },
   ];
 
   const notActiveMagicButtonControls = [
     {
-      content: <img src={CrossMarkRedPNG} alt="Завершить игру" height={18} width={18} />,
+      content: <img src={CrossMarkRedPNG} alt={t('game.controls.quitGame')} height={18} width={18} />,
       onClick: () => handleQuitGame(),
-      tooltip: 'Уйти',
+      tooltip: t('game.controls.leave'),
     },
   ];
 
@@ -274,7 +275,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
     if (gameState.manualBotRoom) return forBotGameMagicButtonControls;
     if (gameState.withAIhints) return withAIhintsMagicButtonControls;
     return magicButtonControls;
-  }, [gameState.withAIhints, gameState.manualBotRoom]);
+  }, [gameState.withAIhints, gameState.manualBotRoom, i18n.language]);
 
   return (
     <IonPage>
@@ -291,7 +292,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
                 onClose={handleCloseResults}
             />
             <ConnectionNotification
-                message="Connection lost"
+                message={t('game.connectionLost')}
                 show={connectionLost}
             />
 

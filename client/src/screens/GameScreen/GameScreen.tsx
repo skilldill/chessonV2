@@ -18,6 +18,7 @@ import { useGameStorage } from "../../hooks/useGameStorage";
 import { useScreenHeightForChessboard } from "../../hooks/useScreenHeightForChessboard";
 import { getChessboardConfig } from "../../components/ChessBoardConfigs/ChessBoardConfigs";
 import { useAppearance } from "../../hooks/useAppearance";
+import { useTranslation } from "react-i18next";
 
 import WhiteFlagPNG from "../../assets/white-flag.png";
 import CrossMarkRedPNG from "../../assets/cross-mark.png";
@@ -66,6 +67,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
     offeredDraw,
     connectionLost = false,
 }) => {
+    const { t, i18n } = useTranslation();
     const screenSize = useScreenSize();
     const { removeGameData } = useGameStorage();
     const { chessboardTheme } = useAppearance();
@@ -166,7 +168,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
         if (waitAIhint) return;
 
         if (playerColor !== gameState.currentColor) {
-            setGameControlsNotify({ text: 'Only on your turn' });
+            setGameControlsNotify({ text: t('game.onlyYourTurn') });
             return;
         }
 
@@ -209,68 +211,68 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
 
     const magicButtonControls = [
         {
-            content: <img src={HandShakePNG} alt="Предложить ничью" height={18} width={18} />,
+            content: <img src={HandShakePNG} alt={t('game.controls.offerDraw')} height={18} width={18} />,
             onClick: () => onSendDrawOffer('offer'),
-            tooltip: 'Предложить ничью',
+            tooltip: t('game.controls.offerDraw'),
         },
         {
-            content: <img src={WhiteFlagPNG} alt="Сдаться" height={18} width={18} />,
+            content: <img src={WhiteFlagPNG} alt={t('game.controls.resign')} height={18} width={18} />,
             onClick: () => onSendResignation(),
-            tooltip: 'Сдаться',
+            tooltip: t('game.controls.resign'),
         },
         {
-            content: <img src={CrossMarkRedPNG} alt="Завершить игру" height={18} width={18} />,
+            content: <img src={CrossMarkRedPNG} alt={t('game.controls.quitGame')} height={18} width={18} />,
             onClick: () => handleQuitGame(),
-            tooltip: 'Уйти',
+            tooltip: t('game.controls.leave'),
         },
     ];
 
     const forBotGameMagicButtonControls = [
         {
-            content: <img src={AiIconPNG} alt="Подсказка от AI" height={18} width={18} />,
+            content: <img src={AiIconPNG} alt={t('game.controls.aiHint')} height={18} width={18} />,
             onClick: () => handleAIhints(),
-            tooltip: 'AI\u00A0подсказка',
+            tooltip: t('game.controls.aiHint'),
         },
         {
-            content: <img src={DoubleChevronesLeft} alt="Вернуться к прошлому ходу" height={18} width={18} />,
+            content: <img src={DoubleChevronesLeft} alt={t('game.controls.rollbackMove')} height={18} width={18} />,
             onClick: () => onSendRollbackPlayerMove(),
-            tooltip: 'Вернуться к прошлому ходу',
+            tooltip: t('game.controls.rollbackMove'),
         },
         {
-            content: <img src={CrossMarkRedPNG} alt="Завершить игру" height={18} width={18} />,
+            content: <img src={CrossMarkRedPNG} alt={t('game.controls.quitGame')} height={18} width={18} />,
             onClick: () => handleQuitGame(),
-            tooltip: 'Уйти',
+            tooltip: t('game.controls.leave'),
         },
     ];
 
     const withAIhintsMagicButtonControls = [
         {
-            content: <img src={AiIconPNG} alt="Подсказка от AI" height={18} width={18} />,
+            content: <img src={AiIconPNG} alt={t('game.controls.aiHint')} height={18} width={18} />,
             onClick: () => handleAIhints(),
-            tooltip: 'AI\u00A0подсказка',
+            tooltip: t('game.controls.aiHint'),
         },
         {
-            content: <img src={HandShakePNG} alt="Предложить ничью" height={18} width={18} />,
+            content: <img src={HandShakePNG} alt={t('game.controls.offerDraw')} height={18} width={18} />,
             onClick: () => onSendDrawOffer('offer'),
-            tooltip: 'Предложить ничью',
+            tooltip: t('game.controls.offerDraw'),
         },
         {
-            content: <img src={WhiteFlagPNG} alt="Сдаться" height={18} width={18} />,
+            content: <img src={WhiteFlagPNG} alt={t('game.controls.resign')} height={18} width={18} />,
             onClick: () => onSendResignation(),
-            tooltip: 'Сдаться',
+            tooltip: t('game.controls.resign'),
         },
         {
-            content: <img src={CrossMarkRedPNG} alt="Завершить игру" height={18} width={18} />,
+            content: <img src={CrossMarkRedPNG} alt={t('game.controls.quitGame')} height={18} width={18} />,
             onClick: () => handleQuitGame(),
-            tooltip: 'Уйти',
+            tooltip: t('game.controls.leave'),
         },
     ];
 
     const notActiveMagicButtonControls = [
         {
-            content: <img src={CrossMarkRedPNG} alt="Завершить игру" height={18} width={18} />,
+            content: <img src={CrossMarkRedPNG} alt={t('game.controls.quitGame')} height={18} width={18} />,
             onClick: () => handleQuitGame(),
-            tooltip: 'Уйти',
+            tooltip: t('game.controls.leave'),
         },
     ];
 
@@ -278,7 +280,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
         if (gameState.manualBotRoom) return forBotGameMagicButtonControls;
         if (gameState.withAIhints) return withAIhintsMagicButtonControls;
         return magicButtonControls;
-    }, [gameState.withAIhints, gameState.manualBotRoom])
+    }, [gameState.withAIhints, gameState.manualBotRoom, i18n.language])
 
     return (
         <div
@@ -294,7 +296,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                 onClose={handleCloseResults}
             />
             <ConnectionNotification
-                message="Connection lost"
+                message={t('game.connectionLost')}
                 show={connectionLost}
             />
             {!resultMessage && (
