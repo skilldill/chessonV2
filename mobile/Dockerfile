@@ -2,6 +2,11 @@
 FROM node:20-alpine AS builder
 
 WORKDIR /app
+
+# Cypress во время установки делает отдельную загрузку своего бинарника. 
+# В Docker это часто висит/падает, особенно на VPS.
+ENV CYPRESS_INSTALL_BINARY=0
+
 COPY . .
 
 RUN npm config set registry https://registry.npmmirror.com && \
