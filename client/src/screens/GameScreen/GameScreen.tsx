@@ -167,6 +167,8 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
     const handleAIhints = () => {
         if (waitAIhint) return;
 
+        console.log(playerColor, gameState.currentColor);
+
         if (playerColor !== gameState.currentColor) {
             setGameControlsNotify({ text: t('game.onlyYourTurn') });
             return;
@@ -276,11 +278,11 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
         },
     ];
 
-    const actualMagicButtonControls = useMemo(() => {
+    const actualMagicButtonControls = () => {
         if (gameState.manualBotRoom) return forBotGameMagicButtonControls;
         if (gameState.withAIhints) return withAIhintsMagicButtonControls;
         return magicButtonControls;
-    }, [gameState.withAIhints, gameState.manualBotRoom, i18n.language])
+    }
 
     return (
         <div
@@ -384,9 +386,9 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                         isNotActive={!!resultMessage}
                         loading={waitAIhint}
                         notify={gameControlsNotify}
-                        controls={actualMagicButtonControls}
+                        controls={actualMagicButtonControls()}
                         notActiveControls={notActiveMagicButtonControls}
-                        highlightsControls={actualMagicButtonControls}
+                        highlightsControls={actualMagicButtonControls()}
                     />
                 </div>
             </div>

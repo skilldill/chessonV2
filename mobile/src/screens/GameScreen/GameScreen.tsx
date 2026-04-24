@@ -271,11 +271,11 @@ const GameScreen: React.FC<GameScreenProps> = ({
     },
   ];
 
-  const actualMagicButtonControls = useMemo(() => {
+  const actualMagicButtonControls = () => {
     if (gameState.manualBotRoom) return forBotGameMagicButtonControls;
     if (gameState.withAIhints) return withAIhintsMagicButtonControls;
     return magicButtonControls;
-  }, [gameState.withAIhints, gameState.manualBotRoom, i18n.language]);
+  };
 
   return (
     <IonPage>
@@ -358,9 +358,9 @@ const GameScreen: React.FC<GameScreenProps> = ({
               isNotActive={!!resultMessage}
               loading={waitAIhint}
               notify={gameControlsNotify}
-              controls={actualMagicButtonControls}
+              controls={actualMagicButtonControls()}
               notActiveControls={notActiveMagicButtonControls}
-              highlightsControls={actualMagicButtonControls}
+              highlightsControls={actualMagicButtonControls()}
             />
           </div>
         </div>
