@@ -18,10 +18,13 @@ import { ConnectionNotification } from '../../components/ConnectionNotification/
 import { DrawOfferActions } from '../../components/DrawOfferActions/DrawOfferActions';
 import { ResultsActions } from '../../components/ResultsActions/ResultsActions';
 import { CHESSBOARD_THEMES } from '../../components/ChessBoardConfigs/ChessBoardConfigs';
+
 import WhiteFlagPNG from "../../assets/white-flag.png";
 import CrossMarkRedPNG from "../../assets/cross-mark.png";
 import HandShakePNG from "../../assets/handshake.png";
 import AiIconPNG from "../../assets/ai-icon.png";
+import ArrowLeftPNG from '../../assets/arrow-left.png';
+import DoubleChevronesLeftSVG from '../../assets/double-chevrones-left.svg';
 
 type GameScreenProps = {
   gameState: GameState;
@@ -222,12 +225,12 @@ const GameScreen: React.FC<GameScreenProps> = ({
     {
       content: <img src={AiIconPNG} alt="Подсказка от AI" height={18} width={18} />,
       onClick: () => handleAIhints(),
-      tooltip: 'Подсказка от AI',
+      tooltip: 'AI\u00A0подсказка',
     },
     {
-      content: <img src={AiIconPNG} alt="Вернуться к прошлому ходу" height={18} width={18} />,
+      content: <img src={DoubleChevronesLeftSVG} alt="Вернуться к прошлому ходу" height={26} width={26} />,
       onClick: () => onSendRollbackPlayerMove(),
-      tooltip: 'Вернуться к прошлому ходу',
+      tooltip: 'Переходить',
     },
     {
       content: <img src={CrossMarkRedPNG} alt="Завершить игру" height={18} width={18} />,
@@ -240,7 +243,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
     {
       content: <img src={AiIconPNG} alt="Подсказка от AI" height={18} width={18} />,
       onClick: () => handleAIhints(),
-      tooltip: 'Подсказка от AI',
+      tooltip: 'AI\u00A0подсказка',
     },
     {
       content: <img src={HandShakePNG} alt="Предложить ничью" height={18} width={18} />,

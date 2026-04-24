@@ -17,7 +17,7 @@ type RoundedControlButtonProps = {
     onActiveClick: () => void;
 }
 
-const RoundedControlButton = ({ children, active, disabled, onClick, onActiveClick, className = '' }: RoundedControlButtonProps) => {
+const RoundedControlButton = ({ children, active, disabled, onClick, onActiveClick, className = '', tooltip }: RoundedControlButtonProps) => {
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
         event.stopPropagation();
         if (disabled) return;
@@ -25,18 +25,25 @@ const RoundedControlButton = ({ children, active, disabled, onClick, onActiveCli
     }
 
     return (
-        <button 
-            className={cn(
-                'min-w-[52px] min-h-[52px] rounded-full bg-black/60 backdrop-blur-xl flex items-center justify-center cursor-pointer border border-[#364153] transition-all duration-300 hover:scale-105 active:scale-95',
-                { 'w-[56px] min-w-[56px] h-[56px] border-indigo-700': active },
-                { 'opacity-60 cursor-not-allowed hover:scale-100 active:scale-100': disabled },
-                className,
-            )}
-            onClick={handleClick}
-            disabled={disabled}
-        >
-            {children}
-        </button>
+        <div className="relative">
+            <button 
+                className={cn(
+                    'min-w-[52px] min-h-[52px] rounded-full bg-black/60 backdrop-blur-xl flex items-center justify-center cursor-pointer border border-[#364153] transition-all duration-300 hover:scale-105 active:scale-95',
+                    { 'w-[56px] min-w-[56px] h-[56px] border-indigo-700': active },
+                    { 'opacity-60 cursor-not-allowed hover:scale-100 active:scale-100': disabled },
+                    className,
+                )}
+                onClick={handleClick}
+                disabled={disabled}
+            >
+                {children}
+            </button>
+            <div className="absolute flex justify-center items-center w-full pt-[4px]">
+                <span className="text-xs text-center text-white/50">
+                    {tooltip}
+                </span>
+            </div>
+        </div>
     )
 }
 

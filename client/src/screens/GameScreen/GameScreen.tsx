@@ -23,6 +23,7 @@ import WhiteFlagPNG from "../../assets/white-flag.png";
 import CrossMarkRedPNG from "../../assets/cross-mark.png";
 import HandShakePNG from "../../assets/handshake.png";
 import AiIconPNG from "../../assets/ai-icon.png";
+import DoubleChevronesLeft from '../../assets/double-chevrones-left.svg';
 
 type GameScreenProps = {
     gameState: GameState;
@@ -39,13 +40,13 @@ type GameScreenProps = {
     onSendAIHintRequest: () => void;
     onSendRollbackPlayerMove: () => void;
     aiHintArrow: { from: [number, number]; to: [number, number] } | null;
-    
+
     resultMessage?: string;
     offeredDraw?: boolean;
     connectionLost?: boolean;
 }
 
-export const GameScreen: React.FC<GameScreenProps> = memo(({ 
+export const GameScreen: React.FC<GameScreenProps> = memo(({
     playerColor,
     gameState,
     currentMove,
@@ -81,11 +82,11 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
     const previousMovesCountRef = useRef<number>(movesHistory.length);
 
     const reversed = useMemo(() => playerColor === "black", [playerColor]);
-    const { 
-        opponentTime, 
+    const {
+        opponentTime,
         playerTime,
         initialOpponentTime,
-        initialPlayerTime, 
+        initialPlayerTime,
     } = useTimers({ timer, playerColor, gameState });
 
     // Отслеживаем позицию курсора
@@ -103,7 +104,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
         };
     }, []);
 
-    
+
 
     const handleMove = (moveData: MoveData) => {
         const move = reversed ? JSChessEngine.reverseMove(moveData) : moveData;
@@ -228,10 +229,10 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
         {
             content: <img src={AiIconPNG} alt="Подсказка от AI" height={18} width={18} />,
             onClick: () => handleAIhints(),
-            tooltip: 'Подсказка от AI',
+            tooltip: 'AI\u00A0подсказка',
         },
         {
-            content: <img src={AiIconPNG} alt="Вернуться к прошлому ходу" height={18} width={18} />,
+            content: <img src={DoubleChevronesLeft} alt="Вернуться к прошлому ходу" height={18} width={18} />,
             onClick: () => onSendRollbackPlayerMove(),
             tooltip: 'Вернуться к прошлому ходу',
         },
@@ -246,7 +247,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
         {
             content: <img src={AiIconPNG} alt="Подсказка от AI" height={18} width={18} />,
             onClick: () => handleAIhints(),
-            tooltip: 'Подсказка от AI',
+            tooltip: 'AI\u00A0подсказка',
         },
         {
             content: <img src={HandShakePNG} alt="Предложить ничью" height={18} width={18} />,
@@ -313,7 +314,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                             color: playerColor === "white" ? "black" : "white",
                         }}
                     />
-                    <CapturedPieces 
+                    <CapturedPieces
                         FEN={movesHistory.length > 0 ? movesHistory[movesHistory.length - 1].FEN : initialFEN}
                         color={playerColor}
                         figure={{
@@ -334,15 +335,15 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                                     <ChessBoard
                                         key="historyBoard"
                                         FEN={selectedHistroyMove?.FEN || initialFEN}
-                                        onChange={() => {}} 
-                                        onEndGame={() => {}}
+                                        onChange={() => { }}
+                                        onEndGame={() => { }}
                                         reversed={playerColor === "black"}
                                         viewOnly={true}
-                                        config={{ 
+                                        config={{
                                             squareSize: wrapWidth / 8,
                                             ...chessboardConfig,
                                         }}
-                                        moveHighlight={selectedHistroyMove ? 
+                                        moveHighlight={selectedHistroyMove ?
                                             // TODO: Небольшой костыль по переворачиванию хода для правильной подсветки
                                             (playerColor === "black" ? [
                                                 JSChessEngine.reverseMove(selectedHistroyMove).from,
@@ -350,7 +351,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                                             ] : [
                                                 selectedHistroyMove.from,
                                                 selectedHistroyMove.to
-                                            ]) : 
+                                            ]) :
                                             undefined
                                         }
                                     />
@@ -360,13 +361,13 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                                 <ChessBoard
                                     key={`gameBoard-${boardResetVersion}`}
                                     FEN={initialFEN}
-                                    onChange={(moveData) => handleMove(moveData as MoveData)} 
+                                    onChange={(moveData) => handleMove(moveData as MoveData)}
                                     onEndGame={onSendGameResult}
                                     reversed={playerColor === "black"}
                                     change={externalChangeMove}
                                     playerColor={playerColor}
                                     moveArrows={mappedHintArrow}
-                                    config={{ 
+                                    config={{
                                         squareSize: wrapWidth / 8,
                                         ...chessboardConfig,
                                     }}

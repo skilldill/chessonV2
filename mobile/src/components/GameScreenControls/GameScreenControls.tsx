@@ -16,7 +16,7 @@ type RoundedControlButtonProps = {
     onActiveClick: () => void;
 }
 
-const RoundedControlButton = ({ children, active, disabled, onClick, onActiveClick, className = '' }: RoundedControlButtonProps) => {
+const RoundedControlButton = ({ children, active, disabled, onClick, onActiveClick, className = '', tooltip }: RoundedControlButtonProps) => {
     const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
         event.stopPropagation();
         if (disabled) return;
@@ -24,17 +24,25 @@ const RoundedControlButton = ({ children, active, disabled, onClick, onActiveCli
     }
 
     return (
-        <div 
-            className={cn(
-                'min-w-[66px] min-h-[66px] bg-black/60 rounded-full backdrop-blur-xl flex items-center justify-center cursor-pointer border border-[#364153] transition-all duration-300 hover:scale-105 active:scale-95',
-                { 'w-[70px] h-[70px] border-indigo-700': active },
-                { 'opacity-60 cursor-not-allowed hover:scale-100 active:scale-100': disabled },
-                className,
-            )}
-            onClick={handleClick}
-        >
-            {children}
+        <div className="relative">
+            <div 
+                className={cn(
+                    'min-w-[66px] min-h-[66px] bg-black/60 rounded-full backdrop-blur-xl flex items-center justify-center cursor-pointer border border-[#364153] transition-all duration-300 hover:scale-105 active:scale-95',
+                    { 'w-[70px] h-[70px] border-indigo-700': active },
+                    { 'opacity-60 cursor-not-allowed hover:scale-100 active:scale-100': disabled },
+                    className,
+                )}
+                onClick={handleClick}
+            >
+                {children}
+            </div>
+            <div className="absolute flex justify-center items-center w-full pt-[4px]">
+                <span className="text-xs text-center text-white/50">
+                    {tooltip}
+                </span>
+            </div>
         </div>
+
     )
 }
 
