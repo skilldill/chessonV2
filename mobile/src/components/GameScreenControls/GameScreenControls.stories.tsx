@@ -15,10 +15,16 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
     args: {
-        withAIhints: true,
-        onDrawOffer: () => { },
-        onResignation: () => { },
-        onQuitGame: () => { },
-        onAIhints: () => { },
+        controls: [
+            { content: 'A', onClick: () => {} },
+            { content: 'B', onClick: () => {} },
+            { content: 'C', onClick: () => {} },
+        ],
+        highlightsControls: [
+            { content: 'A', onClick: () => {} },
+        ],
+        notActiveControls: [
+            { content: 'X', onClick: () => {} },
+        ],
     },
 };

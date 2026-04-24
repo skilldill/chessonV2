@@ -18,6 +18,10 @@ import { ConnectionNotification } from '../../components/ConnectionNotification/
 import { DrawOfferActions } from '../../components/DrawOfferActions/DrawOfferActions';
 import { ResultsActions } from '../../components/ResultsActions/ResultsActions';
 import { CHESSBOARD_THEMES } from '../../components/ChessBoardConfigs/ChessBoardConfigs';
+import WhiteFlagPNG from "../../assets/white-flag.png";
+import CrossMarkRedPNG from "../../assets/cross-mark.png";
+import HandShakePNG from "../../assets/handshake.png";
+import AiIconPNG from "../../assets/ai-icon.png";
 
 type GameScreenProps = {
   gameState: GameState;
@@ -196,6 +200,79 @@ const GameScreen: React.FC<GameScreenProps> = ({
   const opponentAvatarIndex = gameState.opponent?.avatar ? parseInt(gameState.opponent.avatar) : undefined;
   const opponentAvatar = opponentAvatarIndex ? MEM_AVATARS[opponentAvatarIndex] : MEM_AVATARS[0];
 
+  const magicButtonControls = [
+    {
+      content: <img src={HandShakePNG} alt="Предложить ничью" height={18} width={18} />,
+      onClick: () => onSendDrawOffer('offer'),
+      tooltip: 'Предложить ничью',
+    },
+    {
+      content: <img src={WhiteFlagPNG} alt="Сдаться" height={18} width={18} />,
+      onClick: () => onSendResignation(),
+      tooltip: 'Сдаться',
+    },
+    {
+      content: <img src={CrossMarkRedPNG} alt="Завершить игру" height={18} width={18} />,
+      onClick: () => handleQuitGame(),
+      tooltip: 'Уйти',
+    },
+  ];
+
+  const forBotGameMagicButtonControls = [
+    {
+      content: <img src={AiIconPNG} alt="Подсказка от AI" height={18} width={18} />,
+      onClick: () => handleAIhints(),
+      tooltip: 'Подсказка от AI',
+    },
+    {
+      content: <img src={AiIconPNG} alt="Вернуться к прошлому ходу" height={18} width={18} />,
+      onClick: () => onSendRollbackPlayerMove(),
+      tooltip: 'Вернуться к прошлому ходу',
+    },
+    {
+      content: <img src={CrossMarkRedPNG} alt="Завершить игру" height={18} width={18} />,
+      onClick: () => handleQuitGame(),
+      tooltip: 'Уйти',
+    },
+  ];
+
+  const withAIhintsMagicButtonControls = [
+    {
+      content: <img src={AiIconPNG} alt="Подсказка от AI" height={18} width={18} />,
+      onClick: () => handleAIhints(),
+      tooltip: 'Подсказка от AI',
+    },
+    {
+      content: <img src={HandShakePNG} alt="Предложить ничью" height={18} width={18} />,
+      onClick: () => onSendDrawOffer('offer'),
+      tooltip: 'Предложить ничью',
+    },
+    {
+      content: <img src={WhiteFlagPNG} alt="Сдаться" height={18} width={18} />,
+      onClick: () => onSendResignation(),
+      tooltip: 'Сдаться',
+    },
+    {
+      content: <img src={CrossMarkRedPNG} alt="Завершить игру" height={18} width={18} />,
+      onClick: () => handleQuitGame(),
+      tooltip: 'Уйти',
+    },
+  ];
+
+  const notActiveMagicButtonControls = [
+    {
+      content: <img src={CrossMarkRedPNG} alt="Завершить игру" height={18} width={18} />,
+      onClick: () => handleQuitGame(),
+      tooltip: 'Уйти',
+    },
+  ];
+
+  const actualMagicButtonControls = useMemo(() => {
+    if (gameState.manualBotRoom) return forBotGameMagicButtonControls;
+    if (gameState.withAIhints) return withAIhintsMagicButtonControls;
+    return magicButtonControls;
+  }, [gameState.withAIhints, gameState.manualBotRoom]);
+
   return (
     <IonPage>
       <IonContent scrollY={true}>
@@ -274,17 +351,12 @@ const GameScreen: React.FC<GameScreenProps> = ({
           <div className="p-[12px] flex justify-center">
             <GameScreenControls
               key={resultMessage}
-              withAIhints={gameState.withAIhints}
-              rollbackInsteadOfDraw={gameState.manualBotRoom === true}
-              showOnboardingAIhint={gameState.withAIhints}
+              isNotActive={!!resultMessage}
               loading={waitAIhint}
               notify={gameControlsNotify}
-              gameEnded={!!resultMessage} // Если есть сообщение об окончании игры, то игра закончилась
-              onDrawOffer={() => onSendDrawOffer('offer')}
-              onRollbackPlayerMove={onSendRollbackPlayerMove}
-              onResignation={onSendResignation}
-              onQuitGame={handleQuitGame}
-              onAIhints={handleAIhints}
+              controls={actualMagicButtonControls}
+              notActiveControls={notActiveMagicButtonControls}
+              highlightsControls={actualMagicButtonControls}
             />
           </div>
         </div>

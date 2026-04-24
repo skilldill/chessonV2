@@ -19,6 +19,11 @@ import { useScreenHeightForChessboard } from "../../hooks/useScreenHeightForChes
 import { getChessboardConfig } from "../../components/ChessBoardConfigs/ChessBoardConfigs";
 import { useAppearance } from "../../hooks/useAppearance";
 
+import WhiteFlagPNG from "../../assets/white-flag.png";
+import CrossMarkRedPNG from "../../assets/cross-mark.png";
+import HandShakePNG from "../../assets/handshake.png";
+import AiIconPNG from "../../assets/ai-icon.png";
+
 type GameScreenProps = {
     gameState: GameState;
     playerColor: ChessColor;
@@ -201,6 +206,79 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
         return [{ start: reverseCoords(aiHintArrow.from), end: reverseCoords(aiHintArrow.to) }];
     }, [aiHintArrow, playerColor, isHistoryMode]);
 
+    const magicButtonControls = [
+        {
+            content: <img src={HandShakePNG} alt="Предложить ничью" height={18} width={18} />,
+            onClick: () => onSendDrawOffer('offer'),
+            tooltip: 'Предложить ничью',
+        },
+        {
+            content: <img src={WhiteFlagPNG} alt="Сдаться" height={18} width={18} />,
+            onClick: () => onSendResignation(),
+            tooltip: 'Сдаться',
+        },
+        {
+            content: <img src={CrossMarkRedPNG} alt="Завершить игру" height={18} width={18} />,
+            onClick: () => handleQuitGame(),
+            tooltip: 'Уйти',
+        },
+    ];
+
+    const forBotGameMagicButtonControls = [
+        {
+            content: <img src={AiIconPNG} alt="Подсказка от AI" height={18} width={18} />,
+            onClick: () => handleAIhints(),
+            tooltip: 'Подсказка от AI',
+        },
+        {
+            content: <img src={AiIconPNG} alt="Вернуться к прошлому ходу" height={18} width={18} />,
+            onClick: () => onSendRollbackPlayerMove(),
+            tooltip: 'Вернуться к прошлому ходу',
+        },
+        {
+            content: <img src={CrossMarkRedPNG} alt="Завершить игру" height={18} width={18} />,
+            onClick: () => handleQuitGame(),
+            tooltip: 'Уйти',
+        },
+    ];
+
+    const withAIhintsMagicButtonControls = [
+        {
+            content: <img src={AiIconPNG} alt="Подсказка от AI" height={18} width={18} />,
+            onClick: () => handleAIhints(),
+            tooltip: 'Подсказка от AI',
+        },
+        {
+            content: <img src={HandShakePNG} alt="Предложить ничью" height={18} width={18} />,
+            onClick: () => onSendDrawOffer('offer'),
+            tooltip: 'Предложить ничью',
+        },
+        {
+            content: <img src={WhiteFlagPNG} alt="Сдаться" height={18} width={18} />,
+            onClick: () => onSendResignation(),
+            tooltip: 'Сдаться',
+        },
+        {
+            content: <img src={CrossMarkRedPNG} alt="Завершить игру" height={18} width={18} />,
+            onClick: () => handleQuitGame(),
+            tooltip: 'Уйти',
+        },
+    ];
+
+    const notActiveMagicButtonControls = [
+        {
+            content: <img src={CrossMarkRedPNG} alt="Завершить игру" height={18} width={18} />,
+            onClick: () => handleQuitGame(),
+            tooltip: 'Уйти',
+        },
+    ];
+
+    const actualMagicButtonControls = useMemo(() => {
+        if (gameState.manualBotRoom) return forBotGameMagicButtonControls;
+        if (gameState.withAIhints) return withAIhintsMagicButtonControls;
+        return magicButtonControls;
+    }, [gameState.withAIhints, gameState.manualBotRoom])
+
     return (
         <div
             className={`bg-back-primary grid h-screen items-center relative ${gridColsClass}`}
@@ -300,17 +378,12 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                 <div className={`absolute ${screenSize === "L" ? "bottom-[-100px]" : "bottom-[-86px]"} left-0 right-0 flex justify-center`}>
                     <GameScreenControls
                         key={resultMessage}
-                        withAIhints={gameState.withAIhints}
-                        rollbackInsteadOfDraw={gameState.manualBotRoom === true}
-                        showOnboardingAIhint={gameState.withAIhints}
-                        gameEnded={!!resultMessage} // Если есть сообщение об окончании игры, то игра закончилась
-                        onDrawOffer={() => onSendDrawOffer('offer')}
-                        onRollbackPlayerMove={onSendRollbackPlayerMove}
-                        onResignation={onSendResignation}
-                        onQuitGame={handleQuitGame}
-                        onAIhints={handleAIhints}
+                        isNotActive={!!resultMessage}
                         loading={waitAIhint}
                         notify={gameControlsNotify}
+                        controls={actualMagicButtonControls}
+                        notActiveControls={notActiveMagicButtonControls}
+                        highlightsControls={actualMagicButtonControls}
                     />
                 </div>
             </div>
