@@ -67,7 +67,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
     offeredDraw,
     connectionLost = false,
 }) => {
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
     const screenSize = useScreenSize();
     const { removeGameData } = useGameStorage();
     const { chessboardTheme } = useAppearance();
