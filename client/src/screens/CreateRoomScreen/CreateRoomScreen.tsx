@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { QuickPlayButton } from "../../components/QuickPlayButton/QuickPlayButton";
 import { useQuickPlayEntry } from "../../hooks/useQuickPlayEntry";
-import { BotDifficultyModal, type BotDifficulty } from "../../components/BotDifficultyModal/BotDifficultyModal";
+import {
+    BotDifficultyModal,
+    type BotDifficulty,
+    type BotPlayerColor,
+    type BotStartPositionMode
+} from "../../components/BotDifficultyModal/BotDifficultyModal";
 import { RoomTimeModal } from "../../components/RoomTimeModal/RoomTimeModal";
 import { useCreateRoom } from "../../hooks/useCreateRoom";
 import { CreateGameButton } from "../../components/CreateGameButton/CreateGameButton";
@@ -17,6 +22,22 @@ import SigninSVG from '../../assets/signin.svg';
 import { useTranslation } from "react-i18next";
 
 const initialRoomTime = getRoomTimeSettingsFromStorage();
+const BOT_CUSTOM_FEN_STORAGE_KEY = "botCustomFEN";
+const FRIEND_CUSTOM_FEN_STORAGE_KEY = "friendCustomFEN";
+
+function getBotCustomFenFromStorage() {
+    if (typeof window === "undefined") {
+        return "";
+    }
+    return localStorage.getItem(BOT_CUSTOM_FEN_STORAGE_KEY) || "";
+}
+
+function getFriendCustomFenFromStorage() {
+    if (typeof window === "undefined") {
+        return "";
+    }
+    return localStorage.getItem(FRIEND_CUSTOM_FEN_STORAGE_KEY) || "";
+}
 
 export const CreateRoomScreen = () => {
     const { t } = useTranslation();
@@ -26,8 +47,13 @@ export const CreateRoomScreen = () => {
     const [isTimeModalOpen, setIsTimeModalOpen] = useState(false);
     const [isThemeModalOpen, setIsThemeModalOpen] = useState(false);
     const [botDifficulty, setBotDifficulty] = useState<BotDifficulty>("medium");
+    const [botPlayerColor, setBotPlayerColor] = useState<BotPlayerColor>("white");
+    const [botStartPositionMode, setBotStartPositionMode] = useState<BotStartPositionMode>("default");
+    const [botCustomFEN, setBotCustomFEN] = useState(getBotCustomFenFromStorage);
     const [timeMinutes, setTimeMinutes] = useState(initialRoomTime.timeMinutes);
     const [incrementSeconds, setIncrementSeconds] = useState(initialRoomTime.incrementSeconds);
+    const [friendStartPositionMode, setFriendStartPositionMode] = useState<"default" | "custom">("default");
+    const [friendCustomFEN, setFriendCustomFEN] = useState(getFriendCustomFenFromStorage);
     const [_, setActiveTheme] = useState(getChessboardThemeFromStorage());
     const [selectedTheme, setSelectedTheme] = useState(getChessboardThemeFromStorage());
     const [withAIhints, setWithAIhints] = useState(false);
@@ -36,24 +62,55 @@ export const CreateRoomScreen = () => {
       setRoomTimeSettingsToStorage(timeMinutes, incrementSeconds);
     }, [timeMinutes, incrementSeconds]);
 
+    useEffect(() => {
+      if (typeof window === "undefined") {
+        return;
+      }
+
+      if (botCustomFEN.length > 0) {
+        localStorage.setItem(BOT_CUSTOM_FEN_STORAGE_KEY, botCustomFEN);
+        return;
+      }
+
+      localStorage.removeItem(BOT_CUSTOM_FEN_STORAGE_KEY);
+    }, [botCustomFEN]);
+
+    useEffect(() => {
+      if (typeof window === "undefined") {
+        return;
+      }
+
+      if (friendCustomFEN.length > 0) {
+        localStorage.setItem(FRIEND_CUSTOM_FEN_STORAGE_KEY, friendCustomFEN);
+        return;
+      }
+
+      localStorage.removeItem(FRIEND_CUSTOM_FEN_STORAGE_KEY);
+    }, [friendCustomFEN]);
+
     const availableThemes = useMemo(() => Object.keys(CHESSBOARD_THEMES), []);
     // const activeThemeLabel = activeTheme.charAt(0).toUpperCase() + activeTheme.slice(1);
 
     const handleCreateBotRoom = () => {
+        const trimmedFen = botCustomFEN.trim();
         createRoom({
             vsBot: true,
             botDifficulty,
             botMoveTimeMs: 800,
             timeMinutes: 30,
             incrementSeconds: 0,
+            color: botPlayerColor,
+            currentFEN: botStartPositionMode === "custom" && trimmedFen.length > 0 ? trimmedFen : undefined,
         });
     };
 
     const handleCreateFriendRoom = () => {
+        const trimmedFen = friendCustomFEN.trim();
         createRoom({
             timeMinutes,
             incrementSeconds,
             withAIhints,
+            currentFEN: friendStartPositionMode === "custom" && trimmedFen.length > 0 ? trimmedFen : undefined,
         });
     };
 
@@ -144,7 +201,13 @@ export const CreateRoomScreen = () => {
                 isOpen={isBotModalOpen}
                 isCreating={isCreating}
                 difficulty={botDifficulty}
+                playerColor={botPlayerColor}
+                startPositionMode={botStartPositionMode}
+                customFEN={botCustomFEN}
                 onChangeDifficulty={setBotDifficulty}
+                onChangePlayerColor={setBotPlayerColor}
+                onChangeStartPositionMode={setBotStartPositionMode}
+                onChangeCustomFEN={setBotCustomFEN}
                 onClose={() => setIsBotModalOpen(false)}
                 onConfirm={handleCreateBotRoom}
             />
@@ -155,9 +218,13 @@ export const CreateRoomScreen = () => {
                 timeMinutes={timeMinutes}
                 incrementSeconds={incrementSeconds}
                 withAIhints={withAIhints}
+                startPositionMode={friendStartPositionMode}
+                customFEN={friendCustomFEN}
                 onChangeTimeMinutes={setTimeMinutes}
                 onChangeIncrementSeconds={setIncrementSeconds}
                 onChangeWithAIhints={setWithAIhints}
+                onChangeStartPositionMode={setFriendStartPositionMode}
+                onChangeCustomFEN={setFriendCustomFEN}
                 onClose={() => setIsTimeModalOpen(false)}
                 onConfirm={handleCreateFriendRoom}
             />

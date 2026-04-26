@@ -1145,7 +1145,7 @@ async function triggerBotMoveIfNeeded(roomId: string) {
       room.gameState.timer.blackTime += room.gameState.timer.blackIncrement;
     }
 
-    room.gameState.currentPlayer = room.gameState.currentPlayer === "white" ? "black" : "white";
+    room.gameState.currentPlayer = getCurrentPlayerFromFEN(botMove.moveData.FEN);
     syncCurrentColor(room);
 
     if (checkThreefoldRepetition(room)) {
@@ -3652,8 +3652,19 @@ app.ws('/ws/room', {
             }
           }
           
-          // Меняем ход
-          room.gameState.currentPlayer = room.gameState.currentPlayer === "white" ? "black" : "white";
+          // Определяем следующего игрока из FEN после хода.
+          // Это безопаснее инверсии currentPlayer и предотвращает рассинхрон после промоции.
+          const nextPlayerFromFen = getCurrentPlayerFromFEN(data.moveData.FEN);
+          if (nextPlayerFromFen === senderUserData.color) {
+              ws.send({ system: true, message: "Invalid move state: turn did not change after move" });
+              room.gameState.moveHistory.pop();
+              room.gameState.currentFEN = room.gameState.moveHistory.length > 0
+                ? room.gameState.moveHistory[room.gameState.moveHistory.length - 1]!.FEN
+                : room.initialFEN;
+              return;
+          }
+
+          room.gameState.currentPlayer = nextPlayerFromFen;
           // Обновляем currentColor синхронно с currentPlayer
           syncCurrentColor(room);
 
@@ -4132,19 +4143,19 @@ app.ws('/ws/room', {
     const room = rooms.get(roomId);
     if (!room) return;
 
-    const currentClientId = ws.data.query.clientId;
     let disconnectedUserId: string | null = null;
     let disconnectedUserName = ws.data.query.userName;
 
     for (const [userId, userData] of room.users) {
-      const sameClientId = !!currentClientId && userData.clientId === currentClientId;
-      const sameUserNameLegacy = !currentClientId && userData.userName === ws.data.query.userName;
-      if (sameClientId || sameUserNameLegacy) {
+      if (userData.ws === ws) {
         disconnectedUserId = userId;
         disconnectedUserName = userData.userName;
         break;
       }
     }
+
+    // Если это старый сокет, уже замененный при reconnect, игнорируем его close.
+    if (!disconnectedUserId) return;
 
     // Проверяем, остались ли подключенные игроки
     let connectedUsers = 0;
@@ -4155,7 +4166,9 @@ app.ws('/ws/room', {
           userData.ws.send({ system: true, message: `${disconnectedUserName} disconnected` });
         }
       } else {
-        userData.isConnected = false;
+        if (userData.ws === ws) {
+          userData.isConnected = false;
+        }
       }
     }
 
