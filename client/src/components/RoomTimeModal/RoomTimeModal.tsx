@@ -1,12 +1,20 @@
+import { useTranslation } from "react-i18next";
+
+type StartPositionMode = "default" | "custom";
+
 type RoomTimeModalProps = {
   isOpen: boolean;
   isCreating: boolean;
   timeMinutes: number;
   incrementSeconds: number;
   withAIhints: boolean;
+  startPositionMode: StartPositionMode;
+  customFEN: string;
   onChangeTimeMinutes: (value: number) => void;
   onChangeIncrementSeconds: (value: number) => void;
   onChangeWithAIhints: (value: boolean) => void;
+  onChangeStartPositionMode: (value: StartPositionMode) => void;
+  onChangeCustomFEN: (value: string) => void;
   onClose: () => void;
   onConfirm: () => void;
 };
@@ -20,9 +28,13 @@ export const RoomTimeModal = ({
   timeMinutes,
   incrementSeconds,
   withAIhints,
+  startPositionMode,
+  customFEN,
   onChangeTimeMinutes,
   onChangeIncrementSeconds,
   onChangeWithAIhints,
+  onChangeStartPositionMode,
+  onChangeCustomFEN,
   onClose,
   onConfirm,
 }: RoomTimeModalProps) => {
@@ -95,6 +107,53 @@ export const RoomTimeModal = ({
             {t("time.selected", { timeMinutes, incrementSeconds })}
           </div>
 
+          <div>
+            <div className="text-white/70 text-sm mb-2">{t("bot.startPosition")}</div>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => onChangeStartPositionMode("default")}
+                disabled={isCreating}
+                className={`h-11 rounded-lg border transition-all duration-200 active:scale-[0.98] focus:outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                  startPositionMode === "default"
+                    ? 'bg-[#4F39F6]/20 text-white border-[#555ab9]/70'
+                    : 'bg-white/5 text-white/90 border-white/15 hover:border-white/35'
+                }`}
+              >
+                <span className="font-semibold">{t("bot.position.default")}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onChangeStartPositionMode("custom")}
+                disabled={isCreating}
+                className={`h-11 rounded-lg border transition-all duration-200 active:scale-[0.98] focus:outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                  startPositionMode === "custom"
+                    ? 'bg-[#4F39F6]/20 text-white border-[#555ab9]/70'
+                    : 'bg-white/5 text-white/90 border-white/15 hover:border-white/35'
+                }`}
+              >
+                <span className="font-semibold">{t("bot.position.custom")}</span>
+              </button>
+            </div>
+          </div>
+
+          {startPositionMode === "custom" && (
+            <div>
+              <label className="block text-white/70 text-xs mb-1.5" htmlFor="friend-custom-fen">
+                {t("bot.fenLabel")}
+              </label>
+              <input
+                id="friend-custom-fen"
+                type="text"
+                value={customFEN}
+                onChange={(event) => onChangeCustomFEN(event.target.value)}
+                disabled={isCreating}
+                placeholder={t("bot.fenPlaceholder")}
+                className="w-full rounded-xl px-3 py-2.5 bg-white/5 border border-white/15 text-white text-sm placeholder:text-white/40 focus:outline-none focus:border-white/35 disabled:opacity-50"
+              />
+            </div>
+          )}
+
           <label className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl px-3 py-3 cursor-pointer select-none">
             <input
               type="checkbox"
@@ -137,4 +196,3 @@ export const RoomTimeModal = ({
     </div>
   );
 };
-import { useTranslation } from "react-i18next";

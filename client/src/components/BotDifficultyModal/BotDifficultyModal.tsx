@@ -1,12 +1,20 @@
 import { useTranslation } from "react-i18next";
 
 export type BotDifficulty = 'super_easy' | 'easy' | 'medium' | 'hard';
+export type BotPlayerColor = "white" | "black";
+export type BotStartPositionMode = "default" | "custom";
 
 type BotDifficultyModalProps = {
   isOpen: boolean;
   isCreating: boolean;
   difficulty: BotDifficulty;
+  playerColor: BotPlayerColor;
+  startPositionMode: BotStartPositionMode;
+  customFEN: string;
   onChangeDifficulty: (value: BotDifficulty) => void;
+  onChangePlayerColor: (value: BotPlayerColor) => void;
+  onChangeStartPositionMode: (value: BotStartPositionMode) => void;
+  onChangeCustomFEN: (value: string) => void;
   onClose: () => void;
   onConfirm: () => void;
 };
@@ -15,7 +23,13 @@ export const BotDifficultyModal = ({
   isOpen,
   isCreating,
   difficulty,
+  playerColor,
+  startPositionMode,
+  customFEN,
   onChangeDifficulty,
+  onChangePlayerColor,
+  onChangeStartPositionMode,
+  onChangeCustomFEN,
   onClose,
   onConfirm,
 }: BotDifficultyModalProps) => {
@@ -63,6 +77,83 @@ export const BotDifficultyModal = ({
               <div className="text-xs text-white/60 mt-0.5">{level.subtitle}</div>
             </button>
           ))}
+        </div>
+
+        <div className="mt-5">
+          <div className="text-white/70 text-sm mb-2">{t("bot.playAs")}</div>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => onChangePlayerColor("white")}
+              disabled={isCreating}
+              className={`rounded-xl px-4 py-2 text-sm border transition-all duration-200 active:scale-[0.98] focus:outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                playerColor === "white"
+                  ? 'bg-[#4F39F6]/20 text-white border-[#555ab9]/70'
+                  : 'bg-white/5 text-white/90 border-white/15 hover:border-white/35'
+              }`}
+            >
+              {t("bot.color.white")}
+            </button>
+            <button
+              type="button"
+              onClick={() => onChangePlayerColor("black")}
+              disabled={isCreating}
+              className={`rounded-xl px-4 py-2 text-sm border transition-all duration-200 active:scale-[0.98] focus:outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                playerColor === "black"
+                  ? 'bg-[#4F39F6]/20 text-white border-[#555ab9]/70'
+                  : 'bg-white/5 text-white/90 border-white/15 hover:border-white/35'
+              }`}
+            >
+              {t("bot.color.black")}
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-5">
+          <div className="text-white/70 text-sm mb-2">{t("bot.startPosition")}</div>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => onChangeStartPositionMode("default")}
+              disabled={isCreating}
+              className={`rounded-xl px-4 py-2 text-sm border transition-all duration-200 active:scale-[0.98] focus:outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                startPositionMode === "default"
+                  ? 'bg-[#4F39F6]/20 text-white border-[#555ab9]/70'
+                  : 'bg-white/5 text-white/90 border-white/15 hover:border-white/35'
+              }`}
+            >
+              {t("bot.position.default")}
+            </button>
+            <button
+              type="button"
+              onClick={() => onChangeStartPositionMode("custom")}
+              disabled={isCreating}
+              className={`rounded-xl px-4 py-2 text-sm border transition-all duration-200 active:scale-[0.98] focus:outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                startPositionMode === "custom"
+                  ? 'bg-[#4F39F6]/20 text-white border-[#555ab9]/70'
+                  : 'bg-white/5 text-white/90 border-white/15 hover:border-white/35'
+              }`}
+            >
+              {t("bot.position.custom")}
+            </button>
+          </div>
+
+          {startPositionMode === "custom" && (
+            <div className="mt-3">
+              <label className="block text-white/70 text-xs mb-1.5" htmlFor="bot-custom-fen">
+                {t("bot.fenLabel")}
+              </label>
+              <input
+                id="bot-custom-fen"
+                type="text"
+                value={customFEN}
+                onChange={(event) => onChangeCustomFEN(event.target.value)}
+                disabled={isCreating}
+                placeholder={t("bot.fenPlaceholder")}
+                className="w-full rounded-xl px-3 py-2.5 bg-white/5 border border-white/15 text-white text-sm placeholder:text-white/40 focus:outline-none focus:border-white/35 disabled:opacity-50"
+              />
+            </div>
+          )}
         </div>
 
         <div className="mt-5 grid grid-cols-2 gap-2">

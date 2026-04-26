@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import { useCreateRoom } from "../../hooks/useCreateRoom";
-import { BotDifficultyModal, type BotDifficulty } from "../BotDifficultyModal/BotDifficultyModal";
+import {
+  BotDifficultyModal,
+  type BotDifficulty,
+  type BotPlayerColor,
+  type BotStartPositionMode
+} from "../BotDifficultyModal/BotDifficultyModal";
 import { RoomTimeModal } from "../RoomTimeModal/RoomTimeModal";
 import { CreateGameButton } from "../CreateGameButton/CreateGameButton";
 import { getRoomTimeSettingsFromStorage, setRoomTimeSettingsToStorage } from "../../utils/roomTimeStorage";
@@ -8,6 +13,22 @@ import AIiconPNG from '../../assets/ai-icon.png';
 import { useTranslation } from "react-i18next";
 
 const initialRoomTime = getRoomTimeSettingsFromStorage();
+const BOT_CUSTOM_FEN_STORAGE_KEY = "botCustomFEN";
+const FRIEND_CUSTOM_FEN_STORAGE_KEY = "friendCustomFEN";
+
+function getBotCustomFenFromStorage() {
+  if (typeof window === "undefined") {
+    return "";
+  }
+  return localStorage.getItem(BOT_CUSTOM_FEN_STORAGE_KEY) || "";
+}
+
+function getFriendCustomFenFromStorage() {
+  if (typeof window === "undefined") {
+    return "";
+  }
+  return localStorage.getItem(FRIEND_CUSTOM_FEN_STORAGE_KEY) || "";
+}
 
 export const CreateRoomSection = () => {
   const { t } = useTranslation();
@@ -15,29 +36,65 @@ export const CreateRoomSection = () => {
   const [isBotModalOpen, setIsBotModalOpen] = useState(false);
   const [isTimeModalOpen, setIsTimeModalOpen] = useState(false);
   const [botDifficulty, setBotDifficulty] = useState<BotDifficulty>("medium");
+  const [botPlayerColor, setBotPlayerColor] = useState<BotPlayerColor>("white");
+  const [botStartPositionMode, setBotStartPositionMode] = useState<BotStartPositionMode>("default");
+  const [botCustomFEN, setBotCustomFEN] = useState(getBotCustomFenFromStorage);
   const [timeMinutes, setTimeMinutes] = useState(initialRoomTime.timeMinutes);
   const [incrementSeconds, setIncrementSeconds] = useState(initialRoomTime.incrementSeconds);
+  const [friendStartPositionMode, setFriendStartPositionMode] = useState<"default" | "custom">("default");
+  const [friendCustomFEN, setFriendCustomFEN] = useState(getFriendCustomFenFromStorage);
   const [withAIhints, setWithAIhints] = useState(false);
 
   useEffect(() => {
     setRoomTimeSettingsToStorage(timeMinutes, incrementSeconds);
   }, [timeMinutes, incrementSeconds]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    if (botCustomFEN.length > 0) {
+      localStorage.setItem(BOT_CUSTOM_FEN_STORAGE_KEY, botCustomFEN);
+      return;
+    }
+
+    localStorage.removeItem(BOT_CUSTOM_FEN_STORAGE_KEY);
+  }, [botCustomFEN]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    if (friendCustomFEN.length > 0) {
+      localStorage.setItem(FRIEND_CUSTOM_FEN_STORAGE_KEY, friendCustomFEN);
+      return;
+    }
+
+    localStorage.removeItem(FRIEND_CUSTOM_FEN_STORAGE_KEY);
+  }, [friendCustomFEN]);
+
   const handleCreateBotRoom = () => {
+    const trimmedFen = botCustomFEN.trim();
     createRoom({
       timeMinutes: 30,
       incrementSeconds: 0,
       vsBot: true,
       botDifficulty,
       botMoveTimeMs: 800,
+      color: botPlayerColor,
+      currentFEN: botStartPositionMode === "custom" && trimmedFen.length > 0 ? trimmedFen : undefined,
     });
   };
 
   const handleCreateFriendRoom = () => {
+    const trimmedFen = friendCustomFEN.trim();
     createRoom({
       timeMinutes,
       incrementSeconds,
       withAIhints,
+      currentFEN: friendStartPositionMode === "custom" && trimmedFen.length > 0 ? trimmedFen : undefined,
     });
   };
 
@@ -78,7 +135,13 @@ export const CreateRoomSection = () => {
         isOpen={isBotModalOpen}
         isCreating={isCreating}
         difficulty={botDifficulty}
+        playerColor={botPlayerColor}
+        startPositionMode={botStartPositionMode}
+        customFEN={botCustomFEN}
         onChangeDifficulty={setBotDifficulty}
+        onChangePlayerColor={setBotPlayerColor}
+        onChangeStartPositionMode={setBotStartPositionMode}
+        onChangeCustomFEN={setBotCustomFEN}
         onClose={() => setIsBotModalOpen(false)}
         onConfirm={handleCreateBotRoom}
       />
@@ -89,9 +152,13 @@ export const CreateRoomSection = () => {
         timeMinutes={timeMinutes}
         incrementSeconds={incrementSeconds}
         withAIhints={withAIhints}
+        startPositionMode={friendStartPositionMode}
+        customFEN={friendCustomFEN}
         onChangeTimeMinutes={setTimeMinutes}
         onChangeIncrementSeconds={setIncrementSeconds}
         onChangeWithAIhints={setWithAIhints}
+        onChangeStartPositionMode={setFriendStartPositionMode}
+        onChangeCustomFEN={setFriendCustomFEN}
         onClose={() => setIsTimeModalOpen(false)}
         onConfirm={handleCreateFriendRoom}
       />

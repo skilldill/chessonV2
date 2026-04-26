@@ -11,6 +11,8 @@ type CreateRoomData = {
     withAIhints?: boolean;
     botDifficulty?: 'super_easy' | 'easy' | 'medium' | 'hard';
     botMoveTimeMs?: number;
+    color?: 'white' | 'black';
+    currentFEN?: string;
 }
 
 export const useCreateRoom = () => {
@@ -37,7 +39,9 @@ export const useCreateRoom = () => {
                     vsBot: roomData.vsBot,
                     withAIhints: roomData.withAIhints,
                     botDifficulty: roomData.botDifficulty,
-                    botMoveTimeMs: roomData.botMoveTimeMs
+                    botMoveTimeMs: roomData.botMoveTimeMs,
+                    color: roomData.color,
+                    currentFEN: roomData.currentFEN
                 })
             });
 
