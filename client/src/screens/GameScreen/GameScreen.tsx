@@ -216,16 +216,19 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
             content: <img src={HandShakePNG} alt={t('game.controls.offerDraw')} height={18} width={18} />,
             onClick: () => onSendDrawOffer('offer'),
             tooltip: t('game.controls.offerDraw'),
+            withoutApprove: true,
         },
         {
             content: <img src={WhiteFlagPNG} alt={t('game.controls.resign')} height={18} width={18} />,
             onClick: () => onSendResignation(),
             tooltip: t('game.controls.resign'),
+            approveText: 'Сдаться?',
         },
         {
             content: <img src={CrossMarkRedPNG} alt={t('game.controls.quitGame')} height={18} width={18} />,
             onClick: () => handleQuitGame(),
             tooltip: t('game.controls.leave'),
+            approveText: 'Покинуть игру?',
         },
     ];
 
@@ -234,16 +237,20 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
             content: <img src={AiIconPNG} alt={t('game.controls.aiHint')} height={18} width={18} />,
             onClick: () => handleAIhints(),
             tooltip: t('game.controls.aiHint'),
+            withoutApprove: true,
         },
         {
             content: <img src={DoubleChevronesLeft} alt={t('game.controls.rollbackMove')} height={18} width={18} />,
             onClick: () => onSendRollbackPlayerMove(),
             tooltip: t('game.controls.rollbackAction'),
+            withoutApprove: true,
+            approveText: 'Сдаться?'
         },
         {
             content: <img src={CrossMarkRedPNG} alt={t('game.controls.quitGame')} height={18} width={18} />,
             onClick: () => handleQuitGame(),
             tooltip: t('game.controls.leave'),
+            approveText: 'Покинуть игру?',
         },
     ];
 
@@ -252,21 +259,25 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
             content: <img src={AiIconPNG} alt={t('game.controls.aiHint')} height={18} width={18} />,
             onClick: () => handleAIhints(),
             tooltip: t('game.controls.aiHint'),
+            withoutApprove: true,
         },
         {
             content: <img src={HandShakePNG} alt={t('game.controls.offerDraw')} height={18} width={18} />,
             onClick: () => onSendDrawOffer('offer'),
             tooltip: t('game.controls.offerDraw'),
+            withoutApprove: true,
         },
         {
             content: <img src={WhiteFlagPNG} alt={t('game.controls.resign')} height={18} width={18} />,
             onClick: () => onSendResignation(),
             tooltip: t('game.controls.resign'),
+            approveText: 'Сдаться?'
         },
         {
             content: <img src={CrossMarkRedPNG} alt={t('game.controls.quitGame')} height={18} width={18} />,
             onClick: () => handleQuitGame(),
             tooltip: t('game.controls.leave'),
+            approveText: 'Покинуть игру?',
         },
     ];
 
@@ -275,6 +286,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
             content: <img src={CrossMarkRedPNG} alt={t('game.controls.quitGame')} height={18} width={18} />,
             onClick: () => handleQuitGame(),
             tooltip: t('game.controls.leave'),
+            withoutApprove: true,
         },
     ];
 
@@ -288,11 +300,11 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
         <div
             className={`bg-back-primary grid h-screen items-center relative ${gridColsClass}`}
         >
-            <DrawOfferActions
+            {/* <DrawOfferActions
                 offeredDraw={offeredDraw}
                 onAcceptDraw={() => onSendDrawOffer('accept')}
                 onDeclineDraw={() => onSendDrawOffer('decline')}
-            />
+            /> */}
             <ResultsActions
                 message={resultMessage}
                 onClose={handleCloseResults}
@@ -389,6 +401,11 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                         controls={actualMagicButtonControls()}
                         notActiveControls={notActiveMagicButtonControls}
                         highlightsControls={actualMagicButtonControls()}
+
+                        // Пока что так, позже сделаю лучше
+                        offeredDraw={offeredDraw}
+                        onAcceptDraw={() => onSendDrawOffer('accept')}
+                        onDeclineDraw={() => onSendDrawOffer('decline')}
                     />
                 </div>
             </div>
