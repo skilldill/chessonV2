@@ -10,7 +10,6 @@ import { INITIAL_FEN } from "../../constants/chess";
 import { useTimers } from "../../hooks/useTimers";
 import { debounce } from "../../utils/debounce";
 import { GameCursorProfile } from "../../components/GameCursorProfile/GameCursorProfile";
-import { DrawOfferActions } from "../../components/DrawOfferActions/DrawOfferActions";
 import { ResultsActions } from "../../components/ResultsActions/ResultsActions";
 import { ConnectionNotification } from "../../components/ConnectionNotification/ConnectionNotification";
 import { useScreenSize } from "../../hooks/useScreenSize";
@@ -222,13 +221,13 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
             content: <img src={WhiteFlagPNG} alt={t('game.controls.resign')} height={18} width={18} />,
             onClick: () => onSendResignation(),
             tooltip: t('game.controls.resign'),
-            approveText: 'Сдаться?',
+            approveText: t('game.confirm.resign'),
         },
         {
             content: <img src={CrossMarkRedPNG} alt={t('game.controls.quitGame')} height={18} width={18} />,
             onClick: () => handleQuitGame(),
             tooltip: t('game.controls.leave'),
-            approveText: 'Покинуть игру?',
+            approveText: t('game.confirm.leave'),
         },
     ];
 
@@ -244,13 +243,13 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
             onClick: () => onSendRollbackPlayerMove(),
             tooltip: t('game.controls.rollbackAction'),
             withoutApprove: true,
-            approveText: 'Сдаться?'
+            approveText: t('game.confirm.resign')
         },
         {
             content: <img src={CrossMarkRedPNG} alt={t('game.controls.quitGame')} height={18} width={18} />,
             onClick: () => handleQuitGame(),
             tooltip: t('game.controls.leave'),
-            approveText: 'Покинуть игру?',
+            approveText: t('game.confirm.leave'),
         },
     ];
 
@@ -271,13 +270,13 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
             content: <img src={WhiteFlagPNG} alt={t('game.controls.resign')} height={18} width={18} />,
             onClick: () => onSendResignation(),
             tooltip: t('game.controls.resign'),
-            approveText: 'Сдаться?'
+            approveText: t('game.confirm.resign')
         },
         {
             content: <img src={CrossMarkRedPNG} alt={t('game.controls.quitGame')} height={18} width={18} />,
             onClick: () => handleQuitGame(),
             tooltip: t('game.controls.leave'),
-            approveText: 'Покинуть игру?',
+            approveText: t('game.confirm.leave'),
         },
     ];
 

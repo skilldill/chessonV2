@@ -146,6 +146,8 @@ export const resources = {
       "game.controls.leave": "Leave",
       "game.controls.rollbackMove": "Return to previous move",
       "game.controls.rollbackAction": "Rollback",
+      "game.confirm.resign": "Resign?",
+      "game.confirm.leave": "Leave game?",
     },
   },
   ru: {
@@ -290,6 +292,8 @@ export const resources = {
       "game.controls.leave": "Уйти",
       "game.controls.rollbackMove": "Вернуться к прошлому ходу",
       "game.controls.rollbackAction": "Переходить",
+      "game.confirm.resign": "Сдаться?",
+      "game.confirm.leave": "Покинуть игру?",
     },
   },
 } as const;

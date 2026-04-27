@@ -24,6 +24,37 @@ export const useAutoConnect = ({
     const [checkingAuth, setCheckingAuth] = useState(true);
     const QUICK_PLAY_PROFILE_KEY = "quickPlayProfile";
     const BOT_GUEST_PROFILE_KEY = "botGuestProfile";
+    const GUEST_CAT_WORDS = [
+        "Mad",
+        "Fury",
+        "Good",
+        "Big",
+        "Small",
+        "Swift",
+        "Lucky",
+        "Brave",
+        "Calm",
+        "Wild",
+        "Sharp",
+        "Rapid",
+        "Bold",
+        "Mighty",
+        "Sneaky",
+        "Quiet",
+        "Storm",
+        "Silver",
+        "Golden",
+        "Cosmic",
+    ];
+
+    const createRandomGuestProfile = () => {
+        const randomWord = GUEST_CAT_WORDS[Math.floor(Math.random() * GUEST_CAT_WORDS.length)] || "Guest";
+        const randomAvatar = Math.floor(Math.random() * 8);
+        return {
+            playerName: `${randomWord} cat`,
+            avatar: randomAvatar,
+        };
+    };
 
     const handleSetUserName = async (userName: string, avatarIndex: number) => {
         setUserName(userName);
@@ -125,6 +156,9 @@ export const useAutoConnect = ({
                         localStorage.removeItem(BOT_GUEST_PROFILE_KEY);
                     }
                 }
+
+                const randomGuestProfile = createRandomGuestProfile();
+                await handleSetUserName(randomGuestProfile.playerName, randomGuestProfile.avatar);
             } finally {
                 setCheckingAuth(false);
             }

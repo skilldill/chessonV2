@@ -214,13 +214,13 @@ const GameScreen: React.FC<GameScreenProps> = ({
       content: <img src={WhiteFlagPNG} alt={t('game.controls.resign')} height={18} width={18} />,
       onClick: () => onSendResignation(),
       tooltip: t('game.controls.resign'),
-      approveText: 'Сдаться?',
+      approveText: t('game.confirm.resign'),
     },
     {
       content: <img src={CrossMarkRedPNG} alt={t('game.controls.quitGame')} height={18} width={18} />,
       onClick: () => handleQuitGame(),
       tooltip: t('game.controls.leave'),
-      approveText: 'Покинуть игру?',
+      approveText: t('game.confirm.leave'),
     },
   ];
 
@@ -236,13 +236,13 @@ const GameScreen: React.FC<GameScreenProps> = ({
       onClick: () => onSendRollbackPlayerMove(),
       tooltip: t('game.controls.rollbackAction'),
       withoutApprove: true,
-      approveText: 'Сдаться?'
+      approveText: t('game.confirm.resign')
     },
     {
       content: <img src={CrossMarkRedPNG} alt={t('game.controls.quitGame')} height={18} width={18} />,
       onClick: () => handleQuitGame(),
       tooltip: t('game.controls.leave'),
-      approveText: 'Покинуть игру?',
+      approveText: t('game.confirm.leave'),
     },
   ];
 
@@ -263,13 +263,13 @@ const GameScreen: React.FC<GameScreenProps> = ({
       content: <img src={WhiteFlagPNG} alt={t('game.controls.resign')} height={18} width={18} />,
       onClick: () => onSendResignation(),
       tooltip: t('game.controls.resign'),
-      approveText: 'Сдаться?',
+      approveText: t('game.confirm.resign'),
     },
     {
       content: <img src={CrossMarkRedPNG} alt={t('game.controls.quitGame')} height={18} width={18} />,
       onClick: () => handleQuitGame(),
       tooltip: t('game.controls.leave'),
-      approveText: 'Покинуть игру?',
+      approveText: t('game.confirm.leave'),
     },
   ];
 

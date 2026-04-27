@@ -1,11 +1,10 @@
 import { IonPage, IonContent, IonText } from '@ionic/react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { MemAvatarSelect } from '../../components/MemAvatarSelect/MemAvatarSelect';
 import { ChessButton } from '../../components/ChessButton/ChessButton';
 import { useTranslation } from 'react-i18next';
 
 const MAX_NICKNAME_LENGTH = 16;
-const GUEST_CREATE_PROFILE_KEY = "guestCreateProfile";
 
 type SetProfileScreenProps = {
   onSetUserName: (userName: string, avatarIndex: number) => void;
@@ -15,44 +14,6 @@ const SetProfileScreen: React.FC<SetProfileScreenProps> = ({ onSetUserName }) =>
   const { t } = useTranslation();
   const [nickname, setNickname] = useState("");
   const [avatarIndex, setSelectedAvatarIndex] = useState(0);
-
-  useEffect(() => {
-      const storedProfileRaw = localStorage.getItem(GUEST_CREATE_PROFILE_KEY);
-      if (!storedProfileRaw) {
-          return;
-      }
-
-      try {
-          const storedProfile = JSON.parse(storedProfileRaw) as { playerName?: string; avatar?: number | string };
-          const storedName = (storedProfile.playerName || "").trim();
-          const parsedAvatar =
-              typeof storedProfile.avatar === "string"
-                  ? parseInt(storedProfile.avatar, 10)
-                  : storedProfile.avatar;
-          const storedAvatar =
-              typeof parsedAvatar === "number" && !Number.isNaN(parsedAvatar) && parsedAvatar >= 0
-                  ? parsedAvatar
-                  : 0;
-
-          if (storedName) {
-              setNickname(storedName.slice(0, MAX_NICKNAME_LENGTH));
-          }
-          setSelectedAvatarIndex(storedAvatar);
-      } catch (error) {
-          console.error("Failed to parse guest create profile:", error);
-          localStorage.removeItem(GUEST_CREATE_PROFILE_KEY);
-      }
-  }, []);
-
-  useEffect(() => {
-      localStorage.setItem(
-          GUEST_CREATE_PROFILE_KEY,
-          JSON.stringify({
-              playerName: nickname.trim(),
-              avatar: avatarIndex,
-          }),
-      );
-  }, [avatarIndex, nickname]);
 
   const handleSelectAvatar = (index: number) => {
       setSelectedAvatarIndex(index);
@@ -71,13 +32,6 @@ const SetProfileScreen: React.FC<SetProfileScreenProps> = ({ onSetUserName }) =>
           return;
       }
 
-      localStorage.setItem(
-          GUEST_CREATE_PROFILE_KEY,
-          JSON.stringify({
-              playerName: cleanedNickname,
-              avatar: avatarIndex,
-          }),
-      );
       onSetUserName(cleanedNickname, avatarIndex);
   }
 
