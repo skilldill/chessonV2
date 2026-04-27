@@ -15,7 +15,6 @@ import { MEM_AVATARS } from '../../constants/avatars';
 import { useGameStorage } from '../../hooks/useGameStorage';
 import { useAppearance } from '../../hooks/useAppearance';
 import { ConnectionNotification } from '../../components/ConnectionNotification/ConnectionNotification';
-import { DrawOfferActions } from '../../components/DrawOfferActions/DrawOfferActions';
 import { ResultsActions } from '../../components/ResultsActions/ResultsActions';
 import { CHESSBOARD_THEMES } from '../../components/ChessBoardConfigs/ChessBoardConfigs';
 import { useTranslation } from 'react-i18next';
@@ -209,16 +208,19 @@ const GameScreen: React.FC<GameScreenProps> = ({
       content: <img src={HandShakePNG} alt={t('game.controls.offerDraw')} height={18} width={18} />,
       onClick: () => onSendDrawOffer('offer'),
       tooltip: t('game.controls.offerDraw'),
+      withoutApprove: true,
     },
     {
       content: <img src={WhiteFlagPNG} alt={t('game.controls.resign')} height={18} width={18} />,
       onClick: () => onSendResignation(),
       tooltip: t('game.controls.resign'),
+      approveText: 'Сдаться?',
     },
     {
       content: <img src={CrossMarkRedPNG} alt={t('game.controls.quitGame')} height={18} width={18} />,
       onClick: () => handleQuitGame(),
       tooltip: t('game.controls.leave'),
+      approveText: 'Покинуть игру?',
     },
   ];
 
@@ -227,16 +229,20 @@ const GameScreen: React.FC<GameScreenProps> = ({
       content: <img src={AiIconPNG} alt={t('game.controls.aiHint')} height={18} width={18} />,
       onClick: () => handleAIhints(),
       tooltip: t('game.controls.aiHint'),
+      withoutApprove: true,
     },
     {
-      content: <img src={DoubleChevronesLeftSVG} alt={t('game.controls.rollbackMove')} height={26} width={26} />,
+      content: <img src={DoubleChevronesLeftSVG} alt={t('game.controls.rollbackMove')} height={18} width={18} />,
       onClick: () => onSendRollbackPlayerMove(),
       tooltip: t('game.controls.rollbackAction'),
+      withoutApprove: true,
+      approveText: 'Сдаться?'
     },
     {
       content: <img src={CrossMarkRedPNG} alt={t('game.controls.quitGame')} height={18} width={18} />,
       onClick: () => handleQuitGame(),
       tooltip: t('game.controls.leave'),
+      approveText: 'Покинуть игру?',
     },
   ];
 
@@ -245,21 +251,25 @@ const GameScreen: React.FC<GameScreenProps> = ({
       content: <img src={AiIconPNG} alt={t('game.controls.aiHint')} height={18} width={18} />,
       onClick: () => handleAIhints(),
       tooltip: t('game.controls.aiHint'),
+      withoutApprove: true,
     },
     {
       content: <img src={HandShakePNG} alt={t('game.controls.offerDraw')} height={18} width={18} />,
       onClick: () => onSendDrawOffer('offer'),
       tooltip: t('game.controls.offerDraw'),
+      withoutApprove: true,
     },
     {
       content: <img src={WhiteFlagPNG} alt={t('game.controls.resign')} height={18} width={18} />,
       onClick: () => onSendResignation(),
       tooltip: t('game.controls.resign'),
+      approveText: 'Сдаться?',
     },
     {
       content: <img src={CrossMarkRedPNG} alt={t('game.controls.quitGame')} height={18} width={18} />,
       onClick: () => handleQuitGame(),
       tooltip: t('game.controls.leave'),
+      approveText: 'Покинуть игру?',
     },
   ];
 
@@ -268,6 +278,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
       content: <img src={CrossMarkRedPNG} alt={t('game.controls.quitGame')} height={18} width={18} />,
       onClick: () => handleQuitGame(),
       tooltip: t('game.controls.leave'),
+      withoutApprove: true,
     },
   ];
 
@@ -282,11 +293,11 @@ const GameScreen: React.FC<GameScreenProps> = ({
       <IonContent scrollY={true}>
         <div className="grid grid-rows-[1fr_56px] h-full">
           <div className="flex flex-col h-full justify-center">
-            <DrawOfferActions
+            {/* <DrawOfferActions
                 offeredDraw={offeredDraw}
                 onAcceptDraw={() => onSendDrawOffer('accept')}
                 onDeclineDraw={() => onSendDrawOffer('decline')}
-            />
+            /> */}
             <ResultsActions
                 message={resultMessage}
                 onClose={handleCloseResults}
@@ -361,6 +372,9 @@ const GameScreen: React.FC<GameScreenProps> = ({
               controls={actualMagicButtonControls()}
               notActiveControls={notActiveMagicButtonControls}
               highlightsControls={actualMagicButtonControls()}
+              offeredDraw={offeredDraw}
+              onAcceptDraw={() => onSendDrawOffer('accept')}
+              onDeclineDraw={() => onSendDrawOffer('decline')}
             />
           </div>
         </div>

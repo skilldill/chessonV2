@@ -3,32 +3,33 @@ import { PlasmaButton } from "../PlasmaButton/PlasmaButton"
 
 import cn from "classnames";
 import styles from "./GameScreenControls.module.css";
+import { useScreenSize } from "../../hooks/useScreenSize";
 
 type RoundedControlButtonProps = {
     children: ReactNode;
-    active: boolean;
     disabled?: boolean;
     className?: string;
     iconSize?: number;
     tooltip?: string;
-
     onClick: () => void;
-    onActiveClick: () => void;
+
+    // TODO: deprecated
+    active?: boolean;
+    onActiveClick?: () => void;
 }
 
-const RoundedControlButton = ({ children, active, disabled, onClick, onActiveClick, className = '', tooltip }: RoundedControlButtonProps) => {
-    const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
+const RoundedControlButton = ({ children, disabled, onClick, className = '', tooltip }: RoundedControlButtonProps) => {
+    const handleClick = (event: any) => {
         event.stopPropagation();
         if (disabled) return;
-        active ? onActiveClick() : onClick();
+        onClick();
     }
 
     return (
         <div className="relative">
-            <div 
+            <div
                 className={cn(
-                    'min-w-[66px] min-h-[66px] bg-black/60 rounded-full backdrop-blur-xl flex items-center justify-center cursor-pointer border border-[#364153] transition-all duration-300 hover:scale-105 active:scale-95',
-                    { 'w-[70px] h-[70px] border-indigo-700': active },
+                    'min-w-[52px] min-h-[52px] rounded-full bg-black/60 backdrop-blur-xl flex items-center justify-center cursor-pointer border border-[#364153] transition-all duration-300 hover:scale-105 active:scale-95',
                     { 'opacity-60 cursor-not-allowed hover:scale-100 active:scale-100': disabled },
                     className,
                 )}
@@ -42,8 +43,15 @@ const RoundedControlButton = ({ children, active, disabled, onClick, onActiveCli
                 </span>
             </div>
         </div>
-
     )
+}
+
+type ControlProps = {
+    content: ReactNode;
+    onClick?: () => void;
+    tooltip?: string;
+    withoutApprove?: boolean;
+    approveText?: string;
 }
 
 type GameScreenControlsProps = {
@@ -51,12 +59,17 @@ type GameScreenControlsProps = {
     loading?: boolean;
     notify?: { text: string };
 
-    controls: { content: ReactNode, onClick?: () => void, tooltip?: string }[];
-    highlightsControls: { content: ReactNode, onClick?: () => void, tooltip?: string }[];
-    notActiveControls: { content: ReactNode, onClick?: () => void, tooltip?: string }[];
+    controls: ControlProps[];
+    highlightsControls: ControlProps[];
+    notActiveControls: ControlProps[];
+
+    // ПОка что так
+    offeredDraw?: boolean;
+    onAcceptDraw: () => void;
+    onDeclineDraw: () => void;
 }
 
-export const GameScreenControls: FC<GameScreenControlsProps> = ({ 
+export const GameScreenControls: FC<GameScreenControlsProps> = ({
     isNotActive,
     loading = false,
     notify,
@@ -64,29 +77,61 @@ export const GameScreenControls: FC<GameScreenControlsProps> = ({
     controls,
     highlightsControls,
     notActiveControls,
+
+    //
+    offeredDraw,
+    onAcceptDraw,
+    onDeclineDraw,
 }) => {
+    const screenSize = useScreenSize();
     const [showButtons, setShowButtons] = useState(false);
     const [showOnboarding, setShowOnboarding] = useState(false);
-    const [activeActionIndex, setActiveActionIndex] = useState<string>();
     const [showNotify, setShowNotify] = useState(false);
+
+    const [activeAction, setActiveAction] = useState<ControlProps>();
+    const [showConfirm, setShowConfirm] = useState(false);
+    const [showDrawOffer, setShowDrawOffer] = useState(false);
 
     const handleClickPlasmaButton = (event?: React.MouseEvent<HTMLButtonElement>) => {
         if (showOnboarding) {
             setShowOnboarding(false);
         };
 
+        if (showConfirm) {
+            setShowConfirm(false);
+            event?.stopPropagation();
+            return;
+        }
+
+        if (showDrawOffer) {
+            onDeclineDraw();
+            setShowDrawOffer(false);
+            event?.stopPropagation();
+            return;
+        }
+
         setShowButtons(!showButtons);
-        setActiveActionIndex(undefined);
         event?.stopPropagation()
     }
 
     const hideButtons = () => {
         setShowButtons(false);
-        setActiveActionIndex(undefined);
     }
 
-    const handleNotActiveClick = (index: string) => {
-        setActiveActionIndex(index);
+    const handleClick = (control: ControlProps) => {
+        if (control.withoutApprove) {
+            control.onClick?.();
+            hideButtons();
+            return;
+        }
+
+        setActiveAction(control);
+        setShowConfirm(true);
+        hideButtons();
+    }
+
+    const handleCancel = () => {
+        setShowConfirm(false);
     }
 
     useEffect(() => {
@@ -117,15 +162,25 @@ export const GameScreenControls: FC<GameScreenControlsProps> = ({
         }, 3000)
     }, [notify])
 
+    useEffect(() => {
+        if (offeredDraw) {
+            setShowDrawOffer(true);
+            setShowButtons(false);
+            setShowConfirm(false);
+            setActiveAction(undefined);
+        } else {
+            setShowDrawOffer(false);
+        }
+    }, [offeredDraw])
+
     return (
         <div className="w-full flex justify-center relative">
-            
             <div className={cn("absolute top-0 w-full z-10 flex items-center justify-center gap-[28px] scale-0 transition-all duration-300", {
                 "scale-120": showNotify,
                 "top-[-100px]": showNotify,
                 [styles.bounce]: showNotify,
             })}>
-                <div 
+                <div
                     className={cn(
                         'min-h-[52px] px-[12px] whitespace-nowrap rounded-[26px] bg-black/60 backdrop-blur-xl flex items-center justify-center cursor-pointer border border-[#364153] transition-all duration-300 hover:scale-105 active:scale-95',
                     )}
@@ -136,20 +191,83 @@ export const GameScreenControls: FC<GameScreenControlsProps> = ({
                 </div>
             </div>
 
-            <div className={cn("absolute top-[-20px] w-full z-10 flex items-center justify-center gap-[28px] scale-0 transition-all duration-300", {
+            <div className={cn("absolute top-0 w-full z-10 flex items-center justify-center gap-[28px] scale-0 transition-all duration-300", {
+                "scale-120": showConfirm,
+                "top-[-154px]": showConfirm,
+                [styles.bounce]: showConfirm,
+            })}>
+                <div
+                    className={cn(
+                        'min-h-[52px] py-[12px] px-[12px] whitespace-nowrap rounded-[26px] bg-black/60 backdrop-blur-xl flex flex-col items-center justify-center gap-[20px] cursor-pointer border border-[#364153] transition-all duration-200 hover:scale-105 active:scale-100',
+                    )}
+                >
+                    <span className="text-sm">
+                        {activeAction && activeAction?.approveText}
+                    </span>
+                    <div className="flex gap-4">
+                        <div
+                            className="rounded-full text-xs font-semibold px-2 py-2 bg-[#4F39F6] text-center text-white min-w-[120px] cursor-pointer transition-all duration-300 active:scale-95 focus:outline-none"
+                            onClick={() => activeAction?.onClick?.()}
+                        >
+                            Ок
+                        </div>
+                        <div
+                            className="rounded-full text-xs font-semibold px-2 py-2 bg-gray-800 text-center text-white min-w-[120px] cursor-pointer transition-all duration-300 active:scale-95 focus:outline-none"
+                            onClick={handleCancel}
+                        >
+                            Cancel
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* ЭТО КОСТЫЛЬ, ПОЗЖЕ ПЕРЕДЕЛАТЬ НА ОБЩИЙ CONFIRM */}
+            <div className={cn("absolute top-0 w-full z-10 flex items-center justify-center gap-[28px] scale-0 transition-all duration-300", {
+                "scale-120": offeredDraw,
+                "top-[-204px]": offeredDraw,
+                [styles.bounce]: offeredDraw,
+            })}>
+                <div
+                    className={cn(
+                        'min-h-[52px] py-[12px] px-[12px] whitespace-nowrap rounded-[26px] bg-black/60 backdrop-blur-xl flex flex-col items-center justify-center gap-[10px] cursor-pointer border border-[#364153] transition-all duration-200 hover:scale-105 active:scale-100',
+                    )}
+                >
+                    <h2 className="text-white text-xl font-semibold mb-[0px]">
+                        Draw Offer
+                    </h2>
+                    <p className="text-gray-300 text-sm mb-[10px] mt-[0px]">
+                        Your opponent offers a draw
+                    </p>
+                    <div className="flex gap-4">
+                        <div
+                            className="rounded-full text-xs font-semibold px-2 py-2 bg-[#4F39F6] text-center text-white min-w-[120px] cursor-pointer transition-all duration-300 active:scale-95 focus:outline-none"
+                            onClick={onAcceptDraw}
+                        >
+                            Accept
+                        </div>
+                        <div
+                            className="rounded-full text-xs font-semibold px-2 py-2 bg-gray-800 text-center text-white min-w-[120px] cursor-pointer transition-all duration-300 active:scale-95 focus:outline-none"
+                            onClick={onDeclineDraw}
+                        >
+                            Decline
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className={cn("absolute top-0 w-full z-10 flex items-center justify-center gap-[36px] scale-0 transition-all duration-300", {
                 "scale-120": showOnboarding,
                 "top-[-110px]": showOnboarding,
                 [styles.bounce]: showOnboarding,
             })}>
-                {highlightsControls.map(({ content, tooltip }, i) => 
+                {highlightsControls.map(({ content, tooltip }, i) =>
                     <RoundedControlButton
                         key={`highlightControls_${i}`}
-                        onClick={() => {}}
-                        onActiveClick={() => {}}
-                        active={false}
+                        onClick={() => { }}
+                        onActiveClick={() => { }}
                         disabled={loading}
                         tooltip={tooltip}
-                    >{content}</RoundedControlButton> 
+                    >{content}</RoundedControlButton>
                 )}
             </div>
 
@@ -158,24 +276,20 @@ export const GameScreenControls: FC<GameScreenControlsProps> = ({
                 "top-[-100px]": showButtons,
                 [styles.bounce]: showButtons,
             })}>
-                {isNotActive && notActiveControls.map(({ content, onClick, tooltip }, i) => 
+                {isNotActive && notActiveControls.map((control, i) =>
                     <RoundedControlButton
                         key={`notActoveControl_${i}`}
-                        onClick={() => handleNotActiveClick(`notActoveControl_${i}`)}
-                        onActiveClick={() => { onClick?.(); hideButtons(); }}
-                        active={activeActionIndex === `notActoveControl_${i}`}
-                        tooltip={tooltip}
-                    >{content}</RoundedControlButton>
+                        onClick={() => handleClick(control)}
+                        tooltip={control.tooltip}
+                    >{control.content}</RoundedControlButton>
                 )}
 
-                {!isNotActive && controls.map(({ content, onClick, tooltip }, i) => 
+                {!isNotActive && controls.map((control, i) =>
                     <RoundedControlButton
                         key={`control_${i}`}
-                        onClick={() => handleNotActiveClick(`control_${i}`)}
-                        onActiveClick={() => { onClick?.(); hideButtons(); }}
-                        active={activeActionIndex === `control_${i}`}
-                        tooltip={tooltip}
-                    >{content}</RoundedControlButton>
+                        onClick={() => handleClick(control)}
+                        tooltip={control.tooltip}
+                    >{control.content}</RoundedControlButton>
                 )}
             </div>
             <PlasmaButton loading={loading} active={!isNotActive} onClick={handleClickPlasmaButton} />

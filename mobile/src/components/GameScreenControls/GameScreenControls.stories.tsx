@@ -26,5 +26,7 @@ export const Default: Story = {
         notActiveControls: [
             { content: 'X', onClick: () => {} },
         ],
+        onAcceptDraw: () => {},
+        onDeclineDraw: () => {},
     },
 };
