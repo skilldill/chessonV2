@@ -47,11 +47,12 @@ ENV CYPRESS_INSTALL_BINARY=0
 
 COPY package*.json ./
 
-RUN npm config set registry https://registry.npmmirror.com && \
-  npm ci --verbose \
+RUN npm config set registry https://registry.npmjs.org/ && \
+  npm ci \
     --legacy-peer-deps \
     --no-audit \
     --no-fund \
+    --prefer-offline \
     --fetch-retries=10 \
     --fetch-retry-mintimeout=30000 \
     --fetch-retry-maxtimeout=300000 \
