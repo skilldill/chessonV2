@@ -45,14 +45,8 @@ export const BotDifficultyModal = ({
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
-      <button
-        type="button"
-        aria-label={t("common.close")}
-        onClick={() => !isCreating && onClose()}
-        className="absolute inset-0 bg-black/70 backdrop-blur-[2px] cursor-default"
-      />
-      <div className="relative w-full max-w-md rounded-2xl border border-white/15 bg-[#121217] p-6 shadow-2xl">
+    <div className="fixed top-[0px] right-[0px] bottom-[0px] left-[0px] z-[100] overflow-y-auto p-[40px] backdrop-blur-sm">
+      <div className="relative w-full max-w-md rounded-2xl border border-white/15 bg-[#121217] p-6 shadow-2xl m-auto">
         <h4 className="text-white text-xl font-semibold text-center">
           {t("bot.title")}
         </h4>

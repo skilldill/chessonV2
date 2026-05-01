@@ -29,7 +29,7 @@ const RoundedControlButton = ({ children, disabled, onClick, className = '', too
         <div className="relative">
             <div
                 className={cn(
-                    'min-w-[52px] min-h-[52px] rounded-full bg-black/60 backdrop-blur-xl flex items-center justify-center cursor-pointer border border-[#364153] transition-all duration-300 hover:scale-105 active:scale-95',
+                    'min-w-[64px] min-h-[64px] rounded-full bg-black/60 backdrop-blur-xl flex items-center justify-center cursor-pointer border border-[#364153] transition-all duration-300 hover:scale-105 active:scale-95',
                     { 'opacity-60 cursor-not-allowed hover:scale-100 active:scale-100': disabled },
                     className,
                 )}
@@ -271,8 +271,8 @@ export const GameScreenControls: FC<GameScreenControlsProps> = ({
                 )}
             </div>
 
-            <div className={cn("absolute top-0 w-full z-10 flex items-center justify-center gap-[28px] scale-0 transition-all duration-300", {
-                "scale-100": showButtons,
+            <div className={cn("absolute top-0 w-full z-10 flex items-center justify-center gap-[36px] scale-0 transition-all duration-300", {
+                "scale-110": showButtons,
                 "top-[-100px]": showButtons,
                 [styles.bounce]: showButtons,
             })}>
