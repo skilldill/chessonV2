@@ -1,7 +1,6 @@
 /// <reference types="vitest/config" />
 /// <reference types="vitest" />
 
-import legacy from '@vitejs/plugin-legacy';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
@@ -17,7 +16,6 @@ export default defineConfig(async () => {
   const config: any = {
     plugins: [
       react(),
-      legacy(),
       tailwindcss(),
       // Fix for Storybook MDX file:// imports
       {
@@ -70,41 +68,6 @@ export default defineConfig(async () => {
       },
     },
   };
-
-  // Only add Vitest config if modules can be imported (skip when Storybook loads config)
-  try {
-    const { storybookTest } = await import('@storybook/addon-vitest/vitest-plugin');
-    const { playwright } = await import('@vitest/browser-playwright');
-    
-    config.test = {
-      globals: true,
-      environment: 'jsdom',
-      setupFiles: './src/setupTests.ts',
-      projects: [{
-        extends: true,
-        plugins: [
-        // The plugin will run tests for the stories defined in your Storybook config
-        // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
-        storybookTest({
-          configDir: path.join(dirname, '.storybook')
-        })],
-        test: {
-          name: 'storybook',
-          browser: {
-            enabled: true,
-            headless: true,
-            provider: playwright({}),
-            instances: [{
-              browser: 'chromium'
-            }]
-          },
-          setupFiles: ['.storybook/vitest.setup.ts']
-        }
-      }]
-    };
-  } catch (error) {
-    // Silently skip Vitest config when modules aren't available (e.g., when Storybook loads config)
-  }
 
   return config;
 });
