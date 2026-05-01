@@ -48,7 +48,7 @@ ENV CYPRESS_INSTALL_BINARY=0
 COPY package*.json ./
 
 RUN npm config set registry https://registry.npmjs.org/ && \
-  npm ci \
+  npm ci --verbose \
     --legacy-peer-deps \
     --no-audit \
     --no-fund \
