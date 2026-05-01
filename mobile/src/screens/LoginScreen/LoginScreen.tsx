@@ -1,4 +1,3 @@
-import { IonPage, IonContent } from '@ionic/react';
 import { useState, useEffect } from 'react';
 import { API_PREFIX } from '../../constants/api';
 import { useTranslation } from 'react-i18next';
@@ -55,9 +54,7 @@ const LoginScreen: React.FC = () => {
   };
 
   return (
-    <IonPage>
-      <IonContent className="ion-padding" fullscreen>
-        <div className="w-full min-h-full flex flex-col justify-center items-center py-6 px-4">
+        <div className="w-full min-h-full flex flex-col justify-center items-center py-6 px-4" style={{ height: window.innerHeight }}>
           <div className="auth-card relative flex flex-col items-center fadeIn" style={{ minHeight: 320 }}>
             <div className="auth-card-blur" />
             <div className="w-full flex flex-col items-center relative z-10 gap-6 py-8 px-5">
@@ -131,8 +128,6 @@ const LoginScreen: React.FC = () => {
             </div>
           </div>
         </div>
-      </IonContent>
-    </IonPage>
   );
 };
 

@@ -1,4 +1,3 @@
-import { IonPage, IonContent, IonSpinner } from '@ionic/react';
 import { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { API_PREFIX } from '../../constants/api';
@@ -40,13 +39,9 @@ export const HomeRedirect = () => {
   // Показываем загрузку во время проверки авторизации
   if (checking) {
     return (
-      <IonPage>
-        <IonContent className="ion-padding">
-          <div className="flex justify-center items-center h-full">
-            <IonSpinner name="crescent" />
-          </div>
-        </IonContent>
-      </IonPage>
+      <div className="flex justify-center items-center h-full">
+        {/* Spinner here */}
+      </div>
     );
   }
 
@@ -57,12 +52,8 @@ export const HomeRedirect = () => {
 
   // Если авторизован, редирект уже произошел, но на всякий случай показываем загрузку
   return (
-    <IonPage>
-      <IonContent className="ion-padding">
-        <div className="flex justify-center items-center h-full">
-          <IonSpinner name="crescent" />
-        </div>
-      </IonContent>
-    </IonPage>
+    <div className="flex justify-center items-center h-full">
+      {/* Spinner here */}
+    </div>
   );
 };

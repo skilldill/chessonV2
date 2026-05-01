@@ -1,4 +1,3 @@
-import { IonContent, IonPage, IonSpinner } from '@ionic/react';
 import { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { API_PREFIX } from '../../constants/api';
@@ -36,13 +35,9 @@ export const MainAuthGuard = () => {
 
   if (checking) {
     return (
-      <IonPage>
-        <IonContent className="ion-padding">
-          <div className="flex justify-center items-center h-full">
-            <IonSpinner name="crescent" />
-          </div>
-        </IonContent>
-      </IonPage>
+      <div className="flex justify-center items-center h-full">
+        {/* spinner here */}
+      </div>
     );
   }
 

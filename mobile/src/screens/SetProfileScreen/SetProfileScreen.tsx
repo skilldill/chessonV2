@@ -1,4 +1,3 @@
-import { IonPage, IonContent, IonText } from '@ionic/react';
 import { useState } from 'react';
 import { MemAvatarSelect } from '../../components/MemAvatarSelect/MemAvatarSelect';
 import { ChessButton } from '../../components/ChessButton/ChessButton';
@@ -16,57 +15,51 @@ const SetProfileScreen: React.FC<SetProfileScreenProps> = ({ onSetUserName }) =>
   const [avatarIndex, setSelectedAvatarIndex] = useState(0);
 
   const handleSelectAvatar = (index: number) => {
-      setSelectedAvatarIndex(index);
+    setSelectedAvatarIndex(index);
   };
 
   const handleChangeNickname = (event: React.ChangeEvent<HTMLInputElement>) => {
-      const value = event.target.value;
-      if (value.length <= MAX_NICKNAME_LENGTH) {
-          setNickname(value);
-      }
+    const value = event.target.value;
+    if (value.length <= MAX_NICKNAME_LENGTH) {
+      setNickname(value);
+    }
   }
 
   const hanleToPlay = () => {
-      const cleanedNickname = nickname.trim();
-      if (!cleanedNickname) {
-          return;
-      }
+    const cleanedNickname = nickname.trim();
+    if (!cleanedNickname) {
+      return;
+    }
 
-      onSetUserName(cleanedNickname, avatarIndex);
+    onSetUserName(cleanedNickname, avatarIndex);
   }
 
   return (
-    <IonPage>
-      <IonContent>
-        <form className="grid grid-rows-[1fr_88px] h-full">
-          <div className="flex flex-col justify-center items-center gap-[20px]">
-            <IonText>
-              <h1 
-                className="text-white text-center" 
-                style={{ fontSize: 30, margin: 0, fontWeight: 600 }}
-              >
-                {t("setProfile.title")}
-              </h1>
-            </IonText>
-            <div className="w-full px-[36px] py-[20px]">
-              <input
-                type="text"
-                value={nickname}
-                onChange={handleChangeNickname}
-                placeholder={t("setProfile.yourName")}
-                className="bg-white/4 w-full h-[46px] px-[12px] py-[11px] text-base leading-[24px] placeholder-[#99A1AF] rounded-md focus:border-indigo-700 focus:outline-none focus:border-[2px] focus:border-[#615FFF] focus:px-[10px] focus:bg-black"
-              />
-            </div>
-            <div className="w-full px-[36px] py-[20px]">
-              <MemAvatarSelect onSelectAvatar={handleSelectAvatar} initialSelected={avatarIndex} />
-            </div>
-          </div>
-          <div className="w-full px-[36px] py-[20px]">
-            <ChessButton onClick={hanleToPlay}>{t("setProfile.toPlay")}</ChessButton>
-          </div>
-        </form>
-      </IonContent>
-    </IonPage>
+    <form className="grid grid-rows-[1fr_88px] h-full">
+      <div className="flex flex-col justify-center items-center gap-[20px]">
+        <h1
+          className="text-white text-center"
+          style={{ fontSize: 30, margin: 0, fontWeight: 600 }}
+        >
+          {t("setProfile.title")}
+        </h1>
+        <div className="w-full px-[36px] py-[20px]">
+          <input
+            type="text"
+            value={nickname}
+            onChange={handleChangeNickname}
+            placeholder={t("setProfile.yourName")}
+            className="bg-white/4 w-full h-[46px] px-[12px] py-[11px] text-base leading-[24px] placeholder-[#99A1AF] rounded-md focus:border-indigo-700 focus:outline-none focus:border-[2px] focus:border-[#615FFF] focus:px-[10px] focus:bg-black"
+          />
+        </div>
+        <div className="w-full px-[36px] py-[20px]">
+          <MemAvatarSelect onSelectAvatar={handleSelectAvatar} initialSelected={avatarIndex} />
+        </div>
+      </div>
+      <div className="w-full px-[36px] py-[20px]">
+        <ChessButton onClick={hanleToPlay}>{t("setProfile.toPlay")}</ChessButton>
+      </div>
+    </form>
   );
 };
 

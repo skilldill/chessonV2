@@ -3,7 +3,6 @@ import { getClockTime } from "../../utils/getClockTime";
 import cn from 'classnames';
 import { CircleProgress } from "../CircleProgress/CircleProgress";
 import { useScreenSize } from "../../hooks/useScreenSize";
-import { IonImg } from "@ionic/react";
 
 type ChessTimerWithProfileProps = {
     initSeconds: number;
@@ -46,7 +45,7 @@ export const ChessTimerWithProfile: FC<ChessTimerWithProfileProps> = (props) => 
                         height: '32px', // 24
                     }}
                 >
-                    {avatar && <IonImg src={avatar} className="h-full w-full object-cover" />}
+                    {avatar && <img src={avatar} className="h-full w-full object-cover" />}
                 </div>
                 <span 
                     className="text-sm font-medium truncate min-w-0" 

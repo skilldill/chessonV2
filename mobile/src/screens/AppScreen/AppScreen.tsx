@@ -7,7 +7,6 @@ import GameScreen from '../GameScreen/GameScreen';
 import WaitingScreen from '../WaitingScreen/WaitingScreen';
 import { useGameStorage } from '../../hooks/useGameStorage';
 import { useAutoConnect } from '../../hooks/useAutoConnect';
-import { IonPage, IonContent, IonSpinner } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
 
 const QUICK_PLAY_ROOM_ID_KEY = "quickPlayRoomId";
@@ -28,30 +27,26 @@ function ConnectingToGameOverlay({ onLeave }: { onLeave: () => void }) {
   };
 
   return (
-    <IonPage>
-      <IonContent className="ion-padding">
-        <div className="flex flex-col justify-center items-center h-full gap-6 px-4">
-          <div className="flex flex-col items-center gap-4">
-            <IonSpinner name="crescent" />
-            <p className="text-white/85 text-sm">{t("app.connectingToGame")}</p>
-          </div>
-          {showLeaveOption && (
-            <div className="w-full max-w-sm flex flex-col items-center gap-3">
-              <p className="text-white/70 text-sm text-center">
-                {t("app.connectionSlow")}
-              </p>
-              <button
-                type="button"
-                onClick={handleLeave}
-                className="btn-client w-full rounded-xl px-6 py-4 bg-white/10 border border-white/15 text-white font-semibold active:bg-white/15 transition-all duration-200 active:scale-[0.98] touch-manipulation -webkit-tap-highlight-color: transparent"
-              >
-                {t("common.leave")}
-              </button>
-            </div>
-          )}
+    <div className="flex flex-col justify-center items-center h-full gap-6 px-4">
+      <div className="flex flex-col items-center gap-4">
+        {/* Spinner here  */}
+        <p className="text-white/85 text-sm">{t("app.connectingToGame")}</p>
+      </div>
+      {showLeaveOption && (
+        <div className="w-full max-w-sm flex flex-col items-center gap-3">
+          <p className="text-white/70 text-sm text-center">
+            {t("app.connectionSlow")}
+          </p>
+          <button
+            type="button"
+            onClick={handleLeave}
+            className="btn-client w-full rounded-xl px-6 py-4 bg-white/10 border border-white/15 text-white font-semibold active:bg-white/15 transition-all duration-200 active:scale-[0.98] touch-manipulation -webkit-tap-highlight-color: transparent"
+          >
+            {t("common.leave")}
+          </button>
         </div>
-      </IonContent>
-    </IonPage>
+      )}
+    </div>
   );
 }
 
@@ -99,13 +94,9 @@ const AppScreen: React.FC = () => {
   // Показываем загрузку пока проверяем авторизацию
   if (checkingAuth) {
     return (
-      <IonPage>
-        <IonContent className="ion-padding">
-          <div className="flex justify-center items-center h-full">
-            <IonSpinner name="crescent" />
-          </div>
-        </IonContent>
-      </IonPage>
+      <div className="flex justify-center items-center h-full">
+        {/* Spinner here  */}
+      </div>
     );
   }
 
