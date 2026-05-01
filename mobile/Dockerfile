@@ -49,6 +49,7 @@ COPY package*.json ./
 
 RUN npm config set registry https://registry.npmmirror.com && \
   npm ci \
+    --legacy-peer-deps \
     --no-audit \
     --no-fund \
     --fetch-retries=10 \
