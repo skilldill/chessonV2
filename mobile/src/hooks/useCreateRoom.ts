@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { API_PREFIX } from "../constants/api";
-import { CapacitorHttp } from '@capacitor/core';
 
 const BOT_GUEST_PROFILE_KEY = "botGuestProfile";
 
@@ -24,9 +23,13 @@ export const useCreateRoom = () => {
 
             const timeSeconds = roomData.timeMinutes * 60;
 
-            const response = await CapacitorHttp.post({
-                url: API_PREFIX + '/rooms',
-                data: {
+            const response = await fetch(API_PREFIX + '/rooms', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify({
                     whiteTimer: timeSeconds,
                     blackTimer: timeSeconds,
                     increment: roomData.incrementSeconds,
@@ -34,10 +37,14 @@ export const useCreateRoom = () => {
                     withAIhints: roomData.withAIhints,
                     botDifficulty: roomData.botDifficulty,
                     botMoveTimeMs: roomData.botMoveTimeMs
-                }
-            })
+                }),
+            });
 
-            const data = response.data;
+            if (!response.ok) {
+                throw new Error(`Failed to create room: ${response.status}`);
+            }
+
+            const data = await response.json();
 
             if (data.roomId) {
                 if (roomData.vsBot) {

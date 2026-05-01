@@ -4,7 +4,6 @@ import ShareLinkSVG from '../../assets/shared-link.svg';
 import { useParams } from 'react-router';
 import cn from 'classnames';
 import { useState } from 'react';
-import { Share } from '@capacitor/share';
 import { useTranslation } from 'react-i18next';
 
 const SITE_BASE_URL = import.meta.env.VITE_TEST_MODE ? 'http://localhost:' + window.location.port : import.meta.env.VITE_MAIN_SITE;
@@ -33,12 +32,16 @@ const WaitingScreen: React.FC<WaitingScreenProps> = ({ onLeave }) => {
 
   const handleShare = async () => {
     try {
-      await Share.share({
-        title: 'Chess Game Invite',
-        text: `${t("share.title")}: ${roomId}`,
-        url: linkForShare,
-        dialogTitle: t("share.title"),
-      });
+      if (navigator.share) {
+        await navigator.share({
+          title: 'Chess Game Invite',
+          text: `${t("share.title")}: ${roomId}`,
+          url: linkForShare,
+        });
+        return;
+      }
+
+      await handleCopy();
     } catch (err) {
       // Пользователь отменил шаринг или произошла ошибка
       // Fallback: копируем в буфер обмена

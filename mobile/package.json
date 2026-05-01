@@ -6,23 +6,12 @@
   "scripts": {
     "dev": "VITE_TEST_MODE=true vite",
     "build": "tsc && vite build",
-    "rebuild:ios": "npm run build && npx cap sync ios",
-    "restart:ios": "npm run rebuild:ios && npm run run:ios",
-    "sync:ios": "npx cap sync ios",
-    "run:ios": "npx cap run ios",
     "preview": "vite preview",
     "test.e2e": "cypress run",
     "test.unit": "vitest",
     "lint": "eslint"
   },
   "dependencies": {
-    "@capacitor/app": "7.1.0",
-    "@capacitor/core": "7.4.4",
-    "@capacitor/haptics": "7.0.2",
-    "@capacitor/ios": "^7.4.4",
-    "@capacitor/keyboard": "7.0.3",
-    "@capacitor/share": "^7.0.3",
-    "@capacitor/status-bar": "7.0.3",
     "@tailwindcss/vite": "^4.1.18",
     "@types/react-router": "^5.1.20",
     "@types/react-router-dom": "^5.3.3",
@@ -38,7 +27,6 @@
     "tailwindcss": "^4.1.18"
   },
   "devDependencies": {
-    "@capacitor/cli": "7.4.4",
     "@testing-library/dom": ">=7.21.4",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^16.2.0",

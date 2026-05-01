@@ -1,4 +1,3 @@
-import { CapacitorHttp } from '@capacitor/core';
 import { API_PREFIX } from '../constants/api';
 import { GameState } from '../types';
 import { useGameStorage } from './useGameStorage';
@@ -9,11 +8,15 @@ export const useRestoreGame = () => {
 
     const fetchGameState = async (gameId: string) => {
         try {
-            const response = await CapacitorHttp.get({
-                url: API_PREFIX + '/rooms/' + gameId,
-            })
+            const response = await fetch(API_PREFIX + '/rooms/' + gameId, {
+                credentials: 'include',
+            });
 
-            const data = (response.data as { gameState: GameState });
+            if (!response.ok) {
+                throw new Error(`Failed to fetch game data: ${response.status}`);
+            }
+
+            const data = await response.json() as { gameState: GameState };
 
             return data;
         } catch (err) {
