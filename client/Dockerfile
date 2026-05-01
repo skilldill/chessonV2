@@ -4,6 +4,8 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 COPY . .
 
+ENV CYPRESS_INSTALL_BINARY=0
+
 RUN npm config set registry https://registry.npmmirror.com && \
   npm ci \
   --fetch-retries=5 \
