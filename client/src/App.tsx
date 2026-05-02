@@ -36,6 +36,7 @@ import Cat8PNG from "./assets/avatars/cat_8.png";
 import { useRestoreGame } from "./hooks/useRestoreGame";
 import { useUserAppearancePreload } from "./hooks/useUserAppearancePreload";
 import { CreateCustomFenRoomScreen } from "./screens/CreateCustomFenRoomScreen/CreateCustomFenRoomScreen";
+import { CreateTournamentScreen, TournamentRoomScreen } from "./screens/TournamentScreen/TournamentScreen";
 
 // Все изображения для предзагрузки (вынесено за пределы компонента)
 const ALL_IMAGES = [
@@ -66,6 +67,8 @@ function AppRoutes() {
       <Route exact path="/main" component={MainAuthGuard} />
       <Route exact path="/quick-play" component={QuickPlayWaitingScreen} />
       <Route exact path="/create-room" component={CreateRoomScreen} />
+      <Route exact path="/tournaments/new" component={CreateTournamentScreen} />
+      <Route exact path="/tournaments/:tournamentId" component={TournamentRoomScreen} />
       <Route path="/game/:roomId" component={AppScreen} />
       <Route exact path="/custom/room" component={CreateCustomFenRoomScreen} />
       <Route exact path="/verify-email" component={VerifyEmailScreen} />

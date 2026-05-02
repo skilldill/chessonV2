@@ -4,6 +4,7 @@ import { QuickPlayButton } from "../../components/QuickPlayButton/QuickPlayButto
 import { useQuickPlayEntry } from "../../hooks/useQuickPlayEntry";
 import { AppVersionCaption } from "../../components/AppVersionCaption/AppVersionCaption";
 import { AppTopBar } from "../../components/AppTopBar/AppTopBar";
+import { Link } from "react-router-dom";
 
 export const HomeScreen = () => {
   const { playersInRandomQueue, quickPlayLabel, openQuickPlay } = useQuickPlayEntry();
@@ -19,6 +20,13 @@ export const HomeScreen = () => {
             playersInQueue={playersInRandomQueue}
           />
         <CreateRoomSection />
+        <Link
+          to="/tournaments/new"
+          className="flex min-h-[72px] w-full flex-col justify-center rounded-xl border border-white/15 bg-white/5 px-5 py-4 text-white transition-colors duration-200 hover:bg-white/10"
+        >
+          <span className="text-[18px] font-bold">Создать турнир</span>
+          <span className="text-sm text-white/60">Швейцарская система с авто-жеребьевкой</span>
+        </Link>
         <AppVersionCaption />
       </div>
     </div>

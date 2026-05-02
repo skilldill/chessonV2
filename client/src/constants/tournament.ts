@@ -1,0 +1,2 @@
+export const TOURNAMENT_MAX_PLAYERS = 50;
+export const TOURNAMENT_MAX_ROUNDS = 50;

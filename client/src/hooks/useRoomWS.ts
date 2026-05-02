@@ -16,6 +16,8 @@ import { WS_URL, API_PREFIX } from "../constants/api";
 // В режиме разработки используем прокси Vite, в production - прямой URL
 
 const INITIAL_GAME_STATE = {
+    gameType: undefined,
+    tournamentId: undefined,
     currentFEN: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
     moveHistory: [],
     currentPlayer: "white" as ChessColor,

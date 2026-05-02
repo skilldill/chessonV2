@@ -3,8 +3,10 @@ import { connectDB } from './config/database';
 import { ElysiaWS } from 'elysia/ws';
 import { v4 as uuidv4 } from 'uuid';
 import { INITIAL_FEN } from './constants/chess';
+import { TOURNAMENT_MAX_PLAYERS, TOURNAMENT_MAX_ROUNDS, TOURNAMENT_NEXT_ROUND_DELAY_SECONDS } from './constants/tournament';
 import { User } from './models/User';
 import { Game } from './models/Game';
+import { Tournament } from './models/Tournament';
 import { hashPassword, comparePassword } from './utils/password';
 import { createToken, verifyToken } from './utils/jwt';
 import { sendVerificationEmail, sendPasswordResetEmail, sendTestEmail } from './utils/email';
@@ -89,6 +91,8 @@ type PlayerInfo = {
 };
 
 type GameState = {
+    gameType?: "tournament";
+    tournamentId?: string;
     currentFEN: string;
     moveHistory: MoveData[];
     currentPlayer: "white" | "black";
@@ -134,6 +138,11 @@ type Room = {
       allowAIhints?: boolean;
       mode?: "manual" | "random_match";
     };
+    tournament?: {
+      tournamentId: string;
+      roundNumber: number;
+      matchId: string;
+    };
 };
 
 type RandomMatchQueueEntry = {
@@ -156,6 +165,18 @@ const randomMatchQueueByTime = new Map<string, RandomMatchQueueEntry[]>();
 const randomMatchUserToTimeKey = new Map<string, string>();
 const randomMatchAssignments = new Map<string, RandomMatchAssignment>();
 const botMoveInProgressRooms = new Set<string>();
+const tournamentClients = new Map<string, Map<string, ElysiaWS<any, any>>>();
+const tournamentStartTimers = new Map<string, NodeJS.Timeout>();
+
+function clearTournamentStartTimer(tournamentId: string) {
+  const existingTimer = tournamentStartTimers.get(tournamentId);
+  if (!existingTimer) {
+    return;
+  }
+
+  clearTimeout(existingTimer);
+  tournamentStartTimers.delete(tournamentId);
+}
 
 // Метрики для мониторинга
 const metrics = {
@@ -456,6 +477,7 @@ async function saveGameToDatabase(room: Room, roomId: string) {
       // Если игра уже существует, не обновляем её - данные уже сохранены
       // Это предотвращает перезапись данных при реконнекте клиента
       console.log(`⏭️ Game already exists in database: roomId=${roomId}, skipping save to prevent data overwrite`);
+      await handleTournamentGameFinished(roomId, room);
       return;
     }
     
@@ -486,6 +508,7 @@ async function saveGameToDatabase(room: Room, roomId: string) {
       // Сохраняем в базу данных
       const game = new Game(gameData);
       await game.save();
+      await handleTournamentGameFinished(roomId, room);
       
       console.log(`✅ Game saved to database: roomId=${roomId}, result=${gameData.result.resultType}, moveHistory length=${game.moveHistory?.length || 0}`);
   } catch (error) {
@@ -798,6 +821,601 @@ async function getAuthenticatedUserFromHeaders(headers: Record<string, string | 
     userName: user.name || user.login,
     avatar: user.avatar || '0'
   };
+}
+
+function tournamentParticipantId() {
+  return `p_${generateShortId()}_${Math.random().toString(36).slice(2, 6)}`;
+}
+
+function tournamentRoundId() {
+  return `r_${generateShortId()}_${Math.random().toString(36).slice(2, 6)}`;
+}
+
+function tournamentMatchId() {
+  return `m_${generateShortId()}_${Math.random().toString(36).slice(2, 6)}`;
+}
+
+function normalizeTournamentTitle(rawTitle: unknown) {
+  const title = typeof rawTitle === 'string' ? rawTitle.trim() : '';
+  return title.slice(0, 120);
+}
+
+function normalizeTournamentNickname(rawNickname: unknown) {
+  const nickname = typeof rawNickname === 'string' ? rawNickname.trim() : '';
+  return nickname.slice(0, 40);
+}
+
+function getCompletedTournamentStandings(tournament: any) {
+  const standings = new Map<string, any>();
+  const opponentsByParticipant = new Map<string, string[]>();
+
+  for (const participant of tournament.participants || []) {
+    if (participant.removed && !(tournament.rounds || []).some((round: any) =>
+      (round.matches || []).some((match: any) => match.playerAId === participant.id || match.playerBId === participant.id)
+    )) {
+      continue;
+    }
+
+    standings.set(participant.id, {
+      participantId: participant.id,
+      nickname: participant.nickname,
+      avatar: participant.avatar,
+      active: participant.active && !participant.removed,
+      connected: participant.connected,
+      points: 0,
+      buchholz: 0,
+      wins: 0,
+      draws: 0,
+      losses: 0,
+      byes: 0
+    });
+    opponentsByParticipant.set(participant.id, []);
+  }
+
+  for (const round of tournament.rounds || []) {
+    for (const match of round.matches || []) {
+      if (match.status !== 'completed') {
+        continue;
+      }
+
+      const playerA = standings.get(match.playerAId);
+      if (!playerA) {
+        continue;
+      }
+
+      if (!match.playerBId) {
+        if (match.result === 'bye') {
+          playerA.points += 1;
+          playerA.byes += 1;
+        } else if (match.result === 'absent') {
+          playerA.losses += 1;
+        }
+        continue;
+      }
+
+      const playerB = standings.get(match.playerBId);
+      if (!playerB) {
+        continue;
+      }
+
+      opponentsByParticipant.get(match.playerAId)?.push(match.playerBId);
+      opponentsByParticipant.get(match.playerBId)?.push(match.playerAId);
+
+      if (match.result === 'playerA') {
+        playerA.points += 1;
+        playerA.wins += 1;
+        playerB.losses += 1;
+      } else if (match.result === 'playerB') {
+        playerB.points += 1;
+        playerB.wins += 1;
+        playerA.losses += 1;
+      } else if (match.result === 'draw') {
+        playerA.points += 0.5;
+        playerB.points += 0.5;
+        playerA.draws += 1;
+        playerB.draws += 1;
+      }
+    }
+  }
+
+  for (const [participantId, standing] of standings.entries()) {
+    const opponents = opponentsByParticipant.get(participantId) || [];
+    standing.points = Math.round(standing.points * 100) / 100;
+    standing.buchholz = Math.round(opponents.reduce((sum, opponentId) => {
+      return sum + (standings.get(opponentId)?.points || 0);
+    }, 0) * 100) / 100;
+  }
+
+  return [...standings.values()].sort((left, right) => {
+    if (right.points !== left.points) return right.points - left.points;
+    if (right.buchholz !== left.buchholz) return right.buchholz - left.buchholz;
+    if (right.wins !== left.wins) return right.wins - left.wins;
+    return left.nickname.localeCompare(right.nickname, 'ru');
+  });
+}
+
+function buildTournamentResponse(tournament: any) {
+  const plain = typeof tournament.toObject === 'function' ? tournament.toObject() : tournament;
+  return {
+    id: plain._id?.toString?.() || plain.id,
+    title: plain.title,
+    roundsCount: plain.roundsCount,
+    timeControl: {
+      timeMinutes: plain.timeControl?.timeMinutes ?? 10,
+      incrementSeconds: plain.timeControl?.incrementSeconds ?? 0
+    },
+    creatorUserId: plain.creatorUserId?.toString?.() || plain.creatorUserId,
+    status: plain.status,
+    participants: (plain.participants || []).map((participant: any) => ({
+      id: participant.id,
+      userId: participant.userId?.toString?.() || participant.userId || null,
+      nickname: participant.nickname,
+      avatar: participant.avatar,
+      active: participant.active,
+      removed: participant.removed,
+      connected: participant.connected,
+      joinedAt: participant.joinedAt,
+      leftAt: participant.leftAt
+    })),
+    rounds: (plain.rounds || []).map((round: any) => ({
+      id: round.id,
+      number: round.number,
+      status: round.status,
+      startedAt: round.startedAt,
+      endedAt: round.endedAt,
+      matches: (round.matches || []).map((match: any) => ({
+        id: match.id,
+        playerAId: match.playerAId,
+        playerBId: match.playerBId || null,
+        gameRoomId: match.gameRoomId || null,
+        status: match.status,
+        result: match.result || null,
+        startedAt: match.startedAt,
+        endedAt: match.endedAt
+      }))
+    })),
+    currentRoundNumber: plain.currentRoundNumber,
+    finishAfterCurrentRound: plain.finishAfterCurrentRound,
+    startAt: plain.startAt,
+    waitingForPlayers: shouldWaitBeforeNextTournamentRound(plain) && !allActiveTournamentParticipantsConnected(plain),
+    standings: getCompletedTournamentStandings(plain),
+    createdAt: plain.createdAt,
+    updatedAt: plain.updatedAt
+  };
+}
+
+function broadcastTournament(tournament: any) {
+  const tournamentId = tournament._id?.toString?.() || tournament.id?.toString?.();
+  if (!tournamentId) {
+    return;
+  }
+
+  const clients = tournamentClients.get(tournamentId);
+  if (!clients) {
+    return;
+  }
+
+  const payload = {
+    type: 'tournamentState',
+    tournament: buildTournamentResponse(tournament),
+    time: Date.now()
+  };
+
+  for (const [, client] of clients) {
+    try {
+      client.send(payload);
+    } catch (error) {
+      // Ignore stale websocket sends; close cleanup will remove them.
+    }
+  }
+}
+
+function finishTournament(tournament: any) {
+  clearTournamentStartTimer(tournament._id.toString());
+  tournament.status = 'finished';
+  tournament.startAt = undefined;
+
+  for (const participant of tournament.participants || []) {
+    participant.active = false;
+    participant.connected = false;
+    participant.leftAt = participant.leftAt || new Date();
+  }
+}
+
+function getPreviousTournamentOpponents(tournament: any) {
+  const previousOpponents = new Map<string, Set<string>>();
+  for (const participant of tournament.participants || []) {
+    previousOpponents.set(participant.id, new Set());
+  }
+
+  for (const round of tournament.rounds || []) {
+    for (const match of round.matches || []) {
+      if (!match.playerBId) {
+        continue;
+      }
+      previousOpponents.get(match.playerAId)?.add(match.playerBId);
+      previousOpponents.get(match.playerBId)?.add(match.playerAId);
+    }
+  }
+
+  return previousOpponents;
+}
+
+function generateTournamentSwissMatches(tournament: any) {
+  const absentParticipants: any[] = [];
+  const activeParticipants = (tournament.participants || []).filter((participant: any) => {
+    if (!participant.active || participant.removed) {
+      return false;
+    }
+
+    if (!participant.connected) {
+      absentParticipants.push(participant);
+      return false;
+    }
+
+    return true;
+  });
+
+  const standings = getCompletedTournamentStandings(tournament);
+  const standingsById = new Map(standings.map((standing: any) => [standing.participantId, standing]));
+  const previousOpponents = getPreviousTournamentOpponents(tournament);
+
+  const sortedPlayers = [...activeParticipants].sort((left: any, right: any) => {
+    const leftStanding: any = standingsById.get(left.id);
+    const rightStanding: any = standingsById.get(right.id);
+    if ((rightStanding?.points || 0) !== (leftStanding?.points || 0)) {
+      return (rightStanding?.points || 0) - (leftStanding?.points || 0);
+    }
+    if ((rightStanding?.buchholz || 0) !== (leftStanding?.buchholz || 0)) {
+      return (rightStanding?.buchholz || 0) - (leftStanding?.buchholz || 0);
+    }
+    return left.nickname.localeCompare(right.nickname, 'ru');
+  });
+
+  const matches: any[] = [];
+  const now = new Date();
+
+  for (const participant of absentParticipants) {
+    matches.push({
+      id: tournamentMatchId(),
+      playerAId: participant.id,
+      status: 'completed',
+      result: 'absent',
+      startedAt: now,
+      endedAt: now
+    });
+  }
+
+  if (sortedPlayers.length % 2 === 1) {
+    const byeCounts = new Map<string, number>();
+    for (const round of tournament.rounds || []) {
+      for (const match of round.matches || []) {
+        if (match.result === 'bye') {
+          byeCounts.set(match.playerAId, (byeCounts.get(match.playerAId) || 0) + 1);
+        }
+      }
+    }
+
+    const byePlayer = [...sortedPlayers].sort((left: any, right: any) => {
+      const leftByeCount = byeCounts.get(left.id) || 0;
+      const rightByeCount = byeCounts.get(right.id) || 0;
+      if (leftByeCount !== rightByeCount) return leftByeCount - rightByeCount;
+      const leftStanding: any = standingsById.get(left.id);
+      const rightStanding: any = standingsById.get(right.id);
+      if ((leftStanding?.points || 0) !== (rightStanding?.points || 0)) {
+        return (leftStanding?.points || 0) - (rightStanding?.points || 0);
+      }
+      return left.nickname.localeCompare(right.nickname, 'ru');
+    })[0];
+
+    if (byePlayer) {
+      matches.push({
+        id: tournamentMatchId(),
+        playerAId: byePlayer.id,
+        status: 'completed',
+        result: 'bye',
+        startedAt: now,
+        endedAt: now
+      });
+      const byeIndex = sortedPlayers.findIndex((participant: any) => participant.id === byePlayer.id);
+      sortedPlayers.splice(byeIndex, 1);
+    }
+  }
+
+  while (sortedPlayers.length > 0) {
+    const playerA = sortedPlayers.shift();
+    if (!playerA) break;
+
+    let bestIndex = sortedPlayers.findIndex((candidate: any) =>
+      !previousOpponents.get(playerA.id)?.has(candidate.id)
+    );
+    if (bestIndex < 0) {
+      bestIndex = 0;
+    }
+
+    const playerB = sortedPlayers.splice(bestIndex, 1)[0];
+    if (!playerB) {
+      matches.push({
+        id: tournamentMatchId(),
+        playerAId: playerA.id,
+        status: 'completed',
+        result: 'bye',
+        startedAt: now,
+        endedAt: now
+      });
+      continue;
+    }
+
+    const timeMinutes = Number(tournament.timeControl?.timeMinutes ?? 10);
+    const incrementSeconds = Number(tournament.timeControl?.incrementSeconds ?? 0);
+    const timeSeconds = Math.max(1, Math.floor(timeMinutes)) * 60;
+    const increment = Math.max(0, Math.floor(incrementSeconds));
+
+    const { roomId, room } = createRoomWithConfig({
+      whiteTimer: timeSeconds,
+      blackTimer: timeSeconds,
+      increment,
+      forceDisableAIhints: true,
+      color: 'white'
+    });
+
+    const roundNumber = (tournament.rounds?.length || 0) + 1;
+    const matchId = tournamentMatchId();
+    room.tournament = {
+      tournamentId: tournament._id.toString(),
+      roundNumber,
+      matchId
+    };
+    room.gameState.gameType = 'tournament';
+    room.gameState.tournamentId = tournament._id.toString();
+
+    matches.push({
+      id: matchId,
+      playerAId: playerA.id,
+      playerBId: playerB.id,
+      gameRoomId: roomId,
+      status: 'active',
+      startedAt: new Date()
+    });
+  }
+
+  return matches;
+}
+
+async function startTournamentRound(tournament: any) {
+  if (!tournament || tournament.status === 'finished') {
+    return tournament;
+  }
+
+  clearTournamentStartTimer(tournament._id.toString());
+
+  const activeCount = (tournament.participants || []).filter((participant: any) =>
+    participant.active && !participant.removed
+  ).length;
+
+  if (activeCount < 2) {
+    finishTournament(tournament);
+    tournament.finishAfterCurrentRound = true;
+    await tournament.save();
+    broadcastTournament(tournament);
+    return tournament;
+  }
+
+  const matches = generateTournamentSwissMatches(tournament);
+  const nextRoundNumber = (tournament.rounds?.length || 0) + 1;
+  tournament.rounds.push({
+    id: tournamentRoundId(),
+    number: nextRoundNumber,
+    status: matches.every((match: any) => match.status === 'completed') ? 'completed' : 'active',
+    matches,
+    startedAt: new Date(),
+    endedAt: matches.every((match: any) => match.status === 'completed') ? new Date() : undefined
+  });
+  tournament.currentRoundNumber = nextRoundNumber;
+  tournament.status = 'running';
+  tournament.startAt = undefined;
+
+  if (tournament.rounds[tournament.rounds.length - 1].status === 'completed') {
+    if (nextRoundNumber >= tournament.roundsCount || tournament.finishAfterCurrentRound) {
+      finishTournament(tournament);
+    }
+  }
+
+  await tournament.save();
+  broadcastTournament(tournament);
+  return tournament;
+}
+
+async function scheduleTournamentRoundStart(tournament: any, delaySeconds: number) {
+  if (!tournament || tournament.status === 'finished') {
+    return tournament;
+  }
+
+  const tournamentId = tournament._id.toString();
+  clearTournamentStartTimer(tournamentId);
+
+  tournament.status = 'scheduled';
+  tournament.startAt = new Date(Date.now() + delaySeconds * 1000);
+  await tournament.save();
+  broadcastTournament(tournament);
+
+  const timer = setTimeout(async () => {
+    tournamentStartTimers.delete(tournamentId);
+    const freshTournament = await Tournament.findById(tournamentId);
+    if (freshTournament && freshTournament.status === 'scheduled') {
+      await startTournamentRound(freshTournament);
+    }
+  }, delaySeconds * 1000);
+
+  tournamentStartTimers.set(tournamentId, timer);
+  return tournament;
+}
+
+function getActiveTournamentRound(tournament: any) {
+  return [...(tournament.rounds || [])].reverse().find((round: any) => round.status === 'active');
+}
+
+function getLatestTournamentRound(tournament: any) {
+  const rounds = tournament.rounds || [];
+  return rounds.length > 0 ? rounds[rounds.length - 1] : undefined;
+}
+
+function shouldWaitBeforeNextTournamentRound(tournament: any) {
+  if (!tournament || tournament.status !== 'running' || tournament.startAt || tournament.finishAfterCurrentRound) {
+    return false;
+  }
+
+  const latestRound = getLatestTournamentRound(tournament);
+  return Boolean(latestRound && latestRound.status === 'completed' && latestRound.number < tournament.roundsCount);
+}
+
+function allActiveTournamentParticipantsConnected(tournament: any) {
+  const activeParticipants = (tournament.participants || []).filter((participant: any) =>
+    participant.active && !participant.removed
+  );
+
+  return activeParticipants.length > 0 && activeParticipants.every((participant: any) => participant.connected);
+}
+
+async function maybeScheduleNextTournamentRound(tournament: any) {
+  if (!shouldWaitBeforeNextTournamentRound(tournament)) {
+    return false;
+  }
+
+  if (!allActiveTournamentParticipantsConnected(tournament)) {
+    await tournament.save();
+    broadcastTournament(tournament);
+    return false;
+  }
+
+  await scheduleTournamentRoundStart(tournament, TOURNAMENT_NEXT_ROUND_DELAY_SECONDS);
+  return true;
+}
+
+async function handleTournamentGameFinished(roomId: string, room: Room) {
+  if (!room.tournament) {
+    return;
+  }
+
+  const tournament = await Tournament.findById(room.tournament.tournamentId);
+  if (!tournament) {
+    return;
+  }
+
+  const round = tournament.rounds.find((item: any) => item.number === room.tournament?.roundNumber);
+  const match = round?.matches.find((item: any) => item.id === room.tournament?.matchId);
+  if (!round || !match || match.status === 'completed') {
+    return;
+  }
+
+  let whiteUser: UserData | null = null;
+  let blackUser: UserData | null = null;
+  for (const [, userData] of room.users) {
+    if (userData.color === 'white') whiteUser = userData;
+    if (userData.color === 'black') blackUser = userData;
+  }
+
+  const playerA = tournament.participants.find((participant: any) => participant.id === match.playerAId);
+  const playerB = tournament.participants.find((participant: any) => participant.id === match.playerBId);
+
+  const participantMatchesUser = (participant: any, userData: UserData | null) => {
+    if (!participant || !userData) return false;
+    if (participant.userId && userData.registeredUserId) {
+      return participant.userId.toString() === userData.registeredUserId.toString();
+    }
+    return participant.nickname.toLowerCase() === userData.userName.toLowerCase();
+  };
+
+  const whiteParticipantId = participantMatchesUser(playerA, whiteUser)
+    ? playerA?.id
+    : participantMatchesUser(playerB, whiteUser)
+      ? playerB?.id
+      : undefined;
+  const blackParticipantId = participantMatchesUser(playerA, blackUser)
+    ? playerA?.id
+    : participantMatchesUser(playerB, blackUser)
+      ? playerB?.id
+      : undefined;
+
+  let result: 'playerA' | 'playerB' | 'draw' = 'draw';
+  if (room.gameState.gameResult?.winColor === 'white' && whiteParticipantId) {
+    result = whiteParticipantId === match.playerAId ? 'playerA' : 'playerB';
+  } else if (room.gameState.gameResult?.winColor === 'black' && blackParticipantId) {
+    result = blackParticipantId === match.playerAId ? 'playerA' : 'playerB';
+  } else if (room.gameState.gameResult?.resultType === 'draw' || room.gameState.gameResult?.resultType === 'pat') {
+    result = 'draw';
+  }
+
+  match.status = 'completed';
+  match.result = result;
+  match.endedAt = new Date();
+  match.gameRoomId = roomId;
+
+  if (round.matches.every((item: any) => item.status === 'completed')) {
+    round.status = 'completed';
+    round.endedAt = new Date();
+
+    if (round.number >= tournament.roundsCount || tournament.finishAfterCurrentRound) {
+      finishTournament(tournament);
+    } else {
+      await tournament.save();
+      broadcastTournament(tournament);
+      await maybeScheduleNextTournamentRound(tournament);
+      return;
+    }
+  }
+
+  await tournament.save();
+  broadcastTournament(tournament);
+}
+
+async function completeTournamentMatchesForAbsentParticipant(tournament: any, participantId: string) {
+  const activeRound = getActiveTournamentRound(tournament);
+  if (!activeRound) {
+    return false;
+  }
+
+  let changed = false;
+  for (const match of activeRound.matches || []) {
+    if (match.status !== 'active') {
+      continue;
+    }
+
+    const participantIsInMatch = match.playerAId === participantId || match.playerBId === participantId;
+    if (!participantIsInMatch) {
+      continue;
+    }
+
+    const room = match.gameRoomId ? rooms.get(match.gameRoomId) : undefined;
+    if (room?.gameState.gameStarted) {
+      continue;
+    }
+
+    match.status = 'completed';
+    match.endedAt = new Date();
+    match.result = match.playerAId === participantId ? 'playerB' : 'playerA';
+    changed = true;
+  }
+
+  if (!changed) {
+    return false;
+  }
+
+  if (activeRound.matches.every((match: any) => match.status === 'completed')) {
+    activeRound.status = 'completed';
+    activeRound.endedAt = new Date();
+
+    if (activeRound.number >= tournament.roundsCount || tournament.finishAfterCurrentRound) {
+      finishTournament(tournament);
+    } else {
+      await tournament.save();
+      broadcastTournament(tournament);
+      await maybeScheduleNextTournamentRound(tournament);
+      return true;
+    }
+  }
+
+  return true;
 }
 
 function normalizeGuestId(guestIdRaw: unknown): string | null {
@@ -1948,6 +2566,75 @@ app.get('/api/auth/my-games', async ({ headers, query }) => {
   })
 });
 
+app.get('/api/auth/my-tournaments', async ({ headers, query }) => {
+  try {
+    const authUser = await getAuthenticatedUserFromHeaders(headers as Record<string, string | undefined>);
+    if (!authUser) {
+      return {
+        success: false,
+        error: 'Not authenticated'
+      };
+    }
+
+    const pageParam = typeof query === 'object' && query !== null && 'page' in query ? query.page : undefined;
+    const limitParam = typeof query === 'object' && query !== null && 'limit' in query ? query.limit : undefined;
+    const page = parseInt(String(pageParam || '1')) || 1;
+    const limit = Math.min(parseInt(String(limitParam || '10')) || 10, 50);
+    const skip = (page - 1) * limit;
+    const userId = new mongoose.Types.ObjectId(authUser.userId);
+
+    const queryFilter = {
+      'participants.userId': userId
+    };
+
+    const tournaments = await Tournament.find(queryFilter)
+      .sort({ updatedAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+    const total = await Tournament.countDocuments(queryFilter);
+
+    const tournamentsResponse = tournaments.map((tournament: any) => {
+      const firstRound = Array.isArray(tournament.rounds) ? tournament.rounds[0] : undefined;
+      const lastCompletedRound = Array.isArray(tournament.rounds)
+        ? [...tournament.rounds].reverse().find((round: any) => round.endedAt)
+        : undefined;
+
+      return {
+        id: (tournament._id as mongoose.Types.ObjectId).toString(),
+        title: tournament.title,
+        status: tournament.status,
+        roundsCount: tournament.roundsCount,
+        playedAt: firstRound?.startedAt || tournament.startAt || tournament.createdAt,
+        endedAt: lastCompletedRound?.endedAt || null,
+        createdAt: tournament.createdAt
+      };
+    });
+
+    return {
+      success: true,
+      tournaments: tournamentsResponse,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
+  } catch (error: any) {
+    console.error('Get my tournaments error:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to get tournaments'
+    };
+  }
+}, {
+  query: t.Object({
+    page: t.Optional(t.String()),
+    limit: t.Optional(t.String())
+  })
+});
+
 // Подтверждение email
 app.post('/api/auth/verify-email', async ({ body }) => {
   try {
@@ -2820,6 +3507,356 @@ app.post('/api/random-match/join', async ({ body, headers, set }) => {
   }
 });
 
+app.post('/api/tournaments', async ({ body, headers, set }) => {
+  try {
+    const authUser = await getAuthenticatedUserFromHeaders(headers as Record<string, string | undefined>);
+    if (!authUser) {
+      set.status = 401;
+      return { success: false, error: 'Only registered users can create tournaments' };
+    }
+
+    const title = normalizeTournamentTitle((body as any)?.title);
+    const roundsCountRaw = Number((body as any)?.roundsCount);
+    const roundsCount = Number.isFinite(roundsCountRaw)
+      ? Math.max(1, Math.min(Math.floor(roundsCountRaw), TOURNAMENT_MAX_ROUNDS))
+      : 5;
+    const rawTimeMinutes = Number((body as any)?.timeMinutes);
+    const rawIncrementSeconds = Number((body as any)?.incrementSeconds);
+    const timeMinutes = Number.isFinite(rawTimeMinutes) && rawTimeMinutes > 0
+      ? Math.min(Math.floor(rawTimeMinutes), 120)
+      : 10;
+    const incrementSeconds = Number.isFinite(rawIncrementSeconds) && rawIncrementSeconds >= 0
+      ? Math.min(Math.floor(rawIncrementSeconds), 100)
+      : 0;
+
+    if (!title) {
+      set.status = 400;
+      return { success: false, error: 'Tournament title is required' };
+    }
+
+    const tournament = new Tournament({
+      title,
+      roundsCount,
+      timeControl: {
+        timeMinutes,
+        incrementSeconds
+      },
+      creatorUserId: new mongoose.Types.ObjectId(authUser.userId),
+      participants: [{
+        id: tournamentParticipantId(),
+        userId: new mongoose.Types.ObjectId(authUser.userId),
+        nickname: authUser.userName,
+        avatar: authUser.avatar,
+        active: true,
+        removed: false,
+        connected: true,
+        joinedAt: new Date()
+      }],
+      rounds: [],
+      status: 'setup',
+      currentRoundNumber: 0,
+      finishAfterCurrentRound: false
+    });
+    await tournament.save();
+
+    return { success: true, tournament: buildTournamentResponse(tournament) };
+  } catch (error: any) {
+    console.error('Create tournament error:', error);
+    set.status = 500;
+    return { success: false, error: error.message || 'Failed to create tournament' };
+  }
+});
+
+app.get('/api/tournaments/:id', async ({ params, set }) => {
+  try {
+    const tournament = await Tournament.findById(params.id);
+    if (!tournament) {
+      set.status = 404;
+      return { success: false, error: 'Tournament not found' };
+    }
+
+    return { success: true, tournament: buildTournamentResponse(tournament) };
+  } catch (error: any) {
+    set.status = 500;
+    return { success: false, error: error.message || 'Failed to get tournament' };
+  }
+});
+
+app.post('/api/tournaments/:id/join', async ({ params, body, headers, set }) => {
+  try {
+    const tournament = await Tournament.findById(params.id);
+    if (!tournament) {
+      set.status = 404;
+      return { success: false, error: 'Tournament not found' };
+    }
+
+    if (tournament.status === 'finished') {
+      set.status = 409;
+      return { success: false, error: 'Tournament is already finished' };
+    }
+
+    const authUser = await getAuthenticatedUserFromHeaders(headers as Record<string, string | undefined>);
+    const guestParticipantId = normalizeGuestId((body as any)?.participantId);
+    const nickname = authUser?.userName || normalizeTournamentNickname((body as any)?.nickname);
+    const avatar = authUser?.avatar || String((body as any)?.avatar ?? '0');
+
+    if (!authUser && !nickname) {
+      set.status = 400;
+      return { success: false, error: 'Guest nickname is required' };
+    }
+
+    const existingParticipant = tournament.participants.find((participant: any) => {
+      if (authUser && participant.userId) {
+        return participant.userId.toString() === authUser.userId;
+      }
+      return !participant.userId && guestParticipantId && participant.id === guestParticipantId;
+    });
+
+    if (existingParticipant) {
+      if (existingParticipant.removed) {
+        set.status = 403;
+        return { success: false, error: 'Participant was removed from this tournament' };
+      }
+
+      existingParticipant.active = true;
+      existingParticipant.connected = true;
+      existingParticipant.leftAt = undefined;
+      existingParticipant.nickname = nickname || existingParticipant.nickname;
+      existingParticipant.avatar = avatar || existingParticipant.avatar;
+      await tournament.save();
+      broadcastTournament(tournament);
+      return {
+        success: true,
+        participant: {
+          id: existingParticipant.id,
+          nickname: existingParticipant.nickname,
+          avatar: existingParticipant.avatar
+        },
+        tournament: buildTournamentResponse(tournament)
+      };
+    }
+
+    const currentPlayerCount = tournament.participants.filter((participant: any) => !participant.removed).length;
+    if (currentPlayerCount >= TOURNAMENT_MAX_PLAYERS) {
+      set.status = 409;
+      return {
+        success: false,
+        error: `Tournament player limit is ${TOURNAMENT_MAX_PLAYERS}`
+      };
+    }
+
+    const normalizedExistingNames = new Set(
+      tournament.participants.map((participant: any) => participant.nickname.toLowerCase())
+    );
+    let uniqueNickname = nickname || 'Guest';
+    let suffix = 2;
+    while (normalizedExistingNames.has(uniqueNickname.toLowerCase())) {
+      uniqueNickname = `${nickname} ${suffix}`;
+      suffix++;
+    }
+
+    const participant = {
+      id: guestParticipantId || tournamentParticipantId(),
+      userId: authUser ? new mongoose.Types.ObjectId(authUser.userId) : undefined,
+      nickname: uniqueNickname,
+      avatar,
+      active: true,
+      removed: false,
+      connected: true,
+      joinedAt: new Date()
+    };
+    tournament.participants.push(participant);
+    await tournament.save();
+    broadcastTournament(tournament);
+
+    return {
+      success: true,
+      participant: {
+        id: participant.id,
+        nickname: participant.nickname,
+        avatar: participant.avatar
+      },
+      tournament: buildTournamentResponse(tournament)
+    };
+  } catch (error: any) {
+    console.error('Join tournament error:', error);
+    set.status = 500;
+    return { success: false, error: error.message || 'Failed to join tournament' };
+  }
+});
+
+app.post('/api/tournaments/:id/leave', async ({ params, body, headers, set }) => {
+  try {
+    const tournament = await Tournament.findById(params.id);
+    if (!tournament) {
+      set.status = 404;
+      return { success: false, error: 'Tournament not found' };
+    }
+
+    const authUser = await getAuthenticatedUserFromHeaders(headers as Record<string, string | undefined>);
+    const participantId = normalizeGuestId((body as any)?.participantId);
+    const participant = tournament.participants.find((item: any) =>
+      (authUser && item.userId?.toString() === authUser.userId) || (participantId && item.id === participantId)
+    );
+
+    if (!participant) {
+      set.status = 404;
+      return { success: false, error: 'Participant not found' };
+    }
+
+    participant.active = false;
+    participant.connected = false;
+    participant.leftAt = new Date();
+    await completeTournamentMatchesForAbsentParticipant(tournament, participant.id);
+    await tournament.save();
+    broadcastTournament(tournament);
+    return { success: true, tournament: buildTournamentResponse(tournament) };
+  } catch (error: any) {
+    set.status = 500;
+    return { success: false, error: error.message || 'Failed to leave tournament' };
+  }
+});
+
+app.post('/api/tournaments/:id/remove-player', async ({ params, body, headers, set }) => {
+  try {
+    const authUser = await getAuthenticatedUserFromHeaders(headers as Record<string, string | undefined>);
+    const tournament = await Tournament.findById(params.id);
+    if (!authUser || !tournament || tournament.creatorUserId.toString() !== authUser.userId) {
+      set.status = !tournament ? 404 : 403;
+      return { success: false, error: !tournament ? 'Tournament not found' : 'Only creator can remove players' };
+    }
+
+    const participantId = String((body as any)?.participantId || '');
+    const participant = tournament.participants.find((item: any) => item.id === participantId);
+    if (!participant) {
+      set.status = 404;
+      return { success: false, error: 'Participant not found' };
+    }
+
+    participant.active = false;
+    participant.removed = true;
+    participant.connected = false;
+    participant.leftAt = new Date();
+    await completeTournamentMatchesForAbsentParticipant(tournament, participant.id);
+    await tournament.save();
+    broadcastTournament(tournament);
+    return { success: true, tournament: buildTournamentResponse(tournament) };
+  } catch (error: any) {
+    set.status = 500;
+    return { success: false, error: error.message || 'Failed to remove player' };
+  }
+});
+
+app.post('/api/tournaments/:id/start', async ({ params, body, headers, set }) => {
+  try {
+    const authUser = await getAuthenticatedUserFromHeaders(headers as Record<string, string | undefined>);
+    const tournament = await Tournament.findById(params.id);
+    if (!authUser || !tournament || tournament.creatorUserId.toString() !== authUser.userId) {
+      set.status = !tournament ? 404 : 403;
+      return { success: false, error: !tournament ? 'Tournament not found' : 'Only creator can start tournament' };
+    }
+
+    if (tournament.status === 'finished') {
+      set.status = 409;
+      return { success: false, error: 'Tournament is already finished' };
+    }
+
+    const delaySecondsRaw = Number((body as any)?.delaySeconds || 0);
+    const delaySeconds = [0, 60, 300].includes(delaySecondsRaw) ? delaySecondsRaw : 0;
+    const tournamentId = (tournament._id as mongoose.Types.ObjectId).toString();
+
+    clearTournamentStartTimer(tournamentId);
+
+    if (delaySeconds > 0) {
+      await scheduleTournamentRoundStart(tournament, delaySeconds);
+      return { success: true, tournament: buildTournamentResponse(tournament) };
+    }
+
+    await startTournamentRound(tournament);
+    return { success: true, tournament: buildTournamentResponse(tournament) };
+  } catch (error: any) {
+    console.error('Start tournament error:', error);
+    set.status = 500;
+    return { success: false, error: error.message || 'Failed to start tournament' };
+  }
+});
+
+app.post('/api/tournaments/:id/finish-after-round', async ({ params, headers, set }) => {
+  try {
+    const authUser = await getAuthenticatedUserFromHeaders(headers as Record<string, string | undefined>);
+    const tournament = await Tournament.findById(params.id);
+    if (!authUser || !tournament || tournament.creatorUserId.toString() !== authUser.userId) {
+      set.status = !tournament ? 404 : 403;
+      return { success: false, error: !tournament ? 'Tournament not found' : 'Only creator can finish tournament' };
+    }
+
+    if (tournament.status === 'running') {
+      tournament.finishAfterCurrentRound = true;
+      const activeRound = getActiveTournamentRound(tournament);
+      if (!activeRound) {
+        finishTournament(tournament);
+      }
+      await tournament.save();
+      broadcastTournament(tournament);
+    }
+
+    return { success: true, tournament: buildTournamentResponse(tournament) };
+  } catch (error: any) {
+    set.status = 500;
+    return { success: false, error: error.message || 'Failed to mark final round' };
+  }
+});
+
+app.post('/api/tournaments/:id/force-next-round', async ({ params, headers, set }) => {
+  try {
+    const authUser = await getAuthenticatedUserFromHeaders(headers as Record<string, string | undefined>);
+    const tournament = await Tournament.findById(params.id);
+    if (!authUser || !tournament || tournament.creatorUserId.toString() !== authUser.userId) {
+      set.status = !tournament ? 404 : 403;
+      return { success: false, error: !tournament ? 'Tournament not found' : 'Only creator can start next round' };
+    }
+
+    if (!shouldWaitBeforeNextTournamentRound(tournament)) {
+      return { success: true, tournament: buildTournamentResponse(tournament) };
+    }
+
+    await scheduleTournamentRoundStart(tournament, TOURNAMENT_NEXT_ROUND_DELAY_SECONDS);
+    return { success: true, tournament: buildTournamentResponse(tournament) };
+  } catch (error: any) {
+    set.status = 500;
+    return { success: false, error: error.message || 'Failed to schedule next round' };
+  }
+});
+
+app.post('/api/tournaments/:id/add-round', async ({ params, headers, set }) => {
+  try {
+    const authUser = await getAuthenticatedUserFromHeaders(headers as Record<string, string | undefined>);
+    const tournament = await Tournament.findById(params.id);
+    if (!authUser || !tournament || tournament.creatorUserId.toString() !== authUser.userId) {
+      set.status = !tournament ? 404 : 403;
+      return { success: false, error: !tournament ? 'Tournament not found' : 'Only creator can add rounds' };
+    }
+
+    if (tournament.status === 'finished') {
+      set.status = 409;
+      return { success: false, error: 'Tournament is already finished' };
+    }
+
+    if (tournament.roundsCount >= TOURNAMENT_MAX_ROUNDS) {
+      set.status = 409;
+      return { success: false, error: `Tournament round limit is ${TOURNAMENT_MAX_ROUNDS}` };
+    }
+
+    tournament.roundsCount += 1;
+    await tournament.save();
+    broadcastTournament(tournament);
+    return { success: true, tournament: buildTournamentResponse(tournament) };
+  } catch (error: any) {
+    set.status = 500;
+    return { success: false, error: error.message || 'Failed to add round' };
+  }
+});
+
 app.get('/api/random-match/status', async ({ query, headers, set }) => {
   try {
     cleanupRandomMatchState();
@@ -3204,6 +4241,91 @@ app.get('/api/games/:id', async ({ params }) => {
   }
 });
 
+app.ws('/ws/tournament', {
+  query: t.Object({
+    tournamentId: t.String(),
+    participantId: t.Optional(t.String())
+  }),
+  body: t.Any(),
+
+  async open(ws) {
+    const { tournamentId, participantId } = ws.data.query;
+    const tournament = await Tournament.findById(tournamentId);
+    if (!tournament) {
+      ws.send({ type: 'error', error: 'Tournament not found' });
+      ws.close();
+      return;
+    }
+
+    if (!tournamentClients.has(tournamentId)) {
+      tournamentClients.set(tournamentId, new Map());
+    }
+
+    const clientKey = participantId || `viewer:${generateShortId()}:${Math.random().toString(36).slice(2)}`;
+    tournamentClients.get(tournamentId)!.set(clientKey, ws);
+
+    if (participantId) {
+      const participant = tournament.participants.find((item: any) => item.id === participantId);
+      if (participant && tournament.status !== 'finished') {
+        participant.connected = true;
+        participant.leftAt = undefined;
+        const scheduledNextRound = await maybeScheduleNextTournamentRound(tournament);
+        if (!scheduledNextRound) {
+          await tournament.save();
+          broadcastTournament(tournament);
+        }
+      } else {
+        broadcastTournament(tournament);
+      }
+    }
+
+    ws.send({
+      type: 'tournamentState',
+      tournament: buildTournamentResponse(tournament),
+      time: Date.now()
+    });
+  },
+
+  async message(ws, data: any) {
+    if (data?.type === 'ping') {
+      ws.send({ type: 'pong', time: Date.now() });
+    }
+  },
+
+  async close(ws) {
+    const { tournamentId, participantId } = ws.data.query;
+    const clients = tournamentClients.get(tournamentId);
+    if (!clients) {
+      return;
+    }
+
+    if (participantId && clients.get(participantId) === ws) {
+      clients.delete(participantId);
+    } else {
+      for (const [key, client] of clients) {
+        if (client === ws) {
+          clients.delete(key);
+          break;
+        }
+      }
+    }
+
+    if (clients.size === 0) {
+      tournamentClients.delete(tournamentId);
+    }
+
+    if (participantId) {
+      const tournament = await Tournament.findById(tournamentId);
+      const participant = tournament?.participants.find((item: any) => item.id === participantId);
+      if (tournament && participant && tournament.status !== 'finished') {
+        participant.connected = false;
+        await tournament.save();
+        broadcastTournament(tournament);
+      }
+    }
+  }
+});
+
 app.ws('/ws/room', {
   query: t.Object({
       roomId: t.String(),
@@ -3354,6 +4476,8 @@ app.ws('/ws/room', {
             users: new Map(),
             initialFEN: currentFEN,
             gameState: {
+              gameType: undefined,
+              tournamentId: undefined,
               currentFEN: currentFEN,
               moveHistory: [],
               currentPlayer: currentPlayer,

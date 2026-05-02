@@ -44,6 +44,7 @@ type GameScreenProps = {
     resultMessage?: string;
     offeredDraw?: boolean;
     connectionLost?: boolean;
+    roomId?: string;
 }
 
 export const GameScreen: React.FC<GameScreenProps> = memo(({
@@ -65,6 +66,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
     resultMessage,
     offeredDraw,
     connectionLost = false,
+    roomId,
 }) => {
     const { t } = useTranslation();
     const screenSize = useScreenSize();
@@ -307,6 +309,8 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
             <ResultsActions
                 message={resultMessage}
                 onClose={handleCloseResults}
+                tournamentId={gameState.gameType === "tournament" ? gameState.tournamentId : undefined}
+                tournamentGameRoomId={gameState.gameType === "tournament" ? roomId : undefined}
             />
             <ConnectionNotification
                 message={t('game.connectionLost')}

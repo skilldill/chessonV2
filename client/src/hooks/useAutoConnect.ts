@@ -24,6 +24,7 @@ export const useAutoConnect = ({
     const [checkingAuth, setCheckingAuth] = useState(true);
     const QUICK_PLAY_PROFILE_KEY = "quickPlayProfile";
     const BOT_GUEST_PROFILE_KEY = "botGuestProfile";
+    const TOURNAMENT_GAME_PROFILE_KEY = "tournamentGameProfile";
     const GUEST_CAT_WORDS = [
         "Mad",
         "Fury",
@@ -154,6 +155,24 @@ export const useAutoConnect = ({
                         console.error("Failed to parse bot guest profile:", error);
                     } finally {
                         localStorage.removeItem(BOT_GUEST_PROFILE_KEY);
+                    }
+                }
+
+                const tournamentGameProfileRaw = localStorage.getItem(TOURNAMENT_GAME_PROFILE_KEY);
+                if (tournamentGameProfileRaw) {
+                    try {
+                        const tournamentGameProfile = JSON.parse(tournamentGameProfileRaw) as { roomId?: string; playerName?: string; avatar?: string };
+                        if (tournamentGameProfile.roomId === roomId) {
+                            const playerName = tournamentGameProfile.playerName || "Tournament player";
+                            const avatarIndex = parseInt(tournamentGameProfile.avatar || "0");
+                            localStorage.removeItem(TOURNAMENT_GAME_PROFILE_KEY);
+                            await handleSetUserName(playerName, Number.isNaN(avatarIndex) ? 0 : avatarIndex);
+                            return;
+                        }
+                    } catch (error) {
+                        console.error("Failed to parse tournament game profile:", error);
+                    } finally {
+                        localStorage.removeItem(TOURNAMENT_GAME_PROFILE_KEY);
                     }
                 }
 
