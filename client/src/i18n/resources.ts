@@ -229,6 +229,10 @@ export const resources = {
       "tournament.finishConfirm": "Finish",
       "tournament.returnToRoom": "Return to the tournament room",
       "tournament.backToTournament": "To tournament",
+      "tournament.tieBreakTitle": "Tie-break for prize places",
+      "tournament.tieBreakDescription": "Several players in the top 3 have equal points. Ask them if they want a tie-break, or keep the prize places shared.",
+      "tournament.createTieBreak": "Create tie-break",
+      "tournament.sharePrizePlaces": "Share prize places",
     },
   },
   ru: {
@@ -456,6 +460,10 @@ export const resources = {
       "tournament.finishConfirm": "Завершить",
       "tournament.returnToRoom": "Вернуться в турнирную комнату",
       "tournament.backToTournament": "К турниру",
+      "tournament.tieBreakTitle": "Тай-брейк за призовые места",
+      "tournament.tieBreakDescription": "В топ-3 есть игроки с одинаковыми очками. Можно узнать у участников, хотят ли они тай-брейк, или оставить призовые места разделенными.",
+      "tournament.createTieBreak": "Сформировать тай-брейк",
+      "tournament.sharePrizePlaces": "Разделить призовые места",
     },
   },
 } as const;

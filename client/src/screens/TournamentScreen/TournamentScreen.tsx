@@ -29,6 +29,7 @@ type TournamentMatch = {
 type TournamentRound = {
   id: string;
   number: number;
+  kind?: "swiss" | "tiebreak";
   status: "active" | "completed";
   matches: TournamentMatch[];
 };
@@ -64,6 +65,8 @@ type Tournament = {
   rounds: TournamentRound[];
   currentRoundNumber: number;
   finishAfterCurrentRound: boolean;
+  tieBreakDeclined: boolean;
+  tieBreakAvailable: boolean;
   startAt?: string;
   waitingForPlayers?: boolean;
   standings: TournamentStanding[];
@@ -137,6 +140,27 @@ function formatDelayLabel(seconds: number, t: (key: string, options?: Record<str
     minutes: Math.floor(seconds / 60),
     seconds: seconds % 60,
   });
+}
+
+function getPrizeBadge(place: number) {
+  if (place === 1) return `🥇 ${place}`;
+  if (place === 2) return `🥈 ${place}`;
+  if (place === 3) return `🥉 ${place}`;
+  return `${place}`;
+}
+
+function getPrizeRowClass(place: number) {
+  if (place === 1) return "border-[#d4af37]/40 bg-[#d4af37]/15";
+  if (place === 2) return "border-[#a5adba]/40 bg-[#a5adba]/15";
+  if (place === 3) return "border-[#b87333]/40 bg-[#b87333]/15";
+  return "border-white/10 bg-black/10";
+}
+
+function getPrizeBadgeClass(place: number) {
+  if (place === 1) return "bg-[#d4af37]/25 text-[#f6d97a]";
+  if (place === 2) return "bg-[#a5adba]/25 text-[#d5dae4]";
+  if (place === 3) return "bg-[#b87333]/25 text-[#e9b083]";
+  return "text-white/50";
 }
 
 type TimeOptionModalProps = {
@@ -419,6 +443,22 @@ export function TournamentRoomScreen() {
 
       return firstPlayer.nickname.localeCompare(secondPlayer.nickname, "ru");
     });
+  const hasTieBreakRounds = Boolean(tournament?.rounds.some((round) => round.kind === "tiebreak"));
+  const displayedPlacesByParticipantId = new Map<string, number>();
+  if (tournament?.status === "finished" && !hasTieBreakRounds) {
+    let currentPlace = 0;
+    for (let index = 0; index < sortedParticipants.length; index++) {
+      const participantItem = sortedParticipants[index];
+      const currentStanding = standingsByParticipantId.get(participantItem.id);
+      const previousStanding = standingsByParticipantId.get(sortedParticipants[index - 1]?.id);
+      if (previousStanding && currentStanding?.points === previousStanding.points) {
+        displayedPlacesByParticipantId.set(participantItem.id, currentPlace);
+      } else {
+        currentPlace += 1;
+        displayedPlacesByParticipantId.set(participantItem.id, currentPlace);
+      }
+    }
+  }
   const participantMatch = currentRound?.matches.find((match) =>
     participant?.id && (match.playerAId === participant.id || match.playerBId === participant.id)
   );
@@ -768,6 +808,21 @@ export function TournamentRoomScreen() {
           )}
 
           {error && <div className="rounded-lg border border-red-500/50 bg-red-500/15 p-3 text-sm text-red-200">{error}</div>}
+
+          {!isViewOnly && isCreator && tournament?.tieBreakAvailable && (
+            <div className="grid gap-3 rounded-lg border border-[#555ab9b3] bg-[#4f39f633] p-4">
+              <div>
+                <div className="text-sm font-semibold text-white">{t("tournament.tieBreakTitle")}</div>
+                <div className="mt-1 text-sm text-white/70">{t("tournament.tieBreakDescription")}</div>
+              </div>
+              <button type="button" disabled={isBusy} onClick={() => callAction("/create-tie-break")} className="h-10 rounded-lg bg-[#4f39f6] text-sm font-semibold text-white disabled:opacity-50">
+                {t("tournament.createTieBreak")}
+              </button>
+              <button type="button" disabled={isBusy} onClick={() => callAction("/decline-tie-break")} className="h-10 rounded-lg bg-white/10 text-sm text-white disabled:opacity-50">
+                {t("tournament.sharePrizePlaces")}
+              </button>
+            </div>
+          )}
         </section>
 
         <section className="grid gap-5">
@@ -792,8 +847,21 @@ export function TournamentRoomScreen() {
                     const playerStatus = getParticipantStatus(item);
 
                     return (
-                      <tr key={item.id} className="border-t border-white/10 bg-black/10">
-                        <td className="px-3 py-2 text-white/50">{index + 1}</td>
+                      <tr
+                        key={item.id}
+                        className={`border-t ${tournament?.status === "finished" ? getPrizeRowClass(displayedPlacesByParticipantId.get(item.id) ?? index + 1) : "border-white/10 bg-black/10"}`}
+                      >
+                        <td className="px-3 py-2 text-white/50">
+                          {(() => {
+                            const place = displayedPlacesByParticipantId.get(item.id) ?? index + 1;
+                            if (tournament?.status !== "finished" || place > 3) return place;
+                            return (
+                              <span className={`inline-flex min-w-[52px] items-center justify-center rounded-full px-2 py-0.5 font-semibold ${getPrizeBadgeClass(place)}`}>
+                                {getPrizeBadge(place)}
+                              </span>
+                            );
+                          })()}
+                        </td>
                         <td className="px-3 py-2 font-medium text-white">{item.nickname}</td>
                         {tournament?.status !== "finished" && (
                           <td className={playerStatus.className}>{playerStatus.label}</td>

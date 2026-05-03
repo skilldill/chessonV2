@@ -5,6 +5,7 @@ export type TournamentStatus = 'setup' | 'scheduled' | 'running' | 'finished';
 export type TournamentMatchResult = 'playerA' | 'playerB' | 'draw' | 'bye' | 'absent';
 export type TournamentMatchStatus = 'pending' | 'active' | 'completed';
 export type TournamentRoundStatus = 'active' | 'completed';
+export type TournamentRoundKind = 'swiss' | 'tiebreak';
 
 export interface ITournamentParticipant {
   id: string;
@@ -33,6 +34,7 @@ export interface ITournamentRound {
   id: string;
   number: number;
   status: TournamentRoundStatus;
+  kind: TournamentRoundKind;
   matches: ITournamentMatch[];
   startedAt: Date;
   endedAt?: Date;
@@ -57,6 +59,7 @@ export interface ITournament extends Document {
   rounds: ITournamentRound[];
   currentRoundNumber: number;
   finishAfterCurrentRound: boolean;
+  tieBreakDeclined: boolean;
   startAt?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -104,6 +107,12 @@ const TournamentRoundSchema = new Schema<ITournamentRound>(
   {
     id: { type: String, required: true },
     number: { type: Number, required: true },
+    kind: {
+      type: String,
+      enum: ['swiss', 'tiebreak'],
+      required: true,
+      default: 'swiss'
+    },
     status: {
       type: String,
       enum: ['active', 'completed'],
@@ -143,6 +152,7 @@ const TournamentSchema = new Schema<ITournament>(
     rounds: { type: [TournamentRoundSchema], required: true, default: [] },
     currentRoundNumber: { type: Number, required: true, default: 0 },
     finishAfterCurrentRound: { type: Boolean, required: true, default: false },
+    tieBreakDeclined: { type: Boolean, required: true, default: false },
     startAt: { type: Date, required: false }
   },
   { timestamps: true }

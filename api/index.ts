@@ -975,6 +975,7 @@ function buildTournamentResponse(tournament: any) {
       id: round.id,
       number: round.number,
       status: round.status,
+      kind: round.kind || 'swiss',
       startedAt: round.startedAt,
       endedAt: round.endedAt,
       matches: (round.matches || []).map((match: any) => ({
@@ -990,12 +991,62 @@ function buildTournamentResponse(tournament: any) {
     })),
     currentRoundNumber: plain.currentRoundNumber,
     finishAfterCurrentRound: plain.finishAfterCurrentRound,
+    tieBreakDeclined: plain.tieBreakDeclined ?? false,
     startAt: plain.startAt,
     waitingForPlayers: shouldWaitBeforeNextTournamentRound(plain) && !allActiveTournamentParticipantsConnected(plain),
+    tieBreakAvailable: isTournamentPrizeTieBreakAvailable(plain),
     standings: getCompletedTournamentStandings(plain),
     createdAt: plain.createdAt,
     updatedAt: plain.updatedAt
   };
+}
+
+function getPrizeTieGroups(tournament: any) {
+  if (!tournament || tournament.tieBreakDeclined) {
+    return [];
+  }
+
+  const hasTieBreakRounds = (tournament.rounds || []).some((round: any) => round.kind === 'tiebreak');
+  if (hasTieBreakRounds) {
+    return [];
+  }
+
+  const standings = getCompletedTournamentStandings(tournament);
+  const prizePlaces = 3;
+  if (standings.length < 2) {
+    return [];
+  }
+
+  const groupsByPoints = new Map<number, any[]>();
+  for (const standing of standings) {
+    const group = groupsByPoints.get(standing.points);
+    if (group) {
+      group.push(standing);
+    } else {
+      groupsByPoints.set(standing.points, [standing]);
+    }
+  }
+
+  const indexById = new Map(standings.map((standing: any, index: number) => [standing.participantId, index]));
+
+  return [...groupsByPoints.values()]
+    .filter((group) => group.length > 1)
+    .filter((group) =>
+      group.some((standing: any) => (indexById.get(standing.participantId) ?? Number.MAX_SAFE_INTEGER) < prizePlaces)
+    )
+    .sort((left, right) => {
+      const leftIndex = Math.min(...left.map((standing: any) => indexById.get(standing.participantId) ?? Number.MAX_SAFE_INTEGER));
+      const rightIndex = Math.min(...right.map((standing: any) => indexById.get(standing.participantId) ?? Number.MAX_SAFE_INTEGER));
+      return leftIndex - rightIndex;
+    });
+}
+
+function isTournamentPrizeTieBreakAvailable(tournament: any) {
+  if (!tournament || tournament.status !== 'finished') {
+    return false;
+  }
+
+  return getPrizeTieGroups(tournament).length > 0;
 }
 
 function getTournamentRoundDelaySeconds(tournament: any) {
@@ -1262,6 +1313,7 @@ async function startTournamentRound(tournament: any) {
   tournament.rounds.push({
     id: tournamentRoundId(),
     number: nextRoundNumber,
+    kind: 'swiss',
     status: matches.every((match: any) => match.status === 'completed') ? 'completed' : 'active',
     matches,
     startedAt: new Date(),
@@ -1280,6 +1332,94 @@ async function startTournamentRound(tournament: any) {
   await tournament.save();
   broadcastTournament(tournament);
   return tournament;
+}
+
+function createTournamentTieBreakMatch(tournament: any, playerA: any, playerB: any, roundNumber: number) {
+  const timeMinutes = Number(tournament.timeControl?.timeMinutes ?? 10);
+  const incrementSeconds = Number(tournament.timeControl?.incrementSeconds ?? 0);
+  const timeSeconds = Math.max(1, Math.floor(timeMinutes)) * 60;
+  const increment = Math.max(0, Math.floor(incrementSeconds));
+
+  const { roomId, room } = createRoomWithConfig({
+    whiteTimer: timeSeconds,
+    blackTimer: timeSeconds,
+    increment,
+    forceDisableAIhints: true,
+    color: 'white'
+  });
+
+  const matchId = tournamentMatchId();
+  room.tournament = {
+    tournamentId: tournament._id.toString(),
+    roundNumber,
+    matchId
+  };
+  room.gameState.gameType = 'tournament';
+  room.gameState.tournamentId = tournament._id.toString();
+
+  return {
+    id: matchId,
+    playerAId: playerA.id,
+    playerBId: playerB.id,
+    gameRoomId: roomId,
+    status: 'active',
+    startedAt: new Date()
+  };
+}
+
+async function createPrizeTieBreakRound(tournament: any) {
+  if (!tournament || tournament.status !== 'finished') {
+    return false;
+  }
+
+  const prizeTieGroups = getPrizeTieGroups(tournament);
+  if (prizeTieGroups.length === 0) {
+    return false;
+  }
+
+  const matches: any[] = [];
+  const nextRoundNumber = (tournament.rounds?.length || 0) + 1;
+  const participantsById = new Map<string, any>((tournament.participants || []).map((participant: any) => [participant.id, participant]));
+
+  for (const group of prizeTieGroups) {
+    const participants = group
+      .map((standing: any) => participantsById.get(standing.participantId))
+      .filter((participant: any): participant is any => participant && !participant.removed);
+
+    for (const participant of participants) {
+      participant.active = true;
+      participant.leftAt = undefined;
+    }
+
+    for (let index = 0; index < participants.length; index++) {
+      for (let candidateIndex = index + 1; candidateIndex < participants.length; candidateIndex++) {
+        matches.push(createTournamentTieBreakMatch(tournament, participants[index], participants[candidateIndex], nextRoundNumber));
+      }
+    }
+  }
+
+  if (matches.length === 0) {
+    return false;
+  }
+
+  clearTournamentStartTimer(tournament._id.toString());
+  tournament.status = 'running';
+  tournament.startAt = undefined;
+  tournament.finishAfterCurrentRound = false;
+  tournament.tieBreakDeclined = false;
+  tournament.currentRoundNumber = nextRoundNumber;
+  tournament.rounds.push({
+    id: tournamentRoundId(),
+    number: nextRoundNumber,
+    kind: 'tiebreak',
+    status: 'active',
+    matches,
+    startedAt: new Date()
+  });
+
+  await tournament.save();
+  broadcastTournament(tournament);
+  return true;
 }
 
 async function scheduleTournamentRoundStart(tournament: any, delaySeconds: number) {
@@ -3935,6 +4075,47 @@ app.post('/api/tournaments/:id/add-round', async ({ params, headers, set }) => {
   } catch (error: any) {
     set.status = 500;
     return { success: false, error: error.message || 'Failed to add round' };
+  }
+});
+
+app.post('/api/tournaments/:id/create-tie-break', async ({ params, headers, set }) => {
+  try {
+    const authUser = await getAuthenticatedUserFromHeaders(headers as Record<string, string | undefined>);
+    const tournament = await Tournament.findById(params.id);
+    if (!authUser || !tournament || tournament.creatorUserId.toString() !== authUser.userId) {
+      set.status = !tournament ? 404 : 403;
+      return { success: false, error: !tournament ? 'Tournament not found' : 'Only creator can create tie-break' };
+    }
+
+    const created = await createPrizeTieBreakRound(tournament);
+    if (!created) {
+      set.status = 409;
+      return { success: false, error: 'Tie-break is not available' };
+    }
+
+    return { success: true, tournament: buildTournamentResponse(tournament) };
+  } catch (error: any) {
+    set.status = 500;
+    return { success: false, error: error.message || 'Failed to create tie-break' };
+  }
+});
+
+app.post('/api/tournaments/:id/decline-tie-break', async ({ params, headers, set }) => {
+  try {
+    const authUser = await getAuthenticatedUserFromHeaders(headers as Record<string, string | undefined>);
+    const tournament = await Tournament.findById(params.id);
+    if (!authUser || !tournament || tournament.creatorUserId.toString() !== authUser.userId) {
+      set.status = !tournament ? 404 : 403;
+      return { success: false, error: !tournament ? 'Tournament not found' : 'Only creator can decline tie-break' };
+    }
+
+    tournament.tieBreakDeclined = true;
+    await tournament.save();
+    broadcastTournament(tournament);
+    return { success: true, tournament: buildTournamentResponse(tournament) };
+  } catch (error: any) {
+    set.status = 500;
+    return { success: false, error: error.message || 'Failed to decline tie-break' };
   }
 });
 
