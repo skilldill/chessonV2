@@ -15,6 +15,7 @@ import SignupSuccessScreen from './screens/SignupSuccessScreen/SignupSuccessScre
 import ForgotPasswordScreen from './screens/ForgotPasswordScreen/ForgotPasswordScreen';
 import ResetPasswordScreen from './screens/ResetPasswordScreen/ResetPasswordScreen';
 import ProfileScreen from './screens/ProfileScreen/ProfileScreen';
+import { CreateTournamentScreen, TournamentRoomScreen } from './screens/TournamentScreen/TournamentScreen';
 import { HomeRedirect } from './components/HomeRedirect/HomeRedirect';
 import { MainAuthGuard } from './components/HomeRedirect/MainAuthGuard';
 import { useRestoreGame } from './hooks/useRestoreGame';
@@ -41,6 +42,12 @@ const App: React.FC = () => {
         </Route>
         <Route exact path="/create-room">
           <CreateRoomScreen />
+        </Route>
+        <Route exact path="/tournaments/new">
+          <CreateTournamentScreen />
+        </Route>
+        <Route exact path="/tournaments/:tournamentId">
+          <TournamentRoomScreen />
         </Route>
         <Route exact path="/verify-email">
           <VerifyEmailScreen />

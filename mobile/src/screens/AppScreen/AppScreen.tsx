@@ -128,6 +128,7 @@ const AppScreen: React.FC = () => {
         onSendDrawOffer={sendDrawOffer}
         offeredDraw={offeredDraw}
         connectionLost={connectionLost}
+        roomId={roomId}
       />
     );
   }

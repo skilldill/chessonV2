@@ -4,8 +4,11 @@ import { QuickPlayButton } from '../../components/QuickPlayButton/QuickPlayButto
 import { useQuickPlayEntry } from '../../hooks/useQuickPlayEntry';
 import { AppVersionCaption } from '../../components/AppVersionCaption/AppVersionCaption';
 import { AppTopBar } from '../../components/AppTopBar/AppTopBar';
+import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 const HomeScreen: React.FC = () => {
+  const { t } = useTranslation();
   const { playersInRandomQueue, quickPlayLabel, openQuickPlay } = useQuickPlayEntry();
 
   return (
@@ -21,6 +24,13 @@ const HomeScreen: React.FC = () => {
           playersInQueue={playersInRandomQueue}
         />
         <CreateRoomSection />
+        <Link
+          to="/tournaments/new"
+          className="flex min-h-[72px] w-full flex-col justify-center rounded-xl border border-white/15 bg-white/5 px-5 py-4 text-white transition-colors duration-200"
+        >
+          <span className="text-[18px] font-bold">{t("tournament.create")}</span>
+          <span className="text-sm text-white/60">{t("tournament.homeSubtitle")}</span>
+        </Link>
         <AppVersionCaption />
       </div>
     </div>
