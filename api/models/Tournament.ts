@@ -53,7 +53,7 @@ export interface ITournament extends Document {
     afterRound: number;
     durationMinutes: number;
   };
-  creatorUserId: mongoose.Types.ObjectId;
+  creatorUserId?: mongoose.Types.ObjectId;
   status: TournamentStatus;
   participants: ITournamentParticipant[];
   rounds: ITournamentRound[];
@@ -140,7 +140,7 @@ const TournamentSchema = new Schema<ITournament>(
       afterRound: { type: Number, required: true, default: 1 },
       durationMinutes: { type: Number, required: true, default: 5 }
     },
-    creatorUserId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    creatorUserId: { type: Schema.Types.ObjectId, ref: 'User', required: false, index: true },
     status: {
       type: String,
       enum: ['setup', 'scheduled', 'running', 'finished'],

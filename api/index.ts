@@ -242,6 +242,9 @@ const CORS_ALLOWED_METHODS = 'GET,POST,PUT,PATCH,DELETE,OPTIONS';
 const CORS_ALLOWED_HEADERS = 'Content-Type, Authorization, x-admin-secret';
 const ADMIN_SECRET_HEADER = 'x-admin-secret';
 const ADMIN_SECRET_VALUE = process.env.ADMIN_SECRET_VALUE || 'local-chesson-admin-secret';
+const TOURNAMENT_ADMIN_COOKIE = 'tournamentAdminIds';
+const TOURNAMENT_ADMIN_COOKIE_MAX_AGE = 365 * 24 * 60 * 60;
+const TOURNAMENT_ADMIN_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
 function getHeaderValue(headers: unknown, headerName: string): string | undefined {
   if (!headers || typeof headers !== 'object') {
@@ -259,6 +262,18 @@ function hasAdminAccess(headers: unknown): boolean {
 
 function clearAuthCookie(set: { headers: Record<string, string> }) {
   set.headers['Set-Cookie'] = 'authToken=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0';
+}
+
+function appendSetCookie(set: { headers: Record<string, any> }, cookie: string) {
+  const existingCookie = set.headers['Set-Cookie'];
+  if (!existingCookie) {
+    set.headers['Set-Cookie'] = cookie;
+    return;
+  }
+
+  set.headers['Set-Cookie'] = Array.isArray(existingCookie)
+    ? [...existingCookie, cookie]
+    : [existingCookie, cookie];
 }
 
 function formatAdminUser(user: any, gamesPlayed = 0) {
@@ -797,12 +812,64 @@ function createRoomWithConfig(rawConfig: any) {
 
 function parseCookiesFromHeader(cookieHeader: string): Record<string, string> {
   return cookieHeader.split(';').reduce((acc: Record<string, string>, cookie) => {
-    const [key, value] = cookie.trim().split('=');
+    const [key, ...valueParts] = cookie.trim().split('=');
+    const value = valueParts.join('=');
     if (key && value) {
       acc[key] = value;
     }
     return acc;
   }, {});
+}
+
+function signTournamentAdminCookiePayload(payload: string): string {
+  return crypto
+    .createHmac('sha256', TOURNAMENT_ADMIN_SECRET)
+    .update(payload)
+    .digest('base64url');
+}
+
+function encodeTournamentAdminCookie(ids: string[]): string {
+  const uniqueIds = Array.from(new Set(ids.filter(Boolean)));
+  const payload = Buffer.from(JSON.stringify({ ids: uniqueIds }), 'utf8').toString('base64url');
+  return `${payload}.${signTournamentAdminCookiePayload(payload)}`;
+}
+
+function readTournamentAdminIds(headers: Record<string, string | undefined>): Set<string> {
+  const cookieHeader = headers.cookie || '';
+  const cookies = parseCookiesFromHeader(cookieHeader);
+  const rawCookie = cookies[TOURNAMENT_ADMIN_COOKIE];
+  if (!rawCookie) {
+    return new Set();
+  }
+
+  const [payload, signature] = rawCookie.split('.');
+  if (!payload || !signature || signature !== signTournamentAdminCookiePayload(payload)) {
+    return new Set();
+  }
+
+  try {
+    const decoded = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
+    if (!Array.isArray(decoded.ids)) {
+      return new Set();
+    }
+    return new Set(decoded.ids.filter((id: unknown) => typeof id === 'string' && id.length > 0));
+  } catch {
+    return new Set();
+  }
+}
+
+function setTournamentAdminCookie(
+  set: { headers: Record<string, any> },
+  headers: Record<string, string | undefined>,
+  tournamentId: string
+) {
+  const ids = readTournamentAdminIds(headers);
+  ids.add(tournamentId);
+  const value = encodeTournamentAdminCookie([...ids]);
+  appendSetCookie(
+    set,
+    `${TOURNAMENT_ADMIN_COOKIE}=${value}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${TOURNAMENT_ADMIN_COOKIE_MAX_AGE}${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`
+  );
 }
 
 async function getAuthenticatedUserFromHeaders(headers: Record<string, string | undefined>) {
@@ -998,6 +1065,31 @@ function buildTournamentResponse(tournament: any) {
     standings: getCompletedTournamentStandings(plain),
     createdAt: plain.createdAt,
     updatedAt: plain.updatedAt
+  };
+}
+
+async function canManageTournament(tournament: any, headers: Record<string, string | undefined>): Promise<boolean> {
+  if (!tournament) {
+    return false;
+  }
+
+  const tournamentId = tournament._id?.toString?.() || tournament.id?.toString?.();
+  const authUser = await getAuthenticatedUserFromHeaders(headers);
+  if (
+    authUser &&
+    tournament.creatorUserId &&
+    tournament.creatorUserId.toString() === authUser.userId
+  ) {
+    return true;
+  }
+
+  return Boolean(tournamentId && readTournamentAdminIds(headers).has(tournamentId));
+}
+
+async function buildTournamentResponseForRequest(tournament: any, headers: Record<string, string | undefined>) {
+  return {
+    ...buildTournamentResponse(tournament),
+    canManage: await canManageTournament(tournament, headers)
   };
 }
 
@@ -3705,11 +3797,8 @@ app.post('/api/random-match/join', async ({ body, headers, set }) => {
 
 app.post('/api/tournaments', async ({ body, headers, set }) => {
   try {
-    const authUser = await getAuthenticatedUserFromHeaders(headers as Record<string, string | undefined>);
-    if (!authUser) {
-      set.status = 401;
-      return { success: false, error: 'Only registered users can create tournaments' };
-    }
+    const requestHeaders = headers as Record<string, string | undefined>;
+    const authUser = await getAuthenticatedUserFromHeaders(requestHeaders);
 
     const title = normalizeTournamentTitle((body as any)?.title);
     const roundsCountRaw = Number((body as any)?.roundsCount);
@@ -3749,6 +3838,19 @@ app.post('/api/tournaments', async ({ body, headers, set }) => {
       return { success: false, error: 'Tournament title is required' };
     }
 
+    const creatorParticipant = authUser
+      ? [{
+        id: tournamentParticipantId(),
+        userId: new mongoose.Types.ObjectId(authUser.userId),
+        nickname: authUser.userName,
+        avatar: authUser.avatar,
+        active: true,
+        removed: false,
+        connected: true,
+        joinedAt: new Date()
+      }]
+      : [];
+
     const tournament = new Tournament({
       title,
       roundsCount,
@@ -3762,17 +3864,8 @@ app.post('/api/tournaments', async ({ body, headers, set }) => {
         afterRound: coffeeBreakAfterRound,
         durationMinutes: coffeeBreakDurationMinutes
       },
-      creatorUserId: new mongoose.Types.ObjectId(authUser.userId),
-      participants: [{
-        id: tournamentParticipantId(),
-        userId: new mongoose.Types.ObjectId(authUser.userId),
-        nickname: authUser.userName,
-        avatar: authUser.avatar,
-        active: true,
-        removed: false,
-        connected: true,
-        joinedAt: new Date()
-      }],
+      creatorUserId: authUser ? new mongoose.Types.ObjectId(authUser.userId) : undefined,
+      participants: creatorParticipant,
       rounds: [],
       status: 'setup',
       currentRoundNumber: 0,
@@ -3780,7 +3873,12 @@ app.post('/api/tournaments', async ({ body, headers, set }) => {
     });
     await tournament.save();
 
-    return { success: true, tournament: buildTournamentResponse(tournament) };
+    const tournamentId = (tournament._id as mongoose.Types.ObjectId).toString();
+    if (!authUser) {
+      setTournamentAdminCookie(set, requestHeaders, tournamentId);
+    }
+
+    return { success: true, tournament: { ...buildTournamentResponse(tournament), canManage: true } };
   } catch (error: any) {
     console.error('Create tournament error:', error);
     set.status = 500;
@@ -3788,7 +3886,7 @@ app.post('/api/tournaments', async ({ body, headers, set }) => {
   }
 });
 
-app.get('/api/tournaments/:id', async ({ params, set }) => {
+app.get('/api/tournaments/:id', async ({ params, headers, set }) => {
   try {
     const tournament = await Tournament.findById(params.id);
     if (!tournament) {
@@ -3796,7 +3894,10 @@ app.get('/api/tournaments/:id', async ({ params, set }) => {
       return { success: false, error: 'Tournament not found' };
     }
 
-    return { success: true, tournament: buildTournamentResponse(tournament) };
+    return {
+      success: true,
+      tournament: await buildTournamentResponseForRequest(tournament, headers as Record<string, string | undefined>)
+    };
   } catch (error: any) {
     set.status = 500;
     return { success: false, error: error.message || 'Failed to get tournament' };
@@ -3805,6 +3906,7 @@ app.get('/api/tournaments/:id', async ({ params, set }) => {
 
 app.post('/api/tournaments/:id/join', async ({ params, body, headers, set }) => {
   try {
+    const requestHeaders = headers as Record<string, string | undefined>;
     const tournament = await Tournament.findById(params.id);
     if (!tournament) {
       set.status = 404;
@@ -3816,7 +3918,7 @@ app.post('/api/tournaments/:id/join', async ({ params, body, headers, set }) => 
       return { success: false, error: 'Tournament is already finished' };
     }
 
-    const authUser = await getAuthenticatedUserFromHeaders(headers as Record<string, string | undefined>);
+    const authUser = await getAuthenticatedUserFromHeaders(requestHeaders);
     const guestParticipantId = normalizeGuestId((body as any)?.participantId);
     const nickname = authUser?.userName || normalizeTournamentNickname((body as any)?.nickname);
     const avatar = authUser?.avatar || String((body as any)?.avatar ?? '0');
@@ -3853,7 +3955,7 @@ app.post('/api/tournaments/:id/join', async ({ params, body, headers, set }) => 
           nickname: existingParticipant.nickname,
           avatar: existingParticipant.avatar
         },
-        tournament: buildTournamentResponse(tournament)
+        tournament: await buildTournamentResponseForRequest(tournament, requestHeaders)
       };
     }
 
@@ -3897,7 +3999,7 @@ app.post('/api/tournaments/:id/join', async ({ params, body, headers, set }) => 
         nickname: participant.nickname,
         avatar: participant.avatar
       },
-      tournament: buildTournamentResponse(tournament)
+      tournament: await buildTournamentResponseForRequest(tournament, requestHeaders)
     };
   } catch (error: any) {
     console.error('Join tournament error:', error);
@@ -3908,13 +4010,14 @@ app.post('/api/tournaments/:id/join', async ({ params, body, headers, set }) => 
 
 app.post('/api/tournaments/:id/leave', async ({ params, body, headers, set }) => {
   try {
+    const requestHeaders = headers as Record<string, string | undefined>;
     const tournament = await Tournament.findById(params.id);
     if (!tournament) {
       set.status = 404;
       return { success: false, error: 'Tournament not found' };
     }
 
-    const authUser = await getAuthenticatedUserFromHeaders(headers as Record<string, string | undefined>);
+    const authUser = await getAuthenticatedUserFromHeaders(requestHeaders);
     const participantId = normalizeGuestId((body as any)?.participantId);
     const participant = tournament.participants.find((item: any) =>
       (authUser && item.userId?.toString() === authUser.userId) || (participantId && item.id === participantId)
@@ -3931,7 +4034,7 @@ app.post('/api/tournaments/:id/leave', async ({ params, body, headers, set }) =>
     await completeTournamentMatchesForAbsentParticipant(tournament, participant.id);
     await tournament.save();
     broadcastTournament(tournament);
-    return { success: true, tournament: buildTournamentResponse(tournament) };
+    return { success: true, tournament: await buildTournamentResponseForRequest(tournament, requestHeaders) };
   } catch (error: any) {
     set.status = 500;
     return { success: false, error: error.message || 'Failed to leave tournament' };
@@ -3940,9 +4043,10 @@ app.post('/api/tournaments/:id/leave', async ({ params, body, headers, set }) =>
 
 app.post('/api/tournaments/:id/remove-player', async ({ params, body, headers, set }) => {
   try {
-    const authUser = await getAuthenticatedUserFromHeaders(headers as Record<string, string | undefined>);
+    const requestHeaders = headers as Record<string, string | undefined>;
     const tournament = await Tournament.findById(params.id);
-    if (!authUser || !tournament || tournament.creatorUserId.toString() !== authUser.userId) {
+    const isManager = await canManageTournament(tournament, requestHeaders);
+    if (!tournament || !isManager) {
       set.status = !tournament ? 404 : 403;
       return { success: false, error: !tournament ? 'Tournament not found' : 'Only creator can remove players' };
     }
@@ -3961,7 +4065,7 @@ app.post('/api/tournaments/:id/remove-player', async ({ params, body, headers, s
     await completeTournamentMatchesForAbsentParticipant(tournament, participant.id);
     await tournament.save();
     broadcastTournament(tournament);
-    return { success: true, tournament: buildTournamentResponse(tournament) };
+    return { success: true, tournament: await buildTournamentResponseForRequest(tournament, requestHeaders) };
   } catch (error: any) {
     set.status = 500;
     return { success: false, error: error.message || 'Failed to remove player' };
@@ -3970,9 +4074,10 @@ app.post('/api/tournaments/:id/remove-player', async ({ params, body, headers, s
 
 app.post('/api/tournaments/:id/start', async ({ params, body, headers, set }) => {
   try {
-    const authUser = await getAuthenticatedUserFromHeaders(headers as Record<string, string | undefined>);
+    const requestHeaders = headers as Record<string, string | undefined>;
     const tournament = await Tournament.findById(params.id);
-    if (!authUser || !tournament || tournament.creatorUserId.toString() !== authUser.userId) {
+    const isManager = await canManageTournament(tournament, requestHeaders);
+    if (!tournament || !isManager) {
       set.status = !tournament ? 404 : 403;
       return { success: false, error: !tournament ? 'Tournament not found' : 'Only creator can start tournament' };
     }
@@ -3990,11 +4095,11 @@ app.post('/api/tournaments/:id/start', async ({ params, body, headers, set }) =>
 
     if (delaySeconds > 0) {
       await scheduleTournamentRoundStart(tournament, delaySeconds);
-      return { success: true, tournament: buildTournamentResponse(tournament) };
+      return { success: true, tournament: await buildTournamentResponseForRequest(tournament, requestHeaders) };
     }
 
     await startTournamentRound(tournament);
-    return { success: true, tournament: buildTournamentResponse(tournament) };
+    return { success: true, tournament: await buildTournamentResponseForRequest(tournament, requestHeaders) };
   } catch (error: any) {
     console.error('Start tournament error:', error);
     set.status = 500;
@@ -4004,9 +4109,10 @@ app.post('/api/tournaments/:id/start', async ({ params, body, headers, set }) =>
 
 app.post('/api/tournaments/:id/finish-after-round', async ({ params, headers, set }) => {
   try {
-    const authUser = await getAuthenticatedUserFromHeaders(headers as Record<string, string | undefined>);
+    const requestHeaders = headers as Record<string, string | undefined>;
     const tournament = await Tournament.findById(params.id);
-    if (!authUser || !tournament || tournament.creatorUserId.toString() !== authUser.userId) {
+    const isManager = await canManageTournament(tournament, requestHeaders);
+    if (!tournament || !isManager) {
       set.status = !tournament ? 404 : 403;
       return { success: false, error: !tournament ? 'Tournament not found' : 'Only creator can finish tournament' };
     }
@@ -4021,7 +4127,7 @@ app.post('/api/tournaments/:id/finish-after-round', async ({ params, headers, se
       broadcastTournament(tournament);
     }
 
-    return { success: true, tournament: buildTournamentResponse(tournament) };
+    return { success: true, tournament: await buildTournamentResponseForRequest(tournament, requestHeaders) };
   } catch (error: any) {
     set.status = 500;
     return { success: false, error: error.message || 'Failed to mark final round' };
@@ -4030,19 +4136,20 @@ app.post('/api/tournaments/:id/finish-after-round', async ({ params, headers, se
 
 app.post('/api/tournaments/:id/force-next-round', async ({ params, headers, set }) => {
   try {
-    const authUser = await getAuthenticatedUserFromHeaders(headers as Record<string, string | undefined>);
+    const requestHeaders = headers as Record<string, string | undefined>;
     const tournament = await Tournament.findById(params.id);
-    if (!authUser || !tournament || tournament.creatorUserId.toString() !== authUser.userId) {
+    const isManager = await canManageTournament(tournament, requestHeaders);
+    if (!tournament || !isManager) {
       set.status = !tournament ? 404 : 403;
       return { success: false, error: !tournament ? 'Tournament not found' : 'Only creator can start next round' };
     }
 
     if (!shouldWaitBeforeNextTournamentRound(tournament)) {
-      return { success: true, tournament: buildTournamentResponse(tournament) };
+      return { success: true, tournament: await buildTournamentResponseForRequest(tournament, requestHeaders) };
     }
 
     await scheduleTournamentRoundStart(tournament, getNextTournamentRoundDelaySeconds(tournament));
-    return { success: true, tournament: buildTournamentResponse(tournament) };
+    return { success: true, tournament: await buildTournamentResponseForRequest(tournament, requestHeaders) };
   } catch (error: any) {
     set.status = 500;
     return { success: false, error: error.message || 'Failed to schedule next round' };
@@ -4051,9 +4158,10 @@ app.post('/api/tournaments/:id/force-next-round', async ({ params, headers, set 
 
 app.post('/api/tournaments/:id/add-round', async ({ params, headers, set }) => {
   try {
-    const authUser = await getAuthenticatedUserFromHeaders(headers as Record<string, string | undefined>);
+    const requestHeaders = headers as Record<string, string | undefined>;
     const tournament = await Tournament.findById(params.id);
-    if (!authUser || !tournament || tournament.creatorUserId.toString() !== authUser.userId) {
+    const isManager = await canManageTournament(tournament, requestHeaders);
+    if (!tournament || !isManager) {
       set.status = !tournament ? 404 : 403;
       return { success: false, error: !tournament ? 'Tournament not found' : 'Only creator can add rounds' };
     }
@@ -4071,7 +4179,7 @@ app.post('/api/tournaments/:id/add-round', async ({ params, headers, set }) => {
     tournament.roundsCount += 1;
     await tournament.save();
     broadcastTournament(tournament);
-    return { success: true, tournament: buildTournamentResponse(tournament) };
+    return { success: true, tournament: await buildTournamentResponseForRequest(tournament, requestHeaders) };
   } catch (error: any) {
     set.status = 500;
     return { success: false, error: error.message || 'Failed to add round' };
@@ -4080,9 +4188,10 @@ app.post('/api/tournaments/:id/add-round', async ({ params, headers, set }) => {
 
 app.post('/api/tournaments/:id/create-tie-break', async ({ params, headers, set }) => {
   try {
-    const authUser = await getAuthenticatedUserFromHeaders(headers as Record<string, string | undefined>);
+    const requestHeaders = headers as Record<string, string | undefined>;
     const tournament = await Tournament.findById(params.id);
-    if (!authUser || !tournament || tournament.creatorUserId.toString() !== authUser.userId) {
+    const isManager = await canManageTournament(tournament, requestHeaders);
+    if (!tournament || !isManager) {
       set.status = !tournament ? 404 : 403;
       return { success: false, error: !tournament ? 'Tournament not found' : 'Only creator can create tie-break' };
     }
@@ -4093,7 +4202,7 @@ app.post('/api/tournaments/:id/create-tie-break', async ({ params, headers, set 
       return { success: false, error: 'Tie-break is not available' };
     }
 
-    return { success: true, tournament: buildTournamentResponse(tournament) };
+    return { success: true, tournament: await buildTournamentResponseForRequest(tournament, requestHeaders) };
   } catch (error: any) {
     set.status = 500;
     return { success: false, error: error.message || 'Failed to create tie-break' };
@@ -4102,9 +4211,10 @@ app.post('/api/tournaments/:id/create-tie-break', async ({ params, headers, set 
 
 app.post('/api/tournaments/:id/decline-tie-break', async ({ params, headers, set }) => {
   try {
-    const authUser = await getAuthenticatedUserFromHeaders(headers as Record<string, string | undefined>);
+    const requestHeaders = headers as Record<string, string | undefined>;
     const tournament = await Tournament.findById(params.id);
-    if (!authUser || !tournament || tournament.creatorUserId.toString() !== authUser.userId) {
+    const isManager = await canManageTournament(tournament, requestHeaders);
+    if (!tournament || !isManager) {
       set.status = !tournament ? 404 : 403;
       return { success: false, error: !tournament ? 'Tournament not found' : 'Only creator can decline tie-break' };
     }
@@ -4112,7 +4222,7 @@ app.post('/api/tournaments/:id/decline-tie-break', async ({ params, headers, set
     tournament.tieBreakDeclined = true;
     await tournament.save();
     broadcastTournament(tournament);
-    return { success: true, tournament: buildTournamentResponse(tournament) };
+    return { success: true, tournament: await buildTournamentResponseForRequest(tournament, requestHeaders) };
   } catch (error: any) {
     set.status = 500;
     return { success: false, error: error.message || 'Failed to decline tie-break' };

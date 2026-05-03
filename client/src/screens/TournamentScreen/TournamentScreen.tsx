@@ -59,7 +59,8 @@ type Tournament = {
     afterRound: number;
     durationMinutes: number;
   };
-  creatorUserId: string;
+  creatorUserId?: string;
+  canManage?: boolean;
   status: "setup" | "scheduled" | "running" | "finished";
   participants: TournamentParticipant[];
   rounds: TournamentRound[];
@@ -503,7 +504,10 @@ export function TournamentRoomScreen() {
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type === "tournamentState") {
-        setTournament(data.tournament);
+        setTournament((previous) => ({
+          ...data.tournament,
+          canManage: data.tournament.canManage ?? previous?.canManage,
+        }));
       }
     };
     return () => ws.close(1000, "Tournament screen closed");
@@ -595,7 +599,12 @@ export function TournamentRoomScreen() {
       });
       const data = await response.json();
       if (!data.success) throw new Error(data.error || t("tournament.actionError"));
-      if (data.tournament) setTournament(data.tournament);
+      if (data.tournament) {
+        setTournament((previous) => ({
+          ...data.tournament,
+          canManage: data.tournament.canManage ?? previous?.canManage,
+        }));
+      }
       return data;
     } catch (err) {
       setError(err instanceof Error ? err.message : t("tournament.actionError"));
@@ -675,7 +684,10 @@ export function TournamentRoomScreen() {
     return { label: t("tournament.status.waitingNextRound"), className: "px-3 py-2 text-emerald-300" };
   };
 
-  const isCreator = Boolean(tournament?.creatorUserId && currentUserId && tournament.creatorUserId === currentUserId);
+  const isCreator = Boolean(
+    tournament?.canManage ||
+    (tournament?.creatorUserId && currentUserId && tournament.creatorUserId === currentUserId)
+  );
   return (
     <div className="min-h-[100vh] text-white px-4 py-20">
       {!isViewOnly && <AppTopBar />}

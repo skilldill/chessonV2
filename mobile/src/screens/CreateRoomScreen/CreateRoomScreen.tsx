@@ -94,6 +94,21 @@ const CreateRoomScreen: React.FC = () => {
                                 theme="neutral"
                             /> */}
 
+                        <CreateGameButton
+                            title={(
+                                <span>
+                                    {t("tournament.create")}
+                                    <span className="italic font-extrabold bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] bg-clip-text text-transparent">
+                                        {' '} NEW
+                                    </span>
+                                </span>
+                            )}
+                            subtitle={t("tournament.homeSubtitle")}
+                            onClick={() => { window.location.href = '/tournaments/new'; }}
+                            theme="neutral"
+                            disabled={isCreating}
+                        />
+
                         <QuickPlayButton
                             onClick={openQuickPlay}
                             timeLabel={quickPlayLabel}
