@@ -5,6 +5,7 @@ import { TOURNAMENT_MAX_PLAYERS, TOURNAMENT_MAX_ROUNDS } from "../../constants/t
 import { AppTopBar } from "../../components/AppTopBar/AppTopBar";
 import { RoomTimeModal } from "../../components/RoomTimeModal/RoomTimeModal";
 import { getRoomTimeSettingsFromStorage, setRoomTimeSettingsToStorage } from "../../utils/roomTimeStorage";
+import { useTranslation } from "react-i18next";
 
 type TournamentParticipant = {
   id: string;
@@ -98,14 +99,14 @@ function participantName(tournament: Tournament, participantId: string | null) {
   return tournament.participants.find((participant) => participant.id === participantId)?.nickname || "Player";
 }
 
-function resultLabel(match: TournamentMatch) {
-  if (match.status !== "completed") return "Идет";
+function resultLabel(match: TournamentMatch, t: (key: string) => string) {
+  if (match.status !== "completed") return t("tournament.matchInProgress");
   if (match.result === "absent") return "0";
   if (match.result === "bye") return "1-0";
   if (match.result === "draw") return "1/2-1/2";
   if (match.result === "playerA") return "1-0";
   if (match.result === "playerB") return "0-1";
-  return "Завершена";
+  return t("tournament.matchCompleted");
 }
 
 function formatCountdown(totalSeconds: number) {
@@ -116,6 +117,7 @@ function formatCountdown(totalSeconds: number) {
 }
 
 export function CreateTournamentScreen() {
+  const { t } = useTranslation();
   const history = useHistory();
   const initialRoomTime = getRoomTimeSettingsFromStorage();
   const [title, setTitle] = useState("");
@@ -141,10 +143,10 @@ export function CreateTournamentScreen() {
         body: JSON.stringify({ title, roundsCount, timeMinutes, incrementSeconds }),
       });
       const data = await response.json();
-      if (!data.success) throw new Error(data.error || "Не удалось создать турнир");
+      if (!data.success) throw new Error(data.error || t("tournament.createError"));
       history.push(`/tournaments/${data.tournament.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Не удалось создать турнир");
+      setError(err instanceof Error ? err.message : t("tournament.createError"));
     } finally {
       setIsCreating(false);
     }
@@ -154,18 +156,18 @@ export function CreateTournamentScreen() {
     <div className="min-h-[100vh] text-white px-4 py-20">
       <AppTopBar />
       <main className="mx-auto flex w-full max-w-[520px] flex-col gap-5">
-        <h1 className="text-2xl font-bold">Новый онлайн-турнир</h1>
+        <h1 className="text-2xl font-bold">{t("tournament.newTitle")}</h1>
         <label className="flex flex-col gap-2 text-sm text-white/70">
-          Название
+          {t("tournament.titleLabel")}
           <input
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             className="h-12 rounded-lg border border-white/15 bg-white/10 px-4 text-base text-white outline-none focus:border-[#4f39f6]"
-            placeholder="Например, Friday Swiss"
+            placeholder={t("tournament.titlePlaceholder")}
           />
         </label>
         <label className="flex flex-col gap-2 text-sm text-white/70">
-          Количество туров
+          {t("tournament.roundsCountLabel")}
           <input
             value={roundsCount}
             onChange={(event) => setRoundsCount(Math.max(1, Number(event.target.value) || 1))}
@@ -180,7 +182,7 @@ export function CreateTournamentScreen() {
           onClick={() => setIsTimeModalOpen(true)}
           className="rounded-lg border border-white/15 bg-white/5 px-4 py-3 text-left text-white hover:bg-white/10"
         >
-          <div className="text-white/50 text-xs">Время партий</div>
+          <div className="text-white/50 text-xs">{t("tournament.gameTime")}</div>
           <div className="text-white/90 text-base font-semibold mt-1">{timeMinutes} + {incrementSeconds}</div>
         </button>
 
@@ -191,7 +193,7 @@ export function CreateTournamentScreen() {
           onClick={handleCreate}
           className="h-12 rounded-lg bg-[#4f39f6] px-4 font-semibold text-white transition-opacity hover:bg-[#432dd9] disabled:opacity-50"
         >
-          Создать турнир
+          {t("tournament.create")}
         </button>
 
         <RoomTimeModal
@@ -201,8 +203,8 @@ export function CreateTournamentScreen() {
           incrementSeconds={incrementSeconds}
           withAIhints={false}
           showAdvancedOptions={false}
-          title="Время партий турнира"
-          subtitle="Выберите контроль времени для всех партий турнира"
+          title={t("tournament.gameTimeTitle")}
+          subtitle={t("tournament.gameTimeSubtitle")}
           startPositionMode="default"
           customFEN=""
           onChangeTimeMinutes={setTimeMinutes}
@@ -219,6 +221,7 @@ export function CreateTournamentScreen() {
 }
 
 export function TournamentRoomScreen() {
+  const { t } = useTranslation();
   const { tournamentId } = useParams<{ tournamentId: string }>();
   const history = useHistory();
   const wsRef = useRef<WebSocket | null>(null);
@@ -386,11 +389,11 @@ export function TournamentRoomScreen() {
         body: JSON.stringify(body || {}),
       });
       const data = await response.json();
-      if (!data.success) throw new Error(data.error || "Действие не выполнено");
+      if (!data.success) throw new Error(data.error || t("tournament.actionError"));
       if (data.tournament) setTournament(data.tournament);
       return data;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Действие не выполнено");
+      setError(err instanceof Error ? err.message : t("tournament.actionError"));
       return null;
     } finally {
       setIsBusy(false);
@@ -430,13 +433,13 @@ export function TournamentRoomScreen() {
       setIsShareCopied(true);
       window.setTimeout(() => setIsShareCopied(false), 2000);
     } catch (error) {
-      setError("Не удалось скопировать ссылку");
+      setError(t("tournament.shareError"));
     }
   };
 
   const getParticipantStatus = (item: TournamentParticipant) => {
     if (!item.active) {
-      return { label: "вышел", className: "px-3 py-2 text-white/40" };
+      return { label: t("tournament.status.left"), className: "px-3 py-2 text-white/40" };
     }
 
     const currentMatch = currentRound?.matches.find(
@@ -445,14 +448,14 @@ export function TournamentRoomScreen() {
     );
 
     if (currentMatch?.status === "active") {
-      return { label: "в игре", className: "px-3 py-2 text-yellow-300" };
+      return { label: t("tournament.status.playing"), className: "px-3 py-2 text-yellow-300" };
     }
 
     if (currentMatch?.status === "completed" && !item.connected) {
-      return { label: "изучает партию после окончания", className: "px-3 py-2 text-yellow-300" };
+      return { label: t("tournament.status.reviewingGame"), className: "px-3 py-2 text-yellow-300" };
     }
 
-    return { label: "ожидает следующий тур", className: "px-3 py-2 text-emerald-300" };
+    return { label: t("tournament.status.waitingNextRound"), className: "px-3 py-2 text-emerald-300" };
   };
 
   const isCreator = Boolean(tournament?.creatorUserId && currentUserId && tournament.creatorUserId === currentUserId);
@@ -461,11 +464,18 @@ export function TournamentRoomScreen() {
       <AppTopBar />
       <main className="mx-auto grid w-full max-w-[1120px] gap-5 lg:grid-cols-[360px_1fr]">
         <section className="flex flex-col gap-4">
-          <Link to="/main" className="text-sm text-white/60 hover:text-white">Назад</Link>
+          <Link to="/main" className="text-sm text-white/60 hover:text-white">{t("common.back")}</Link>
           <div>
-            <h1 className="text-2xl font-bold">{tournament?.title || "Турнир"}</h1>
+            <h1 className="text-2xl font-bold">{tournament?.title || t("tournament.defaultTitle")}</h1>
             <p className="text-sm text-white/60">
-              {playerCount}/{TOURNAMENT_MAX_PLAYERS} игроков · {tournament?.roundsCount || 0} туров · {tournament?.timeControl?.timeMinutes || 10} + {tournament?.timeControl?.incrementSeconds || 0} · {tournament?.status || "loading"}
+              {t("tournament.summary", {
+                playerCount,
+                maxPlayers: TOURNAMENT_MAX_PLAYERS,
+                roundsCount: tournament?.roundsCount || 0,
+                timeMinutes: tournament?.timeControl?.timeMinutes || 10,
+                incrementSeconds: tournament?.timeControl?.incrementSeconds || 0,
+                status: tournament?.status || "loading",
+              })}
             </p>
           </div>
 
@@ -474,13 +484,13 @@ export function TournamentRoomScreen() {
             onClick={handleShare}
             className="h-10 rounded-lg border border-white/15 bg-white/10 text-sm font-semibold text-white hover:bg-white/15 transition-colors"
           >
-            {isShareCopied ? "Ссылка скопирована" : "Поделиться"}
+            {isShareCopied ? t("tournament.shareCopied") : t("tournament.share")}
           </button>
 
           {tournament?.status === "scheduled" && tournament.startAt && (
             <div className="rounded-lg border border-[#555ab9b3] bg-[#4f39f633] p-4">
               <div className="text-sm text-white/70">
-                {tournament.currentRoundNumber > 0 ? "Следующий тур начнется через" : "Турнир начнется через"}
+                {tournament.currentRoundNumber > 0 ? t("tournament.nextRoundStartsIn") : t("tournament.startsIn")}
               </div>
               <div className="mt-1 text-3xl font-bold text-[#4f39f6]">{formatCountdown(secondsToStart)}</div>
             </div>
@@ -488,13 +498,13 @@ export function TournamentRoomScreen() {
 
           {isLateParticipantWaiting && (
             <div className="rounded-lg border border-[#555ab9b3] bg-[#4f39f633] p-4 text-sm text-white/85">
-              Вы вошли после начала текущего тура. За пропущенные туры будет 0 очков, первая партия появится со следующего тура.
+              {t("tournament.lateJoinHint")}
             </div>
           )}
 
           {tournament?.waitingForPlayers && (
             <div className="rounded-lg border border-[#555ab9b3] bg-[#4f39f633] p-4 text-sm text-white/80">
-              Ждем, пока все участники вернутся в турнирную комнату после партий.
+              {t("tournament.waitingForPlayers")}
             </div>
           )}
 
@@ -505,7 +515,7 @@ export function TournamentRoomScreen() {
                   value={nickname}
                   onChange={(event) => setNickname(event.target.value)}
                   className="h-11 rounded-lg border border-white/15 bg-black/20 px-3 text-white outline-none"
-                  placeholder="Никнейм для турнира"
+                  placeholder={t("tournament.nicknamePlaceholder")}
                 />
               )}
               <button
@@ -514,18 +524,18 @@ export function TournamentRoomScreen() {
                 onClick={handleJoin}
                 className="h-11 rounded-lg bg-[#4f39f6] font-semibold text-white hover:bg-[#432dd9] disabled:opacity-50"
               >
-                {isTournamentFull ? "Турнир заполнен" : participantInTournament ? "Вернуться в турнир" : "Войти в турнир"}
+                {isTournamentFull ? t("tournament.full") : participantInTournament ? t("tournament.rejoin") : t("tournament.join")}
               </button>
             </div>
           )}
 
           {participant && tournament?.status !== "finished" && participantInTournament?.active && (
             <div className="flex flex-col gap-3 rounded-lg border border-white/15 bg-white/5 p-4">
-              <div className="text-sm text-white/70">Вы играете как</div>
+              <div className="text-sm text-white/70">{t("tournament.playingAs")}</div>
               <div className="text-lg font-semibold">{participant.nickname}</div>
-              {canOpenGame && <div className="text-sm text-[#4f39f6]">Партия открывается автоматически...</div>}
+              {canOpenGame && <div className="text-sm text-[#4f39f6]">{t("tournament.gameOpening")}</div>}
               <button type="button" disabled={isBusy} onClick={() => setShowLeaveConfirm(true)} className="h-10 rounded-lg border border-white/15 bg-white/10 text-sm">
-                Покинуть турнир
+                {t("tournament.leave")}
               </button>
             </div>
           )}
@@ -535,13 +545,13 @@ export function TournamentRoomScreen() {
               {(tournament.status === "setup" || (tournament.status === "scheduled" && tournament.rounds.length === 0)) && (
                 playerCount < 3 ? (
                   <div className="rounded-lg border border-[#555ab9b3] bg-[#4f39f633] px-3 py-2 text-center text-sm text-white/85">
-                    Для начала турнира необходимо минимум 3 участника
+                    {t("tournament.minPlayersHint")}
                   </div>
                 ) : (
                   <>
-                    <button type="button" disabled={isBusy} onClick={() => callAction("/start", { delaySeconds: 0 })} className="h-10 rounded-lg bg-[#4f39f6] text-sm font-semibold text-white hover:bg-[#432dd9] disabled:opacity-50">Запустить сейчас</button>
-                    <button type="button" disabled={isBusy} onClick={() => callAction("/start", { delaySeconds: 60 })} className="h-10 rounded-lg bg-white/10 text-sm">Через 1 минуту</button>
-                    <button type="button" disabled={isBusy} onClick={() => callAction("/start", { delaySeconds: 300 })} className="h-10 rounded-lg bg-white/10 text-sm">Через 5 минут</button>
+                    <button type="button" disabled={isBusy} onClick={() => callAction("/start", { delaySeconds: 0 })} className="h-10 rounded-lg bg-[#4f39f6] text-sm font-semibold text-white hover:bg-[#432dd9] disabled:opacity-50">{t("tournament.startNow")}</button>
+                    <button type="button" disabled={isBusy} onClick={() => callAction("/start", { delaySeconds: 60 })} className="h-10 rounded-lg bg-white/10 text-sm">{t("tournament.startInOneMinute")}</button>
+                    <button type="button" disabled={isBusy} onClick={() => callAction("/start", { delaySeconds: 300 })} className="h-10 rounded-lg bg-white/10 text-sm">{t("tournament.startInFiveMinutes")}</button>
                   </>
                 )
               )}
@@ -549,19 +559,19 @@ export function TournamentRoomScreen() {
                 <>
                   {tournament.waitingForPlayers && (
                     <button type="button" disabled={isBusy} onClick={() => callAction("/force-next-round")} className="h-10 rounded-lg bg-[#4f39f6] text-sm font-semibold text-white hover:bg-[#432dd9] disabled:opacity-50">
-                      Не ждать всех, начать через 15 секунд
+                      {t("tournament.forceNextRound")}
                     </button>
                   )}
                   <button type="button" disabled={isBusy} onClick={() => callAction("/add-round")} className="h-10 rounded-lg bg-white/10 text-sm">
-                    Добавить тур
+                    {t("tournament.addRound")}
                   </button>
                   {tournament.finishAfterCurrentRound ? (
                     <div className="rounded-lg border border-[#555ab9b3] bg-[#4f39f633] px-3 py-2 text-center text-sm text-white/85">
-                      Турнир завершится сразу после текущего тура
+                      {t("tournament.finishAfterRoundNotice")}
                     </div>
                   ) : (
                     <button type="button" disabled={isBusy} onClick={() => setShowFinishConfirm(true)} className="h-10 rounded-lg border border-[#555ab9b3] bg-[#4f39f633] text-sm text-white/85 hover:bg-[#4f39f64d] disabled:opacity-50">
-                      Завершить турнир сейчас
+                      {t("tournament.finishNow")}
                     </button>
                   )}
                 </>
@@ -574,17 +584,17 @@ export function TournamentRoomScreen() {
 
         <section className="grid gap-5">
           <div className="rounded-lg border border-white/15 bg-white/5 p-4">
-            <h2 className="mb-3 text-lg font-semibold">Игроки</h2>
+            <h2 className="mb-3 text-lg font-semibold">{t("tournament.players")}</h2>
             <div className="overflow-x-auto rounded-lg border border-white/10">
               <table className="w-full border-collapse text-left text-sm">
                 <thead className="bg-white/10 text-xs uppercase tracking-wide text-white/50">
                   <tr>
                     <th className="px-3 py-2 font-semibold">#</th>
-                    <th className="px-3 py-2 font-semibold">Игрок</th>
-                    {tournament?.status !== "finished" && <th className="px-3 py-2 font-semibold">Статус</th>}
-                    <th className="px-3 py-2 font-semibold">Очки</th>
-                    <th className="px-3 py-2 font-semibold">Бх</th>
-                    <th className="px-3 py-2 font-semibold">Победы</th>
+                    <th className="px-3 py-2 font-semibold">{t("tournament.table.player")}</th>
+                    {tournament?.status !== "finished" && <th className="px-3 py-2 font-semibold">{t("tournament.table.status")}</th>}
+                    <th className="px-3 py-2 font-semibold">{t("tournament.table.points")}</th>
+                    <th className="px-3 py-2 font-semibold">{t("tournament.table.buchholz")}</th>
+                    <th className="px-3 py-2 font-semibold">{t("tournament.table.wins")}</th>
                     {isCreator && tournament?.status !== "finished" && <th className="px-3 py-2 font-semibold" />}
                   </tr>
                 </thead>
@@ -607,7 +617,7 @@ export function TournamentRoomScreen() {
                           <td className="px-3 py-2 text-right">
                             {item.id !== participant?.id && (
                               <button type="button" onClick={() => callAction("/remove-player", { participantId: item.id })} className="rounded border border-white/15 px-2 py-1 text-white/70 hover:bg-white/10">
-                                убрать
+                                {t("tournament.remove")}
                               </button>
                             )}
                           </td>
@@ -618,7 +628,7 @@ export function TournamentRoomScreen() {
                   {sortedParticipants.length === 0 && (
                     <tr>
                       <td colSpan={isCreator && tournament?.status !== "finished" ? 7 : tournament?.status === "finished" ? 5 : 6} className="px-3 py-5 text-center text-white/50">
-                        Игроков пока нет.
+                        {t("tournament.noPlayers")}
                       </td>
                     </tr>
                   )}
@@ -629,35 +639,35 @@ export function TournamentRoomScreen() {
 
           {tournament?.status === "finished" ? (
             <div className="rounded-lg border border-white/15 bg-white/5 p-4">
-              <h2 className="mb-3 text-lg font-semibold">Все туры</h2>
+              <h2 className="mb-3 text-lg font-semibold">{t("tournament.allRounds")}</h2>
               <div className="grid gap-4">
                 {tournament.rounds.map((round) => (
                   <div key={round.id} className="grid gap-2">
-                    <div className="text-sm font-semibold text-white/80">Тур {round.number}</div>
+                    <div className="text-sm font-semibold text-white/80">{t("tournament.roundNumber", { number: round.number })}</div>
                     {round.matches.map((match) => (
                       <div key={match.id} className="grid gap-2 rounded-md bg-black/20 px-3 py-2 text-sm sm:grid-cols-[1fr_auto]">
                         <span>{participantName(tournament, match.playerAId)} - {participantName(tournament, match.playerBId)}</span>
-                        <span className="text-white/70">{resultLabel(match)}</span>
+                        <span className="text-white/70">{resultLabel(match, t)}</span>
                       </div>
                     ))}
                   </div>
                 ))}
-                {tournament.rounds.length === 0 && <div className="text-sm text-white/60">Туры не проводились.</div>}
+                {tournament.rounds.length === 0 && <div className="text-sm text-white/60">{t("tournament.noRounds")}</div>}
               </div>
             </div>
           ) : (
             <div className="rounded-lg border border-white/15 bg-white/5 p-4">
               <h2 className="mb-3 text-lg font-semibold">
-                Текущий тур{currentRound ? `: Тур ${currentRound.number}` : ""}
+                {currentRound ? t("tournament.currentRoundNumber", { number: currentRound.number }) : t("tournament.currentRound")}
               </h2>
               <div className="grid gap-2">
                 {(currentRound?.matches || []).map((match) => (
                   <div key={match.id} className="grid gap-2 rounded-md bg-black/20 px-3 py-2 text-sm sm:grid-cols-[1fr_auto]">
                     <span>{participantName(tournament!, match.playerAId)} - {participantName(tournament!, match.playerBId)}</span>
-                    <span className="text-white/70">{resultLabel(match)}</span>
+                    <span className="text-white/70">{resultLabel(match, t)}</span>
                   </div>
                 ))}
-                {!currentRound && <div className="text-sm text-white/60">Тур еще не запущен.</div>}
+                {!currentRound && <div className="text-sm text-white/60">{t("tournament.roundNotStarted")}</div>}
               </div>
             </div>
           )}
@@ -669,14 +679,14 @@ export function TournamentRoomScreen() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm px-4">
           <button
             type="button"
-            aria-label="Закрыть"
+            aria-label={t("common.close")}
             onClick={() => setShowLeaveConfirm(false)}
             className="absolute inset-0 cursor-default"
           />
           <div className="relative w-full max-w-md rounded-2xl border border-white/15 bg-[#121217] p-6 shadow-2xl">
-            <h4 className="text-white text-xl font-semibold text-center">Покинуть турнир?</h4>
+            <h4 className="text-white text-xl font-semibold text-center">{t("tournament.leaveConfirmTitle")}</h4>
             <p className="text-white/60 text-sm text-center mt-3">
-              Если вы покинете турнир, вы не попадете в следующие пары, а несыгранная партия текущего тура может быть засчитана как 0 очков.
+              {t("tournament.leaveConfirmText")}
             </p>
             <div className="mt-5 grid grid-cols-2 gap-2">
               <button
@@ -684,7 +694,7 @@ export function TournamentRoomScreen() {
                 onClick={() => setShowLeaveConfirm(false)}
                 className="rounded-xl px-4 py-3 bg-white/10 border border-white/15 text-white font-semibold hover:bg-white/15 transition-all duration-200"
               >
-                Остаться
+                {t("tournament.stay")}
               </button>
               <button
                 type="button"
@@ -692,7 +702,7 @@ export function TournamentRoomScreen() {
                 onClick={handleLeave}
                 className="rounded-xl px-4 py-3 bg-red-500/80 text-white font-semibold hover:bg-red-500 transition-all duration-200 disabled:opacity-50"
               >
-                Покинуть
+                {t("tournament.leaveConfirm")}
               </button>
             </div>
           </div>
@@ -703,14 +713,14 @@ export function TournamentRoomScreen() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm px-4">
           <button
             type="button"
-            aria-label="Закрыть"
+            aria-label={t("common.close")}
             onClick={() => setShowFinishConfirm(false)}
             className="absolute inset-0 cursor-default"
           />
           <div className="relative w-full max-w-md rounded-2xl border border-white/15 bg-[#121217] p-6 shadow-2xl">
-            <h4 className="text-white text-xl font-semibold text-center">Завершить турнир?</h4>
+            <h4 className="text-white text-xl font-semibold text-center">{t("tournament.finishConfirmTitle")}</h4>
             <p className="text-white/60 text-sm text-center mt-3">
-              Если сейчас идет тур, турнир завершится сразу после последней партии этого тура. Следующий тур создан не будет.
+              {t("tournament.finishConfirmText")}
             </p>
             <div className="mt-5 grid grid-cols-2 gap-2">
               <button
@@ -718,7 +728,7 @@ export function TournamentRoomScreen() {
                 onClick={() => setShowFinishConfirm(false)}
                 className="rounded-xl px-4 py-3 bg-white/10 border border-white/15 text-white font-semibold hover:bg-white/15 transition-all duration-200"
               >
-                Отмена
+                {t("common.cancel")}
               </button>
               <button
                 type="button"
@@ -726,7 +736,7 @@ export function TournamentRoomScreen() {
                 onClick={handleFinishTournament}
                 className="rounded-xl px-4 py-3 bg-[#4f39f6] text-white font-semibold hover:bg-[#432dd9] transition-all duration-200 disabled:opacity-50"
               >
-                Завершить
+                {t("tournament.finishConfirm")}
               </button>
             </div>
           </div>

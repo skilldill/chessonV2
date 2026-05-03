@@ -5,8 +5,10 @@ import { useQuickPlayEntry } from "../../hooks/useQuickPlayEntry";
 import { AppVersionCaption } from "../../components/AppVersionCaption/AppVersionCaption";
 import { AppTopBar } from "../../components/AppTopBar/AppTopBar";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 export const HomeScreen = () => {
+  const { t } = useTranslation();
   const { playersInRandomQueue, quickPlayLabel, openQuickPlay } = useQuickPlayEntry();
 
   return (
@@ -24,8 +26,8 @@ export const HomeScreen = () => {
           to="/tournaments/new"
           className="flex min-h-[72px] w-full flex-col justify-center rounded-xl border border-white/15 bg-white/5 px-5 py-4 text-white transition-colors duration-200 hover:bg-white/10"
         >
-          <span className="text-[18px] font-bold">Создать турнир</span>
-          <span className="text-sm text-white/60">Швейцарская система с авто-жеребьевкой</span>
+          <span className="text-[18px] font-bold">{t("tournament.create")}</span>
+          <span className="text-sm text-white/60">{t("tournament.homeSubtitle")}</span>
         </Link>
         <AppVersionCaption />
       </div>

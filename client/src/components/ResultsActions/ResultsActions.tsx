@@ -154,7 +154,7 @@ export const ResultsActions: FC<ResultsActionsProps> = ({
                         className="flex-1 rounded-md text-sm font-semibold px-4 py-2 bg-[#4F39F6] text-white cursor-pointer transition-all duration-300 active:scale-95 focus:outline-none"
                         onClick={handleCloseButton}
                     >
-                        {tournamentId ? "Вернитесь в турнирную комнату" : isAuthenticated === false ? t("results.continueWithoutRegistration") : t("results.returnToMain")}
+                        {tournamentId ? t("tournament.returnToRoom") : isAuthenticated === false ? t("results.continueWithoutRegistration") : t("results.returnToMain")}
                     </button>
                 </div>
             </div>

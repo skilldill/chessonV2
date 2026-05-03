@@ -319,9 +319,9 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
 
     const tournamentNotActiveMagicButtonControls = [
         {
-            content: <img src={DoubleChevronesLeft} alt="Вернуться в турнирную комнату" height={18} width={18} />,
+            content: <img src={DoubleChevronesLeft} alt={t("tournament.returnToRoom")} height={18} width={18} />,
             onClick: () => handleReturnToTournamentRoom(),
-            tooltip: "К турниру",
+            tooltip: t("tournament.backToTournament"),
             withoutApprove: true,
         },
     ];
