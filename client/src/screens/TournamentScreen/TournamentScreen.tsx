@@ -240,6 +240,22 @@ export function TournamentRoomScreen() {
   const standingsByParticipantId = new Map(
     (tournament?.standings || []).map((standing, index) => [standing.participantId, { ...standing, place: index + 1 }])
   );
+  const sortedParticipants = [...(tournament?.participants || [])]
+    .filter((item) => !item.removed)
+    .sort((firstPlayer, secondPlayer) => {
+      const firstStanding = standingsByParticipantId.get(firstPlayer.id);
+      const secondStanding = standingsByParticipantId.get(secondPlayer.id);
+      const pointsDiff = (secondStanding?.points || 0) - (firstStanding?.points || 0);
+      if (pointsDiff !== 0) return pointsDiff;
+
+      const buchholzDiff = (secondStanding?.buchholz || 0) - (firstStanding?.buchholz || 0);
+      if (buchholzDiff !== 0) return buchholzDiff;
+
+      const winsDiff = (secondStanding?.wins || 0) - (firstStanding?.wins || 0);
+      if (winsDiff !== 0) return winsDiff;
+
+      return firstPlayer.nickname.localeCompare(secondPlayer.nickname, "ru");
+    });
   const participantMatch = currentRound?.matches.find((match) =>
     participant?.id && (match.playerAId === participant.id || match.playerBId === participant.id)
   );
@@ -418,6 +434,27 @@ export function TournamentRoomScreen() {
     }
   };
 
+  const getParticipantStatus = (item: TournamentParticipant) => {
+    if (!item.active) {
+      return { label: "вышел", className: "px-3 py-2 text-white/40" };
+    }
+
+    const currentMatch = currentRound?.matches.find(
+      (match) =>
+        (match.playerAId === item.id || match.playerBId === item.id)
+    );
+
+    if (currentMatch?.status === "active") {
+      return { label: "в игре", className: "px-3 py-2 text-yellow-300" };
+    }
+
+    if (currentMatch?.status === "completed" && !item.connected) {
+      return { label: "изучает партию после окончания", className: "px-3 py-2 text-yellow-300" };
+    }
+
+    return { label: "ожидает следующий тур", className: "px-3 py-2 text-emerald-300" };
+  };
+
   const isCreator = Boolean(tournament?.creatorUserId && currentUserId && tournament.creatorUserId === currentUserId);
   return (
     <div className="min-h-[100vh] text-white px-4 py-20">
@@ -552,17 +589,16 @@ export function TournamentRoomScreen() {
                   </tr>
                 </thead>
                 <tbody>
-                  {tournament?.participants.filter((item) => !item.removed).map((item, index) => {
+                  {sortedParticipants.map((item, index) => {
                     const standing = standingsByParticipantId.get(item.id);
+                    const playerStatus = getParticipantStatus(item);
 
                     return (
                       <tr key={item.id} className="border-t border-white/10 bg-black/10">
-                        <td className="px-3 py-2 text-white/50">{standing?.place || index + 1}</td>
+                        <td className="px-3 py-2 text-white/50">{index + 1}</td>
                         <td className="px-3 py-2 font-medium text-white">{item.nickname}</td>
                         {tournament?.status !== "finished" && (
-                          <td className={item.active ? "px-3 py-2 text-emerald-300" : "px-3 py-2 text-white/40"}>
-                            {item.active ? "в игре" : "вышел"}
-                          </td>
+                          <td className={playerStatus.className}>{playerStatus.label}</td>
                         )}
                         <td className="px-3 py-2 text-white/80">{standing?.points || 0}</td>
                         <td className="px-3 py-2 text-white/60">{standing?.buchholz || 0}</td>
@@ -579,7 +615,7 @@ export function TournamentRoomScreen() {
                       </tr>
                     );
                   })}
-                  {(!tournament || tournament.participants.filter((item) => !item.removed).length === 0) && (
+                  {sortedParticipants.length === 0 && (
                     <tr>
                       <td colSpan={isCreator && tournament?.status !== "finished" ? 7 : tournament?.status === "finished" ? 5 : 6} className="px-3 py-5 text-center text-white/50">
                         Игроков пока нет.
@@ -626,19 +662,6 @@ export function TournamentRoomScreen() {
             </div>
           )}
 
-          <div className="rounded-lg border border-white/15 bg-white/5 p-4">
-            <h2 className="mb-3 text-lg font-semibold">{tournament?.status === "finished" ? "Итоговая таблица" : "Предварительная таблица"}</h2>
-            <div className="grid gap-2">
-              {(tournament?.standings || []).map((standing, index) => (
-                <div key={standing.participantId} className="grid grid-cols-[32px_1fr_56px_80px] items-center rounded-md bg-black/20 px-3 py-2 text-sm">
-                  <span className="text-white/50">{index + 1}</span>
-                  <span>{standing.nickname}</span>
-                  <span>{standing.points}</span>
-                  <span className="text-white/50">Бх {standing.buchholz}</span>
-                </div>
-              ))}
-            </div>
-          </div>
         </section>
       </main>
 

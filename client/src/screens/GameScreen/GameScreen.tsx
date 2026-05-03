@@ -120,6 +120,17 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
         window.location.href = '/';
     };
 
+    const handleReturnToTournamentRoom = () => {
+        removeGameData();
+
+        if (gameState.tournamentId && roomId) {
+            localStorage.setItem("tournamentCompletedGame", `${gameState.tournamentId}:${roomId}`);
+        }
+
+        localStorage.removeItem("tournamentGameProfile");
+        window.location.href = gameState.tournamentId ? `/tournaments/${gameState.tournamentId}` : '/';
+    };
+
     useEffect(() => {
         setInitialFEN(gameState.currentFEN);
     }, [])
@@ -282,6 +293,21 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
         },
     ];
 
+    const tournamentMagicButtonControls = [
+        {
+            content: <img src={HandShakePNG} alt={t('game.controls.offerDraw')} height={18} width={18} />,
+            onClick: () => onSendDrawOffer('offer'),
+            tooltip: t('game.controls.offerDraw'),
+            withoutApprove: true,
+        },
+        {
+            content: <img src={WhiteFlagPNG} alt={t('game.controls.resign')} height={18} width={18} />,
+            onClick: () => onSendResignation(),
+            tooltip: t('game.controls.resign'),
+            approveText: t('game.confirm.resign'),
+        },
+    ];
+
     const notActiveMagicButtonControls = [
         {
             content: <img src={CrossMarkRedPNG} alt={t('game.controls.quitGame')} height={18} width={18} />,
@@ -291,10 +317,25 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
         },
     ];
 
+    const tournamentNotActiveMagicButtonControls = [
+        {
+            content: <img src={DoubleChevronesLeft} alt="Вернуться в турнирную комнату" height={18} width={18} />,
+            onClick: () => handleReturnToTournamentRoom(),
+            tooltip: "К турниру",
+            withoutApprove: true,
+        },
+    ];
+
     const actualMagicButtonControls = () => {
+        if (gameState.gameType === "tournament") return tournamentMagicButtonControls;
         if (gameState.manualBotRoom) return forBotGameMagicButtonControls;
         if (gameState.withAIhints) return withAIhintsMagicButtonControls;
         return magicButtonControls;
+    }
+
+    const actualNotActiveMagicButtonControls = () => {
+        if (gameState.gameType === "tournament") return tournamentNotActiveMagicButtonControls;
+        return notActiveMagicButtonControls;
     }
 
     return (
@@ -402,7 +443,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                         loading={waitAIhint}
                         notify={gameControlsNotify}
                         controls={actualMagicButtonControls()}
-                        notActiveControls={notActiveMagicButtonControls}
+                        notActiveControls={actualNotActiveMagicButtonControls()}
                         highlightsControls={actualMagicButtonControls()}
 
                         // Пока что так, позже сделаю лучше
