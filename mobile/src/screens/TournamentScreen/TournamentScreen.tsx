@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useHistory, useParams } from "react-router-dom";
+import { Link, useHistory, useLocation, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { API_PREFIX, TOURNAMENT_WS_URL } from "../../constants/api";
 import { TOURNAMENT_MAX_PLAYERS, TOURNAMENT_MAX_ROUNDS } from "../../constants/tournament";
@@ -219,6 +219,8 @@ export function TournamentRoomScreen() {
   const { t } = useTranslation();
   const { tournamentId } = useParams<{ tournamentId: string }>();
   const history = useHistory();
+  const location = useLocation();
+  const isViewOnly = new URLSearchParams(location.search).get("viewOnly") === "true";
   const wsRef = useRef<WebSocket | null>(null);
   const openedGameRoomRef = useRef<string | null>(null);
   const [tournament, setTournament] = useState<Tournament | null>(null);
@@ -228,6 +230,7 @@ export function TournamentRoomScreen() {
   const [isCurrentUserChecked, setIsCurrentUserChecked] = useState(false);
   const [nowMs, setNowMs] = useState(Date.now());
   const [isShareCopied, setIsShareCopied] = useState(false);
+  const [isBroadcastCopied, setIsBroadcastCopied] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -284,7 +287,7 @@ export function TournamentRoomScreen() {
       })
       .catch(() => undefined)
       .finally(() => setIsCurrentUserChecked(true));
-    const query = participant?.id ? `&participantId=${encodeURIComponent(participant.id)}` : "";
+    const query = !isViewOnly && participant?.id ? `&participantId=${encodeURIComponent(participant.id)}` : "";
     const ws = new WebSocket(`${TOURNAMENT_WS_URL}?tournamentId=${encodeURIComponent(tournamentId)}${query}`);
     wsRef.current = ws;
     ws.onmessage = (event) => {
@@ -295,7 +298,7 @@ export function TournamentRoomScreen() {
     };
     return () => ws.close(1000, "Tournament screen closed");
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tournamentId, participant?.id]);
+  }, [tournamentId, participant?.id, isViewOnly]);
 
   useEffect(() => {
     if (!tournament?.startAt) return;
@@ -304,7 +307,7 @@ export function TournamentRoomScreen() {
   }, [tournament?.startAt]);
 
   useEffect(() => {
-    if (!participant || !participantMatch?.gameRoomId || participantMatch.status !== "active") {
+    if (isViewOnly || !participant || !participantMatch?.gameRoomId || participantMatch.status !== "active") {
       return;
     }
 
@@ -335,10 +338,10 @@ export function TournamentRoomScreen() {
       })
     );
     history.push(`/game/${participantMatch.gameRoomId}`);
-  }, [history, participant, participantMatch?.gameRoomId, participantMatch?.status, tournamentId]);
+  }, [history, isViewOnly, participant, participantMatch?.gameRoomId, participantMatch?.status, tournamentId]);
 
   useEffect(() => {
-    if (!tournament || !currentUserId || participant) return;
+    if (isViewOnly || !tournament || !currentUserId || participant) return;
     const ownParticipant = tournament.participants.find((item) => item.userId === currentUserId && item.active && !item.removed);
     if (!ownParticipant) return;
 
@@ -349,15 +352,15 @@ export function TournamentRoomScreen() {
     };
     setParticipant(nextParticipant);
     storeParticipant(tournamentId, nextParticipant);
-  }, [currentUserId, participant, tournament, tournamentId]);
+  }, [currentUserId, isViewOnly, participant, tournament, tournamentId]);
 
   useEffect(() => {
-    if (!participant || !tournament) return;
+    if (isViewOnly || !participant || !tournament) return;
     const currentParticipant = tournament.participants.find((item) => item.id === participant.id && !item.removed);
     if (currentParticipant && !currentParticipant.active && tournament.status !== "finished") {
       setParticipant(null);
     }
-  }, [participant, tournament]);
+  }, [isViewOnly, participant, tournament]);
 
   const callAction = async (path: string, body?: unknown) => {
     setIsBusy(true);
@@ -415,6 +418,17 @@ export function TournamentRoomScreen() {
     }
   };
 
+  const handleShareBroadcast = async () => {
+    const broadcastUrl = `${window.location.origin}/tournaments/${tournamentId}?viewOnly=true`;
+    try {
+      await navigator.clipboard.writeText(broadcastUrl);
+      setIsBroadcastCopied(true);
+      window.setTimeout(() => setIsBroadcastCopied(false), 2000);
+    } catch {
+      setError(t("tournament.shareError"));
+    }
+  };
+
   const getParticipantStatus = (item: TournamentParticipant) => {
     if (!item.active) return { label: t("tournament.status.left"), className: "px-3 py-2 text-white/40" };
 
@@ -430,11 +444,13 @@ export function TournamentRoomScreen() {
 
   return (
     <div className="relative w-full min-h-full overflow-y-auto px-4 py-20">
-      <div className="fixed top-0 left-0 right-0 z-1">
-        <AppTopBar />
-      </div>
+      {!isViewOnly && (
+        <div className="fixed top-0 left-0 right-0 z-1">
+          <AppTopBar />
+        </div>
+      )}
       <main className="mx-auto flex w-full max-w-[430px] flex-col gap-4">
-        <Link to="/main" className="text-sm text-white/60">{t("common.back")}</Link>
+        {!isViewOnly && <Link to="/main" className="text-sm text-white/60">{t("common.back")}</Link>}
         <section className="rounded-2xl border border-white/10 bg-white/5 p-4">
           <h1 className="text-white text-2xl font-bold">{tournament?.title || t("tournament.defaultTitle")}</h1>
           <p className="mt-1 text-sm text-white/60">
@@ -447,13 +463,24 @@ export function TournamentRoomScreen() {
               status: tournament?.status || "loading",
             })}
           </p>
-          <button
-            type="button"
-            onClick={handleShare}
-            className="btn-client btn-client-preset mt-4 h-11 w-full rounded-xl border border-white/15 text-sm font-semibold text-white"
-          >
-            {isShareCopied ? t("tournament.shareCopied") : t("tournament.share")}
-          </button>
+          {!isViewOnly && (
+            <div className="mt-4 grid gap-2">
+              <button
+                type="button"
+                onClick={handleShare}
+                className="btn-client h-11 w-full rounded-xl border border-[#555ab9b3] bg-[#4f39f633] text-sm font-semibold text-white"
+              >
+                {isShareCopied ? t("tournament.shareCopied") : t("tournament.share")}
+              </button>
+              <button
+                type="button"
+                onClick={handleShareBroadcast}
+                className="btn-client btn-client-preset h-11 w-full rounded-xl border border-white/15 text-sm font-semibold text-white"
+              >
+                {isBroadcastCopied ? t("tournament.broadcastCopied") : t("tournament.shareBroadcast")}
+              </button>
+            </div>
+          )}
         </section>
 
         {tournament?.status === "scheduled" && tournament.startAt && (
@@ -477,7 +504,7 @@ export function TournamentRoomScreen() {
           </div>
         )}
 
-        {(!participant || (participantInTournament && !participantInTournament.active)) && isCurrentUserChecked && tournament?.status !== "finished" && (
+        {!isViewOnly && (!participant || (participantInTournament && !participantInTournament.active)) && isCurrentUserChecked && tournament?.status !== "finished" && (
           <section className="rounded-2xl border border-white/10 bg-white/5 p-4">
             {!currentUserId && (
               <input
@@ -498,7 +525,7 @@ export function TournamentRoomScreen() {
           </section>
         )}
 
-        {participant && tournament?.status !== "finished" && participantInTournament?.active && (
+        {!isViewOnly && participant && tournament?.status !== "finished" && participantInTournament?.active && (
           <section className="rounded-2xl border border-white/10 bg-white/5 p-4">
             <div className="text-sm text-white/70">{t("tournament.playingAs")}</div>
             <div className="mt-1 text-lg font-semibold text-white">{participant.nickname}</div>
@@ -514,7 +541,7 @@ export function TournamentRoomScreen() {
           </section>
         )}
 
-        {isCreator && tournament && tournament.status !== "finished" && (
+        {!isViewOnly && isCreator && tournament && tournament.status !== "finished" && (
           <section className="rounded-2xl border border-white/10 bg-white/5 p-4">
             <div className="flex flex-col gap-2">
               {(tournament.status === "setup" || (tournament.status === "scheduled" && tournament.rounds.length === 0)) && (
@@ -569,7 +596,7 @@ export function TournamentRoomScreen() {
                   <th className="px-3 py-2 font-semibold">{t("tournament.table.points")}</th>
                   <th className="px-3 py-2 font-semibold">{t("tournament.table.buchholz")}</th>
                   <th className="px-3 py-2 font-semibold">{t("tournament.table.wins")}</th>
-                  {isCreator && tournament?.status !== "finished" && <th className="px-3 py-2 font-semibold" />}
+                  {!isViewOnly && isCreator && tournament?.status !== "finished" && <th className="px-3 py-2 font-semibold" />}
                 </tr>
               </thead>
               <tbody>
@@ -584,7 +611,7 @@ export function TournamentRoomScreen() {
                       <td className="px-3 py-2 text-white/80">{standing?.points || 0}</td>
                       <td className="px-3 py-2 text-white/60">{standing?.buchholz || 0}</td>
                       <td className="px-3 py-2 text-white/60">{standing?.wins || 0}</td>
-                      {isCreator && tournament?.status !== "finished" && (
+                      {!isViewOnly && isCreator && tournament?.status !== "finished" && (
                         <td className="px-3 py-2 text-right">
                           {item.id !== participant?.id && (
                             <button type="button" onClick={() => callAction("/remove-player", { participantId: item.id })} className="rounded border border-white/15 px-2 py-1 text-white/70">
@@ -598,7 +625,7 @@ export function TournamentRoomScreen() {
                 })}
                 {sortedParticipants.length === 0 && (
                   <tr>
-                    <td colSpan={isCreator && tournament?.status !== "finished" ? 7 : tournament?.status === "finished" ? 5 : 6} className="px-3 py-5 text-center text-white/50">
+                    <td colSpan={!isViewOnly && isCreator && tournament?.status !== "finished" ? 7 : tournament?.status === "finished" ? 5 : 6} className="px-3 py-5 text-center text-white/50">
                       {t("tournament.noPlayers")}
                     </td>
                   </tr>
@@ -644,7 +671,7 @@ export function TournamentRoomScreen() {
         )}
       </main>
 
-      {showLeaveConfirm && (
+      {!isViewOnly && showLeaveConfirm && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm px-4">
           <button type="button" aria-label={t("common.close")} onClick={() => setShowLeaveConfirm(false)} className="absolute inset-0 cursor-default" />
           <div className="relative w-full max-w-[390px] rounded-2xl border border-white/15 bg-[#121217] p-6 shadow-2xl">
@@ -662,7 +689,7 @@ export function TournamentRoomScreen() {
         </div>
       )}
 
-      {showFinishConfirm && (
+      {!isViewOnly && showFinishConfirm && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm px-4">
           <button type="button" aria-label={t("common.close")} onClick={() => setShowFinishConfirm(false)} className="absolute inset-0 cursor-default" />
           <div className="relative w-full max-w-[390px] rounded-2xl border border-white/15 bg-[#121217] p-6 shadow-2xl">
