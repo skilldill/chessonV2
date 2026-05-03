@@ -59,33 +59,33 @@ export const CreateRoomScreen = () => {
     const [withAIhints, setWithAIhints] = useState(false);
 
     useEffect(() => {
-      setRoomTimeSettingsToStorage(timeMinutes, incrementSeconds);
+        setRoomTimeSettingsToStorage(timeMinutes, incrementSeconds);
     }, [timeMinutes, incrementSeconds]);
 
     useEffect(() => {
-      if (typeof window === "undefined") {
-        return;
-      }
+        if (typeof window === "undefined") {
+            return;
+        }
 
-      if (botCustomFEN.length > 0) {
-        localStorage.setItem(BOT_CUSTOM_FEN_STORAGE_KEY, botCustomFEN);
-        return;
-      }
+        if (botCustomFEN.length > 0) {
+            localStorage.setItem(BOT_CUSTOM_FEN_STORAGE_KEY, botCustomFEN);
+            return;
+        }
 
-      localStorage.removeItem(BOT_CUSTOM_FEN_STORAGE_KEY);
+        localStorage.removeItem(BOT_CUSTOM_FEN_STORAGE_KEY);
     }, [botCustomFEN]);
 
     useEffect(() => {
-      if (typeof window === "undefined") {
-        return;
-      }
+        if (typeof window === "undefined") {
+            return;
+        }
 
-      if (friendCustomFEN.length > 0) {
-        localStorage.setItem(FRIEND_CUSTOM_FEN_STORAGE_KEY, friendCustomFEN);
-        return;
-      }
+        if (friendCustomFEN.length > 0) {
+            localStorage.setItem(FRIEND_CUSTOM_FEN_STORAGE_KEY, friendCustomFEN);
+            return;
+        }
 
-      localStorage.removeItem(FRIEND_CUSTOM_FEN_STORAGE_KEY);
+        localStorage.removeItem(FRIEND_CUSTOM_FEN_STORAGE_KEY);
     }, [friendCustomFEN]);
 
     const availableThemes = useMemo(() => Object.keys(CHESSBOARD_THEMES), []);
@@ -115,9 +115,9 @@ export const CreateRoomScreen = () => {
     };
 
     const handleSaveThemeToStorage = () => {
-      setChessboardThemeToStorage(selectedTheme);
-      setActiveTheme(selectedTheme);
-      setIsThemeModalOpen(false);
+        setChessboardThemeToStorage(selectedTheme);
+        setActiveTheme(selectedTheme);
+        setIsThemeModalOpen(false);
     };
 
     return (
@@ -149,6 +149,21 @@ export const CreateRoomScreen = () => {
                         theme="neutral"
                     /> */}
 
+                    <CreateGameButton
+                        title={(
+                            <span>
+                                {t("tournament.create")}
+                                <span className="italic font-extrabold bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] bg-clip-text text-transparent">
+                                    {' '} NEW
+                                </span>
+                            </span>
+                        )}
+                        subtitle={t("tournament.homeSubtitle")}
+                        onClick={() => { window.location.href = "/tournaments/new"; }}
+                        theme="neutral"
+                        disabled={isCreating}
+                    />
+
                     <div className="flex flex-col gap-1">
                         <QuickPlayButton
                             onClick={openQuickPlay}
@@ -165,7 +180,7 @@ export const CreateRoomScreen = () => {
                                     + {t("room.aiHints")} <img className="w-[14px] h-[14px]" src={AIiconPNG} />
                                 </span>
                             </span>
-                         )}
+                        )}
                         subtitle={t("room.botSubtitle")}
                         onClick={() => setIsBotModalOpen(true)}
                         theme="success"
@@ -180,7 +195,7 @@ export const CreateRoomScreen = () => {
                                     + {t("room.aiHints")} <img className="w-[14px] h-[14px]" src={AIiconPNG} />
                                 </span>
                             </span>
-                          )}
+                        )}
                         subtitle={t("room.timeSummary", { timeMinutes, incrementSeconds })}
                         onClick={() => setIsTimeModalOpen(true)}
                         theme="success"

@@ -71,6 +71,8 @@ export interface GameState {
   timer?: TimerState;
   player?: PlayerInfo;
   opponent?: PlayerInfo;
+  gameType?: "tournament";
+  tournamentId?: string;
 }
 
 export type ScreenSize = {

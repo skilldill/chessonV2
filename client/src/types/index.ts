@@ -57,6 +57,8 @@ export interface PlayerInfo {
 
 // Типы для состояния игры
 export interface GameState {
+  gameType?: "tournament";
+  tournamentId?: string;
   currentFEN: string;
   moveHistory: MoveData[];
   currentPlayer: ChessColor;

@@ -24,6 +24,8 @@ const INITIAL_GAME_STATE = {
     manualBotRoom: false,
     gameStarted: false,
     gameEnded: false,
+    gameType: undefined,
+    tournamentId: undefined,
     gameResult: undefined,
     drawOffer: undefined,
     drawOfferCount: {},

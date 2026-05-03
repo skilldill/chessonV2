@@ -8,6 +8,9 @@ type RoomTimeModalProps = {
   timeMinutes: number;
   incrementSeconds: number;
   withAIhints: boolean;
+  showAdvancedOptions?: boolean;
+  title?: string;
+  subtitle?: string;
   startPositionMode: StartPositionMode;
   customFEN: string;
   onChangeTimeMinutes: (value: number) => void;
@@ -28,6 +31,9 @@ export const RoomTimeModal = ({
   timeMinutes,
   incrementSeconds,
   withAIhints,
+  showAdvancedOptions = true,
+  title,
+  subtitle,
   startPositionMode,
   customFEN,
   onChangeTimeMinutes,
@@ -47,10 +53,10 @@ export const RoomTimeModal = ({
     <div className="fixed top-[0px] right-[0px] bottom-[0px] left-[0px] z-[100] overflow-y-auto p-[40px] backdrop-blur-sm">
       <div className="w-full max-w-md rounded-2xl border border-white/15 bg-[#121217] p-6 shadow-2xl m-auto">
         <h4 className="text-white text-xl font-semibold text-center">
-          {t("time.title")}
+          {title || t("time.title")}
         </h4>
         <p className="text-white/60 text-sm text-center mt-2">
-          {t("time.createForFriends")}
+          {subtitle || t("time.createForFriends")}
         </p>
 
         <div className="mt-5 space-y-4">
@@ -100,37 +106,39 @@ export const RoomTimeModal = ({
             {t("time.selected", { timeMinutes, incrementSeconds })}
           </div>
 
-          <div>
-            <div className="text-white/70 text-sm mb-2">{t("bot.startPosition")}</div>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => onChangeStartPositionMode("default")}
-                disabled={isCreating}
-                className={`h-11 rounded-lg border transition-all duration-200 active:scale-[0.98] focus:outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
-                  startPositionMode === "default"
-                    ? 'bg-[#4F39F6]/20 text-white border-[#555ab9]/70'
-                    : 'bg-white/5 text-white/90 border-white/15 hover:border-white/35'
-                }`}
-              >
-                <span className="font-semibold">{t("bot.position.default")}</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => onChangeStartPositionMode("custom")}
-                disabled={isCreating}
-                className={`h-11 rounded-lg border transition-all duration-200 active:scale-[0.98] focus:outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
-                  startPositionMode === "custom"
-                    ? 'bg-[#4F39F6]/20 text-white border-[#555ab9]/70'
-                    : 'bg-white/5 text-white/90 border-white/15 hover:border-white/35'
-                }`}
-              >
-                <span className="font-semibold">{t("bot.position.custom")}</span>
-              </button>
+          {showAdvancedOptions && (
+            <div>
+              <div className="text-white/70 text-sm mb-2">{t("bot.startPosition")}</div>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => onChangeStartPositionMode("default")}
+                  disabled={isCreating}
+                  className={`h-11 rounded-lg border transition-all duration-200 active:scale-[0.98] focus:outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                    startPositionMode === "default"
+                      ? 'bg-[#4F39F6]/20 text-white border-[#555ab9]/70'
+                      : 'bg-white/5 text-white/90 border-white/15 hover:border-white/35'
+                  }`}
+                >
+                  <span className="font-semibold">{t("bot.position.default")}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onChangeStartPositionMode("custom")}
+                  disabled={isCreating}
+                  className={`h-11 rounded-lg border transition-all duration-200 active:scale-[0.98] focus:outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                    startPositionMode === "custom"
+                      ? 'bg-[#4F39F6]/20 text-white border-[#555ab9]/70'
+                      : 'bg-white/5 text-white/90 border-white/15 hover:border-white/35'
+                  }`}
+                >
+                  <span className="font-semibold">{t("bot.position.custom")}</span>
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
-          {startPositionMode === "custom" && (
+          {showAdvancedOptions && startPositionMode === "custom" && (
             <div>
               <label className="block text-white/70 text-xs mb-1.5" htmlFor="friend-custom-fen">
                 {t("bot.fenLabel")}
@@ -147,24 +155,26 @@ export const RoomTimeModal = ({
             </div>
           )}
 
-          <label className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl px-3 py-3 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={withAIhints}
-              onChange={(event) => onChangeWithAIhints(event.target.checked)}
-              disabled={isCreating}
-              className="h-4 w-4 accent-[#555ab9] cursor-pointer"
-            />
-            <div className="flex flex-col">
-              <span className="text-white font-medium leading-tight">
-                {t("time.enable")}{" "}
-                <span className="font-extrabold bg-gradient-to-r from-[#E810A7] to-[#FFE600] bg-clip-text text-transparent">
-                  {t("room.aiHints")}
+          {showAdvancedOptions && (
+            <label className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl px-3 py-3 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={withAIhints}
+                onChange={(event) => onChangeWithAIhints(event.target.checked)}
+                disabled={isCreating}
+                className="h-4 w-4 accent-[#555ab9] cursor-pointer"
+              />
+              <div className="flex flex-col">
+                <span className="text-white font-medium leading-tight">
+                  {t("time.enable")}{" "}
+                  <span className="font-extrabold bg-gradient-to-r from-[#E810A7] to-[#FFE600] bg-clip-text text-transparent">
+                    {t("room.aiHints")}
+                  </span>
                 </span>
-              </span>
-              <span className="text-white/60 text-xs leading-tight">{t("time.hintButton")}</span>
-            </div>
-          </label>
+                <span className="text-white/60 text-xs leading-tight">{t("time.hintButton")}</span>
+              </div>
+            </label>
+          )}
         </div>
 
         <div className="mt-5 grid grid-cols-2 gap-2">

@@ -42,6 +42,7 @@ type GameScreenProps = {
   resultMessage?: string;
   offeredDraw?: boolean;
   connectionLost?: boolean;
+  roomId?: string;
 }
 
 const GameScreen: React.FC<GameScreenProps> = ({
@@ -62,6 +63,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
   resultMessage,
   offeredDraw,
   connectionLost = false,
+  roomId,
 }) => {
   const { t, i18n } = useTranslation();
   const screenSize = useScreenSize();
@@ -111,6 +113,17 @@ const GameScreen: React.FC<GameScreenProps> = ({
     window.location.href = '/';
   };
 
+  const handleReturnToTournamentRoom = () => {
+    removeGameData();
+
+    if (gameState.tournamentId && roomId) {
+      localStorage.setItem("tournamentCompletedGame", `${gameState.tournamentId}:${roomId}`);
+    }
+
+    localStorage.removeItem("tournamentGameProfile");
+    window.location.href = gameState.tournamentId ? `/tournaments/${gameState.tournamentId}` : '/';
+  };
+
   useEffect(() => {
     setInitialFEN(gameState.currentFEN);
   }, [])
@@ -146,7 +159,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
   }, [movesHistory.length, gameState.currentFEN]);
 
   const handleCloseResults = () => {
-    window.location.href = import.meta.env.VITE_MAIN_SITE;
+    removeGameData();
   };
 
   const handleAIhints = () => {
@@ -272,6 +285,21 @@ const GameScreen: React.FC<GameScreenProps> = ({
     },
   ];
 
+  const tournamentMagicButtonControls = [
+    {
+      content: <img src={HandShakePNG} alt={t('game.controls.offerDraw')} height={18} width={18} />,
+      onClick: () => onSendDrawOffer('offer'),
+      tooltip: t('game.controls.offerDraw'),
+      withoutApprove: true,
+    },
+    {
+      content: <img src={WhiteFlagPNG} alt={t('game.controls.resign')} height={18} width={18} />,
+      onClick: () => onSendResignation(),
+      tooltip: t('game.controls.resign'),
+      approveText: t('game.confirm.resign'),
+    },
+  ];
+
   const notActiveMagicButtonControls = [
     {
       content: <img src={CrossMarkRedPNG} alt={t('game.controls.quitGame')} height={18} width={18} />,
@@ -281,10 +309,25 @@ const GameScreen: React.FC<GameScreenProps> = ({
     },
   ];
 
+  const tournamentNotActiveMagicButtonControls = [
+    {
+      content: <img src={DoubleChevronesLeftSVG} alt={t("tournament.returnToRoom")} height={18} width={18} />,
+      onClick: () => handleReturnToTournamentRoom(),
+      tooltip: t("tournament.backToTournament"),
+      withoutApprove: true,
+    },
+  ];
+
   const actualMagicButtonControls = () => {
+    if (gameState.gameType === "tournament") return tournamentMagicButtonControls;
     if (gameState.manualBotRoom) return forBotGameMagicButtonControls;
     if (gameState.withAIhints) return withAIhintsMagicButtonControls;
     return magicButtonControls;
+  };
+
+  const actualNotActiveMagicButtonControls = () => {
+    if (gameState.gameType === "tournament") return tournamentNotActiveMagicButtonControls;
+    return notActiveMagicButtonControls;
   };
 
   return (
@@ -298,6 +341,8 @@ const GameScreen: React.FC<GameScreenProps> = ({
         <ResultsActions
           message={resultMessage}
           onClose={handleCloseResults}
+          tournamentId={gameState.gameType === "tournament" ? gameState.tournamentId : undefined}
+          tournamentGameRoomId={gameState.gameType === "tournament" ? roomId : undefined}
         />
         <ConnectionNotification
           message={t('game.connectionLost')}
@@ -367,7 +412,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
           loading={waitAIhint}
           notify={gameControlsNotify}
           controls={actualMagicButtonControls()}
-          notActiveControls={notActiveMagicButtonControls}
+          notActiveControls={actualNotActiveMagicButtonControls()}
           highlightsControls={actualMagicButtonControls()}
           offeredDraw={offeredDraw}
           onAcceptDraw={() => onSendDrawOffer('accept')}

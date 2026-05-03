@@ -4,11 +4,14 @@ import { BackButton } from '../../components/BackButton/BackButton';
 import { MEM_AVATARS } from '../../constants/avatars';
 import { useProfile } from '../../hooks/useProfile';
 import { useUserGames } from '../../hooks/useUserGames';
+import { useUserTournaments } from '../../hooks/useUserTournaments';
 import { CHESSBOARD_THEMES } from '../../components/ChessBoardConfigs/ChessBoardConfigs';
 import { useTranslation } from 'react-i18next';
+import { useHistory } from 'react-router-dom';
 
 const ProfileScreen: React.FC = () => {
   const { t } = useTranslation();
+  const history = useHistory();
   const {
     name,
     avatarIndex,
@@ -25,12 +28,24 @@ const ProfileScreen: React.FC = () => {
   } = useProfile();
 
   const { loadTotalGames, totalGames } = useUserGames();
+  const {
+    tournaments,
+    loading: tournamentsLoading,
+    showTournaments,
+    setShowTournaments,
+    loadTournaments,
+    loadTotalTournaments,
+    totalTournaments,
+    formatDate: formatTournamentDate,
+  } = useUserTournaments();
   const [showAvatarSelect, setShowAvatarSelect] = useState(false);
   const [selectedAvatarIndex, setSelectedAvatarIndex] = useState(avatarIndex);
 
   useEffect(() => {
     loadTotalGames();
-  }, [loadTotalGames]);
+    loadTotalTournaments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (showAvatarSelect) {
@@ -87,6 +102,16 @@ const ProfileScreen: React.FC = () => {
                 {totalGames}
               </div>
             </div>
+            <button
+              type="button"
+              onClick={() => loadTournaments()}
+              className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-left touch-manipulation"
+            >
+              <div className="text-white/50 text-xs">{t("profile.tournamentsPlayed")}</div>
+              <div className="text-white/90 text-xl font-semibold mt-1">
+                {totalTournaments}
+              </div>
+            </button>
             <div className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3">
               <div className="text-white/50 text-xs">{t("profile.status")}</div>
               <div className="text-white/80 text-sm font-medium mt-1">
@@ -185,6 +210,62 @@ const ProfileScreen: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {showTournaments && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4">
+          <button
+            type="button"
+            aria-label={t("common.close")}
+            onClick={() => setShowTournaments(false)}
+            className="absolute inset-0 cursor-default"
+          />
+          <div className="relative w-full max-w-md rounded-2xl border border-white/15 bg-[#121217] p-6 shadow-2xl">
+            <div className="flex items-center justify-between gap-4 mb-4">
+              <h4 className="text-white text-xl font-semibold">{t("profile.tournamentsPlayed")}</h4>
+              <button
+                type="button"
+                onClick={() => setShowTournaments(false)}
+                className="rounded-lg border border-white/10 bg-white/5 px-3 py-1 text-sm text-white/70"
+              >
+                {t("common.close")}
+              </button>
+            </div>
+
+            {tournamentsLoading && (
+              <div className="flex justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#4F39F6] border-t-transparent" />
+              </div>
+            )}
+
+            {!tournamentsLoading && tournaments.length === 0 && (
+              <div className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-5 text-center text-sm text-white/60">
+                {t("profile.noTournaments")}
+              </div>
+            )}
+
+            {!tournamentsLoading && tournaments.length > 0 && (
+              <div className="max-h-[60vh] overflow-y-auto flex flex-col gap-2 pr-1">
+                {tournaments.map((tournament) => (
+                  <button
+                    key={tournament.id}
+                    type="button"
+                    onClick={() => {
+                      setShowTournaments(false);
+                      history.push(`/tournaments/${tournament.id}`);
+                    }}
+                    className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-left touch-manipulation"
+                  >
+                    <div className="text-white/90 text-sm font-semibold">{tournament.title}</div>
+                    <div className="text-white/50 text-xs mt-1">
+                      {formatTournamentDate(tournament.playedAt)}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

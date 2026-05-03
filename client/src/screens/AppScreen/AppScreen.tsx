@@ -114,6 +114,7 @@ export const AppScreen = () => {
         return (
             <GameScreen
                 gameState={gameState}
+                roomId={roomId}
                 movesHistory={movesHistory}
                 playerColor={userColor}
                 onMove={sendMove}

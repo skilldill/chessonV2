@@ -7,11 +7,15 @@ import { useTranslation } from "react-i18next";
 type ResultsActionsProps = {
     message?: string;
     onClose: () => void;
+    tournamentId?: string;
+    tournamentGameRoomId?: string;
 }
 
 export const ResultsActions: FC<ResultsActionsProps> = ({ 
     message,
-    onClose
+    onClose,
+    tournamentId,
+    tournamentGameRoomId
 }) => {
     const { t } = useTranslation();
     const [isClosing, setIsClosing] = useState(false);
@@ -77,6 +81,15 @@ export const ResultsActions: FC<ResultsActionsProps> = ({
 
     const handleCloseButton = () => {
         onClose();
+        if (tournamentId) {
+            if (tournamentGameRoomId) {
+                localStorage.setItem("tournamentCompletedGame", `${tournamentId}:${tournamentGameRoomId}`);
+            }
+            localStorage.removeItem("tournamentGameProfile");
+            window.location.href = `/tournaments/${tournamentId}`;
+            return;
+        }
+
         const url = isAuthenticated ? '/main' : '/';
         window.location.href = url;
     };
@@ -112,7 +125,7 @@ export const ResultsActions: FC<ResultsActionsProps> = ({
                 </p>
 
                 {/* Предложение регистрации для неавторизованных */}
-                {isAuthenticated === false && (
+                {!tournamentId && isAuthenticated === false && (
                     <div className="w-full bg-gradient-to-r from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 rounded-lg p-4 mb-2">
                         <p className="text-white text-sm text-center mb-3">
                             {t("results.signUpPrompt")}
@@ -139,7 +152,7 @@ export const ResultsActions: FC<ResultsActionsProps> = ({
                         className="flex-1 rounded-md text-sm font-semibold px-4 py-2 bg-[#4F39F6] text-white cursor-pointer transition-all duration-300 active:scale-95 focus:outline-none"
                         onClick={handleCloseButton}
                     >
-                        {isAuthenticated === false ? t("results.continueWithoutRegistration") : t("results.returnToMain")}
+                        {tournamentId ? t("tournament.returnToRoom") : isAuthenticated === false ? t("results.continueWithoutRegistration") : t("results.returnToMain")}
                     </ChessButton>
                 </div>
             </div>
