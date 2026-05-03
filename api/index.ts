@@ -3,7 +3,15 @@ import { connectDB } from './config/database';
 import { ElysiaWS } from 'elysia/ws';
 import { v4 as uuidv4 } from 'uuid';
 import { INITIAL_FEN } from './constants/chess';
-import { TOURNAMENT_MAX_PLAYERS, TOURNAMENT_MAX_ROUNDS, TOURNAMENT_NEXT_ROUND_DELAY_SECONDS } from './constants/tournament';
+import {
+  TOURNAMENT_MAX_PLAYERS,
+  TOURNAMENT_MAX_ROUNDS,
+  TOURNAMENT_NEXT_ROUND_DELAY_SECONDS,
+  TOURNAMENT_MAX_COFFEE_BREAK_MINUTES,
+  TOURNAMENT_MAX_ROUND_DELAY_SECONDS,
+  TOURNAMENT_MIN_COFFEE_BREAK_MINUTES,
+  TOURNAMENT_MIN_ROUND_DELAY_SECONDS
+} from './constants/tournament';
 import { User } from './models/User';
 import { Game } from './models/Game';
 import { Tournament } from './models/Tournament';
@@ -944,6 +952,12 @@ function buildTournamentResponse(tournament: any) {
       timeMinutes: plain.timeControl?.timeMinutes ?? 10,
       incrementSeconds: plain.timeControl?.incrementSeconds ?? 0
     },
+    roundDelaySeconds: plain.roundDelaySeconds ?? TOURNAMENT_NEXT_ROUND_DELAY_SECONDS,
+    coffeeBreak: {
+      enabled: plain.coffeeBreak?.enabled ?? false,
+      afterRound: plain.coffeeBreak?.afterRound ?? 1,
+      durationMinutes: plain.coffeeBreak?.durationMinutes ?? 5
+    },
     creatorUserId: plain.creatorUserId?.toString?.() || plain.creatorUserId,
     status: plain.status,
     participants: (plain.participants || []).map((participant: any) => ({
@@ -982,6 +996,48 @@ function buildTournamentResponse(tournament: any) {
     createdAt: plain.createdAt,
     updatedAt: plain.updatedAt
   };
+}
+
+function getTournamentRoundDelaySeconds(tournament: any) {
+  const rawDelay = Number(tournament.roundDelaySeconds ?? TOURNAMENT_NEXT_ROUND_DELAY_SECONDS);
+  if (!Number.isFinite(rawDelay)) {
+    return TOURNAMENT_NEXT_ROUND_DELAY_SECONDS;
+  }
+
+  return Math.max(
+    TOURNAMENT_MIN_ROUND_DELAY_SECONDS,
+    Math.min(Math.floor(rawDelay), TOURNAMENT_MAX_ROUND_DELAY_SECONDS)
+  );
+}
+
+function getTournamentCoffeeBreakDelaySeconds(tournament: any, latestRoundNumber: number) {
+  if (!tournament?.coffeeBreak?.enabled) {
+    return null;
+  }
+
+  const afterRound = Number(tournament.coffeeBreak.afterRound);
+  if (!Number.isFinite(afterRound) || Math.floor(afterRound) !== latestRoundNumber) {
+    return null;
+  }
+
+  const rawMinutes = Number(tournament.coffeeBreak.durationMinutes);
+  const durationMinutes = Number.isFinite(rawMinutes)
+    ? Math.max(
+      TOURNAMENT_MIN_COFFEE_BREAK_MINUTES,
+      Math.min(Math.floor(rawMinutes), TOURNAMENT_MAX_COFFEE_BREAK_MINUTES)
+    )
+    : 5;
+
+  return durationMinutes * 60;
+}
+
+function getNextTournamentRoundDelaySeconds(tournament: any) {
+  const latestRound = getLatestTournamentRound(tournament);
+  const coffeeBreakDelaySeconds = latestRound
+    ? getTournamentCoffeeBreakDelaySeconds(tournament, latestRound.number)
+    : null;
+
+  return coffeeBreakDelaySeconds ?? getTournamentRoundDelaySeconds(tournament);
 }
 
 function broadcastTournament(tournament: any) {
@@ -1288,7 +1344,7 @@ async function maybeScheduleNextTournamentRound(tournament: any) {
     return false;
   }
 
-  await scheduleTournamentRoundStart(tournament, TOURNAMENT_NEXT_ROUND_DELAY_SECONDS);
+  await scheduleTournamentRoundStart(tournament, getNextTournamentRoundDelaySeconds(tournament));
   return true;
 }
 
@@ -3528,6 +3584,25 @@ app.post('/api/tournaments', async ({ body, headers, set }) => {
     const incrementSeconds = Number.isFinite(rawIncrementSeconds) && rawIncrementSeconds >= 0
       ? Math.min(Math.floor(rawIncrementSeconds), 100)
       : 0;
+    const rawRoundDelaySeconds = Number((body as any)?.roundDelaySeconds);
+    const roundDelaySeconds = Number.isFinite(rawRoundDelaySeconds)
+      ? Math.max(
+        TOURNAMENT_MIN_ROUND_DELAY_SECONDS,
+        Math.min(Math.floor(rawRoundDelaySeconds), TOURNAMENT_MAX_ROUND_DELAY_SECONDS)
+      )
+      : TOURNAMENT_NEXT_ROUND_DELAY_SECONDS;
+    const coffeeBreakEnabled = Boolean((body as any)?.coffeeBreak?.enabled);
+    const rawCoffeeBreakAfterRound = Number((body as any)?.coffeeBreak?.afterRound);
+    const coffeeBreakAfterRound = Number.isFinite(rawCoffeeBreakAfterRound)
+      ? Math.max(1, Math.min(Math.floor(rawCoffeeBreakAfterRound), roundsCount))
+      : 1;
+    const rawCoffeeBreakDurationMinutes = Number((body as any)?.coffeeBreak?.durationMinutes);
+    const coffeeBreakDurationMinutes = Number.isFinite(rawCoffeeBreakDurationMinutes)
+      ? Math.max(
+        TOURNAMENT_MIN_COFFEE_BREAK_MINUTES,
+        Math.min(Math.floor(rawCoffeeBreakDurationMinutes), TOURNAMENT_MAX_COFFEE_BREAK_MINUTES)
+      )
+      : 5;
 
     if (!title) {
       set.status = 400;
@@ -3540,6 +3615,12 @@ app.post('/api/tournaments', async ({ body, headers, set }) => {
       timeControl: {
         timeMinutes,
         incrementSeconds
+      },
+      roundDelaySeconds,
+      coffeeBreak: {
+        enabled: coffeeBreakEnabled,
+        afterRound: coffeeBreakAfterRound,
+        durationMinutes: coffeeBreakDurationMinutes
       },
       creatorUserId: new mongoose.Types.ObjectId(authUser.userId),
       participants: [{
@@ -3820,7 +3901,7 @@ app.post('/api/tournaments/:id/force-next-round', async ({ params, headers, set 
       return { success: true, tournament: buildTournamentResponse(tournament) };
     }
 
-    await scheduleTournamentRoundStart(tournament, TOURNAMENT_NEXT_ROUND_DELAY_SECONDS);
+    await scheduleTournamentRoundStart(tournament, getNextTournamentRoundDelaySeconds(tournament));
     return { success: true, tournament: buildTournamentResponse(tournament) };
   } catch (error: any) {
     set.status = 500;

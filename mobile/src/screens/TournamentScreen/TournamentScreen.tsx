@@ -52,6 +52,12 @@ type Tournament = {
     timeMinutes: number;
     incrementSeconds: number;
   };
+  roundDelaySeconds: number;
+  coffeeBreak: {
+    enabled: boolean;
+    afterRound: number;
+    durationMinutes: number;
+  };
   creatorUserId: string;
   status: "setup" | "scheduled" | "running" | "finished";
   participants: TournamentParticipant[];
@@ -67,6 +73,8 @@ const TOURNAMENT_GUEST_ID_KEY = "tournamentGuestId";
 const TOURNAMENT_PARTICIPANT_KEY_PREFIX = "tournamentParticipant:";
 const TOURNAMENT_GAME_PROFILE_KEY = "tournamentGameProfile";
 const TOURNAMENT_COMPLETED_GAME_KEY = "tournamentCompletedGame";
+const ROUND_DELAY_SECONDS_OPTIONS = [0, 5, 10, 15, 30, 60, 120, 300];
+const COFFEE_BREAK_MINUTES_OPTIONS = [1, 3, 5, 10, 15, 30, 45, 60];
 
 function getOrCreateGuestId() {
   const existingId = localStorage.getItem(TOURNAMENT_GUEST_ID_KEY);
@@ -116,6 +124,60 @@ function formatCountdown(totalSeconds: number) {
   return minutes > 0 ? `${minutes}:${restSeconds.toString().padStart(2, "0")}` : `${restSeconds}`;
 }
 
+function formatDelayLabel(seconds: number, t: (key: string, options?: Record<string, unknown>) => string) {
+  if (seconds < 60) return t("tournament.secondsShort", { count: seconds });
+  if (seconds % 60 === 0) return t("tournament.minutesShort", { count: seconds / 60 });
+  return t("tournament.minutesSecondsShort", {
+    minutes: Math.floor(seconds / 60),
+    seconds: seconds % 60,
+  });
+}
+
+type TimeOptionModalProps = {
+  isOpen: boolean;
+  title: string;
+  subtitle: string;
+  options: number[];
+  selectedValue: number;
+  renderValue: (value: number) => string;
+  onSelect: (value: number) => void;
+  onClose: () => void;
+};
+
+function TimeOptionModal({ isOpen, title, subtitle, options, selectedValue, renderValue, onSelect, onClose }: TimeOptionModalProps) {
+  const { t } = useTranslation();
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm px-4">
+      <button type="button" aria-label={t("common.close")} onClick={onClose} className="absolute inset-0 cursor-default" />
+      <div className="relative w-full max-w-[390px] rounded-2xl border border-white/15 bg-[#121217] p-6 shadow-2xl">
+        <h4 className="text-white text-xl font-semibold text-center">{title}</h4>
+        <p className="text-white/60 text-sm text-center mt-2">{subtitle}</p>
+        <div className="mt-6 grid grid-cols-4 gap-2">
+          {options.map((value) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => onSelect(value)}
+              className={`btn-client h-11 rounded-lg border text-sm font-semibold ${
+                selectedValue === value
+                  ? "border-[#555ab9b3] bg-[#4f39f633] text-white"
+                  : "btn-client-preset border-white/15 bg-white/5 text-white/80"
+              }`}
+            >
+              {renderValue(value)}
+            </button>
+          ))}
+        </div>
+        <button type="button" onClick={onClose} className="btn-client mt-6 h-11 w-full rounded-xl bg-[#4f39f6] text-sm font-semibold text-white">
+          {t("common.save")}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function CreateTournamentScreen() {
   const { t } = useTranslation();
   const history = useHistory();
@@ -124,7 +186,13 @@ export function CreateTournamentScreen() {
   const [roundsCount, setRoundsCount] = useState(5);
   const [timeMinutes, setTimeMinutes] = useState(initialRoomTime.timeMinutes);
   const [incrementSeconds, setIncrementSeconds] = useState(initialRoomTime.incrementSeconds);
+  const [roundDelaySeconds, setRoundDelaySeconds] = useState(15);
+  const [coffeeBreakEnabled, setCoffeeBreakEnabled] = useState(false);
+  const [coffeeBreakAfterRound, setCoffeeBreakAfterRound] = useState(1);
+  const [coffeeBreakDurationMinutes, setCoffeeBreakDurationMinutes] = useState(5);
   const [isTimeModalOpen, setIsTimeModalOpen] = useState(false);
+  const [isRoundDelayModalOpen, setIsRoundDelayModalOpen] = useState(false);
+  const [isCoffeeBreakDurationModalOpen, setIsCoffeeBreakDurationModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
 
@@ -140,7 +208,18 @@ export function CreateTournamentScreen() {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, roundsCount, timeMinutes, incrementSeconds }),
+        body: JSON.stringify({
+          title,
+          roundsCount,
+          timeMinutes,
+          incrementSeconds,
+          roundDelaySeconds,
+          coffeeBreak: {
+            enabled: coffeeBreakEnabled,
+            afterRound: coffeeBreakAfterRound,
+            durationMinutes: coffeeBreakDurationMinutes,
+          },
+        }),
       });
       const data = await response.json();
       if (!data.success) throw new Error(data.error || t("tournament.createError"));
@@ -188,6 +267,51 @@ export function CreateTournamentScreen() {
           <div className="text-white/90 text-base font-semibold mt-1">{timeMinutes} + {incrementSeconds}</div>
         </button>
 
+        <button
+          type="button"
+          onClick={() => setIsRoundDelayModalOpen(true)}
+          className="btn-client btn-client-preset rounded-lg border border-white/15 bg-white/5 px-4 py-3 text-left text-white"
+        >
+          <div className="text-white/50 text-xs">{t("tournament.roundDelay")}</div>
+          <div className="text-white/90 text-base font-semibold mt-1">{formatDelayLabel(roundDelaySeconds, t)}</div>
+        </button>
+
+        <label className="flex items-center gap-3 rounded-lg border border-white/15 bg-white/5 px-4 py-3 text-white">
+          <input
+            type="checkbox"
+            checked={!coffeeBreakEnabled}
+            onChange={(event) => setCoffeeBreakEnabled(!event.target.checked)}
+            className="h-4 w-4 accent-[#4f39f6]"
+          />
+          <span className="text-sm font-semibold">{t("tournament.noCoffeeBreak")}</span>
+        </label>
+
+        {coffeeBreakEnabled && (
+          <div className="grid gap-3 rounded-lg border border-[#555ab9b3] bg-[#4f39f633] p-4">
+            <label className="flex flex-col gap-2 text-sm text-white/70">
+              {t("tournament.coffeeBreakAfterRound")}
+              <input
+                value={coffeeBreakAfterRound}
+                onChange={(event) => setCoffeeBreakAfterRound(Math.max(1, Math.min(Number(event.target.value) || 1, roundsCount)))}
+                type="number"
+                min={1}
+                max={roundsCount}
+                className="h-11 rounded-lg border border-white/15 bg-black/20 px-3 text-white outline-none focus:border-[#4f39f6]"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={() => setIsCoffeeBreakDurationModalOpen(true)}
+              className="btn-client btn-client-preset rounded-lg border border-white/15 bg-white/5 px-4 py-3 text-left text-white"
+            >
+              <div className="text-white/50 text-xs">{t("tournament.coffeeBreakDuration")}</div>
+              <div className="text-white/90 text-base font-semibold mt-1">
+                {t("tournament.minutesShort", { count: coffeeBreakDurationMinutes })}
+              </div>
+            </button>
+          </div>
+        )}
+
         {error && <div className="rounded-lg border border-red-500/50 bg-red-500/15 p-3 text-sm text-red-200">{error}</div>}
         <button
           type="button"
@@ -209,6 +333,26 @@ export function CreateTournamentScreen() {
           onChangeWithAIhints={() => undefined}
           onClose={() => setIsTimeModalOpen(false)}
           onConfirm={() => setIsTimeModalOpen(false)}
+        />
+        <TimeOptionModal
+          isOpen={isRoundDelayModalOpen}
+          title={t("tournament.roundDelayTitle")}
+          subtitle={t("tournament.roundDelaySubtitle")}
+          options={ROUND_DELAY_SECONDS_OPTIONS}
+          selectedValue={roundDelaySeconds}
+          renderValue={(value) => formatDelayLabel(value, t)}
+          onSelect={setRoundDelaySeconds}
+          onClose={() => setIsRoundDelayModalOpen(false)}
+        />
+        <TimeOptionModal
+          isOpen={isCoffeeBreakDurationModalOpen}
+          title={t("tournament.coffeeBreakDurationTitle")}
+          subtitle={t("tournament.coffeeBreakDurationSubtitle")}
+          options={COFFEE_BREAK_MINUTES_OPTIONS}
+          selectedValue={coffeeBreakDurationMinutes}
+          renderValue={(value) => t("tournament.minutesShort", { count: value })}
+          onSelect={setCoffeeBreakDurationMinutes}
+          onClose={() => setIsCoffeeBreakDurationModalOpen(false)}
         />
       </main>
     </div>
@@ -260,6 +404,11 @@ export function TournamentRoomScreen() {
   const canOpenGame = participantMatch?.gameRoomId && participantMatch.status === "active";
   const startAtMs = tournament?.startAt ? new Date(tournament.startAt).getTime() : null;
   const secondsToStart = startAtMs ? Math.max(0, Math.ceil((startAtMs - nowMs) / 1000)) : 0;
+  const nextRoundDelaySeconds =
+    tournament?.coffeeBreak?.enabled &&
+    currentRound?.number === tournament.coffeeBreak.afterRound
+      ? tournament.coffeeBreak.durationMinutes * 60
+      : tournament?.roundDelaySeconds ?? 15;
   const isTournamentFull = playerCount >= TOURNAMENT_MAX_PLAYERS;
   const isLateParticipantWaiting =
     Boolean(participant) &&
@@ -561,7 +710,7 @@ export function TournamentRoomScreen() {
                 <>
                   {tournament.waitingForPlayers && (
                     <button type="button" disabled={isBusy} onClick={() => callAction("/force-next-round")} className="btn-client h-11 rounded-xl bg-[#4f39f6] text-sm font-semibold text-white disabled:opacity-50">
-                      {t("tournament.forceNextRound")}
+                      {t("tournament.forceNextRoundWithDelay", { delay: formatDelayLabel(nextRoundDelaySeconds, t) })}
                     </button>
                   )}
                   <button type="button" disabled={isBusy} onClick={() => callAction("/add-round")} className="btn-client btn-client-preset h-11 rounded-xl bg-white/10 text-sm text-white">

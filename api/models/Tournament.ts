@@ -45,6 +45,12 @@ export interface ITournament extends Document {
     timeMinutes: number;
     incrementSeconds: number;
   };
+  roundDelaySeconds: number;
+  coffeeBreak: {
+    enabled: boolean;
+    afterRound: number;
+    durationMinutes: number;
+  };
   creatorUserId: mongoose.Types.ObjectId;
   status: TournamentStatus;
   participants: ITournamentParticipant[];
@@ -118,6 +124,12 @@ const TournamentSchema = new Schema<ITournament>(
     timeControl: {
       timeMinutes: { type: Number, required: true, default: 10 },
       incrementSeconds: { type: Number, required: true, default: 0 }
+    },
+    roundDelaySeconds: { type: Number, required: true, default: 15 },
+    coffeeBreak: {
+      enabled: { type: Boolean, required: true, default: false },
+      afterRound: { type: Number, required: true, default: 1 },
+      durationMinutes: { type: Number, required: true, default: 5 }
     },
     creatorUserId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     status: {
