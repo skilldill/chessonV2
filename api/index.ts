@@ -101,6 +101,8 @@ type PlayerInfo = {
 type GameState = {
     gameType?: "tournament";
     tournamentId?: string;
+    isSpectator?: boolean;
+    spectatorsCount?: number;
     currentFEN: string;
     moveHistory: MoveData[];
     currentPlayer: "white" | "black";
@@ -131,6 +133,7 @@ type UserData = {
 
 type Room = {
     users: Map<string, UserData>;
+    spectators: Map<string, UserData>;
     initialFEN: string;
     gameState: GameState;
     firstPlayerColor?: "white" | "black"; // Цвет для первого подключившегося игрока
@@ -388,6 +391,20 @@ function cleanupInactiveRooms() {
             }
           }
         }
+        for (const [_, userData] of room.spectators || []) {
+          if (userData.isConnected && userData.ws) {
+            try {
+              userData.ws.send({
+                system: true,
+                message: "Room expired due to inactivity",
+                type: "roomExpired"
+              });
+              userData.ws.close();
+            } catch (e) {
+              // Игнорируем ошибки при закрытии
+            }
+          }
+        }
       }
       
       // Удаляем комнату
@@ -401,6 +418,14 @@ function cleanupInactiveRooms() {
         if (userData.isConnected) {
           hasActiveConnections = true;
           break;
+        }
+      }
+      if (!hasActiveConnections) {
+        for (const [_, userData] of room.spectators || []) {
+          if (userData.isConnected) {
+            hasActiveConnections = true;
+            break;
+          }
         }
       }
       
@@ -431,6 +456,12 @@ function updateMetrics() {
   for (const [_, room] of rooms) {
     let hasActiveUsers = false;
     for (const [_, userData] of room.users) {
+      if (userData.isConnected) {
+        activeConnections++;
+        hasActiveUsers = true;
+      }
+    }
+    for (const [_, userData] of room.spectators || []) {
       if (userData.isConnected) {
         activeConnections++;
         hasActiveUsers = true;
@@ -762,6 +793,7 @@ function createRoomWithConfig(rawConfig: any) {
 
   const room: Room = {
     users: new Map(),
+    spectators: new Map(),
     initialFEN: timerConfig.currentFEN,
     gameState: {
       currentFEN: timerConfig.currentFEN,
@@ -1059,6 +1091,7 @@ function buildTournamentResponse(tournament: any) {
     currentRoundNumber: plain.currentRoundNumber,
     finishAfterCurrentRound: plain.finishAfterCurrentRound,
     tieBreakDeclined: plain.tieBreakDeclined ?? false,
+    nextRoundDelayKind: plain.nextRoundDelayKind || null,
     startAt: plain.startAt,
     waitingForPlayers: shouldWaitBeforeNextTournamentRound(plain) && !allActiveTournamentParticipantsConnected(plain),
     tieBreakAvailable: isTournamentPrizeTieBreakAvailable(plain),
@@ -1109,19 +1142,20 @@ function getPrizeTieGroups(tournament: any) {
     return [];
   }
 
-  const groupsByPoints = new Map<number, any[]>();
+  const groupsByScoreAndBuchholz = new Map<string, any[]>();
   for (const standing of standings) {
-    const group = groupsByPoints.get(standing.points);
+    const groupKey = `${standing.points}:${standing.buchholz}`;
+    const group = groupsByScoreAndBuchholz.get(groupKey);
     if (group) {
       group.push(standing);
     } else {
-      groupsByPoints.set(standing.points, [standing]);
+      groupsByScoreAndBuchholz.set(groupKey, [standing]);
     }
   }
 
   const indexById = new Map(standings.map((standing: any, index: number) => [standing.participantId, index]));
 
-  return [...groupsByPoints.values()]
+  return [...groupsByScoreAndBuchholz.values()]
     .filter((group) => group.length > 1)
     .filter((group) =>
       group.some((standing: any) => (indexById.get(standing.participantId) ?? Number.MAX_SAFE_INTEGER) < prizePlaces)
@@ -1174,13 +1208,27 @@ function getTournamentCoffeeBreakDelaySeconds(tournament: any, latestRoundNumber
   return durationMinutes * 60;
 }
 
-function getNextTournamentRoundDelaySeconds(tournament: any) {
+function getNextTournamentRoundDelayConfig(tournament: any) {
   const latestRound = getLatestTournamentRound(tournament);
   const coffeeBreakDelaySeconds = latestRound
     ? getTournamentCoffeeBreakDelaySeconds(tournament, latestRound.number)
     : null;
 
-  return coffeeBreakDelaySeconds ?? getTournamentRoundDelaySeconds(tournament);
+  if (coffeeBreakDelaySeconds !== null) {
+    return {
+      seconds: coffeeBreakDelaySeconds,
+      kind: 'coffeeBreak' as const
+    };
+  }
+
+  return {
+    seconds: getTournamentRoundDelaySeconds(tournament),
+    kind: 'regular' as const
+  };
+}
+
+function getNextTournamentRoundDelaySeconds(tournament: any) {
+  return getNextTournamentRoundDelayConfig(tournament).seconds;
 }
 
 function broadcastTournament(tournament: any) {
@@ -1213,6 +1261,7 @@ function finishTournament(tournament: any) {
   clearTournamentStartTimer(tournament._id.toString());
   tournament.status = 'finished';
   tournament.startAt = undefined;
+  tournament.nextRoundDelayKind = undefined;
 
   for (const participant of tournament.participants || []) {
     participant.active = false;
@@ -1241,25 +1290,15 @@ function getPreviousTournamentOpponents(tournament: any) {
 }
 
 function generateTournamentSwissMatches(tournament: any) {
-  const absentParticipants: any[] = [];
-  const activeParticipants = (tournament.participants || []).filter((participant: any) => {
-    if (!participant.active || participant.removed) {
-      return false;
-    }
-
-    if (!participant.connected) {
-      absentParticipants.push(participant);
-      return false;
-    }
-
-    return true;
-  });
+  const activeParticipants = (tournament.participants || []).filter((participant: any) =>
+    participant.active && !participant.removed
+  );
 
   const standings = getCompletedTournamentStandings(tournament);
   const standingsById = new Map(standings.map((standing: any) => [standing.participantId, standing]));
   const previousOpponents = getPreviousTournamentOpponents(tournament);
 
-  const sortedPlayers = [...activeParticipants].sort((left: any, right: any) => {
+  const sortTournamentPlayers = (players: any[]) => [...players].sort((left: any, right: any) => {
     const leftStanding: any = standingsById.get(left.id);
     const rightStanding: any = standingsById.get(right.id);
     if ((rightStanding?.points || 0) !== (leftStanding?.points || 0)) {
@@ -1273,29 +1312,28 @@ function generateTournamentSwissMatches(tournament: any) {
 
   const matches: any[] = [];
   const now = new Date();
+  const byeCounts = new Map<string, number>();
 
-  for (const participant of absentParticipants) {
-    matches.push({
-      id: tournamentMatchId(),
-      playerAId: participant.id,
-      status: 'completed',
-      result: 'absent',
-      startedAt: now,
-      endedAt: now
-    });
-  }
-
-  if (sortedPlayers.length % 2 === 1) {
-    const byeCounts = new Map<string, number>();
-    for (const round of tournament.rounds || []) {
-      for (const match of round.matches || []) {
-        if (match.result === 'bye') {
-          byeCounts.set(match.playerAId, (byeCounts.get(match.playerAId) || 0) + 1);
-        }
+  for (const round of tournament.rounds || []) {
+    for (const match of round.matches || []) {
+      if (match.result === 'bye') {
+        byeCounts.set(match.playerAId, (byeCounts.get(match.playerAId) || 0) + 1);
       }
     }
+  }
 
-    const byePlayer = [...sortedPlayers].sort((left: any, right: any) => {
+  const connectedParticipants = sortTournamentPlayers(activeParticipants.filter((participant: any) => participant.connected));
+  const disconnectedParticipants = sortTournamentPlayers(activeParticipants.filter((participant: any) => !participant.connected));
+  let byePlayer: any | undefined;
+
+  if (activeParticipants.length % 2 === 1) {
+    const byeCandidates = connectedParticipants.length % 2 === 1
+      ? connectedParticipants
+      : disconnectedParticipants.length > 0
+        ? disconnectedParticipants
+        : connectedParticipants;
+
+    byePlayer = [...byeCandidates].sort((left: any, right: any) => {
       const leftByeCount = byeCounts.get(left.id) || 0;
       const rightByeCount = byeCounts.get(right.id) || 0;
       if (leftByeCount !== rightByeCount) return leftByeCount - rightByeCount;
@@ -1316,10 +1354,25 @@ function generateTournamentSwissMatches(tournament: any) {
         startedAt: now,
         endedAt: now
       });
-      const byeIndex = sortedPlayers.findIndex((participant: any) => participant.id === byePlayer.id);
-      sortedPlayers.splice(byeIndex, 1);
     }
   }
+
+  for (const participant of disconnectedParticipants) {
+    if (participant.id === byePlayer?.id) {
+      continue;
+    }
+
+    matches.push({
+      id: tournamentMatchId(),
+      playerAId: participant.id,
+      status: 'completed',
+      result: 'absent',
+      startedAt: now,
+      endedAt: now
+    });
+  }
+
+  const sortedPlayers = connectedParticipants.filter((participant: any) => participant.id !== byePlayer?.id);
 
   while (sortedPlayers.length > 0) {
     const playerA = sortedPlayers.shift();
@@ -1414,6 +1467,7 @@ async function startTournamentRound(tournament: any) {
   tournament.currentRoundNumber = nextRoundNumber;
   tournament.status = 'running';
   tournament.startAt = undefined;
+  tournament.nextRoundDelayKind = undefined;
 
   if (tournament.rounds[tournament.rounds.length - 1].status === 'completed') {
     if (nextRoundNumber >= tournament.roundsCount || tournament.finishAfterCurrentRound) {
@@ -1514,7 +1568,7 @@ async function createPrizeTieBreakRound(tournament: any) {
   return true;
 }
 
-async function scheduleTournamentRoundStart(tournament: any, delaySeconds: number) {
+async function scheduleTournamentRoundStart(tournament: any, delaySeconds: number, delayKind: 'regular' | 'coffeeBreak' = 'regular') {
   if (!tournament || tournament.status === 'finished') {
     return tournament;
   }
@@ -1524,6 +1578,7 @@ async function scheduleTournamentRoundStart(tournament: any, delaySeconds: numbe
 
   tournament.status = 'scheduled';
   tournament.startAt = new Date(Date.now() + delaySeconds * 1000);
+  tournament.nextRoundDelayKind = delayKind;
   await tournament.save();
   broadcastTournament(tournament);
 
@@ -1576,7 +1631,8 @@ async function maybeScheduleNextTournamentRound(tournament: any) {
     return false;
   }
 
-  await scheduleTournamentRoundStart(tournament, getNextTournamentRoundDelaySeconds(tournament));
+  const delayConfig = getNextTournamentRoundDelayConfig(tournament);
+  await scheduleTournamentRoundStart(tournament, delayConfig.seconds, delayConfig.kind);
   return true;
 }
 
@@ -1794,19 +1850,19 @@ function declareDrawByThreefoldRepetition(room: Room, roomId: string) {
     saveGameToDatabase(room, roomId);
     
     // Отправляем результат всем игрокам
-    for (const [id, userData] of room.users) {
+    for (const { id, userData, spectator } of getRoomRecipients(room)) {
         if (userData.isConnected && userData.ws) {
             userData.ws.send({
                 type: "gameResult",
                 gameResult: room.gameState.gameResult,
-                gameState: getPersonalizedGameState(room, id),
+                gameState: getRecipientGameState(room, id, spectator),
                 time: Date.now()
             });
         }
     }
     
     // Отправляем системное сообщение
-    for (const [id, userData] of room.users) {
+    for (const { userData } of getRoomRecipients(room)) {
         if (userData.isConnected && userData.ws) {
             userData.ws.send({
                 system: true,
@@ -1896,19 +1952,19 @@ function declareDrawByInsufficientMaterial(room: Room, roomId: string) {
     saveGameToDatabase(room, roomId);
     
     // Отправляем результат всем игрокам
-    for (const [id, userData] of room.users) {
+    for (const { id, userData, spectator } of getRoomRecipients(room)) {
         if (userData.isConnected && userData.ws) {
             userData.ws.send({
                 type: "gameResult",
                 gameResult: room.gameState.gameResult,
-                gameState: getPersonalizedGameState(room, id),
+                gameState: getRecipientGameState(room, id, spectator),
                 time: Date.now()
             });
         }
     }
     
     // Отправляем системное сообщение
-    for (const [id, userData] of room.users) {
+    for (const { userData } of getRoomRecipients(room)) {
         if (userData.isConnected && userData.ws) {
             userData.ws.send({
                 system: true,
@@ -1919,20 +1975,87 @@ function declareDrawByInsufficientMaterial(room: Room, roomId: string) {
     }
 }
 
+function ensureRoomSpectators(room: Room) {
+    if (!room.spectators) {
+        room.spectators = new Map();
+    }
+    return room.spectators;
+}
+
+function getRoomRecipients(room: Room) {
+    return [
+        ...Array.from(room.users.entries()).map(([id, userData]) => ({ id, userData, spectator: false })),
+        ...Array.from(ensureRoomSpectators(room).entries()).map(([id, userData]) => ({ id, userData, spectator: true }))
+    ];
+}
+
+function getPlayerByColor(room: Room, color: "white" | "black") {
+    return Array.from(room.users.entries()).find(([, userData]) => userData.color === color);
+}
+
+function getSpectatorGameState(room: Room, spectatorId: string): GameState {
+    const withAIhints = room.gameState.withAIhints === true;
+    const manualBotRoom = isManualBotRoom(room);
+    const whitePlayer = getPlayerByColor(room, "white");
+    const blackPlayer = getPlayerByColor(room, "black");
+    const spectatorCount = ensureRoomSpectators(room).size;
+
+    const player = whitePlayer
+        ? {
+            userId: whitePlayer[0],
+            userName: whitePlayer[1].userName,
+            avatar: whitePlayer[1].avatar,
+            color: "white" as const
+        }
+        : undefined;
+    const opponent = blackPlayer
+        ? {
+            userId: blackPlayer[0],
+            userName: blackPlayer[1].userName,
+            avatar: blackPlayer[1].avatar,
+            color: "black" as const
+        }
+        : room.botSettings?.enabled && room.botSettings.color === "black"
+            ? {
+                userId: "bot",
+                userName: room.botSettings.name,
+                avatar: room.botSettings.avatar,
+                color: "black" as const
+            }
+            : undefined;
+
+    return {
+        ...room.gameState,
+        withAIhints,
+        manualBotRoom,
+        isSpectator: true,
+        spectatorsCount: spectatorCount,
+        player,
+        opponent
+    };
+}
+
+function getRecipientGameState(room: Room, recipientId: string, spectator: boolean): GameState {
+    return spectator
+        ? getSpectatorGameState(room, recipientId)
+        : getPersonalizedGameState(room, recipientId);
+}
+
 // Функция для получения персонализированного gameState для конкретного игрока
 function getPersonalizedGameState(room: Room, userId: string): GameState {
     const withAIhints = room.gameState.withAIhints === true;
     const manualBotRoom = isManualBotRoom(room);
+    const spectatorCount = ensureRoomSpectators(room).size;
     const userData = room.users.get(userId);
     if (!userData) {
         // Если пользователь не найден, возвращаем базовый gameState без player/opponent
-        return { ...room.gameState, withAIhints, manualBotRoom };
+        return { ...room.gameState, withAIhints, manualBotRoom, isSpectator: false, spectatorsCount: spectatorCount };
     }
 
     const userColor = userData.color;
     if (!userColor) {
         // Если у пользователя нет цвета, возвращаем базовый gameState
-        return { ...room.gameState, withAIhints, manualBotRoom };
+        return { ...room.gameState, withAIhints, manualBotRoom, isSpectator: false, spectatorsCount: spectatorCount };
     }
 
     // Находим соперника
@@ -1946,6 +2069,8 @@ function getPersonalizedGameState(room: Room, userId: string): GameState {
                 ...room.gameState,
                 withAIhints,
                 manualBotRoom,
+                isSpectator: false,
+                spectatorsCount: spectatorCount,
                 player: {
                     userId: userId,
                     userName: userData.userName,
@@ -1966,6 +2091,8 @@ function getPersonalizedGameState(room: Room, userId: string): GameState {
             ...room.gameState,
             withAIhints,
             manualBotRoom,
+            isSpectator: false,
+            spectatorsCount: spectatorCount,
             player: {
                 userId: userId,
                 userName: userData.userName,
@@ -1982,6 +2109,8 @@ function getPersonalizedGameState(room: Room, userId: string): GameState {
         ...room.gameState,
         withAIhints,
         manualBotRoom,
+        isSpectator: false,
+        spectatorsCount: spectatorCount,
         player: {
             userId: userId,
             userName: userData.userName,
@@ -2007,13 +2136,13 @@ function startRoomGame(room: Room, roomId: string) {
 
   createRoomTimer(roomId);
 
-  for (const [id, userData] of room.users) {
+  for (const { id, userData, spectator } of getRoomRecipients(room)) {
     if (userData.isConnected && userData.ws) {
       userData.ws.send({
         system: true,
         message: "Game started! White moves first.",
         type: "gameStart",
-        gameState: getPersonalizedGameState(room, id)
+        gameState: getRecipientGameState(room, id, spectator)
       });
     }
   }
@@ -2064,14 +2193,14 @@ async function triggerBotMoveIfNeeded(roomId: string) {
       return;
     }
 
-    for (const [id, userData] of room.users) {
+    for (const { id, userData, spectator } of getRoomRecipients(room)) {
       if (userData.isConnected && userData.ws) {
         userData.ws.send({
           type: "move",
           moveData: botMove.moveData,
           from: room.botSettings.name,
           userId: 'bot',
-          gameState: getPersonalizedGameState(room, id),
+          gameState: getRecipientGameState(room, id, spectator),
           time: Date.now()
         });
       }
@@ -2128,19 +2257,19 @@ function createRoomTimer(roomId: string) {
         saveGameToDatabase(room, roomId);
 
         // Отправляем результат всем игрокам
-        for (const [id, userData] of room.users) {
+        for (const { id, userData, spectator } of getRoomRecipients(room)) {
           if (userData.isConnected && userData.ws) {
             userData.ws.send({
               type: "gameResult",
               gameResult: room.gameState.gameResult,
-              gameState: getPersonalizedGameState(room, id),
+              gameState: getRecipientGameState(room, id, spectator),
               time: Date.now()
             });
           }
         }
 
         // Отправляем системное сообщение
-        for (const [id, userData] of room.users) {
+        for (const { userData } of getRoomRecipients(room)) {
           if (userData.isConnected && userData.ws) {
             userData.ws.send({
               system: true,
@@ -2169,19 +2298,19 @@ function createRoomTimer(roomId: string) {
         saveGameToDatabase(room, roomId);
 
         // Отправляем результат всем игрокам
-        for (const [id, userData] of room.users) {
+        for (const { id, userData, spectator } of getRoomRecipients(room)) {
           if (userData.isConnected && userData.ws) {
             userData.ws.send({
               type: "gameResult",
               gameResult: room.gameState.gameResult,
-              gameState: getPersonalizedGameState(room, id),
+              gameState: getRecipientGameState(room, id, spectator),
               time: Date.now()
             });
           }
         }
 
         // Отправляем системное сообщение
-        for (const [id, userData] of room.users) {
+        for (const { userData } of getRoomRecipients(room)) {
           if (userData.isConnected && userData.ws) {
             userData.ws.send({
               system: true,
@@ -2196,7 +2325,7 @@ function createRoomTimer(roomId: string) {
     }
 
     // Отправляем обновленное время всем игрокам
-    for (const [id, userData] of room.users) {
+    for (const { userData } of getRoomRecipients(room)) {
       if (userData.isConnected && userData.ws) {
         userData.ws.send({
           type: "timerTick",
@@ -4156,6 +4285,29 @@ app.post('/api/tournaments/:id/force-next-round', async ({ params, headers, set 
   }
 });
 
+app.post('/api/tournaments/:id/end-coffee-break', async ({ params, headers, set }) => {
+  try {
+    const requestHeaders = headers as Record<string, string | undefined>;
+    const tournament = await Tournament.findById(params.id);
+    const isManager = await canManageTournament(tournament, requestHeaders);
+    if (!tournament || !isManager) {
+      set.status = !tournament ? 404 : 403;
+      return { success: false, error: !tournament ? 'Tournament not found' : 'Only creator can end coffee break' };
+    }
+
+    if (tournament.status !== 'scheduled' || tournament.nextRoundDelayKind !== 'coffeeBreak') {
+      set.status = 409;
+      return { success: false, error: 'Coffee break is not active' };
+    }
+
+    await scheduleTournamentRoundStart(tournament, getTournamentRoundDelaySeconds(tournament), 'regular');
+    return { success: true, tournament: await buildTournamentResponseForRequest(tournament, requestHeaders) };
+  } catch (error: any) {
+    set.status = 500;
+    return { success: false, error: error.message || 'Failed to end coffee break' };
+  }
+});
+
 app.post('/api/tournaments/:id/add-round', async ({ params, headers, set }) => {
   try {
     const requestHeaders = headers as Record<string, string | undefined>;
@@ -4846,6 +4998,7 @@ app.ws('/ws/room', {
 
           room = {
             users: new Map(),
+            spectators: new Map(),
             initialFEN: currentFEN,
             gameState: {
               gameType: undefined,
@@ -4964,10 +5117,38 @@ app.ws('/ws/room', {
 
       const maxRoomUsers = room.botSettings?.enabled ? 1 : 2;
 
-      // Если комната заполнена → не пускаем
+      // Если игровые слоты заняты, подключаем нового посетителя наблюдателем.
+      // Reconnect реального игрока обработан выше по clientId/registeredUserId/name.
       if (room.users.size >= maxRoomUsers) {
-          ws.send({ system: true, message: 'Room is full' });
-          ws.close();
+          const spectatorId = `spectator_${generateShortId()}_${Math.random().toString(36).slice(2, 6)}`;
+          ensureRoomSpectators(room).set(spectatorId, {
+              userName: normalizedUserName,
+              avatar: avatar,
+              clientId: clientId,
+              ws: ws,
+              isConnected: true,
+              cursorPosition: { x: 0, y: 0 },
+              registeredUserId: registeredUserId
+          });
+
+          updateRoomActivity(roomId);
+          updateMetrics();
+
+          ws.send({
+            system: true,
+            message: `Connected to room ${roomId} as spectator`,
+            type: "connection",
+            gameState: getSpectatorGameState(room, spectatorId)
+          });
+
+          if (room.gameState.gameStarted && !room.gameState.gameEnded && room.gameState.timer) {
+            ws.send({
+              type: "timerTick",
+              timer: room.gameState.timer,
+              currentPlayer: room.gameState.currentPlayer,
+              time: Date.now()
+            });
+          }
           return;
       }
 
@@ -5106,8 +5287,11 @@ app.ws('/ws/room', {
       // Обрабатываем различные типы сообщений
       if (data.type === "message") {
           // Обычное текстовое сообщение
-          for (const [id, userData] of room.users) {
-              if (id !== senderUserId && userData.isConnected && userData.ws) {
+          for (const { id, userData, spectator } of getRoomRecipients(room)) {
+              if ((!spectator && id === senderUserId) || !userData.isConnected || !userData.ws) {
+                  continue;
+              }
+              {
                   userData.ws.send({
                       type: "message",
                       from: senderUserData.userName,
@@ -5177,14 +5361,17 @@ app.ws('/ws/room', {
           }
 
           // Отправляем ход всем игрокам кроме отправителя
-          for (const [id, userData] of room.users) {
-              if (id !== senderUserId && userData.isConnected && userData.ws) {
+          for (const { id, userData, spectator } of getRoomRecipients(room)) {
+              if ((!spectator && id === senderUserId) || !userData.isConnected || !userData.ws) {
+                  continue;
+              }
+              {
                   userData.ws.send({
                       type: "move",
                       moveData: data.moveData,
                       from: senderUserData.userName,
                       userId: senderUserId,
-                      gameState: getPersonalizedGameState(room, id),
+                      gameState: getRecipientGameState(room, id, spectator),
                       time: Date.now()
                   });
               }
@@ -5204,8 +5391,11 @@ app.ws('/ws/room', {
           senderUserData.cursorPosition = position;
 
           // Отправляем позицию курсора другим игрокам
-          for (const [id, userData] of room.users) {
-              if (id !== senderUserId && userData.isConnected && userData.ws) {
+          for (const { id, userData, spectator } of getRoomRecipients(room)) {
+              if ((!spectator && id === senderUserId) || !userData.isConnected || !userData.ws) {
+                  continue;
+              }
+              {
                   userData.ws.send({
                       type: "cursor",
                       position: position,
@@ -5298,20 +5488,20 @@ app.ws('/ws/room', {
               createRoomTimer(roomId);
           }
 
-          for (const [id, userData] of room.users) {
+          for (const { id, userData, spectator } of getRoomRecipients(room)) {
               if (userData.isConnected && userData.ws) {
                   userData.ws.send({
                       type: "move",
                       moveData: lastMove,
                       from: senderUserData.userName,
                       userId: senderUserId,
-                      gameState: getPersonalizedGameState(room, id),
+                      gameState: getRecipientGameState(room, id, spectator),
                       time: Date.now()
                   });
               }
           }
 
-          for (const [_, userData] of room.users) {
+          for (const { userData } of getRoomRecipients(room)) {
               if (userData.isConnected && userData.ws) {
                   userData.ws.send({
                       system: true,
@@ -5346,14 +5536,14 @@ app.ws('/ws/room', {
           saveGameToDatabase(room, roomId);
 
           // Отправляем результат всем игрокам
-          for (const [id, userData] of room.users) {
+          for (const { id, userData, spectator } of getRoomRecipients(room)) {
               if (userData.isConnected && userData.ws) {
                   userData.ws.send({
                       type: "gameResult",
                       gameResult: data.gameResult,
                       from: senderUserData.userName,
                       userId: senderUserId,
-                      gameState: getPersonalizedGameState(room, id),
+                      gameState: getRecipientGameState(room, id, spectator),
                       time: Date.now()
                   });
               }
@@ -5371,7 +5561,7 @@ app.ws('/ws/room', {
               resultMessage = `Resignation! ${data.gameResult.winColor === "white" ? "White" : "Black"} wins!`;
           }
 
-          for (const [id, userData] of room.users) {
+          for (const { userData } of getRoomRecipients(room)) {
               if (userData.isConnected && userData.ws) {
                   userData.ws.send({
                       system: true,
@@ -5415,20 +5605,20 @@ app.ws('/ws/room', {
                   clearRoomTimer(roomId);
                   saveGameToDatabase(room, roomId);
 
-                  for (const [id, userData] of room.users) {
+                  for (const { id, userData, spectator } of getRoomRecipients(room)) {
                       if (userData.isConnected && userData.ws) {
                           userData.ws.send({
                               type: "gameResult",
                               gameResult: room.gameState.gameResult,
                               from: room.botSettings.name,
                               userId: senderUserId,
-                              gameState: getPersonalizedGameState(room, id),
+                              gameState: getRecipientGameState(room, id, spectator),
                               time: Date.now()
                           });
                       }
                   }
 
-                  for (const [_, userData] of room.users) {
+                  for (const { userData } of getRoomRecipients(room)) {
                       if (userData.isConnected && userData.ws) {
                           userData.ws.send({
                               system: true,
@@ -5521,21 +5711,21 @@ app.ws('/ws/room', {
               saveGameToDatabase(room, roomId);
 
               // Отправляем результат всем игрокам
-              for (const [id, userData] of room.users) {
+              for (const { id, userData, spectator } of getRoomRecipients(room)) {
                   if (userData.isConnected && userData.ws) {
                       userData.ws.send({
                           type: "gameResult",
                           gameResult: room.gameState.gameResult,
                           from: senderUserData.userName,
                           userId: senderUserId,
-                          gameState: getPersonalizedGameState(room, id),
+                          gameState: getRecipientGameState(room, id, spectator),
                           time: Date.now()
                       });
                   }
               }
 
               // Отправляем системное сообщение
-              for (const [id, userData] of room.users) {
+              for (const { userData } of getRoomRecipients(room)) {
                   if (userData.isConnected && userData.ws) {
                       userData.ws.send({
                           system: true,
@@ -5608,21 +5798,21 @@ app.ws('/ws/room', {
           saveGameToDatabase(room, roomId);
 
           // Отправляем результат всем игрокам
-          for (const [id, userData] of room.users) {
+          for (const { id, userData, spectator } of getRoomRecipients(room)) {
               if (userData.isConnected && userData.ws) {
                   userData.ws.send({
                       type: "gameResult",
                       gameResult: room.gameState.gameResult,
                       from: senderUserData.userName,
                       userId: senderUserId,
-                      gameState: room.gameState,
+                      gameState: getRecipientGameState(room, id, spectator),
                       time: Date.now()
                   });
               }
           }
 
           // Отправляем системное сообщение
-          for (const [id, userData] of room.users) {
+          for (const { userData } of getRoomRecipients(room)) {
               if (userData.isConnected && userData.ws) {
                   userData.ws.send({
                       system: true,
@@ -5647,6 +5837,17 @@ app.ws('/ws/room', {
         disconnectedUserId = userId;
         disconnectedUserName = userData.userName;
         break;
+      }
+    }
+
+    if (!disconnectedUserId) {
+      for (const [spectatorId, userData] of ensureRoomSpectators(room)) {
+        if (userData.ws === ws) {
+          userData.isConnected = false;
+          ensureRoomSpectators(room).delete(spectatorId);
+          updateMetrics();
+          return;
+        }
       }
     }
 

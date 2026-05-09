@@ -2,6 +2,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 import { TOURNAMENT_MAX_ROUNDS } from '../constants/tournament';
 
 export type TournamentStatus = 'setup' | 'scheduled' | 'running' | 'finished';
+export type TournamentNextRoundDelayKind = 'regular' | 'coffeeBreak';
 export type TournamentMatchResult = 'playerA' | 'playerB' | 'draw' | 'bye' | 'absent';
 export type TournamentMatchStatus = 'pending' | 'active' | 'completed';
 export type TournamentRoundStatus = 'active' | 'completed';
@@ -60,6 +61,7 @@ export interface ITournament extends Document {
   currentRoundNumber: number;
   finishAfterCurrentRound: boolean;
   tieBreakDeclined: boolean;
+  nextRoundDelayKind?: TournamentNextRoundDelayKind;
   startAt?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -153,6 +155,11 @@ const TournamentSchema = new Schema<ITournament>(
     currentRoundNumber: { type: Number, required: true, default: 0 },
     finishAfterCurrentRound: { type: Boolean, required: true, default: false },
     tieBreakDeclined: { type: Boolean, required: true, default: false },
+    nextRoundDelayKind: {
+      type: String,
+      enum: ['regular', 'coffeeBreak'],
+      required: false
+    },
     startAt: { type: Date, required: false }
   },
   { timestamps: true }

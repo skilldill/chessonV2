@@ -43,6 +43,7 @@ type GameScreenProps = {
   offeredDraw?: boolean;
   connectionLost?: boolean;
   roomId?: string;
+  isSpectator?: boolean;
 }
 
 const GameScreen: React.FC<GameScreenProps> = ({
@@ -64,6 +65,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
   offeredDraw,
   connectionLost = false,
   roomId,
+  isSpectator = false,
 }) => {
   const { t, i18n } = useTranslation();
   const screenSize = useScreenSize();
@@ -103,6 +105,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
   }, []);
 
   const handleMove = (moveData: MoveData) => {
+    if (isSpectator) return;
     const move = reversed ? JSChessEngine.reverseMove(moveData) : moveData;
     onMove(move as MoveData);
   }
@@ -319,6 +322,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
   ];
 
   const actualMagicButtonControls = () => {
+    if (isSpectator) return [];
     if (gameState.gameType === "tournament") return tournamentMagicButtonControls;
     if (gameState.manualBotRoom) return forBotGameMagicButtonControls;
     if (gameState.withAIhints) return withAIhintsMagicButtonControls;
@@ -326,6 +330,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
   };
 
   const actualNotActiveMagicButtonControls = () => {
+    if (isSpectator) return notActiveMagicButtonControls;
     if (gameState.gameType === "tournament") return tournamentNotActiveMagicButtonControls;
     return notActiveMagicButtonControls;
   };
@@ -376,6 +381,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
           onChange={(moveData) => handleMove(moveData as MoveData)}
           onEndGame={onSendGameResult}
           reversed={playerColor === "black"}
+          viewOnly={isSpectator}
           change={externalChangeMove}
           playerColor={playerColor}
           moveArrows={mappedHintArrow}

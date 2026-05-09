@@ -59,6 +59,8 @@ export interface PlayerInfo {
 export interface GameState {
   gameType?: "tournament";
   tournamentId?: string;
+  isSpectator?: boolean;
+  spectatorsCount?: number;
   currentFEN: string;
   moveHistory: MoveData[];
   currentPlayer: ChessColor;
@@ -96,7 +98,7 @@ export type WSClientMessage =
 export interface WSServerMessage {
   system?: boolean;
   message?: string;
-  type?: "connection" | "reconnection" | "gameStart" | "gameEnd" | "message" | "move" | "cursor" | "hintAI" | "gameResult" | "drawOffer" | "timerTick";
+  type?: "connection" | "reconnection" | "gameStart" | "gameEnd" | "message" | "move" | "cursor" | "hintAI" | "gameResult" | "drawOffer" | "timerTick" | "roomExpired" | "rateLimitExceeded";
   userColor?: ChessColor;
   opponentColor?: ChessColor;
   gameState?: GameState;

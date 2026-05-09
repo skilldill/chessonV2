@@ -106,7 +106,7 @@ const AppScreen: React.FC = () => {
   }
 
   // Если игра началась, показываем игровой экран
-  if (userColor && gameState.gameStarted) {
+  if ((userColor || gameState.isSpectator) && gameState.gameStarted) {
     if (isQuickPlayRoom) {
       localStorage.removeItem(QUICK_PLAY_ROOM_ID_KEY);
     }
@@ -114,7 +114,8 @@ const AppScreen: React.FC = () => {
       <GameScreen
         gameState={gameState}
         movesHistory={movesHistory}
-        playerColor={userColor}
+        playerColor={userColor || "white"}
+        isSpectator={Boolean(gameState.isSpectator)}
         onMove={sendMove}
         currentMove={lastMove}
         timer={timer}

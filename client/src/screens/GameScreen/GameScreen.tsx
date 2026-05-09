@@ -45,6 +45,7 @@ type GameScreenProps = {
     offeredDraw?: boolean;
     connectionLost?: boolean;
     roomId?: string;
+    isSpectator?: boolean;
 }
 
 export const GameScreen: React.FC<GameScreenProps> = memo(({
@@ -67,6 +68,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
     offeredDraw,
     connectionLost = false,
     roomId,
+    isSpectator = false,
 }) => {
     const { t } = useTranslation();
     const screenSize = useScreenSize();
@@ -110,6 +112,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
 
 
     const handleMove = (moveData: MoveData) => {
+        if (isSpectator) return;
         const move = reversed ? JSChessEngine.reverseMove(moveData) : moveData;
         onMove(move as MoveData);
     }
@@ -327,6 +330,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
     ];
 
     const actualMagicButtonControls = () => {
+        if (isSpectator) return [];
         if (gameState.gameType === "tournament") return tournamentMagicButtonControls;
         if (gameState.manualBotRoom) return forBotGameMagicButtonControls;
         if (gameState.withAIhints) return withAIhintsMagicButtonControls;
@@ -334,6 +338,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
     }
 
     const actualNotActiveMagicButtonControls = () => {
+        if (isSpectator) return notActiveMagicButtonControls;
         if (gameState.gameType === "tournament") return tournamentNotActiveMagicButtonControls;
         return notActiveMagicButtonControls;
     }
@@ -424,6 +429,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                                     onChange={(moveData) => handleMove(moveData as MoveData)}
                                     onEndGame={onSendGameResult}
                                     reversed={playerColor === "black"}
+                                    viewOnly={isSpectator}
                                     change={externalChangeMove}
                                     playerColor={playerColor}
                                     moveArrows={mappedHintArrow}
