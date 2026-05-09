@@ -107,7 +107,7 @@ export const AppScreen = () => {
     }
 
     // Если игра началась, показываем игровой экран
-    if (userColor && gameState.gameStarted) {
+    if ((userColor || gameState.isSpectator) && gameState.gameStarted) {
         if (isQuickPlayRoom) {
             localStorage.removeItem(QUICK_PLAY_ROOM_ID_KEY);
         }
@@ -116,7 +116,8 @@ export const AppScreen = () => {
                 gameState={gameState}
                 roomId={roomId}
                 movesHistory={movesHistory}
-                playerColor={userColor}
+                playerColor={userColor || "white"}
+                isSpectator={Boolean(gameState.isSpectator)}
                 onMove={sendMove}
                 currentMove={lastMove}
                 timer={timer}

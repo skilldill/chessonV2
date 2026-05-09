@@ -73,6 +73,8 @@ export interface GameState {
   opponent?: PlayerInfo;
   gameType?: "tournament";
   tournamentId?: string;
+  isSpectator?: boolean;
+  spectatorsCount?: number;
 }
 
 export type ScreenSize = {
@@ -96,7 +98,7 @@ export type WSClientMessage =
 export interface WSServerMessage {
   system?: boolean;
   message?: string;
-  type?: "connection" | "reconnection" | "gameStart" | "gameEnd" | "message" | "move" | "cursor" | "hintAI" | "gameResult" | "drawOffer" | "timerTick";
+  type?: "connection" | "reconnection" | "gameStart" | "gameEnd" | "message" | "move" | "cursor" | "hintAI" | "gameResult" | "drawOffer" | "timerTick" | "roomExpired" | "rateLimitExceeded";
   userColor?: ChessColor;
   opponentColor?: ChessColor;
   gameState?: GameState;

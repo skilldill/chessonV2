@@ -18,6 +18,8 @@ import { WS_URL, API_PREFIX } from "../constants/api";
 const INITIAL_GAME_STATE = {
     gameType: undefined,
     tournamentId: undefined,
+    isSpectator: false,
+    spectatorsCount: 0,
     currentFEN: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
     moveHistory: [],
     currentPlayer: "white" as ChessColor,
@@ -112,6 +114,9 @@ export const useRoomWS = (roomId: string) => {
                     setUserColor(data.userColor);
                 }
                 if (data.gameState) {
+                    if (data.gameState.isSpectator) {
+                        setUserColor(undefined);
+                    }
                     setGameState(data.gameState);
                     setMovesHistory(data.gameState.moveHistory);
                     // Обновляем currentColorMove на основе currentColor

@@ -67,6 +67,7 @@ type Tournament = {
   currentRoundNumber: number;
   finishAfterCurrentRound: boolean;
   tieBreakDeclined: boolean;
+  nextRoundDelayKind?: "regular" | "coffeeBreak" | null;
   tieBreakAvailable: boolean;
   startAt?: string;
   waitingForPlayers?: boolean;
@@ -119,6 +120,25 @@ function resultLabel(match: TournamentMatch, t: (key: string) => string) {
   if (match.result === "playerA") return "1-0";
   if (match.result === "playerB") return "0-1";
   return t("tournament.matchCompleted");
+}
+
+function TournamentMatchPlayers({ tournament, match }: { tournament: Tournament; match: TournamentMatch }) {
+  const label = `${participantName(tournament, match.playerAId)} - ${participantName(tournament, match.playerBId)}`;
+
+  if (!match.gameRoomId) {
+    return <span>{label}</span>;
+  }
+
+  return (
+    <a
+      href={`/game/${match.gameRoomId}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="font-semibold text-white underline decoration-[#555ab9b3] underline-offset-4 transition-colors hover:text-[#b9baff]"
+    >
+      {label}
+    </a>
+  );
 }
 
 function formatCountdown(totalSeconds: number) {
@@ -452,7 +472,11 @@ export function TournamentRoomScreen() {
       const participantItem = sortedParticipants[index];
       const currentStanding = standingsByParticipantId.get(participantItem.id);
       const previousStanding = standingsByParticipantId.get(sortedParticipants[index - 1]?.id);
-      if (previousStanding && currentStanding?.points === previousStanding.points) {
+      if (
+        previousStanding &&
+        currentStanding?.points === previousStanding.points &&
+        currentStanding?.buchholz === previousStanding.buchholz
+      ) {
         displayedPlacesByParticipantId.set(participantItem.id, currentPlace);
       } else {
         currentPlace += 1;
@@ -466,9 +490,10 @@ export function TournamentRoomScreen() {
   const canOpenGame = participantMatch?.gameRoomId && participantMatch.status === "active";
   const startAtMs = tournament?.startAt ? new Date(tournament.startAt).getTime() : null;
   const secondsToStart = startAtMs ? Math.max(0, Math.ceil((startAtMs - nowMs) / 1000)) : 0;
+  const isCoffeeBreakActive = tournament?.status === "scheduled" && tournament.nextRoundDelayKind === "coffeeBreak";
   const nextRoundDelaySeconds =
-    tournament?.coffeeBreak?.enabled &&
-    currentRound?.number === tournament.coffeeBreak.afterRound
+    isCoffeeBreakActive &&
+    tournament?.coffeeBreak?.enabled
       ? tournament.coffeeBreak.durationMinutes * 60
       : tournament?.roundDelaySeconds ?? 15;
   const isTournamentFull = playerCount >= TOURNAMENT_MAX_PLAYERS;
@@ -733,6 +758,16 @@ export function TournamentRoomScreen() {
                 {tournament.currentRoundNumber > 0 ? t("tournament.nextRoundStartsIn") : t("tournament.startsIn")}
               </div>
               <div className="mt-1 text-3xl font-bold text-[#4f39f6]">{formatCountdown(secondsToStart)}</div>
+              {!isViewOnly && isCreator && isCoffeeBreakActive && (
+                <button
+                  type="button"
+                  disabled={isBusy}
+                  onClick={() => callAction("/end-coffee-break")}
+                  className="mt-3 h-10 w-full rounded-lg bg-[#4f39f6] text-sm font-semibold text-white hover:bg-[#432dd9] disabled:opacity-50"
+                >
+                  {t("tournament.endCoffeeBreak")}
+                </button>
+              )}
             </div>
           )}
 
@@ -914,7 +949,7 @@ export function TournamentRoomScreen() {
                     <div className="text-sm font-semibold text-white/80">{t("tournament.roundNumber", { number: round.number })}</div>
                     {round.matches.map((match) => (
                       <div key={match.id} className="grid gap-2 rounded-md bg-black/20 px-3 py-2 text-sm sm:grid-cols-[1fr_auto]">
-                        <span>{participantName(tournament, match.playerAId)} - {participantName(tournament, match.playerBId)}</span>
+                        <TournamentMatchPlayers tournament={tournament} match={match} />
                         <span className="text-white/70">{resultLabel(match, t)}</span>
                       </div>
                     ))}
@@ -931,7 +966,7 @@ export function TournamentRoomScreen() {
               <div className="grid gap-2">
                 {(currentRound?.matches || []).map((match) => (
                   <div key={match.id} className="grid gap-2 rounded-md bg-black/20 px-3 py-2 text-sm sm:grid-cols-[1fr_auto]">
-                    <span>{participantName(tournament!, match.playerAId)} - {participantName(tournament!, match.playerBId)}</span>
+                    <TournamentMatchPlayers tournament={tournament!} match={match} />
                     <span className="text-white/70">{resultLabel(match, t)}</span>
                   </div>
                 ))}
