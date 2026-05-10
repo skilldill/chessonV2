@@ -70,7 +70,7 @@ export class ChessBotService {
 
   async getFenAfterRoomMove(input: { fen: string; moveData: Pick<RoomMoveData, 'from' | 'to' | 'figure' | 'FEN' | 'type'> }): Promise<string> {
     return this.mutex.runExclusive(async () => {
-      const uci = this.roomMoveToUci(input.moveData);
+      const uci = this.roomMoveToUci(input.moveData, input.fen);
       return this.engine.getFenAfterUciMove({
         fen: input.fen,
         uci,
@@ -78,7 +78,10 @@ export class ChessBotService {
     });
   }
 
-  roomMoveToUci(moveData: Pick<RoomMoveData, 'from' | 'to' | 'figure' | 'FEN'>): string {
+  roomMoveToUci(
+    moveData: Pick<RoomMoveData, 'from' | 'to' | 'figure' | 'FEN'>,
+    previousFen?: string,
+  ): string {
     const castlingUci = this.getCastlingUci(moveData);
     if (castlingUci) {
       return castlingUci;
@@ -89,15 +92,17 @@ export class ChessBotService {
     const moveWithMeta = moveData as Pick<RoomMoveData, 'from' | 'to' | 'figure' | 'FEN' | 'type'>;
 
     let promotionSuffix = '';
+    const movedPieceBefore = previousFen ? this.getPieceAt(previousFen, moveData.from) : null;
+
     if (moveWithMeta.type === 'transform') {
       promotionSuffix = this.getPromotionSuffixFromPiece(moveData.figure);
     } else if (
+      movedPieceBefore?.type === 'pawn' &&
       (moveData.to[1] === 0 || moveData.to[1] === 7) &&
-      (moveData.from[1] === 1 || moveData.from[1] === 6) &&
       ['queen', 'rook', 'bishop', 'knight'].includes(moveData.figure.type)
     ) {
-      // Some clients may drop moveData.type during transport; infer promotion
-      // from final rank + promoted piece type.
+      // Some clients may drop moveData.type during transport.
+      // Detect promotion by checking that the moving piece on previous FEN was a pawn.
       promotionSuffix = this.getPromotionSuffixFromPiece(moveData.figure);
     } else if (
       moveData.figure.type === 'pawn' &&
