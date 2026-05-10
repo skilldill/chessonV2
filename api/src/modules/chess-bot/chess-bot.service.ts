@@ -68,6 +68,16 @@ export class ChessBotService {
     });
   }
 
+  async getFenAfterRoomMove(input: { fen: string; moveData: Pick<RoomMoveData, 'from' | 'to' | 'figure' | 'FEN' | 'type'> }): Promise<string> {
+    return this.mutex.runExclusive(async () => {
+      const uci = this.roomMoveToUci(input.moveData);
+      return this.engine.getFenAfterUciMove({
+        fen: input.fen,
+        uci,
+      });
+    });
+  }
+
   roomMoveToUci(moveData: Pick<RoomMoveData, 'from' | 'to' | 'figure' | 'FEN'>): string {
     const castlingUci = this.getCastlingUci(moveData);
     if (castlingUci) {

@@ -138,6 +138,31 @@ export class StockfishEngine {
     return { result, nextFen };
   }
 
+  async getFenAfterUciMove(input: { fen: string; uci: string }): Promise<string> {
+    const fen = input.fen?.trim();
+    const uci = input.uci?.trim();
+
+    if (!fen) {
+      throw new Error('fen is required to apply move');
+    }
+    if (!uci) {
+      throw new Error('uci is required to apply move');
+    }
+
+    await this.ensureRunning();
+    await this.sendIsReady();
+    await this.sendCommand('ucinewgame');
+    await this.sendIsReady();
+
+    const request: BotMoveRequest = {
+      fen,
+      moveTimeMs: 1,
+      difficulty: 'medium',
+    };
+
+    return this.getFenAfterMove(request, uci);
+  }
+
   private async bootProcess(): Promise<void> {
     const child = spawn(this.options.stockfishPath, [], {
       stdio: ['pipe', 'pipe', 'pipe'],

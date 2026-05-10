@@ -5246,7 +5246,7 @@ app.ws('/ws/room', {
       }
   },
 
-  message(ws, data) {
+  async message(ws, data) {
       const { roomId } = ws.data.query;
       const room = rooms.get(roomId);
       if (!room) return;
@@ -5319,9 +5319,31 @@ app.ws('/ws/room', {
               return;
           }
 
+          const previousFen = room.gameState.currentFEN;
+          const moveDataFromClient = data.moveData as MoveData;
+          let resolvedMoveData: MoveData = moveDataFromClient;
+
+          // Для игры с ботом не доверяем FEN от клиента после хода:
+          // пересчитываем его на сервере из предыдущей позиции + UCI хода.
+          if (room.botSettings?.enabled) {
+            try {
+              const resolvedFen = await chessBot.getFenAfterRoomMove({
+                fen: previousFen,
+                moveData: moveDataFromClient,
+              });
+              resolvedMoveData = {
+                ...moveDataFromClient,
+                FEN: resolvedFen,
+              };
+            } catch (error) {
+              ws.send({ system: true, message: "Invalid move: server failed to resolve position" });
+              return;
+            }
+          }
+
           // Обновляем состояние игры
-          room.gameState.currentFEN = data.moveData.FEN;
-          room.gameState.moveHistory.push(data.moveData);
+          room.gameState.currentFEN = resolvedMoveData.FEN;
+          room.gameState.moveHistory.push(resolvedMoveData);
           
           // Добавляем время за ход (increment) если есть
           if (room.gameState.timer) {
@@ -5334,7 +5356,7 @@ app.ws('/ws/room', {
           
           // Определяем следующего игрока из FEN после хода.
           // Это безопаснее инверсии currentPlayer и предотвращает рассинхрон после промоции.
-          const nextPlayerFromFen = getCurrentPlayerFromFEN(data.moveData.FEN);
+          const nextPlayerFromFen = getCurrentPlayerFromFEN(resolvedMoveData.FEN);
           if (nextPlayerFromFen === senderUserData.color) {
               ws.send({ system: true, message: "Invalid move state: turn did not change after move" });
               room.gameState.moveHistory.pop();
@@ -5368,7 +5390,7 @@ app.ws('/ws/room', {
               {
                   userData.ws.send({
                       type: "move",
-                      moveData: data.moveData,
+                      moveData: resolvedMoveData,
                       from: senderUserData.userName,
                       userId: senderUserId,
                       gameState: getRecipientGameState(room, id, spectator),
