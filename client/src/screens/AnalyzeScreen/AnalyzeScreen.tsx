@@ -4,6 +4,7 @@ import { ChessBoard } from "react-chessboard-ui";
 import { API_PREFIX } from "../../constants/api";
 import type { MoveData } from "../../types";
 import { ChessboardWrap } from "../../components/ChessboardWrap/ChessboardWrap";
+import { getReadableMoveNotation } from "../../utils/getReadableMoveNotation";
 
 type AnalysisEntry = {
   ply: number;
@@ -25,6 +26,17 @@ type AnalyzeResponse = {
 };
 
 type ArrowCoords = [number, number];
+type MoveCategory = "Best" | "Excellent" | "Good" | "Inaccuracy" | "Mistake" | "Blunder";
+type ReviewRow = {
+  index: number;
+  ply: number;
+  playedSAN: string;
+  bestSAN: string;
+  evalText: string;
+  category: MoveCategory;
+  comment: string;
+  pvShort?: string;
+};
 
 const FILES = "abcdefgh";
 const PIECE_MAP: Record<string, "pawn" | "bishop" | "knight" | "rook" | "queen" | "king"> = {
@@ -72,6 +84,92 @@ function toReadableMove(uci?: string): string {
     return `${uci.slice(0, 4)}=${uci[4].toUpperCase()}`;
   }
   return uci;
+}
+
+function toReviewEval(scoreCp?: number): string {
+  if (typeof scoreCp !== "number") {
+    return "—";
+  }
+  const pawns = scoreCp / 100;
+  const sign = pawns > 0 ? "+" : "";
+  return `${sign}${pawns.toFixed(1)}`;
+}
+
+function getFenActiveColor(fen?: string): "white" | "black" {
+  if (!fen) {
+    return "white";
+  }
+  const active = fen.split(" ")[1];
+  return active === "b" ? "black" : "white";
+}
+
+function normalizeToWhiteAdvantage(scoreCp: number, fenAfter?: string): number {
+  const activeColor = getFenActiveColor(fenAfter);
+  return activeColor === "white" ? scoreCp : -scoreCp;
+}
+
+function toSidePerspective(whiteAdvantage: number, side: "white" | "black"): number {
+  return side === "white" ? whiteAdvantage : -whiteAdvantage;
+}
+
+function classifyMove(lossCp: number): MoveCategory {
+  if (lossCp <= 20) return "Best";
+  if (lossCp <= 60) return "Excellent";
+  if (lossCp <= 130) return "Good";
+  if (lossCp <= 260) return "Inaccuracy";
+  if (lossCp <= 500) return "Mistake";
+  return "Blunder";
+}
+
+function categoryColor(category: MoveCategory): string {
+  switch (category) {
+    case "Best":
+      return "text-emerald-300 bg-emerald-500/20 border-emerald-400/40";
+    case "Excellent":
+      return "text-green-300 bg-green-500/20 border-green-400/40";
+    case "Good":
+      return "text-cyan-300 bg-cyan-500/20 border-cyan-400/40";
+    case "Inaccuracy":
+      return "text-yellow-300 bg-yellow-500/20 border-yellow-400/40";
+    case "Mistake":
+      return "text-orange-300 bg-orange-500/20 border-orange-400/40";
+    case "Blunder":
+      return "text-red-300 bg-red-500/20 border-red-400/40";
+    default:
+      return "text-white/80 bg-white/10 border-white/20";
+  }
+}
+
+function categoryComment(category: MoveCategory, lossCp: number): string {
+  switch (category) {
+    case "Best":
+      return "Сильнейший ход в позиции.";
+    case "Excellent":
+      return "Очень точный ход, почти без потери качества.";
+    case "Good":
+      return "Нормальный практичный ход.";
+    case "Inaccuracy":
+      return `Небольшая неточность (примерно ${Math.round(lossCp / 100)} пешки).`;
+    case "Mistake":
+      return `Серьёзная ошибка: позиция ухудшилась примерно на ${(lossCp / 100).toFixed(1)}.`;
+    case "Blunder":
+      return `Грубая ошибка: резкое ухудшение позиции на ${(lossCp / 100).toFixed(1)}+.`;
+    default:
+      return "Ход требует дополнительного анализа.";
+  }
+}
+
+function toPseudoSAN(move?: MoveData): string {
+  if (!move) {
+    return "—";
+  }
+
+  try {
+    const notation = getReadableMoveNotation(move);
+    return notation.replace(/\s+/g, "");
+  } catch {
+    return "—";
+  }
 }
 
 function getPieceFromFenAt(fen: string, coords: [number, number]) {
@@ -131,6 +229,30 @@ function analysisToMoveData(entries: AnalysisEntry[]): MoveData[] {
       } satisfies MoveData;
     })
     .filter((move): move is MoveData => move !== null);
+}
+
+function uciToMoveData(uci: string | undefined, fenBefore: string): MoveData | null {
+  if (!uci || uci.length < 4) {
+    return null;
+  }
+
+  const from = squareToCoords(uci.slice(0, 2));
+  const to = squareToCoords(uci.slice(2, 4));
+  if (!from || !to) {
+    return null;
+  }
+
+  const piece = getPieceFromFenAt(fenBefore, from);
+  if (!piece) {
+    return null;
+  }
+
+  return {
+    from,
+    to,
+    FEN: fenBefore,
+    figure: piece,
+  };
 }
 
 export const AnalyzeScreen = () => {
@@ -213,7 +335,55 @@ export const AnalyzeScreen = () => {
     return analysisToMoveData(analysis);
   }, [analysis, moveHistory]);
 
+  const reviewRows = useMemo<ReviewRow[]>(() => {
+    if (!analysis.length) {
+      return [];
+    }
+
+    return analysis.map((entry, index) => {
+      const playedMove = normalizedMoveHistory[index];
+      const bestMove = uciToMoveData(entry.bestMoveUci, entry.fenBefore);
+
+      const playedScoreWhite = typeof entry.scoreCp === "number"
+        ? normalizeToWhiteAdvantage(entry.scoreCp, entry.fenAfter)
+        : undefined;
+
+      const side = playedMove?.figure.color || getFenActiveColor(entry.fenBefore);
+      const currPerspective = typeof playedScoreWhite === "number"
+        ? toSidePerspective(playedScoreWhite, side)
+        : undefined;
+
+      const prevEntry = analysis[index - 1];
+      const prevWhite = prevEntry && typeof prevEntry.scoreCp === "number"
+        ? normalizeToWhiteAdvantage(prevEntry.scoreCp, prevEntry.fenAfter)
+        : undefined;
+      const prevPerspective = typeof prevWhite === "number"
+        ? toSidePerspective(prevWhite, side)
+        : undefined;
+
+      const lossCp = index === 0 || typeof currPerspective !== "number" || typeof prevPerspective !== "number"
+        ? 0
+        : Math.max(0, Math.round(prevPerspective - currPerspective));
+
+      const category = classifyMove(lossCp);
+      const serious = category === "Mistake" || category === "Blunder";
+      const bestSAN = toPseudoSAN(bestMove || undefined);
+
+      return {
+        index,
+        ply: entry.ply,
+        playedSAN: toPseudoSAN(playedMove),
+        bestSAN,
+        evalText: toReviewEval(entry.scoreCp),
+        category,
+        comment: categoryComment(category, lossCp),
+        pvShort: serious && bestSAN !== "—" ? bestSAN : undefined,
+      };
+    });
+  }, [analysis, normalizedMoveHistory]);
+
   const analyzedEntry = selectedPly > 0 ? analysis[selectedPly - 1] : undefined;
+  const analyzedRow = selectedPly > 0 ? reviewRows[selectedPly - 1] : undefined;
   const boardFen = selectedPly > 0
     ? (normalizedMoveHistory[selectedPly - 1]?.FEN || initialFen)
     : initialFen;
@@ -328,10 +498,26 @@ export const AnalyzeScreen = () => {
               </button>
             </div>
             <div className="mt-3 text-center text-sm text-white/70">
-              Played: <span className="font-mono">{toReadableMove(analyzedEntry?.playedMoveUci)}</span>
+              Played: <span className="font-mono">{analyzedRow?.playedSAN || "—"}</span>
               {" · "}
-              Best: <span className="font-mono">{toReadableMove(analyzedEntry?.bestMoveUci)}</span>
+              Best: <span className="font-mono">{analyzedRow?.bestSAN || "—"}</span>
             </div>
+            <div className="mt-2 flex items-center justify-center gap-2 text-sm">
+              {analyzedRow?.category && (
+                <span className={`px-2 py-1 rounded-md border ${categoryColor(analyzedRow.category)}`}>
+                  {analyzedRow.category}
+                </span>
+              )}
+              <span className="text-white/80">Eval: {analyzedRow?.evalText || "—"}</span>
+            </div>
+            <div className="mt-2 text-center text-sm text-white/70">
+              {analyzedRow?.comment || "Сделайте ход вперёд, чтобы увидеть review."}
+            </div>
+            {analyzedRow?.pvShort && (
+              <div className="mt-1 text-center text-sm text-red-200">
+                Лучше было: <span className="font-mono">{analyzedRow.pvShort}</span>
+              </div>
+            )}
           </div>
         )}
 
@@ -341,24 +527,26 @@ export const AnalyzeScreen = () => {
               <thead className="bg-white/10">
                 <tr>
                   <th className="text-left px-3 py-2">#</th>
-                  <th className="text-left px-3 py-2">Played</th>
+                  <th className="text-left px-3 py-2">Move</th>
                   <th className="text-left px-3 py-2">Best</th>
-                  <th className="text-left px-3 py-2">Score (cp)</th>
-                  <th className="text-left px-3 py-2">Depth</th>
+                  <th className="text-left px-3 py-2">Review</th>
+                  <th className="text-left px-3 py-2">Eval</th>
                 </tr>
               </thead>
               <tbody>
-                {analysis.map((entry, index) => (
+                {reviewRows.map((row) => (
                   <tr
-                    key={entry.ply}
-                    className={`border-t border-white/10 cursor-pointer ${index === selectedPly - 1 ? "bg-white/10" : "hover:bg-white/5"}`}
-                    onClick={() => setSelectedPly(index + 1)}
+                    key={row.ply}
+                    className={`border-t border-white/10 cursor-pointer ${row.index === selectedPly - 1 ? "bg-white/10" : "hover:bg-white/5"}`}
+                    onClick={() => setSelectedPly(row.index + 1)}
                   >
-                    <td className="px-3 py-2">{entry.ply}</td>
-                    <td className="px-3 py-2 font-mono">{toReadableMove(entry.playedMoveUci)}</td>
-                    <td className="px-3 py-2 font-mono">{toReadableMove(entry.bestMoveUci)}</td>
-                    <td className="px-3 py-2">{entry.scoreCp ?? "—"}</td>
-                    <td className="px-3 py-2">{entry.depth ?? "—"}</td>
+                    <td className="px-3 py-2">{row.ply}</td>
+                    <td className="px-3 py-2 font-mono">{row.playedSAN}</td>
+                    <td className="px-3 py-2 font-mono">{row.bestSAN}</td>
+                    <td className="px-3 py-2">
+                      <span className={`px-2 py-1 rounded-md border ${categoryColor(row.category)}`}>{row.category}</span>
+                    </td>
+                    <td className="px-3 py-2">{row.evalText}</td>
                   </tr>
                 ))}
               </tbody>
