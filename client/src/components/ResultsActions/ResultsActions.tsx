@@ -24,6 +24,9 @@ export const ResultsActions: FC<ResultsActionsProps> = ({
     const [isDismissed, setIsDismissed] = useState<boolean>(false);
     const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
     const previousMessageRef = useRef<string | undefined>(undefined);
+    const currentRoomId = window.location.pathname.startsWith('/game/')
+        ? window.location.pathname.replace('/game/', '').split('/')[0]
+        : undefined;
 
     // Проверяем авторизацию при показе модального окна
     useEffect(() => {
@@ -106,6 +109,11 @@ export const ResultsActions: FC<ResultsActionsProps> = ({
         history.push("/login");
     };
 
+    const handleAnalyze = () => {
+        if (!currentRoomId) return;
+        history.push(`/analyze/${currentRoomId}`);
+    };
+
     if (!shouldRender) {
         return null;
     }
@@ -150,6 +158,14 @@ export const ResultsActions: FC<ResultsActionsProps> = ({
                 )}
 
                 <div className="flex gap-4 w-full">
+                    {!!currentRoomId && (
+                        <button
+                            className="flex-1 rounded-md text-sm font-semibold px-4 py-2 bg-white/10 text-white border border-white/20 cursor-pointer transition-all duration-300 active:scale-95 focus:outline-none hover:bg-white/20"
+                            onClick={handleAnalyze}
+                        >
+                            Analyze game
+                        </button>
+                    )}
                     <button 
                         className="flex-1 rounded-md text-sm font-semibold px-4 py-2 bg-[#4F39F6] text-white cursor-pointer transition-all duration-300 active:scale-95 focus:outline-none"
                         onClick={handleCloseButton}

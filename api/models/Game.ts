@@ -38,6 +38,20 @@ export interface IGame extends Document {
   startedAt: Date;
   endedAt: Date;
   hasMobilePlayer?: boolean; // Есть ли мобильный игрок в игре
+  analysisStatus?: "not_started" | "in_progress" | "done" | "failed";
+  analysisRequestedAt?: Date;
+  analysisCompletedAt?: Date;
+  analysisError?: string;
+  analysisVersion?: number;
+  analysis?: Array<{
+    ply: number;
+    fenBefore: string;
+    fenAfter: string;
+    playedMoveUci: string;
+    bestMoveUci: string;
+    scoreCp?: number;
+    depth?: number;
+  }>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -148,7 +162,64 @@ const GameSchema = new Schema<IGame>(
     hasMobilePlayer: {
       type: Boolean,
       required: false
-    }
+    },
+    analysisStatus: {
+      type: String,
+      enum: ["not_started", "in_progress", "done", "failed"],
+      default: "not_started",
+      index: true,
+    },
+    analysisRequestedAt: {
+      type: Date,
+      required: false,
+    },
+    analysisCompletedAt: {
+      type: Date,
+      required: false,
+    },
+    analysisError: {
+      type: String,
+      required: false,
+    },
+    analysisVersion: {
+      type: Number,
+      required: false,
+      default: 1,
+    },
+    analysis: {
+      type: [{
+        ply: {
+          type: Number,
+          required: true,
+        },
+        fenBefore: {
+          type: String,
+          required: true,
+        },
+        fenAfter: {
+          type: String,
+          required: true,
+        },
+        playedMoveUci: {
+          type: String,
+          required: true,
+        },
+        bestMoveUci: {
+          type: String,
+          required: true,
+        },
+        scoreCp: {
+          type: Number,
+          required: false,
+        },
+        depth: {
+          type: Number,
+          required: false,
+        },
+      }],
+      default: undefined,
+      required: false,
+    },
   },
   {
     timestamps: true

@@ -29,7 +29,21 @@ if (process.env.WITHOUT_MONGO !== 'true') {
 
 const DEFAULT_TIME_SECONDS = 600;
 
-const app = new Elysia();
+const app = new Elysia().onError(({ code, error, path, set }) => {
+  const message = error instanceof Error ? error.message : String(error);
+  console.error(`[api-error] code=${code} path=${path} message=${message}`);
+
+  if (!set.status || Number(set.status) < 400) {
+    set.status = 500;
+  }
+
+  return {
+    success: false,
+    error: message,
+    code,
+    path,
+  };
+});
 
 // Функция для генерации коротких уникальных ID
 function generateShortId(): string {
@@ -176,6 +190,9 @@ const randomMatchQueueByTime = new Map<string, RandomMatchQueueEntry[]>();
 const randomMatchUserToTimeKey = new Map<string, string>();
 const randomMatchAssignments = new Map<string, RandomMatchAssignment>();
 const botMoveInProgressRooms = new Set<string>();
+const postGameAnalysisInProgressRooms = new Set<string>();
+const ANALYSIS_VERSION = 1;
+const ANALYSIS_MOVE_TIME_MS = 500;
 const tournamentClients = new Map<string, Map<string, ElysiaWS<any, any>>>();
 const tournamentStartTimers = new Map<string, NodeJS.Timeout>();
 
@@ -501,8 +518,39 @@ async function saveGameToDatabase(room: Room, roomId: string) {
       }
     }
 
-    // Если нет обоих игроков, не сохраняем
-    if (!whitePlayer || !blackPlayer) {
+    const isBotGame = room.botSettings?.enabled === true;
+    const botColor = room.botSettings?.color;
+
+    const whitePlayerData = whitePlayer
+      ? {
+          userId: whitePlayer.registeredUserId || undefined,
+          userName: whitePlayer.userName,
+          avatar: whitePlayer.avatar
+        }
+      : isBotGame && botColor === "white"
+        ? {
+            userId: undefined,
+            userName: room.botSettings?.name || "Bot",
+            avatar: room.botSettings?.avatar || "0"
+          }
+        : null;
+
+    const blackPlayerData = blackPlayer
+      ? {
+          userId: blackPlayer.registeredUserId || undefined,
+          userName: blackPlayer.userName,
+          avatar: blackPlayer.avatar
+        }
+      : isBotGame && botColor === "black"
+        ? {
+            userId: undefined,
+            userName: room.botSettings?.name || "Bot",
+            avatar: room.botSettings?.avatar || "0"
+          }
+        : null;
+
+    // Если после обработки все еще не хватает одного из цветов, не сохраняем
+    if (!whitePlayerData || !blackPlayerData) {
       return;
     }
 
@@ -539,16 +587,8 @@ async function saveGameToDatabase(room: Room, roomId: string) {
     // Создаем новую запись игры
       const gameData = {
         roomId: roomId,
-        whitePlayer: {
-          userId: whitePlayer.registeredUserId || undefined,
-          userName: whitePlayer.userName,
-          avatar: whitePlayer.avatar
-        },
-        blackPlayer: {
-          userId: blackPlayer.registeredUserId || undefined,
-          userName: blackPlayer.userName,
-          avatar: blackPlayer.avatar
-        },
+        whitePlayer: whitePlayerData,
+        blackPlayer: blackPlayerData,
         initialFEN: initialFEN,
         finalFEN: room.gameState.currentFEN,
         moveHistory: filteredMoveHistory,
@@ -4704,7 +4744,187 @@ app.get('/api/games', async ({ query }) => {
 
 
 
+app.post('/api/game-analysis/:roomId/start', async ({ params }) => {
+  try {
+    const { roomId } = params;
+    const game = await Game.findOne({ roomId }).lean();
+
+    if (!game) {
+      return {
+        success: false,
+        error: 'Game not found'
+      };
+    }
+
+    if ((game as any).analysisStatus === 'done' && Array.isArray((game as any).analysis)) {
+      return {
+        success: true,
+        roomId,
+        status: 'done',
+      };
+    }
+
+    if ((game as any).analysisStatus !== 'in_progress') {
+      await Game.updateOne(
+        { roomId, analysisStatus: { $ne: 'in_progress' } },
+        {
+          $set: {
+            analysisStatus: 'in_progress',
+            analysisRequestedAt: new Date(),
+            analysisCompletedAt: undefined,
+            analysisError: undefined,
+          },
+          $unset: {
+            analysis: '',
+          }
+        }
+      );
+    }
+
+    void analyzeGameByRoomId(roomId);
+
+    return {
+      success: true,
+      roomId,
+      status: 'in_progress',
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      error: error.message || 'Failed to start analysis'
+    };
+  }
+});
+
+app.get('/api/game-analysis/:roomId', async ({ params }) => {
+  try {
+    const { roomId } = params;
+    const game = await Game.findOne({ roomId }).lean();
+
+    if (!game) {
+      return {
+        success: false,
+        error: 'Game not found'
+      };
+    }
+
+    const status = (game as any).analysisStatus || 'not_started';
+
+    return {
+      success: true,
+      roomId,
+      status,
+      analysisRequestedAt: (game as any).analysisRequestedAt,
+      analysisCompletedAt: (game as any).analysisCompletedAt,
+      analysisError: (game as any).analysisError,
+      analysisVersion: (game as any).analysisVersion,
+      analysis: status === 'done' ? (game as any).analysis || [] : undefined,
+      moveHistory: Array.isArray(game.moveHistory) ? game.moveHistory : [],
+      initialFEN: game.initialFEN,
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      error: error.message || 'Failed to get analysis'
+    };
+  }
+});
+
 // Get game by ID endpoint - одна игра по ID
+async function analyzeGameByRoomId(roomId: string): Promise<void> {
+  if (postGameAnalysisInProgressRooms.has(roomId)) {
+    return;
+  }
+
+  postGameAnalysisInProgressRooms.add(roomId);
+
+  try {
+    const game = await Game.findOne({ roomId });
+    if (!game) {
+      return;
+    }
+
+    const moveHistory = Array.isArray(game.moveHistory) ? game.moveHistory : [];
+    if (moveHistory.length === 0) {
+      await Game.updateOne(
+        { roomId },
+        {
+          $set: {
+            analysisStatus: 'done',
+            analysisRequestedAt: game.analysisRequestedAt ?? new Date(),
+            analysisCompletedAt: new Date(),
+            analysisError: undefined,
+            analysisVersion: ANALYSIS_VERSION,
+            analysis: [],
+          }
+        }
+      );
+      return;
+    }
+
+    const entries: Array<{
+      ply: number;
+      fenBefore: string;
+      fenAfter: string;
+      playedMoveUci: string;
+      bestMoveUci: string;
+      scoreCp?: number;
+      depth?: number;
+    }> = [];
+
+    let previousFen = game.initialFEN;
+
+    for (let i = 0; i < moveHistory.length; i++) {
+      const move = moveHistory[i] as MoveData;
+
+      const playedMoveUci = chessBot.roomMoveToUci(move as any, previousFen);
+      const best = await chessBot.getMove({
+        fen: previousFen,
+        difficulty: 'medium',
+        moveTimeMs: ANALYSIS_MOVE_TIME_MS,
+      });
+
+      entries.push({
+        ply: i + 1,
+        fenBefore: previousFen,
+        fenAfter: move.FEN,
+        playedMoveUci,
+        bestMoveUci: best.bestMove,
+        scoreCp: best.scoreCp,
+        depth: best.depth,
+      });
+
+      previousFen = move.FEN;
+    }
+
+    await Game.updateOne(
+      { roomId },
+      {
+        $set: {
+          analysisStatus: 'done',
+          analysisCompletedAt: new Date(),
+          analysisError: undefined,
+          analysisVersion: ANALYSIS_VERSION,
+          analysis: entries,
+        }
+      }
+    );
+  } catch (error: any) {
+    await Game.updateOne(
+      { roomId },
+      {
+        $set: {
+          analysisStatus: 'failed',
+          analysisCompletedAt: new Date(),
+          analysisError: error?.message || 'Failed to analyze game',
+        }
+      }
+    );
+  } finally {
+    postGameAnalysisInProgressRooms.delete(roomId);
+  }
+}
+
 app.get('/api/games/:id', async ({ params }) => {
   try {
     const { id } = params;
