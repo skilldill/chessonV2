@@ -357,6 +357,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                 onClose={handleCloseResults}
                 tournamentId={gameState.gameType === "tournament" ? gameState.tournamentId : undefined}
                 tournamentGameRoomId={gameState.gameType === "tournament" ? roomId : undefined}
+                roomId={roomId}
             />
             <ConnectionNotification
                 message={t('game.connectionLost')}

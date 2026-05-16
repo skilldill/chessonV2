@@ -19,6 +19,7 @@ import { hashPassword, comparePassword } from './utils/password';
 import { createToken, verifyToken } from './utils/jwt';
 import { sendVerificationEmail, sendPasswordResetEmail, sendTestEmail } from './utils/email';
 import { chessBot, type BotDifficulty } from './src/modules/chess-bot';
+import { gameAnalysisService } from './src/modules/game-analysis/game-analysis.service';
 import mongoose from 'mongoose';
 import crypto from 'crypto';
 
@@ -4703,6 +4704,92 @@ app.get('/api/games', async ({ query }) => {
 // });
 
 
+// Game analysis endpoint. Starts analysis only when the analysis page asks for it.
+app.get('/api/analysis/:gameId', async ({ params }) => {
+  try {
+    const { gameId } = params;
+    const analysis = await gameAnalysisService.getOrStart(gameId);
+
+    return {
+      success: true,
+      status: analysis?.status || 'running',
+      progress: {
+        current: analysis?.progressCurrent || 0,
+        total: analysis?.progressTotal || 0,
+      },
+      analysis,
+    };
+  } catch (error: any) {
+    console.error('[game-analysis] Get analysis error:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to get game analysis',
+    };
+  }
+});
+
+app.post('/api/analysis/:gameId/retry', async ({ params }) => {
+  try {
+    const { gameId } = params;
+    const analysis = await gameAnalysisService.retry(gameId);
+
+    return {
+      success: true,
+      status: analysis?.status || 'running',
+      progress: {
+        current: analysis?.progressCurrent || 0,
+        total: analysis?.progressTotal || 0,
+      },
+      analysis,
+    };
+  } catch (error: any) {
+    console.error('[game-analysis] Retry analysis error:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to retry game analysis',
+    };
+  }
+});
+
+app.get('/api/analysis/:gameId/events', ({ params }) => {
+  const { gameId } = params;
+  const encoder = new TextEncoder();
+  let unsubscribe: (() => void) | null = null;
+
+  const stream = new ReadableStream({
+    start(controller) {
+      const send = (event: string, data: unknown) => {
+        controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
+      };
+
+      unsubscribe = gameAnalysisService.subscribe(gameId, {
+        send,
+        close: () => {
+          try {
+            controller.close();
+          } catch {
+            // The browser may have closed the stream first.
+          }
+        },
+      });
+
+      send('connected', { gameId });
+    },
+    cancel() {
+      unsubscribe?.();
+      unsubscribe = null;
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache, no-transform',
+      Connection: 'keep-alive',
+    },
+  });
+});
+
 
 // Get game by ID endpoint - одна игра по ID
 app.get('/api/games/:id', async ({ params }) => {
@@ -5905,9 +5992,11 @@ const PORT = process.env.PORT ? parseInt(process.env.PORT) : 4000;
 try {
   await chessBot.start();
   console.log('[chess-bot] Stockfish engine started');
+  await gameAnalysisService.start();
+  console.log('[game-analysis] Stockfish engine started');
 } catch (error) {
   const message = error instanceof Error ? error.message : String(error);
-  console.error('[chess-bot] Failed to start Stockfish engine:', message);
+  console.error('[stockfish] Failed to start Stockfish engine:', message);
   process.exit(1);
 }
 
@@ -5927,9 +6016,11 @@ const shutdown = async (signal: string): Promise<void> => {
   try {
     await chessBot.stop();
     console.log('[chess-bot] Stockfish engine stopped');
+    await gameAnalysisService.stop();
+    console.log('[game-analysis] Stockfish engine stopped');
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error('[chess-bot] Error during shutdown:', message);
+    console.error('[stockfish] Error during shutdown:', message);
   }
 
   process.exit(0);

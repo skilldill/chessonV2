@@ -9,13 +9,15 @@ type ResultsActionsProps = {
     onClose: () => void;
     tournamentId?: string;
     tournamentGameRoomId?: string;
+    roomId?: string;
 }
 
 export const ResultsActions: FC<ResultsActionsProps> = ({ 
     message,
     onClose,
     tournamentId,
-    tournamentGameRoomId
+    tournamentGameRoomId,
+    roomId
 }) => {
     const { t } = useTranslation();
     const history = useHistory();
@@ -106,6 +108,12 @@ export const ResultsActions: FC<ResultsActionsProps> = ({
         history.push("/login");
     };
 
+    const handleAnalyzeGame = () => {
+        if (!roomId) return;
+        onClose();
+        history.push(`/analyze/${roomId}`);
+    };
+
     if (!shouldRender) {
         return null;
     }
@@ -149,9 +157,17 @@ export const ResultsActions: FC<ResultsActionsProps> = ({
                     </div>
                 )}
 
-                <div className="flex gap-4 w-full">
+                <div className="flex flex-col gap-3 w-full">
+                    {roomId && (
+                        <button
+                            className="w-full rounded-md text-sm font-semibold px-4 py-2 bg-white/10 text-white border border-white/20 cursor-pointer transition-all duration-300 active:scale-95 focus:outline-none hover:bg-white/20"
+                            onClick={handleAnalyzeGame}
+                        >
+                            {t("results.analyzeGame")}
+                        </button>
+                    )}
                     <button 
-                        className="flex-1 rounded-md text-sm font-semibold px-4 py-2 bg-[#4F39F6] text-white cursor-pointer transition-all duration-300 active:scale-95 focus:outline-none"
+                        className="w-full rounded-md text-sm font-semibold px-4 py-2 bg-[#4F39F6] text-white cursor-pointer transition-all duration-300 active:scale-95 focus:outline-none"
                         onClick={handleCloseButton}
                     >
                         {tournamentId ? t("tournament.returnToRoom") : isAuthenticated === false ? t("results.continueWithoutRegistration") : t("results.returnToMain")}
