@@ -36,6 +36,42 @@ export function getReadableAnalysisNotation(move: AnalysisMoveData, previousFen:
   return `${pieceLetter}${isCapture ? 'x' : ''}${destination}`;
 }
 
+export function getReadableUciNotation(uci: string, previousFen: string): string {
+  const from = squareToCoords(uci.slice(0, 2));
+  const to = squareToCoords(uci.slice(2, 4));
+  const movedPiece = getPieceAt(previousFen, from);
+
+  if (!movedPiece) {
+    return uci;
+  }
+
+  const promotionType = getPromotionType(uci[4]);
+
+  return getReadableAnalysisNotation(
+    {
+      FEN: previousFen,
+      from,
+      to,
+      figure: {
+        color: movedPiece.color,
+        type: promotionType ?? movedPiece.type,
+      },
+    },
+    previousFen,
+  );
+}
+
+export function uciToCoords(uci: string): { from: [number, number]; to: [number, number] } | null {
+  if (!/^[a-h][1-8][a-h][1-8][qrbn]?$/i.test(uci)) {
+    return null;
+  }
+
+  return {
+    from: squareToCoords(uci.slice(0, 2)),
+    to: squareToCoords(uci.slice(2, 4)),
+  };
+}
+
 function getCastlingNotation(move: AnalysisMoveData): string | null {
   if (move.figure.type !== 'king') {
     return null;
@@ -80,6 +116,23 @@ function coordsToSquare(coords: [number, number]): string {
   const [x, y] = coords;
   const file = FILES[x] ?? 'a';
   return `${file}${8 - y}`;
+}
+
+function squareToCoords(square: string): [number, number] {
+  const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+  const rank = Number.parseInt(square[1], 10);
+  return [file, 8 - rank];
+}
+
+function getPromotionType(letter?: string): FigureType | null {
+  const map: Record<string, FigureType> = {
+    q: 'queen',
+    r: 'rook',
+    b: 'bishop',
+    n: 'knight',
+  };
+
+  return letter ? map[letter.toLowerCase()] ?? null : null;
 }
 
 function getPieceAt(fen: string, coords: [number, number]): FenPiece | null {

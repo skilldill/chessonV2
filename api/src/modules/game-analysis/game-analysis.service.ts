@@ -1,9 +1,9 @@
 import { Game } from '../../../models/Game';
 import { GameAnalysis } from '../../../models/GameAnalysis';
 import { AnalysisEngine } from './analysis-engine';
-import { classifyMove, getMoveLossCp, scoreCpToPawns } from './analysis-classifier';
-import { getReadableAnalysisNotation } from './notation';
-import type { AnalysisCounter, AnalysisMoveData, EngineEvaluation, GameAnalysisResult } from './types';
+import { calculateAccuracy, classifyMove, getMoveLossCp, scoreCpToPawns } from './analysis-classifier';
+import { getReadableAnalysisNotation, getReadableUciNotation, uciToCoords } from './notation';
+import type { AnalysisCounter, AnalysisMoveData, AnalysisSideSummary, EngineEvaluation, GameAnalysisResult } from './types';
 
 type Subscriber = {
   send: (event: string, data: unknown) => void;
@@ -12,7 +12,7 @@ type Subscriber = {
 
 const DEFAULT_ANALYSIS_MOVE_TIME_MS = Number.parseInt(process.env.ANALYSIS_MOVE_TIME_MS || '100', 10);
 const STALE_RUNNING_MS = 10 * 60 * 1000;
-const ANALYSIS_VERSION = 2;
+const ANALYSIS_VERSION = 6;
 
 function emptyCounter(): AnalysisCounter {
   return {
@@ -20,6 +20,13 @@ function emptyCounter(): AnalysisCounter {
     good: 0,
     bad: 0,
     blunder: 0,
+  };
+}
+
+function emptySideSummary(): AnalysisSideSummary {
+  return {
+    ...emptyCounter(),
+    accuracy: 100,
   };
 }
 
@@ -197,8 +204,12 @@ export class GameAnalysisService {
   }): Promise<GameAnalysisResult> {
     const evalCache = new Map<string, EngineEvaluation>();
     const counters = {
-      white: emptyCounter(),
-      black: emptyCounter(),
+      white: emptySideSummary(),
+      black: emptySideSummary(),
+    };
+    const lossByColor = {
+      white: [] as number[],
+      black: [] as number[],
     };
     const moves: GameAnalysisResult['moves'] = [];
     const graph: GameAnalysisResult['graph'] = [];
@@ -223,6 +234,9 @@ export class GameAnalysisService {
       const afterEval = await this.evaluateWithCache(fenAfter, evalCache);
       const lossCp = getMoveLossCp(beforeEval.scoreCp, afterEval.scoreCp, move.figure.color);
       const quality = classifyMove(lossCp);
+      const bestMove = buildBestMove(beforeEval.bestMove, fenBefore);
+      const nextBestMove = buildBestMove(afterEval.bestMove, fenAfter);
+      lossByColor[move.figure.color].push(lossCp);
 
       if (quality !== 'normal') {
         counters[move.figure.color][quality] += 1;
@@ -232,6 +246,8 @@ export class GameAnalysisService {
         ply,
         moveNumber,
         color: move.figure.color,
+        from: move.from,
+        to: move.to,
         notation: getReadableAnalysisNotation(move, fenBefore),
         quality,
         beforeScore: scoreCpToPawns(beforeEval.scoreCp),
@@ -239,6 +255,8 @@ export class GameAnalysisService {
         lossCp,
         fenBefore,
         fenAfter,
+        bestMove,
+        nextBestMove,
       });
 
       graph.push({
@@ -250,6 +268,9 @@ export class GameAnalysisService {
 
       await this.updateProgress(input.gameId, ply, input.moveHistory.length);
     }
+
+    counters.white.accuracy = calculateAccuracy(lossByColor.white);
+    counters.black.accuracy = calculateAccuracy(lossByColor.black);
 
     return {
       initialFEN: input.initialFEN,
@@ -331,6 +352,24 @@ export class GameAnalysisService {
 
     return Date.now() - new Date(startedAt).getTime() > STALE_RUNNING_MS;
   }
+}
+
+function buildBestMove(bestMoveUci: string | undefined, fenBefore: string) {
+  if (!bestMoveUci) {
+    return undefined;
+  }
+
+  const coords = uciToCoords(bestMoveUci);
+  if (!coords) {
+    return undefined;
+  }
+
+  return {
+    uci: bestMoveUci,
+    notation: getReadableUciNotation(bestMoveUci, fenBefore),
+    from: coords.from,
+    to: coords.to,
+  };
 }
 
 function buildSummary(moves: GameAnalysisResult['moves']): GameAnalysisResult['summary'] {

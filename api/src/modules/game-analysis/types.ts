@@ -19,6 +19,13 @@ export type EngineEvaluation = {
   depth?: number;
 };
 
+export type AnalysisBestMove = {
+  uci: string;
+  notation: string;
+  from: [number, number];
+  to: [number, number];
+};
+
 export type AnalysisGraphPoint = {
   ply: number;
   moveNumber: number;
@@ -28,10 +35,16 @@ export type AnalysisGraphPoint = {
 
 export type AnalysisCounter = Record<'excellent' | 'good' | 'bad' | 'blunder', number>;
 
+export type AnalysisSideSummary = AnalysisCounter & {
+  accuracy: number;
+};
+
 export type AnalyzedMove = {
   ply: number;
   moveNumber: number;
   color: FigureColor;
+  from: [number, number];
+  to: [number, number];
   notation: string;
   quality: MoveQuality;
   beforeScore: number;
@@ -39,14 +52,16 @@ export type AnalyzedMove = {
   lossCp: number;
   fenBefore: string;
   fenAfter: string;
+  bestMove?: AnalysisBestMove;
+  nextBestMove?: AnalysisBestMove;
 };
 
 export type GameAnalysisResult = {
   initialFEN: string;
   graph: AnalysisGraphPoint[];
   counters: {
-    white: AnalysisCounter;
-    black: AnalysisCounter;
+    white: AnalysisSideSummary;
+    black: AnalysisSideSummary;
   };
   moves: AnalyzedMove[];
   summary: {

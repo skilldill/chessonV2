@@ -21,13 +21,15 @@ export interface IGameAnalysis extends Document {
       quality?: MoveQuality;
     }>;
     counters: {
-      white: Record<'excellent' | 'good' | 'bad' | 'blunder', number>;
-      black: Record<'excellent' | 'good' | 'bad' | 'blunder', number>;
+      white: Record<'excellent' | 'good' | 'bad' | 'blunder', number> & { accuracy?: number };
+      black: Record<'excellent' | 'good' | 'bad' | 'blunder', number> & { accuracy?: number };
     };
     moves: Array<{
       ply: number;
       moveNumber: number;
       color: 'white' | 'black';
+      from: [number, number];
+      to: [number, number];
       notation: string;
       quality: MoveQuality;
       beforeScore: number;
@@ -35,6 +37,18 @@ export interface IGameAnalysis extends Document {
       lossCp: number;
       fenBefore: string;
       fenAfter: string;
+      bestMove?: {
+        uci: string;
+        notation: string;
+        from: [number, number];
+        to: [number, number];
+      };
+      nextBestMove?: {
+        uci: string;
+        notation: string;
+        from: [number, number];
+        to: [number, number];
+      };
     }>;
     summary: {
       text: string;
@@ -51,6 +65,7 @@ const CounterSchema = new Schema(
     good: { type: Number, required: true, default: 0 },
     bad: { type: Number, required: true, default: 0 },
     blunder: { type: Number, required: true, default: 0 },
+    accuracy: { type: Number, required: false, default: 100 },
   },
   { _id: false },
 );
@@ -119,6 +134,8 @@ const GameAnalysisSchema = new Schema<IGameAnalysis>(
             type: String,
             enum: ['white', 'black'],
           },
+          from: [Number],
+          to: [Number],
           notation: String,
           quality: {
             type: String,
@@ -129,6 +146,18 @@ const GameAnalysisSchema = new Schema<IGameAnalysis>(
           lossCp: Number,
           fenBefore: String,
           fenAfter: String,
+          bestMove: {
+            uci: String,
+            notation: String,
+            from: [Number],
+            to: [Number],
+          },
+          nextBestMove: {
+            uci: String,
+            notation: String,
+            from: [Number],
+            to: [Number],
+          },
         },
       ],
       summary: {

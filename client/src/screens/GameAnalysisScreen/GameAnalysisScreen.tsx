@@ -7,7 +7,7 @@ import { getChessboardConfig } from "../../components/ChessBoardConfigs/ChessBoa
 import { useAppearance } from "../../hooks/useAppearance";
 import { useGameAnalysis } from "../../hooks/useGameAnalysis";
 import { useScreenSize } from "../../hooks/useScreenSize";
-import type { AnalyzedMove, MoveQuality } from "../../types/analysis";
+import type { AnalysisSideSummary, AnalyzedMove, MoveQuality } from "../../types/analysis";
 
 const FILTERS: Array<{ value: MoveQuality | "all"; label: string }> = [
   { value: "all", label: "Все" },
@@ -51,11 +51,49 @@ export function GameAnalysisScreen() {
     setSelectedPly(analysis.summary.keyMomentPly ?? analysis.moves.at(-1)?.ply ?? 0);
   }, [analysis, selectedPly]);
 
+  useEffect(() => {
+    if (!analysis) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target;
+      if (target instanceof HTMLElement) {
+        const tagName = target.tagName.toLowerCase();
+        if (tagName === "input" || tagName === "textarea" || target.isContentEditable) {
+          return;
+        }
+      }
+
+      if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") {
+        return;
+      }
+
+      event.preventDefault();
+      setSelectedPly((current) => {
+        const maxPly = analysis.moves.length;
+        const currentPly = current ?? maxPly;
+        return event.key === "ArrowLeft"
+          ? Math.max(0, currentPly - 1)
+          : Math.min(maxPly, currentPly + 1);
+      });
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [analysis]);
+
   const selectedMove = useMemo(
     () => analysis?.moves.find((move) => move.ply === selectedPly) ?? null,
     [analysis, selectedPly],
   );
   const selectedFen = selectedMove?.fenAfter ?? analysis?.initialFEN;
+  const bestMoveArrow = selectedMove?.bestMove
+    ? [{ start: selectedMove.bestMove.from, end: selectedMove.bestMove.to }]
+    : [];
+  const selectedMoveHighlight = selectedMove
+    ? [selectedMove.from, selectedMove.to] as [[number, number], [number, number]]
+    : undefined;
   const boardSize = screenSize === "S" ? 36 : screenSize === "M" ? 44 : 52;
   const filteredMoves = useMemo(() => {
     if (!analysis) return [];
@@ -175,6 +213,8 @@ export function GameAnalysisScreen() {
                   onChange={() => {}}
                   onEndGame={() => {}}
                   viewOnly={true}
+                  moveArrows={bestMoveArrow}
+                  moveHighlight={selectedMoveHighlight}
                   config={{
                     squareSize: boardSize,
                     ...chessboardConfig,
@@ -187,6 +227,11 @@ export function GameAnalysisScreen() {
                 ? `${formatMovePrefix(selectedMove)} ${selectedMove.notation}: ${QUALITY_LABELS[selectedMove.quality]}`
                 : "Начальная позиция"}
             </div>
+            {selectedMove?.bestMove && (
+              <div className="mt-2 rounded-md border border-emerald-400/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-100">
+                Лучший ход: <span className="font-semibold">{selectedMove.bestMove.notation}</span>
+              </div>
+            )}
           </div>
         </aside>
       </div>
@@ -211,10 +256,15 @@ function AnalysisPageShell({ children, onBack }: { children: ReactNode; onBack: 
   );
 }
 
-function CountersBlock({ title, counters }: { title: string; counters: Record<"excellent" | "good" | "bad" | "blunder", number> }) {
+function CountersBlock({ title, counters }: { title: string; counters: AnalysisSideSummary }) {
   return (
     <div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
-      <h2 className="mb-3 text-sm font-semibold text-white/80">{title}</h2>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h2 className="text-sm font-semibold text-white/80">{title}</h2>
+        <div className="rounded-md bg-white/8 px-2.5 py-1 text-xs font-semibold text-white">
+          Точность {counters.accuracy}%
+        </div>
+      </div>
       <div className="grid grid-cols-2 gap-2">
         <Counter label="Отличные" value={counters.excellent} className="text-emerald-200" />
         <Counter label="Хорошие" value={counters.good} className="text-sky-200" />
@@ -247,6 +297,11 @@ function MoveRow({ move, selected, onClick }: { move: AnalyzedMove; selected: bo
         <span className="mr-2 text-white/45">{formatMovePrefix(move)}</span>
         <span className="font-semibold">{move.notation}</span>
         <span className="ml-2 text-xs text-white/35">{move.afterScore > 0 ? "+" : ""}{move.afterScore}</span>
+        {move.bestMove && (
+          <span className="mt-1 block text-xs text-emerald-100/75">
+            Лучший: {move.bestMove.notation}
+          </span>
+        )}
       </span>
       <span className={`shrink-0 rounded border px-2 py-1 text-xs font-semibold ${QUALITY_CLASSES[move.quality]}`}>
         {QUALITY_LABELS[move.quality]}
