@@ -261,8 +261,11 @@ function CountersBlock({ title, counters }: { title: string; counters: AnalysisS
     <div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
       <div className="mb-3 flex items-center justify-between gap-3">
         <h2 className="text-sm font-semibold text-white/80">{title}</h2>
-        <div className="rounded-md bg-white/8 px-2.5 py-1 text-xs font-semibold text-white">
-          Точность {counters.accuracy}%
+        <div className="rounded-md bg-white/8 px-2.5 py-1 text-right text-xs font-semibold text-white">
+          <div>Accuracy {counters.accuracy}%</div>
+          <div className="mt-0.5 text-[11px] font-medium text-white/55">
+            Average loss {counters.averageLossCp} cp
+          </div>
         </div>
       </div>
       <div className="grid grid-cols-2 gap-2">

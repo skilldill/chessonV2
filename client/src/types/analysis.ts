@@ -11,6 +11,7 @@ export type AnalysisCounter = Record<"excellent" | "good" | "bad" | "blunder", n
 
 export type AnalysisSideSummary = AnalysisCounter & {
   accuracy: number;
+  averageLossCp: number;
 };
 
 export type AnalysisBestMove = {

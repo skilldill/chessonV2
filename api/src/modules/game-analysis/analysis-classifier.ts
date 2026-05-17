@@ -31,6 +31,50 @@ export function calculateAccuracy(lossesCp: number[]): number {
   return Math.round(total / lossesCp.length);
 }
 
+export function calculateQualityBasedAccuracy(
+  lossesCp: number[],
+  totalPly: number,
+): { accuracy: number; averageLossCp: number } {
+  if (lossesCp.length === 0) {
+    return {
+      accuracy: smoothAccuracy(100, totalPly),
+      averageLossCp: 0,
+    };
+  }
+
+  const averageLossCp = Math.round(
+    lossesCp.reduce((sum, loss) => sum + loss, 0) / lossesCp.length,
+  );
+  const averageMoveScore = lossesCp.reduce((sum, loss) => sum + getQualityMoveScore(loss), 0) / lossesCp.length;
+
+  return {
+    accuracy: smoothAccuracy(averageMoveScore, totalPly),
+    averageLossCp,
+  };
+}
+
+function getQualityMoveScore(lossCp: number): number {
+  if (lossCp === 0) {
+    return 100;
+  }
+
+  const quality = classifyMove(lossCp);
+
+  if (quality === 'excellent') return 95;
+  if (quality === 'good') return 90;
+  if (quality === 'normal') return 75;
+  if (quality === 'bad') return 45;
+  return 10;
+}
+
+function smoothAccuracy(accuracy: number, totalPly: number): number {
+  const smoothed = totalPly < 20
+    ? accuracy * 0.7 + 50 * 0.3
+    : accuracy;
+
+  return Math.max(0, Math.min(100, Math.round(smoothed)));
+}
+
 function getMoveAccuracy(lossCp: number): number {
   if (lossCp <= 15) {
     return 100;

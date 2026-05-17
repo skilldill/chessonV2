@@ -21,8 +21,8 @@ export interface IGameAnalysis extends Document {
       quality?: MoveQuality;
     }>;
     counters: {
-      white: Record<'excellent' | 'good' | 'bad' | 'blunder', number> & { accuracy?: number };
-      black: Record<'excellent' | 'good' | 'bad' | 'blunder', number> & { accuracy?: number };
+      white: Record<'excellent' | 'good' | 'bad' | 'blunder', number> & { accuracy?: number; averageLossCp?: number };
+      black: Record<'excellent' | 'good' | 'bad' | 'blunder', number> & { accuracy?: number; averageLossCp?: number };
     };
     moves: Array<{
       ply: number;
@@ -66,6 +66,7 @@ const CounterSchema = new Schema(
     bad: { type: Number, required: true, default: 0 },
     blunder: { type: Number, required: true, default: 0 },
     accuracy: { type: Number, required: false, default: 100 },
+    averageLossCp: { type: Number, required: false, default: 0 },
   },
   { _id: false },
 );

@@ -1,7 +1,7 @@
 import { Game } from '../../../models/Game';
 import { GameAnalysis } from '../../../models/GameAnalysis';
 import { AnalysisEngine } from './analysis-engine';
-import { calculateAccuracy, classifyMove, getMoveLossCp, scoreCpToPawns } from './analysis-classifier';
+import { calculateQualityBasedAccuracy, classifyMove, getMoveLossCp, scoreCpToPawns } from './analysis-classifier';
 import { getReadableAnalysisNotation, getReadableUciNotation, uciToCoords } from './notation';
 import type { AnalysisCounter, AnalysisMoveData, AnalysisSideSummary, EngineEvaluation, GameAnalysisResult } from './types';
 
@@ -12,7 +12,7 @@ type Subscriber = {
 
 const DEFAULT_ANALYSIS_MOVE_TIME_MS = Number.parseInt(process.env.ANALYSIS_MOVE_TIME_MS || '100', 10);
 const STALE_RUNNING_MS = 10 * 60 * 1000;
-const ANALYSIS_VERSION = 6;
+const ANALYSIS_VERSION = 7;
 
 function emptyCounter(): AnalysisCounter {
   return {
@@ -27,6 +27,7 @@ function emptySideSummary(): AnalysisSideSummary {
   return {
     ...emptyCounter(),
     accuracy: 100,
+    averageLossCp: 0,
   };
 }
 
@@ -269,8 +270,12 @@ export class GameAnalysisService {
       await this.updateProgress(input.gameId, ply, input.moveHistory.length);
     }
 
-    counters.white.accuracy = calculateAccuracy(lossByColor.white);
-    counters.black.accuracy = calculateAccuracy(lossByColor.black);
+    const whiteAccuracy = calculateQualityBasedAccuracy(lossByColor.white, input.moveHistory.length);
+    const blackAccuracy = calculateQualityBasedAccuracy(lossByColor.black, input.moveHistory.length);
+    counters.white.accuracy = whiteAccuracy.accuracy;
+    counters.white.averageLossCp = whiteAccuracy.averageLossCp;
+    counters.black.accuracy = blackAccuracy.accuracy;
+    counters.black.averageLossCp = blackAccuracy.averageLossCp;
 
     return {
       initialFEN: input.initialFEN,
