@@ -132,6 +132,12 @@ type UserData = {
     gameStartedAt?: Date; // Время начала игры для этого пользователя
 };
 
+type PersistableGamePlayer = {
+    registeredUserId?: mongoose.Types.ObjectId;
+    userName: string;
+    avatar: string;
+};
+
 type Room = {
     users: Map<string, UserData>;
     spectators: Map<string, UserData>;
@@ -490,9 +496,10 @@ async function saveGameToDatabase(room: Room, roomId: string) {
       return;
     }
 
-    // Находим игроков
-    let whitePlayer: UserData | null = null;
-    let blackPlayer: UserData | null = null;
+    // Находим игроков. В bot-комнатах второй игрок не лежит в room.users,
+    // поэтому недостающую сторону подставляем из botSettings.
+    let whitePlayer: PersistableGamePlayer | null = null;
+    let blackPlayer: PersistableGamePlayer | null = null;
 
     for (const [_, userData] of room.users) {
       if (userData.color === "white") {
@@ -502,8 +509,23 @@ async function saveGameToDatabase(room: Room, roomId: string) {
       }
     }
 
+    if (room.botSettings?.enabled && room.botSettings.color === "white" && !whitePlayer) {
+      whitePlayer = {
+        userName: room.botSettings.name,
+        avatar: room.botSettings.avatar
+      };
+    }
+
+    if (room.botSettings?.enabled && room.botSettings.color === "black" && !blackPlayer) {
+      blackPlayer = {
+        userName: room.botSettings.name,
+        avatar: room.botSettings.avatar
+      };
+    }
+
     // Если нет обоих игроков, не сохраняем
     if (!whitePlayer || !blackPlayer) {
+      console.log(`⏭️ Game not saved: roomId=${roomId}, missing player snapshot`);
       return;
     }
 
