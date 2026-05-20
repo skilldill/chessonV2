@@ -21,8 +21,8 @@ export interface IGameAnalysis extends Document {
       quality?: MoveQuality;
     }>;
     counters: {
-      white: Record<'excellent' | 'good' | 'bad' | 'blunder', number> & { accuracy?: number; averageLossCp?: number };
-      black: Record<'excellent' | 'good' | 'bad' | 'blunder', number> & { accuracy?: number; averageLossCp?: number };
+      white: Record<'excellent' | 'good' | 'bad' | 'blunder', number> & { accuracy?: number; averageLossCp?: number; accuracyLabel?: string };
+      black: Record<'excellent' | 'good' | 'bad' | 'blunder', number> & { accuracy?: number; averageLossCp?: number; accuracyLabel?: string };
     };
     moves: Array<{
       ply: number;
@@ -32,6 +32,7 @@ export interface IGameAnalysis extends Document {
       to: [number, number];
       notation: string;
       quality: MoveQuality;
+      qualityDescription: string;
       beforeScore: number;
       afterScore: number;
       lossCp: number;
@@ -53,6 +54,8 @@ export interface IGameAnalysis extends Document {
     summary: {
       text: string;
       keyMomentPly?: number;
+      bestMovePly?: number;
+      bestMoveText?: string;
     };
   };
   createdAt: Date;
@@ -67,6 +70,7 @@ const CounterSchema = new Schema(
     blunder: { type: Number, required: true, default: 0 },
     accuracy: { type: Number, required: false, default: 100 },
     averageLossCp: { type: Number, required: false, default: 0 },
+    accuracyLabel: { type: String, required: false, default: 'Отличная игра' },
   },
   { _id: false },
 );
@@ -142,6 +146,7 @@ const GameAnalysisSchema = new Schema<IGameAnalysis>(
             type: String,
             enum: ['excellent', 'good', 'normal', 'bad', 'blunder'],
           },
+          qualityDescription: String,
           beforeScore: Number,
           afterScore: Number,
           lossCp: Number,
@@ -164,6 +169,8 @@ const GameAnalysisSchema = new Schema<IGameAnalysis>(
       summary: {
         text: String,
         keyMomentPly: Number,
+        bestMovePly: Number,
+        bestMoveText: String,
       },
     },
   },

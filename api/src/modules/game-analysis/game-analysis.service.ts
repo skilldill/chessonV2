@@ -1,7 +1,15 @@
 import { Game } from '../../../models/Game';
 import { GameAnalysis } from '../../../models/GameAnalysis';
 import { AnalysisEngine } from './analysis-engine';
-import { calculateQualityBasedAccuracy, classifyMove, getMoveLossCp, scoreCpToPawns } from './analysis-classifier';
+import {
+  calculateQualityBasedAccuracy,
+  classifyMove,
+  getAccuracyLabel,
+  getBestMoveStrengthScore,
+  getMoveLossCp,
+  getQualityDescription,
+  scoreCpToPawns,
+} from './analysis-classifier';
 import { getReadableAnalysisNotation, getReadableUciNotation, uciToCoords } from './notation';
 import type { AnalysisCounter, AnalysisMoveData, AnalysisSideSummary, EngineEvaluation, GameAnalysisResult } from './types';
 
@@ -12,7 +20,7 @@ type Subscriber = {
 
 const DEFAULT_ANALYSIS_MOVE_TIME_MS = Number.parseInt(process.env.ANALYSIS_MOVE_TIME_MS || '100', 10);
 const STALE_RUNNING_MS = 10 * 60 * 1000;
-const ANALYSIS_VERSION = 7;
+const ANALYSIS_VERSION = 8;
 
 function emptyCounter(): AnalysisCounter {
   return {
@@ -28,6 +36,7 @@ function emptySideSummary(): AnalysisSideSummary {
     ...emptyCounter(),
     accuracy: 100,
     averageLossCp: 0,
+    accuracyLabel: 'Отличная игра',
   };
 }
 
@@ -235,6 +244,7 @@ export class GameAnalysisService {
       const afterEval = await this.evaluateWithCache(fenAfter, evalCache);
       const lossCp = getMoveLossCp(beforeEval.scoreCp, afterEval.scoreCp, move.figure.color);
       const quality = classifyMove(lossCp);
+      const qualityDescription = getQualityDescription(quality, lossCp);
       const bestMove = buildBestMove(beforeEval.bestMove, fenBefore);
       const nextBestMove = buildBestMove(afterEval.bestMove, fenAfter);
       lossByColor[move.figure.color].push(lossCp);
@@ -251,6 +261,7 @@ export class GameAnalysisService {
         to: move.to,
         notation: getReadableAnalysisNotation(move, fenBefore),
         quality,
+        qualityDescription,
         beforeScore: scoreCpToPawns(beforeEval.scoreCp),
         afterScore: scoreCpToPawns(afterEval.scoreCp),
         lossCp,
@@ -274,8 +285,10 @@ export class GameAnalysisService {
     const blackAccuracy = calculateQualityBasedAccuracy(lossByColor.black, input.moveHistory.length);
     counters.white.accuracy = whiteAccuracy.accuracy;
     counters.white.averageLossCp = whiteAccuracy.averageLossCp;
+    counters.white.accuracyLabel = getAccuracyLabel(whiteAccuracy.accuracy);
     counters.black.accuracy = blackAccuracy.accuracy;
     counters.black.averageLossCp = blackAccuracy.averageLossCp;
+    counters.black.accuracyLabel = getAccuracyLabel(blackAccuracy.accuracy);
 
     return {
       initialFEN: input.initialFEN,
@@ -381,10 +394,18 @@ function buildSummary(moves: GameAnalysisResult['moves']): GameAnalysisResult['s
   const keyMove = [...moves]
     .filter((move) => move.quality === 'blunder' || move.quality === 'bad')
     .sort((a, b) => b.lossCp - a.lossCp)[0];
+  const bestMove = [...moves]
+    .sort((a, b) => {
+      const aScore = getBestMoveStrengthScore(a.lossCp, a.beforeScore * 100, a.afterScore * 100, a.color);
+      const bScore = getBestMoveStrengthScore(b.lossCp, b.beforeScore * 100, b.afterScore * 100, b.color);
+      return bScore - aScore;
+    })[0];
 
   if (!keyMove) {
     return {
       text: 'Партия прошла ровно: явных зевков и серьезных ошибок не найдено.',
+      bestMovePly: bestMove?.ply,
+      bestMoveText: bestMove ? `${formatMovePrefix(bestMove.moveNumber, bestMove.color)} ${bestMove.notation}` : undefined,
     };
   }
 
@@ -394,6 +415,8 @@ function buildSummary(moves: GameAnalysisResult['moves']): GameAnalysisResult['s
   return {
     text: `${label}: ${formatMovePrefix(keyMove.moveNumber, keyMove.color)} ${keyMove.notation} у ${side}.`,
     keyMomentPly: keyMove.ply,
+    bestMovePly: bestMove?.ply,
+    bestMoveText: bestMove ? `${formatMovePrefix(bestMove.moveNumber, bestMove.color)} ${bestMove.notation}` : undefined,
   };
 }
 

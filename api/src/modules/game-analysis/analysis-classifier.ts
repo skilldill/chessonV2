@@ -1,11 +1,13 @@
 import type { FigureColor, MoveQuality } from './types';
 
+const METRIC_LOSS_CP_CAP = 800;
+
 export function getMoveLossCp(beforeCp: number, afterCp: number, moverColor: FigureColor): number {
   const loss = moverColor === 'white'
     ? beforeCp - afterCp
     : afterCp - beforeCp;
 
-  return Math.max(0, Math.round(loss));
+  return normalizeLossCp(loss);
 }
 
 export function classifyMove(lossCp: number): MoveQuality {
@@ -51,6 +53,54 @@ export function calculateQualityBasedAccuracy(
     accuracy: smoothAccuracy(averageMoveScore, totalPly),
     averageLossCp,
   };
+}
+
+export function getAccuracyLabel(accuracy: number): string {
+  if (accuracy >= 95) return 'Отличная игра';
+  if (accuracy >= 85) return 'Хорошая игра';
+  if (accuracy >= 70) return 'Средняя игра';
+  if (accuracy >= 50) return 'Много ошибок';
+  return 'Очень много ошибок';
+}
+
+export function getQualityDescription(quality: MoveQuality, lossCp: number): string {
+  if (quality === 'excellent') {
+    return lossCp === 0 ? 'Лучший ход в позиции' : 'Удерживает перевес';
+  }
+
+  if (quality === 'good') {
+    return `Потеря: ${lossCp} cp`;
+  }
+
+  if (quality === 'normal') {
+    return `Небольшая потеря инициативы: ${lossCp} cp`;
+  }
+
+  if (quality === 'bad') {
+    return `Серьезная потеря: ${lossCp} cp`;
+  }
+
+  return `Зевок: потеря ${lossCp} cp`;
+}
+
+export function getBestMoveStrengthScore(lossCp: number, beforeCp: number, afterCp: number, moverColor: FigureColor): number {
+  const improvement = moverColor === 'white'
+    ? afterCp - beforeCp
+    : beforeCp - afterCp;
+
+  if (lossCp > 15) {
+    return -lossCp;
+  }
+
+  return Math.max(0, improvement) + (15 - lossCp);
+}
+
+function normalizeLossCp(loss: number): number {
+  if (!Number.isFinite(loss)) {
+    return METRIC_LOSS_CP_CAP;
+  }
+
+  return Math.max(0, Math.min(METRIC_LOSS_CP_CAP, Math.round(loss)));
 }
 
 function getQualityMoveScore(lossCp: number): number {

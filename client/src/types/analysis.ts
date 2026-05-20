@@ -12,6 +12,7 @@ export type AnalysisCounter = Record<"excellent" | "good" | "bad" | "blunder", n
 export type AnalysisSideSummary = AnalysisCounter & {
   accuracy: number;
   averageLossCp: number;
+  accuracyLabel: string;
 };
 
 export type AnalysisBestMove = {
@@ -29,6 +30,7 @@ export type AnalyzedMove = {
   to: [number, number];
   notation: string;
   quality: MoveQuality;
+  qualityDescription: string;
   beforeScore: number;
   afterScore: number;
   lossCp: number;
@@ -49,6 +51,8 @@ export type GameAnalysisResult = {
   summary: {
     text: string;
     keyMomentPly?: number;
+    bestMovePly?: number;
+    bestMoveText?: string;
   };
 };
 

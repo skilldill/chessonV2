@@ -158,6 +158,17 @@ export function GameAnalysisScreen() {
             <p className="text-sm text-white/65">{analysis.summary.text}</p>
           </header>
 
+          {analysis.summary.bestMoveText && (
+            <button
+              type="button"
+              onClick={() => analysis.summary.bestMovePly && setSelectedPly(analysis.summary.bestMovePly)}
+              className="rounded-lg border border-emerald-400/20 bg-emerald-500/10 p-4 text-left transition hover:bg-emerald-500/15"
+            >
+              <div className="text-sm font-semibold text-emerald-100">Лучший ход партии</div>
+              <div className="mt-1 text-lg font-semibold text-white">{analysis.summary.bestMoveText}</div>
+            </button>
+          )}
+
           <div className="grid gap-3 sm:grid-cols-2">
             <CountersBlock title="Белые" counters={analysis.counters.white} />
             <CountersBlock title="Черные" counters={analysis.counters.black} />
@@ -263,6 +274,7 @@ function CountersBlock({ title, counters }: { title: string; counters: AnalysisS
         <h2 className="text-sm font-semibold text-white/80">{title}</h2>
         <div className="rounded-md bg-white/8 px-2.5 py-1 text-right text-xs font-semibold text-white">
           <div>Accuracy {counters.accuracy}%</div>
+          <div className="mt-0.5 text-[11px] font-medium text-white/70">{counters.accuracyLabel}</div>
           <div className="mt-0.5 text-[11px] font-medium text-white/55">
             Average loss {counters.averageLossCp} cp
           </div>
@@ -300,6 +312,9 @@ function MoveRow({ move, selected, onClick }: { move: AnalyzedMove; selected: bo
         <span className="mr-2 text-white/45">{formatMovePrefix(move)}</span>
         <span className="font-semibold">{move.notation}</span>
         <span className="ml-2 text-xs text-white/35">{move.afterScore > 0 ? "+" : ""}{move.afterScore}</span>
+        <span className="mt-1 block text-xs text-white/55">
+          {move.qualityDescription}
+        </span>
         {move.bestMove && (
           <span className="mt-1 block text-xs text-emerald-100/75">
             Лучший: {move.bestMove.notation}
