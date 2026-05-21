@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Switch } from 'react-router-dom';
+import { BrowserRouter, Redirect, Route, Switch } from 'react-router-dom';
 
 import 'react-chessboard-ui/dist/index.css';
 import './styles/index.css';
@@ -20,6 +20,7 @@ import { HomeRedirect } from './components/HomeRedirect/HomeRedirect';
 import { MainAuthGuard } from './components/HomeRedirect/MainAuthGuard';
 import { useRestoreGame } from './hooks/useRestoreGame';
 import { useUserAppearancePreload } from './hooks/useUserAppearancePreload';
+import { GameAnalysisScreen } from './screens/GameAnalysisScreen/GameAnalysisScreen';
 
 const App: React.FC = () => {
   useRestoreGame();
@@ -31,6 +32,14 @@ const App: React.FC = () => {
         <Route exact path="/game/:roomId">
           <AppScreen />
         </Route>
+        <Route exact path="/analyze/:gameId">
+          <GameAnalysisScreen />
+        </Route>
+        <Route
+          exact
+          path="/analize/:gameId"
+          render={({ match }: any) => <Redirect to={`/analyze/${match.params.gameId}`} />}
+        />
         <Route exact path="/">
           <HomeRedirect />
         </Route>
