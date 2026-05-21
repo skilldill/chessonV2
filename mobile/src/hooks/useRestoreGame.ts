@@ -26,6 +26,7 @@ export const useRestoreGame = () => {
 
     const checkStartedGame = async () => {
         if (!storageGameData) return;
+        if (window.location.pathname.startsWith('/analyze/') || window.location.pathname.startsWith('/analize/')) return;
 
         const fetchedData = await fetchGameState(storageGameData.gameId);
 
