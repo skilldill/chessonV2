@@ -6,6 +6,7 @@ export type MoveQuality = 'excellent' | 'good' | 'normal' | 'bad' | 'blunder';
 export interface IGameAnalysis extends Document {
   gameId: string;
   analysisVersion?: number;
+  uniqueViewerKeys?: string[];
   status: AnalysisStatus;
   progressCurrent: number;
   progressTotal: number;
@@ -87,6 +88,12 @@ const GameAnalysisSchema = new Schema<IGameAnalysis>(
       type: Number,
       required: false,
       default: 1,
+    },
+    uniqueViewerKeys: {
+      type: [String],
+      required: false,
+      default: [],
+      select: false,
     },
     status: {
       type: String,

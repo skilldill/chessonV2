@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { useHistory, useParams } from "react-router-dom";
 import { ChessBoard } from "react-chessboard-ui";
@@ -43,6 +43,8 @@ export function GameAnalysisScreen() {
   const [selectedPly, setSelectedPly] = useState<number | null>(null);
   const [filter, setFilter] = useState<MoveQuality | "all">("all");
   const [viewportHeight, setViewportHeight] = useState(() => window.innerHeight);
+  const [isShareCopied, setIsShareCopied] = useState(false);
+  const historyListRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     localStorage.removeItem("gameData");
@@ -53,6 +55,17 @@ export function GameAnalysisScreen() {
     history.push("/main");
   };
 
+  const handleShareGame = async () => {
+    const shareUrl = `${window.location.origin}/analyze/${gameId}`;
+
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setIsShareCopied(true);
+      window.setTimeout(() => setIsShareCopied(false), 1600);
+    } catch {
+      setIsShareCopied(false);
+    }
+  };
 
   useEffect(() => {
     if (!analysis || selectedPly !== null) {
@@ -126,9 +139,25 @@ export function GameAnalysisScreen() {
     [analysis],
   );
 
+  useEffect(() => {
+    if (selectedPly === null) {
+      return;
+    }
+
+    const selectedMoveElement = historyListRef.current?.querySelector<HTMLElement>(
+      `[data-analysis-ply="${selectedPly}"]`,
+    );
+
+    selectedMoveElement?.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+      inline: "nearest",
+    });
+  }, [groupedMoves, selectedPly]);
+
   if (status === "loading" || status === "running" || status === "idle") {
     return (
-      <AnalysisPageShell onGoHome={handleGoHome}>
+      <AnalysisPageShell onGoHome={handleGoHome} onShareGame={handleShareGame} isShareCopied={isShareCopied}>
         <div className="mx-auto flex min-h-[70vh] w-full max-w-xl flex-col items-center justify-center gap-5 text-center">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#4F39F6] border-t-transparent" />
           <div>
@@ -154,7 +183,7 @@ export function GameAnalysisScreen() {
 
   if (status === "failed") {
     return (
-      <AnalysisPageShell onGoHome={handleGoHome}>
+      <AnalysisPageShell onGoHome={handleGoHome} onShareGame={handleShareGame} isShareCopied={isShareCopied}>
         <div className="mx-auto flex min-h-[70vh] w-full max-w-xl flex-col items-center justify-center gap-4 text-center">
           <h1 className="text-xl font-semibold text-white">Анализ не готов</h1>
           <p className="text-sm text-white/60">{error || "Не удалось выполнить анализ партии"}</p>
@@ -175,7 +204,7 @@ export function GameAnalysisScreen() {
   }
 
   return (
-    <AnalysisPageShell onGoHome={handleGoHome}>
+    <AnalysisPageShell onGoHome={handleGoHome} onShareGame={handleShareGame} isShareCopied={isShareCopied}>
       <div className="mx-auto grid w-full max-w-[1500px] gap-5 lg:grid-cols-[minmax(660px,780px)_minmax(380px,1fr)] lg:items-start">
         <section className="flex min-w-0 flex-col gap-4">
           <div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
@@ -200,7 +229,7 @@ export function GameAnalysisScreen() {
                 />
               </div>
             )}
-            <div className="mt-3 text-sm text-white/65">
+            {/* <div className="mt-3 text-sm text-white/65">
               {selectedMove
                 ? `${formatMovePrefix(selectedMove)} ${selectedMove.notation}: ${QUALITY_LABELS[selectedMove.quality]}`
                 : "Начальная позиция"}
@@ -209,7 +238,7 @@ export function GameAnalysisScreen() {
               <div className="mt-2 rounded-md border border-emerald-400/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-100">
                 Лучший ход: <span className="font-semibold">{selectedMove.bestMove.notation}</span>
               </div>
-            )}
+            )} */}
           </div>
 
           <AnalysisEvaluationChart
@@ -220,10 +249,10 @@ export function GameAnalysisScreen() {
         </section>
 
         <aside className="flex min-w-0 flex-col gap-4">
-          <header className="flex flex-col gap-2">
+          {/* <header className="flex flex-col gap-2">
             <h1 className="text-2xl font-semibold text-white">Анализ партии</h1>
+          </header> */}
             {/* <p className="text-sm text-white/65">{analysis.summary.text}</p> */}
-          </header>
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
             {analysis.summary.bestMoveText && (
@@ -270,7 +299,7 @@ export function GameAnalysisScreen() {
               </div>
             </div>
 
-            <div className="grid max-h-[680px] gap-2 overflow-y-auto pr-1">
+            <div ref={historyListRef} className="grid max-h-[680px] gap-2 overflow-y-auto pr-1">
               {groupedMoves.map((moveGroup) => (
                 <MovePairRow
                   key={moveGroup.moveNumber}
@@ -289,20 +318,74 @@ export function GameAnalysisScreen() {
   );
 }
 
-function AnalysisPageShell({ children, onGoHome }: { children: ReactNode; onGoHome: () => void }) {
+function AnalysisPageShell({
+  children,
+  onGoHome,
+  onShareGame,
+  isShareCopied,
+}: {
+  children: ReactNode;
+  onGoHome: () => void;
+  onShareGame: () => void;
+  isShareCopied: boolean;
+}) {
   return (
-    <main className="min-h-screen bg-back-primary px-4 py-5 text-white sm:px-6 lg:px-8">
-      <div className="mx-auto mb-5 flex w-full max-w-[1500px] items-center justify-between">
-        <button
-          type="button"
-          onClick={onGoHome}
-          className="rounded-md border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white/75 transition hover:bg-white/10"
-        >
-          На главную
-        </button>
+    <main className="min-h-screen bg-back-primary text-white">
+      <div className="sticky left-0 right-0 top-0 z-30 border-b border-white/10 bg-black/25 backdrop-blur-md">
+        <div className="relative mx-auto flex h-14 w-full max-w-[1500px] items-center justify-center px-4 sm:px-6 lg:px-8">
+          <button
+            type="button"
+            onClick={onGoHome}
+            className="absolute left-4 flex h-9 items-center gap-1 rounded-md px-2 text-sm font-semibold text-white/80 transition hover:bg-white/10 active:scale-[0.98] sm:left-6 lg:left-8"
+          >
+            <span className="h-2.5 w-2.5 rotate-45 border-b-2 border-l-2 border-current" aria-hidden="true" />
+            <span className="hidden sm:inline">На главную</span>
+          </button>
+
+          <img src="/chesson-logo.svg" alt="Chesson" className="h-6 w-auto" />
+
+          <button
+            type="button"
+            onClick={onShareGame}
+            className="absolute right-4 flex h-9 items-center gap-2 rounded-md border border-white/15 bg-white/5 px-3 text-sm font-semibold text-white/80 transition hover:bg-white/10 active:scale-[0.98] sm:right-6 lg:right-8"
+          >
+            <LinkIcon />
+            {isShareCopied ? "Ссылка скопирована" : "Поделиться партией"}
+          </button>
+        </div>
       </div>
-      {children}
+      <div className="px-4 py-5 sm:px-6 lg:px-8">{children}</div>
     </main>
+  );
+}
+
+function LinkIcon() {
+  return (
+    <svg
+      className="h-4 w-4 shrink-0"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M10 13.5L14 9.5"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <path
+        d="M9.3 7.7L10.8 6.2C12.5 4.5 15.3 4.5 17 6.2C18.7 7.9 18.7 10.7 17 12.4L15.5 13.9"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <path
+        d="M14.7 16.3L13.2 17.8C11.5 19.5 8.7 19.5 7 17.8C5.3 16.1 5.3 13.3 7 11.6L8.5 10.1"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }
 
@@ -340,8 +423,8 @@ function CountersBlock({ title, counters }: { title: string; counters: AnalysisS
         <h2 className="text-sm font-semibold text-white/80">{title}</h2>
       </div>
       <div className="grid grid-cols-2 gap-2">
-        <Counter label="Точность %" value={counters.accuracy} className="text-white" />
-        <Counter label="Ср.потери cp" value={counters.averageLossCp} className="text-white" />
+        <Counter label="Точность, %" value={counters.accuracy} className="text-white" />
+        <Counter label="Ср.потери, cp" value={counters.averageLossCp} className="text-white" />
         <Counter label="Отличные" value={counters.excellent} className="text-emerald-200" />
         <Counter label="Хорошие" value={counters.good} className="text-sky-200" />
         <Counter label="Плохие" value={counters.bad} className="text-amber-200" />
@@ -354,8 +437,8 @@ function CountersBlock({ title, counters }: { title: string; counters: AnalysisS
 function Counter({ label, value, className }: { label: string; value: number; className: string }) {
   return (
     <div className="rounded-md bg-black/20 p-2.5">
+      <div className="text-sm text-white/45">{label}</div>
       <div className={`text-2xl font-semibold ${className}`}>{value}</div>
-      <div className="text-m text-white/45">{label}</div>
     </div>
   );
 }
@@ -422,6 +505,7 @@ function MoveCell({ move, selected, onClick }: { move?: AnalyzedMove; selected: 
   return (
     <button
       type="button"
+      data-analysis-ply={move.ply}
       onClick={onClick}
       className={`min-w-0 rounded-md border p-2 text-left transition flex flex-col justify-start ${
         selected ? "border-[#4F39F6] bg-[#4F39F6]/20" : "border-transparent bg-white/[0.03] hover:bg-white/8"

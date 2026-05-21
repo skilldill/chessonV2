@@ -14,6 +14,7 @@ import {
 } from './constants/tournament';
 import { User } from './models/User';
 import { Game } from './models/Game';
+import { GameAnalysis } from './models/GameAnalysis';
 import { Tournament } from './models/Tournament';
 import { hashPassword, comparePassword } from './utils/password';
 import { createToken, verifyToken } from './utils/jwt';
@@ -249,7 +250,8 @@ const CORS_ALLOWED_ORIGINS = (process.env.CORS_ALLOWED_ORIGINS || '')
   .filter(Boolean);
 const ALLOWED_ORIGINS = CORS_ALLOWED_ORIGINS.length > 0 ? CORS_ALLOWED_ORIGINS : DEFAULT_ALLOWED_ORIGINS;
 const CORS_ALLOWED_METHODS = 'GET,POST,PUT,PATCH,DELETE,OPTIONS';
-const CORS_ALLOWED_HEADERS = 'Content-Type, Authorization, x-admin-secret';
+const ANALYSIS_VIEWER_HEADER = 'x-analysis-viewer-id';
+const CORS_ALLOWED_HEADERS = `Content-Type, Authorization, x-admin-secret, ${ANALYSIS_VIEWER_HEADER}`;
 const ADMIN_SECRET_HEADER = 'x-admin-secret';
 const ADMIN_SECRET_VALUE = process.env.ADMIN_SECRET_VALUE || 'local-chesson-admin-secret';
 const TOURNAMENT_ADMIN_COOKIE = 'tournamentAdminIds';
@@ -268,6 +270,22 @@ function getHeaderValue(headers: unknown, headerName: string): string | undefine
 function hasAdminAccess(headers: unknown): boolean {
   const receivedSecret = getHeaderValue(headers, ADMIN_SECRET_HEADER);
   return receivedSecret === ADMIN_SECRET_VALUE;
+}
+
+function getAnalysisViewerKey(headers: unknown): string | undefined {
+  const explicitViewerId = getHeaderValue(headers, ANALYSIS_VIEWER_HEADER);
+  const forwardedFor = getHeaderValue(headers, 'x-forwarded-for')?.split(',')[0]?.trim();
+  const realIp = getHeaderValue(headers, 'x-real-ip');
+  const userAgent = getHeaderValue(headers, 'user-agent');
+  const source = explicitViewerId
+    ? `client:${explicitViewerId.slice(0, 120)}`
+    : `${forwardedFor || realIp || 'unknown-ip'}:${userAgent || 'unknown-agent'}`;
+
+  if (!source.trim()) {
+    return undefined;
+  }
+
+  return crypto.createHash('sha256').update(source).digest('hex');
 }
 
 function clearAuthCookie(set: { headers: Record<string, string> }) {
@@ -3380,9 +3398,11 @@ app.get('/api/admin/stats/overview', async ({ headers, set }) => {
   }
 
   try {
-    const [gamesWithResult, totalRegisteredUsers] = await Promise.all([
+    const [gamesWithResult, totalRegisteredUsers, totalGameAnalyses, uniqueAnalysisViewerKeys] = await Promise.all([
       Game.countDocuments({ 'result.resultType': { $exists: true } }),
-      User.countDocuments({})
+      User.countDocuments({}),
+      GameAnalysis.countDocuments({}),
+      GameAnalysis.distinct('uniqueViewerKeys')
     ]);
     const gamesWithoutResult = getOngoingGamesCount();
 
@@ -3392,7 +3412,9 @@ app.get('/api/admin/stats/overview', async ({ headers, set }) => {
         totalGames: gamesWithResult + gamesWithoutResult,
         gamesWithResult,
         gamesWithoutResult,
-        totalRegisteredUsers
+        totalRegisteredUsers,
+        totalGameAnalyses,
+        uniqueAnalysisViewers: uniqueAnalysisViewerKeys.filter(Boolean).length
       }
     };
   } catch (error: any) {
@@ -4727,10 +4749,18 @@ app.get('/api/games', async ({ query }) => {
 
 
 // Game analysis endpoint. Starts analysis only when the analysis page asks for it.
-app.get('/api/analysis/:gameId', async ({ params }) => {
+app.get('/api/analysis/:gameId', async ({ params, headers }) => {
   try {
     const { gameId } = params;
     const analysis = await gameAnalysisService.getOrStart(gameId);
+    const viewerKey = getAnalysisViewerKey(headers);
+
+    if (viewerKey) {
+      await GameAnalysis.updateOne(
+        { gameId },
+        { $addToSet: { uniqueViewerKeys: viewerKey } }
+      );
+    }
 
     return {
       success: true,

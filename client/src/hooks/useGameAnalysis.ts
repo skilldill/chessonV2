@@ -17,6 +17,19 @@ type AnalysisResponse = {
   error?: string;
 };
 
+const ANALYSIS_VIEWER_ID_KEY = "chesson-analysis-viewer-id";
+
+function getAnalysisViewerId(): string {
+  const existingId = localStorage.getItem(ANALYSIS_VIEWER_ID_KEY);
+  if (existingId) {
+    return existingId;
+  }
+
+  const nextId = crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  localStorage.setItem(ANALYSIS_VIEWER_ID_KEY, nextId);
+  return nextId;
+}
+
 export type UseGameAnalysisResult = {
   status: AnalysisStatus;
   progress: AnalysisProgress | null;
@@ -125,6 +138,11 @@ export function useGameAnalysis(gameId: string | undefined): UseGameAnalysisResu
         {
           method: options?.retry ? "POST" : "GET",
           credentials: "include",
+          headers: options?.retry
+            ? undefined
+            : {
+                "x-analysis-viewer-id": getAnalysisViewerId(),
+              },
         },
       );
       const data = await response.json() as AnalysisResponse;
