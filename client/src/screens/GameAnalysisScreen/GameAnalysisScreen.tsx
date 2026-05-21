@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { useHistory, useParams } from "react-router-dom";
 import { ChessBoard } from "react-chessboard-ui";
 import { AnalysisEvaluationChart } from "../../components/AnalysisEvaluationChart/AnalysisEvaluationChart";
@@ -9,21 +10,13 @@ import { useGameAnalysis } from "../../hooks/useGameAnalysis";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import type { AnalysisSideSummary, AnalyzedMove, MoveQuality } from "../../types/analysis";
 
-const FILTERS: Array<{ value: MoveQuality | "all"; label: string }> = [
-  { value: "all", label: "Все" },
-  { value: "blunder", label: "Зевки" },
-  { value: "bad", label: "Плохие" },
-  { value: "good", label: "Хорошие" },
-  { value: "excellent", label: "Отличные" },
+const FILTERS: Array<{ value: MoveQuality | "all"; labelKey: string }> = [
+  { value: "all", labelKey: "analysis.filter.all" },
+  { value: "blunder", labelKey: "analysis.filter.blunder" },
+  { value: "bad", labelKey: "analysis.filter.bad" },
+  { value: "good", labelKey: "analysis.filter.good" },
+  { value: "excellent", labelKey: "analysis.filter.excellent" },
 ];
-
-const QUALITY_LABELS: Record<MoveQuality, string> = {
-  excellent: "Отличный",
-  good: "Хороший",
-  normal: "Обычный",
-  bad: "Плохой",
-  blunder: "Зевок",
-};
 
 const QUALITY_CLASSES: Record<MoveQuality, string> = {
   excellent: "bg-emerald-500/16 text-emerald-200 border-emerald-400/25",
@@ -34,6 +27,7 @@ const QUALITY_CLASSES: Record<MoveQuality, string> = {
 };
 
 export function GameAnalysisScreen() {
+  const { t } = useTranslation();
   const { gameId } = useParams<{ gameId: string }>();
   const history = useHistory();
   const screenSize = useScreenSize();
@@ -161,11 +155,11 @@ export function GameAnalysisScreen() {
         <div className="mx-auto flex min-h-[70vh] w-full max-w-xl flex-col items-center justify-center gap-5 text-center">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#4F39F6] border-t-transparent" />
           <div>
-            <h1 className="text-xl font-semibold text-white">Анализ партии</h1>
+            <h1 className="text-xl font-semibold text-white">{t("analysis.title")}</h1>
             <p className="mt-2 text-sm text-white/60">
               {progress?.total
-                ? `Анализируем ${progress.current} из ${progress.total} ходов`
-                : "Готовим анализ партии"}
+                ? t("analysis.loadingProgress", { current: progress.current, total: progress.total })
+                : t("analysis.loading")}
             </p>
           </div>
           <div className="h-2 w-full max-w-sm overflow-hidden rounded-full bg-white/10">
@@ -185,14 +179,14 @@ export function GameAnalysisScreen() {
     return (
       <AnalysisPageShell onGoHome={handleGoHome} onShareGame={handleShareGame} isShareCopied={isShareCopied}>
         <div className="mx-auto flex min-h-[70vh] w-full max-w-xl flex-col items-center justify-center gap-4 text-center">
-          <h1 className="text-xl font-semibold text-white">Анализ не готов</h1>
-          <p className="text-sm text-white/60">{error || "Не удалось выполнить анализ партии"}</p>
+          <h1 className="text-xl font-semibold text-white">{t("analysis.failedTitle")}</h1>
+          <p className="text-sm text-white/60">{error || t("analysis.failedText")}</p>
           <button
             type="button"
             onClick={retry}
             className="rounded-md bg-[#4F39F6] px-5 py-3 text-sm font-semibold text-white transition active:scale-95"
           >
-            Повторить анализ
+            {t("analysis.retry")}
           </button>
         </div>
       </AnalysisPageShell>
@@ -209,8 +203,8 @@ export function GameAnalysisScreen() {
         <section className="flex min-w-0 flex-col gap-4">
           <div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
             <div className="mb-3 flex items-center justify-between gap-3">
-              <h2 className="text-base font-semibold text-white">Позиция</h2>
-              <div className="text-sm text-white/45">Стрелка показывает лучший ход</div>
+              <h2 className="text-base font-semibold text-white">{t("analysis.position")}</h2>
+              <div className="text-sm text-white/45">{t("analysis.bestMoveArrowHint")}</div>
             </div>
             {selectedFen && (
               <div className="mx-auto w-fit overflow-hidden rounded-md">
@@ -229,16 +223,6 @@ export function GameAnalysisScreen() {
                 />
               </div>
             )}
-            {/* <div className="mt-3 text-sm text-white/65">
-              {selectedMove
-                ? `${formatMovePrefix(selectedMove)} ${selectedMove.notation}: ${QUALITY_LABELS[selectedMove.quality]}`
-                : "Начальная позиция"}
-            </div>
-            {selectedMove?.bestMove && (
-              <div className="mt-2 rounded-md border border-emerald-400/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-100">
-                Лучший ход: <span className="font-semibold">{selectedMove.bestMove.notation}</span>
-              </div>
-            )} */}
           </div>
 
           <AnalysisEvaluationChart
@@ -249,15 +233,10 @@ export function GameAnalysisScreen() {
         </section>
 
         <aside className="flex min-w-0 flex-col gap-4">
-          {/* <header className="flex flex-col gap-2">
-            <h1 className="text-2xl font-semibold text-white">Анализ партии</h1>
-          </header> */}
-            {/* <p className="text-sm text-white/65">{analysis.summary.text}</p> */}
-
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
             {analysis.summary.bestMoveText && (
               <MomentButton
-                title="Лучший ход партии"
+                title={t("analysis.bestMoveOfGame")}
                 value={analysis.summary.bestMoveText}
                 tone="green"
                 onClick={() => analysis.summary.bestMovePly && setSelectedPly(analysis.summary.bestMovePly)}
@@ -265,7 +244,7 @@ export function GameAnalysisScreen() {
             )}
             {keyMomentMove && (
               <MomentButton
-                title="Главный зевок"
+                title={t("analysis.keyBlunder")}
                 value={`${formatMovePrefix(keyMomentMove)} ${keyMomentMove.notation}`}
                 tone="red"
                 onClick={() => setSelectedPly(keyMomentMove.ply)}
@@ -274,13 +253,13 @@ export function GameAnalysisScreen() {
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <CountersBlock title="Белые" counters={analysis.counters.white} />
-            <CountersBlock title="Черные" counters={analysis.counters.black} />
+            <CountersBlock title={t("analysis.white")} counters={analysis.counters.white} />
+            <CountersBlock title={t("analysis.black")} counters={analysis.counters.black} />
           </div>
 
           <section className="rounded-lg border border-white/10 bg-white/[0.04] p-3">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-base font-semibold text-white">История ходов</h2>
+              <h2 className="text-base font-semibold text-white">{t("analysis.moveHistory")}</h2>
               <div className="flex flex-wrap gap-2">
                 {FILTERS.map((item) => (
                   <button
@@ -293,7 +272,7 @@ export function GameAnalysisScreen() {
                         : "border-white/10 bg-white/5 text-white/60 hover:bg-white/10"
                     }`}
                   >
-                    {item.label}
+                    {t(item.labelKey)}
                   </button>
                 ))}
               </div>
@@ -329,6 +308,8 @@ function AnalysisPageShell({
   onShareGame: () => void;
   isShareCopied: boolean;
 }) {
+  const { t } = useTranslation();
+
   return (
     <main className="min-h-screen bg-back-primary text-white">
       <div className="sticky left-0 right-0 top-0 z-30 border-b border-white/10 bg-black/25 backdrop-blur-md">
@@ -339,7 +320,7 @@ function AnalysisPageShell({
             className="absolute left-4 flex h-9 items-center gap-1 rounded-md px-2 text-sm font-semibold text-white/80 transition hover:bg-white/10 active:scale-[0.98] sm:left-6 lg:left-8"
           >
             <span className="h-2.5 w-2.5 rotate-45 border-b-2 border-l-2 border-current" aria-hidden="true" />
-            <span className="hidden sm:inline">На главную</span>
+            <span className="hidden sm:inline">{t("analysis.goHome")}</span>
           </button>
 
           <img src="/chesson-logo.svg" alt="Chesson" className="h-6 w-auto" />
@@ -350,7 +331,7 @@ function AnalysisPageShell({
             className="absolute right-4 flex h-9 items-center gap-2 rounded-md border border-white/15 bg-white/5 px-3 text-sm font-semibold text-white/80 transition hover:bg-white/10 active:scale-[0.98] sm:right-6 lg:right-8"
           >
             <LinkIcon />
-            {isShareCopied ? "Ссылка скопирована" : "Поделиться партией"}
+            {isShareCopied ? t("analysis.shareCopied") : t("analysis.shareGame")}
           </button>
         </div>
       </div>
@@ -417,18 +398,20 @@ function MomentButton({
 }
 
 function CountersBlock({ title, counters }: { title: string; counters: AnalysisSideSummary }) {
+  const { t } = useTranslation();
+
   return (
     <div className="rounded-lg border border-white/10 bg-white/[0.04] p-3">
       <div className="mb-2 flex items-start justify-between gap-3">
         <h2 className="text-sm font-semibold text-white/80">{title}</h2>
       </div>
       <div className="grid grid-cols-2 gap-2">
-        <Counter label="Точность, %" value={counters.accuracy} className="text-white" />
-        <Counter label="Ср.потери, cp" value={counters.averageLossCp} className="text-white" />
-        <Counter label="Отличные" value={counters.excellent} className="text-emerald-200" />
-        <Counter label="Хорошие" value={counters.good} className="text-sky-200" />
-        <Counter label="Плохие" value={counters.bad} className="text-amber-200" />
-        <Counter label="Зевки" value={counters.blunder} className="text-red-200" />
+        <Counter label={t("analysis.accuracyPercent")} value={counters.accuracy} className="text-white" />
+        <Counter label={t("analysis.averageLossCp")} value={counters.averageLossCp} className="text-white" />
+        <Counter label={t("analysis.excellentMoves")} value={counters.excellent} className="text-emerald-200" />
+        <Counter label={t("analysis.goodMoves")} value={counters.good} className="text-sky-200" />
+        <Counter label={t("analysis.badMoves")} value={counters.bad} className="text-amber-200" />
+        <Counter label={t("analysis.blunders")} value={counters.blunder} className="text-red-200" />
       </div>
     </div>
   );
@@ -498,9 +481,13 @@ function MovePairRow({
 }
 
 function MoveCell({ move, selected, onClick }: { move?: AnalyzedMove; selected: boolean; onClick: () => void }) {
+  const { t } = useTranslation();
+
   if (!move) {
     return <div className="min-h-[74px] rounded-md border border-transparent" />;
   }
+
+  const qualityDescription = getQualityDescription(move, t);
 
   return (
     <button
@@ -514,18 +501,18 @@ function MoveCell({ move, selected, onClick }: { move?: AnalyzedMove; selected: 
       <span className="block min-w-0 text-sm text-white">
         <span className="text-[18px]">{move.notation}</span>
         <span className="ml-2 text-sm text-white/35">{move.afterScore > 0 ? "+" : ""}{move.afterScore}</span>
-        <span className="mt-1 block truncate text-sm text-white/55" title={move.qualityDescription}>
-          {move.qualityDescription}
+        <span className="mt-1 block truncate text-sm text-white/55" title={qualityDescription}>
+          {qualityDescription}
         </span>
         {move.bestMove && (
-          <span className="mt-1 block truncate text-sm text-emerald-100/75" title={`Лучший: ${move.bestMove.notation}`}>
-            Лучший: {move.bestMove.notation}
+          <span className="mt-1 block truncate text-sm text-emerald-100/75" title={t("analysis.bestMoveTitle", { move: move.bestMove.notation })}>
+            {t("analysis.bestMoveShort", { move: move.bestMove.notation })}
           </span>
         )}
       </span>
       {move.quality !== 'normal' && (
         <span className={`mt-2 inline-flex rounded border px-2 py-1 text-sm font-semibold max-w-min ${QUALITY_CLASSES[move.quality]}`}>
-          {QUALITY_LABELS[move.quality]}
+          {t(`analysis.quality.${move.quality}`)}
         </span>
       )}
     </button>
@@ -534,4 +521,12 @@ function MoveCell({ move, selected, onClick }: { move?: AnalyzedMove; selected: 
 
 function formatMovePrefix(move: Pick<AnalyzedMove, "moveNumber" | "color">): string {
   return move.color === "white" ? `${move.moveNumber}.` : `${move.moveNumber}...`;
+}
+
+function getQualityDescription(move: AnalyzedMove, t: ReturnType<typeof useTranslation>["t"]): string {
+  if (move.lossCp > 0) {
+    return t(`analysis.qualityDescription.${move.quality}`, { lossCp: move.lossCp });
+  }
+
+  return t(`analysis.qualityDescription.${move.quality}.zero`);
 }

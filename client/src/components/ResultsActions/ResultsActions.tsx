@@ -98,16 +98,6 @@ export const ResultsActions: FC<ResultsActionsProps> = ({
         history.push(url);
     };
 
-    const handleSignup = () => {
-        onClose();
-        history.push("/signup");
-    };
-
-    const handleLogin = () => {
-        onClose();
-        history.push("/login");
-    };
-
     const handleAnalyzeGame = () => {
         if (!roomId) return;
         onClose();
@@ -134,33 +124,10 @@ export const ResultsActions: FC<ResultsActionsProps> = ({
                     {message || t("results.gameOver")}
                 </p>
 
-                {/* Предложение регистрации для неавторизованных */}
-                {!tournamentId && isAuthenticated === false && (
-                    <div className="w-full bg-gradient-to-r from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 rounded-lg p-4 mb-2">
-                        <p className="text-white text-sm text-center mb-3">
-                            {t("results.signUpPrompt")}
-                        </p>
-                        <div className="flex flex-col gap-2">
-                            <button 
-                                className="rounded-md text-sm font-semibold px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white cursor-pointer transition-all duration-300 active:scale-95 focus:outline-none hover:from-indigo-700 hover:to-purple-700"
-                                onClick={handleSignup}
-                            >
-                                {t("auth.signUp")}
-                            </button>
-                            <button 
-                                className="rounded-md text-sm font-semibold px-4 py-2 bg-white/10 text-white border border-white/20 cursor-pointer transition-all duration-300 active:scale-95 focus:outline-none hover:bg-white/20"
-                                onClick={handleLogin}
-                            >
-                                {t("auth.signIn")}
-                            </button>
-                        </div>
-                    </div>
-                )}
-
                 <div className="flex flex-col gap-3 w-full">
                     {roomId && (
                         <button
-                            className="w-full rounded-md text-sm font-semibold px-4 py-2 bg-white/10 text-white border border-white/20 cursor-pointer transition-all duration-300 active:scale-95 focus:outline-none hover:bg-white/20"
+                            className={`w-full rounded-md text-sm font-semibold px-4 py-2 text-white cursor-pointer transition-all duration-300 active:scale-95 focus:outline-none ${styles.analysisButton}`}
                             onClick={handleAnalyzeGame}
                         >
                             {t("results.analyzeGame")}
@@ -170,7 +137,7 @@ export const ResultsActions: FC<ResultsActionsProps> = ({
                         className="w-full rounded-md text-sm font-semibold px-4 py-2 bg-[#4F39F6] text-white cursor-pointer transition-all duration-300 active:scale-95 focus:outline-none"
                         onClick={handleCloseButton}
                     >
-                        {tournamentId ? t("tournament.returnToRoom") : isAuthenticated === false ? t("results.continueWithoutRegistration") : t("results.returnToMain")}
+                        {tournamentId ? t("tournament.returnToRoom") : t("results.returnToMain")}
                     </button>
                 </div>
             </div>

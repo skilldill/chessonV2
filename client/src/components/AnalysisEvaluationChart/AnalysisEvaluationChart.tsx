@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { AnalysisEvaluationPoint, MoveQuality } from "../../types/analysis";
 
 type AnalysisEvaluationChartProps = {
@@ -25,6 +26,7 @@ export function AnalysisEvaluationChart({
   selectedPly,
   onPointClick,
 }: AnalysisEvaluationChartProps) {
+  const { t } = useTranslation();
   const safePoints = points.length > 0 ? points : [{ ply: 0, moveNumber: 0, score: 0 }];
   const maxPly = Math.max(...safePoints.map((point) => point.ply), 1);
 
@@ -45,17 +47,17 @@ export function AnalysisEvaluationChart({
     <div className="w-full rounded-lg border border-white/10 bg-white/[0.04] p-4">
       <div className="mb-3 flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-base font-semibold text-white">График перевеса</h2>
-          <p className="text-xs text-white/50">Выше нуля лучше белым, ниже нуля лучше черным</p>
+          <h2 className="text-base font-semibold text-white">{t("analysis.chart.title")}</h2>
+          <p className="text-xs text-white/50">{t("analysis.chart.subtitle")}</p>
         </div>
-        <div className="text-xs text-white/50">+/- пешки</div>
+        <div className="text-xs text-white/50">{t("analysis.chart.units")}</div>
       </div>
 
       <svg
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
         className="block h-[220px] w-full overflow-visible"
         role="img"
-        aria-label="График перевеса позиции"
+        aria-label={t("analysis.chart.aria")}
       >
         <rect x="0" y="0" width={WIDTH} height={zeroY} fill="rgba(255,255,255,0.035)" />
         <rect x="0" y={zeroY} width={WIDTH} height={HEIGHT - zeroY} fill="rgba(0,0,0,0.16)" />
@@ -96,7 +98,7 @@ export function AnalysisEvaluationChart({
                   onPointClick?.(point);
                 }
               }}
-              aria-label={`Ход ${point.ply}, оценка ${point.score}`}
+              aria-label={t("analysis.chart.pointAria", { ply: point.ply, score: point.score })}
             >
               <circle
                 cx={toX(point.ply)}
