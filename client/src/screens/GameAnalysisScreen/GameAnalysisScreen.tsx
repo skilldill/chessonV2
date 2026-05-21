@@ -338,15 +338,10 @@ function CountersBlock({ title, counters }: { title: string; counters: AnalysisS
     <div className="rounded-lg border border-white/10 bg-white/[0.04] p-3">
       <div className="mb-2 flex items-start justify-between gap-3">
         <h2 className="text-sm font-semibold text-white/80">{title}</h2>
-        <div className="rounded-md bg-white/8 px-2 py-1 text-right text-sm font-semibold text-white">
-          <div>Accuracy {counters.accuracy}%</div>
-          <div className="mt-0.5 text-sm font-medium text-white/70">{counters.accuracyLabel}</div>
-          <div className="mt-0.5 text-sm font-medium text-white/55">
-            Average loss {counters.averageLossCp} cp
-          </div>
-        </div>
       </div>
       <div className="grid grid-cols-2 gap-2">
+        <Counter label="Точность %" value={counters.accuracy} className="text-white" />
+        <Counter label="Ср.потери cp" value={counters.averageLossCp} className="text-white" />
         <Counter label="Отличные" value={counters.excellent} className="text-emerald-200" />
         <Counter label="Хорошие" value={counters.good} className="text-sky-200" />
         <Counter label="Плохие" value={counters.bad} className="text-amber-200" />
@@ -359,8 +354,8 @@ function CountersBlock({ title, counters }: { title: string; counters: AnalysisS
 function Counter({ label, value, className }: { label: string; value: number; className: string }) {
   return (
     <div className="rounded-md bg-black/20 p-2.5">
-      <div className={`text-lg font-semibold ${className}`}>{value}</div>
-      <div className="text-sm text-white/45">{label}</div>
+      <div className={`text-2xl font-semibold ${className}`}>{value}</div>
+      <div className="text-m text-white/45">{label}</div>
     </div>
   );
 }
@@ -433,7 +428,7 @@ function MoveCell({ move, selected, onClick }: { move?: AnalyzedMove; selected: 
       }`}
     >
       <span className="block min-w-0 text-sm text-white">
-        <span className="font-semibold">{move.notation}</span>
+        <span className="text-[18px]">{move.notation}</span>
         <span className="ml-2 text-sm text-white/35">{move.afterScore > 0 ? "+" : ""}{move.afterScore}</span>
         <span className="mt-1 block truncate text-sm text-white/55" title={move.qualityDescription}>
           {move.qualityDescription}
