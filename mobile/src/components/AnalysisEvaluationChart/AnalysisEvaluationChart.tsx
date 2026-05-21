@@ -8,10 +8,11 @@ type AnalysisEvaluationChartProps = {
 };
 
 const WIDTH = 720;
-const HEIGHT = 240;
-const PADDING_X = 28;
-const PADDING_Y = 22;
+const HEIGHT = 340;
+const PADDING_X = 74;
+const PADDING_Y = 34;
 const MAX_SCORE = 10;
+const TICKS = [-10, -5, 0, 5, 10];
 
 const QUALITY_COLORS: Record<MoveQuality, string> = {
   excellent: "#22c55e",
@@ -55,14 +56,14 @@ export function AnalysisEvaluationChart({
 
       <svg
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-        className="block h-[180px] w-full overflow-visible"
+        className="block h-[260px] w-full overflow-visible"
         role="img"
         aria-label={t("analysis.chart.aria")}
       >
         <rect x="0" y="0" width={WIDTH} height={zeroY} fill="rgba(255,255,255,0.035)" />
         <rect x="0" y={zeroY} width={WIDTH} height={HEIGHT - zeroY} fill="rgba(0,0,0,0.16)" />
 
-        {[-5, 0, 5].map((score) => (
+        {TICKS.map((score) => (
           <g key={score}>
             <line
               x1={PADDING_X}
@@ -72,7 +73,13 @@ export function AnalysisEvaluationChart({
               stroke={score === 0 ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.12)"}
               strokeWidth={score === 0 ? 1.5 : 1}
             />
-            <text x={4} y={toY(score) + 4} fill="rgba(255,255,255,0.48)" fontSize="14">
+            <text
+              x={8}
+              y={toY(score) + 8}
+              fill="rgba(255,255,255,0.62)"
+              fontSize="24"
+              fontWeight="700"
+            >
               {score > 0 ? `+${score}` : score}
             </text>
           </g>
