@@ -45,6 +45,16 @@ export function GameAnalysisScreen() {
   const [viewportHeight, setViewportHeight] = useState(() => window.innerHeight);
 
   useEffect(() => {
+    localStorage.removeItem("gameData");
+  }, []);
+
+  const handleGoHome = () => {
+    localStorage.removeItem("gameData");
+    history.push("/main");
+  };
+
+
+  useEffect(() => {
     if (!analysis || selectedPly !== null) {
       return;
     }
@@ -118,7 +128,7 @@ export function GameAnalysisScreen() {
 
   if (status === "loading" || status === "running" || status === "idle") {
     return (
-      <AnalysisPageShell onBack={() => history.goBack()}>
+      <AnalysisPageShell onGoHome={handleGoHome}>
         <div className="mx-auto flex min-h-[70vh] w-full max-w-xl flex-col items-center justify-center gap-5 text-center">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#4F39F6] border-t-transparent" />
           <div>
@@ -144,7 +154,7 @@ export function GameAnalysisScreen() {
 
   if (status === "failed") {
     return (
-      <AnalysisPageShell onBack={() => history.goBack()}>
+      <AnalysisPageShell onGoHome={handleGoHome}>
         <div className="mx-auto flex min-h-[70vh] w-full max-w-xl flex-col items-center justify-center gap-4 text-center">
           <h1 className="text-xl font-semibold text-white">Анализ не готов</h1>
           <p className="text-sm text-white/60">{error || "Не удалось выполнить анализ партии"}</p>
@@ -165,13 +175,13 @@ export function GameAnalysisScreen() {
   }
 
   return (
-    <AnalysisPageShell onBack={() => history.goBack()}>
+    <AnalysisPageShell onGoHome={handleGoHome}>
       <div className="mx-auto grid w-full max-w-[1500px] gap-5 lg:grid-cols-[minmax(660px,780px)_minmax(380px,1fr)] lg:items-start">
         <section className="flex min-w-0 flex-col gap-4">
           <div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
             <div className="mb-3 flex items-center justify-between gap-3">
               <h2 className="text-base font-semibold text-white">Позиция</h2>
-              <div className="text-xs text-white/45">Стрелка показывает лучший ход</div>
+              <div className="text-sm text-white/45">Стрелка показывает лучший ход</div>
             </div>
             {selectedFen && (
               <div className="mx-auto w-fit overflow-hidden rounded-md">
@@ -185,6 +195,7 @@ export function GameAnalysisScreen() {
                   config={{
                     squareSize: boardSize,
                     ...chessboardConfig,
+                    arrowColor: 'oklch(79.2% 0.209 151.711)'
                   }}
                 />
               </div>
@@ -247,7 +258,7 @@ export function GameAnalysisScreen() {
                     key={item.value}
                     type="button"
                     onClick={() => setFilter(item.value)}
-                    className={`rounded-md border px-3 py-1.5 text-xs font-semibold transition ${
+                    className={`rounded-md border px-3 py-1.5 text-sm font-semibold transition ${
                       filter === item.value
                         ? "border-[#4F39F6] bg-[#4F39F6] text-white"
                         : "border-white/10 bg-white/5 text-white/60 hover:bg-white/10"
@@ -278,16 +289,16 @@ export function GameAnalysisScreen() {
   );
 }
 
-function AnalysisPageShell({ children, onBack }: { children: ReactNode; onBack: () => void }) {
+function AnalysisPageShell({ children, onGoHome }: { children: ReactNode; onGoHome: () => void }) {
   return (
     <main className="min-h-screen bg-back-primary px-4 py-5 text-white sm:px-6 lg:px-8">
       <div className="mx-auto mb-5 flex w-full max-w-[1500px] items-center justify-between">
         <button
           type="button"
-          onClick={onBack}
+          onClick={onGoHome}
           className="rounded-md border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white/75 transition hover:bg-white/10"
         >
-          Назад
+          На главную
         </button>
       </div>
       {children}
@@ -316,7 +327,7 @@ function MomentButton({
       onClick={onClick}
       className={`rounded-lg border p-3 text-left transition ${toneClass}`}
     >
-      <div className="text-xs font-semibold opacity-85">{title}</div>
+      <div className="text-sm font-semibold opacity-85">{title}</div>
       <div className="mt-1 text-base font-semibold text-white">{value}</div>
     </button>
   );
@@ -327,10 +338,10 @@ function CountersBlock({ title, counters }: { title: string; counters: AnalysisS
     <div className="rounded-lg border border-white/10 bg-white/[0.04] p-3">
       <div className="mb-2 flex items-start justify-between gap-3">
         <h2 className="text-sm font-semibold text-white/80">{title}</h2>
-        <div className="rounded-md bg-white/8 px-2 py-1 text-right text-[11px] font-semibold text-white">
+        <div className="rounded-md bg-white/8 px-2 py-1 text-right text-sm font-semibold text-white">
           <div>Accuracy {counters.accuracy}%</div>
-          <div className="mt-0.5 font-medium text-white/70">{counters.accuracyLabel}</div>
-          <div className="mt-0.5 font-medium text-white/55">
+          <div className="mt-0.5 text-sm font-medium text-white/70">{counters.accuracyLabel}</div>
+          <div className="mt-0.5 text-sm font-medium text-white/55">
             Average loss {counters.averageLossCp} cp
           </div>
         </div>
@@ -349,7 +360,7 @@ function Counter({ label, value, className }: { label: string; value: number; cl
   return (
     <div className="rounded-md bg-black/20 p-2.5">
       <div className={`text-lg font-semibold ${className}`}>{value}</div>
-      <div className="text-[11px] text-white/45">{label}</div>
+      <div className="text-sm text-white/45">{label}</div>
     </div>
   );
 }
@@ -393,7 +404,7 @@ function MovePairRow({
 }) {
   return (
     <div className="grid grid-cols-[34px_minmax(0,1fr)_minmax(0,1fr)] gap-2 rounded-md border border-white/10 bg-black/15 p-2">
-      <div className="pt-2 text-right text-xs font-semibold text-white/40">{moveNumber}.</div>
+      <div className="pt-2 text-right text-sm font-semibold text-white/40">{moveNumber}.</div>
       <MoveCell
         move={whiteMove}
         selected={selectedPly === whiteMove?.ply}
@@ -417,25 +428,27 @@ function MoveCell({ move, selected, onClick }: { move?: AnalyzedMove; selected: 
     <button
       type="button"
       onClick={onClick}
-      className={`min-w-0 rounded-md border p-2 text-left transition ${
+      className={`min-w-0 rounded-md border p-2 text-left transition flex flex-col justify-start ${
         selected ? "border-[#4F39F6] bg-[#4F39F6]/20" : "border-transparent bg-white/[0.03] hover:bg-white/8"
       }`}
     >
       <span className="block min-w-0 text-sm text-white">
         <span className="font-semibold">{move.notation}</span>
-        <span className="ml-2 text-xs text-white/35">{move.afterScore > 0 ? "+" : ""}{move.afterScore}</span>
-        <span className="mt-1 block truncate text-xs text-white/55" title={move.qualityDescription}>
+        <span className="ml-2 text-sm text-white/35">{move.afterScore > 0 ? "+" : ""}{move.afterScore}</span>
+        <span className="mt-1 block truncate text-sm text-white/55" title={move.qualityDescription}>
           {move.qualityDescription}
         </span>
         {move.bestMove && (
-          <span className="mt-1 block truncate text-xs text-emerald-100/75" title={`Лучший: ${move.bestMove.notation}`}>
+          <span className="mt-1 block truncate text-sm text-emerald-100/75" title={`Лучший: ${move.bestMove.notation}`}>
             Лучший: {move.bestMove.notation}
           </span>
         )}
       </span>
-      <span className={`mt-2 inline-flex rounded border px-2 py-1 text-[11px] font-semibold ${QUALITY_CLASSES[move.quality]}`}>
-        {QUALITY_LABELS[move.quality]}
-      </span>
+      {move.quality !== 'normal' && (
+        <span className={`mt-2 inline-flex rounded border px-2 py-1 text-sm font-semibold max-w-min ${QUALITY_CLASSES[move.quality]}`}>
+          {QUALITY_LABELS[move.quality]}
+        </span>
+      )}
     </button>
   );
 }
