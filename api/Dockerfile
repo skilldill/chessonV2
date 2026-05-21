@@ -8,7 +8,7 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 COPY package.json ./
-RUN bun install --registry https://registry.npmmirror.com
+RUN bun install --registry https://npm-mirror.gitverse.ru
 
 COPY . .
 

@@ -1,7 +1,7 @@
 FROM node:lts AS build
 WORKDIR /app
 COPY package*.json ./
-RUN npm config set registry https://registry.npmmirror.com && \
+RUN npm config set registry https://npm-mirror.gitverse.ru && \
   npm ci \
   --fetch-retries=5 \
   --fetch-retry-mintimeout=20000 \

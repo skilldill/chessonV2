@@ -6,7 +6,7 @@ COPY . .
 
 ENV CYPRESS_INSTALL_BINARY=0
 
-RUN npm config set registry https://registry.npmmirror.com && \
+RUN npm config set registry https://npm-mirror.gitverse.ru && \
   npm ci \
   --fetch-retries=5 \
   --fetch-retry-mintimeout=20000 \
@@ -20,7 +20,7 @@ FROM node:20-alpine
 WORKDIR /app
 
 # Install serve globally
-RUN npm config set registry https://registry.npmmirror.com && \
+RUN npm config set registry https://npm-mirror.gitverse.ru && \
   npm install -g serve \
   --fetch-retries=5 \
   --fetch-retry-mintimeout=20000 \
