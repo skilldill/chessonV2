@@ -14,11 +14,13 @@ import {
 } from './constants/tournament';
 import { User } from './models/User';
 import { Game } from './models/Game';
+import { GameAnalysis } from './models/GameAnalysis';
 import { Tournament } from './models/Tournament';
 import { hashPassword, comparePassword } from './utils/password';
 import { createToken, verifyToken } from './utils/jwt';
 import { sendVerificationEmail, sendPasswordResetEmail, sendTestEmail } from './utils/email';
 import { chessBot, type BotDifficulty } from './src/modules/chess-bot';
+import { gameAnalysisService } from './src/modules/game-analysis/game-analysis.service';
 import mongoose from 'mongoose';
 import crypto from 'crypto';
 
@@ -129,6 +131,12 @@ type UserData = {
     cursorPosition?: CursorPosition;
     registeredUserId?: mongoose.Types.ObjectId; // ID зарегистрированного пользователя из базы данных
     gameStartedAt?: Date; // Время начала игры для этого пользователя
+};
+
+type PersistableGamePlayer = {
+    registeredUserId?: mongoose.Types.ObjectId;
+    userName: string;
+    avatar: string;
 };
 
 type Room = {
@@ -242,7 +250,8 @@ const CORS_ALLOWED_ORIGINS = (process.env.CORS_ALLOWED_ORIGINS || '')
   .filter(Boolean);
 const ALLOWED_ORIGINS = CORS_ALLOWED_ORIGINS.length > 0 ? CORS_ALLOWED_ORIGINS : DEFAULT_ALLOWED_ORIGINS;
 const CORS_ALLOWED_METHODS = 'GET,POST,PUT,PATCH,DELETE,OPTIONS';
-const CORS_ALLOWED_HEADERS = 'Content-Type, Authorization, x-admin-secret';
+const ANALYSIS_VIEWER_HEADER = 'x-analysis-viewer-id';
+const CORS_ALLOWED_HEADERS = `Content-Type, Authorization, x-admin-secret, ${ANALYSIS_VIEWER_HEADER}`;
 const ADMIN_SECRET_HEADER = 'x-admin-secret';
 const ADMIN_SECRET_VALUE = process.env.ADMIN_SECRET_VALUE || 'local-chesson-admin-secret';
 const TOURNAMENT_ADMIN_COOKIE = 'tournamentAdminIds';
@@ -261,6 +270,22 @@ function getHeaderValue(headers: unknown, headerName: string): string | undefine
 function hasAdminAccess(headers: unknown): boolean {
   const receivedSecret = getHeaderValue(headers, ADMIN_SECRET_HEADER);
   return receivedSecret === ADMIN_SECRET_VALUE;
+}
+
+function getAnalysisViewerKey(headers: unknown): string | undefined {
+  const explicitViewerId = getHeaderValue(headers, ANALYSIS_VIEWER_HEADER);
+  const forwardedFor = getHeaderValue(headers, 'x-forwarded-for')?.split(',')[0]?.trim();
+  const realIp = getHeaderValue(headers, 'x-real-ip');
+  const userAgent = getHeaderValue(headers, 'user-agent');
+  const source = explicitViewerId
+    ? `client:${explicitViewerId.slice(0, 120)}`
+    : `${forwardedFor || realIp || 'unknown-ip'}:${userAgent || 'unknown-agent'}`;
+
+  if (!source.trim()) {
+    return undefined;
+  }
+
+  return crypto.createHash('sha256').update(source).digest('hex');
 }
 
 function clearAuthCookie(set: { headers: Record<string, string> }) {
@@ -489,9 +514,10 @@ async function saveGameToDatabase(room: Room, roomId: string) {
       return;
     }
 
-    // Находим игроков
-    let whitePlayer: UserData | null = null;
-    let blackPlayer: UserData | null = null;
+    // Находим игроков. В bot-комнатах второй игрок не лежит в room.users,
+    // поэтому недостающую сторону подставляем из botSettings.
+    let whitePlayer: PersistableGamePlayer | null = null;
+    let blackPlayer: PersistableGamePlayer | null = null;
 
     for (const [_, userData] of room.users) {
       if (userData.color === "white") {
@@ -501,8 +527,23 @@ async function saveGameToDatabase(room: Room, roomId: string) {
       }
     }
 
+    if (room.botSettings?.enabled && room.botSettings.color === "white" && !whitePlayer) {
+      whitePlayer = {
+        userName: room.botSettings.name,
+        avatar: room.botSettings.avatar
+      };
+    }
+
+    if (room.botSettings?.enabled && room.botSettings.color === "black" && !blackPlayer) {
+      blackPlayer = {
+        userName: room.botSettings.name,
+        avatar: room.botSettings.avatar
+      };
+    }
+
     // Если нет обоих игроков, не сохраняем
     if (!whitePlayer || !blackPlayer) {
+      console.log(`⏭️ Game not saved: roomId=${roomId}, missing player snapshot`);
       return;
     }
 
@@ -3357,9 +3398,11 @@ app.get('/api/admin/stats/overview', async ({ headers, set }) => {
   }
 
   try {
-    const [gamesWithResult, totalRegisteredUsers] = await Promise.all([
+    const [gamesWithResult, totalRegisteredUsers, totalGameAnalyses, uniqueAnalysisViewerKeys] = await Promise.all([
       Game.countDocuments({ 'result.resultType': { $exists: true } }),
-      User.countDocuments({})
+      User.countDocuments({}),
+      GameAnalysis.countDocuments({}),
+      GameAnalysis.distinct('uniqueViewerKeys')
     ]);
     const gamesWithoutResult = getOngoingGamesCount();
 
@@ -3369,7 +3412,9 @@ app.get('/api/admin/stats/overview', async ({ headers, set }) => {
         totalGames: gamesWithResult + gamesWithoutResult,
         gamesWithResult,
         gamesWithoutResult,
-        totalRegisteredUsers
+        totalRegisteredUsers,
+        totalGameAnalyses,
+        uniqueAnalysisViewers: uniqueAnalysisViewerKeys.filter(Boolean).length
       }
     };
   } catch (error: any) {
@@ -4703,6 +4748,100 @@ app.get('/api/games', async ({ query }) => {
 // });
 
 
+// Game analysis endpoint. Starts analysis only when the analysis page asks for it.
+app.get('/api/analysis/:gameId', async ({ params, headers }) => {
+  try {
+    const { gameId } = params;
+    const analysis = await gameAnalysisService.getOrStart(gameId);
+    const viewerKey = getAnalysisViewerKey(headers);
+
+    if (viewerKey) {
+      await GameAnalysis.updateOne(
+        { gameId },
+        { $addToSet: { uniqueViewerKeys: viewerKey } }
+      );
+    }
+
+    return {
+      success: true,
+      status: analysis?.status || 'running',
+      progress: {
+        current: analysis?.progressCurrent || 0,
+        total: analysis?.progressTotal || 0,
+      },
+      analysis,
+    };
+  } catch (error: any) {
+    console.error('[game-analysis] Get analysis error:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to get game analysis',
+    };
+  }
+});
+
+app.post('/api/analysis/:gameId/retry', async ({ params }) => {
+  try {
+    const { gameId } = params;
+    const analysis = await gameAnalysisService.retry(gameId);
+
+    return {
+      success: true,
+      status: analysis?.status || 'running',
+      progress: {
+        current: analysis?.progressCurrent || 0,
+        total: analysis?.progressTotal || 0,
+      },
+      analysis,
+    };
+  } catch (error: any) {
+    console.error('[game-analysis] Retry analysis error:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to retry game analysis',
+    };
+  }
+});
+
+app.get('/api/analysis/:gameId/events', ({ params }) => {
+  const { gameId } = params;
+  const encoder = new TextEncoder();
+  let unsubscribe: (() => void) | null = null;
+
+  const stream = new ReadableStream({
+    start(controller) {
+      const send = (event: string, data: unknown) => {
+        controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
+      };
+
+      unsubscribe = gameAnalysisService.subscribe(gameId, {
+        send,
+        close: () => {
+          try {
+            controller.close();
+          } catch {
+            // The browser may have closed the stream first.
+          }
+        },
+      });
+
+      send('connected', { gameId });
+    },
+    cancel() {
+      unsubscribe?.();
+      unsubscribe = null;
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache, no-transform',
+      Connection: 'keep-alive',
+    },
+  });
+});
+
 
 // Get game by ID endpoint - одна игра по ID
 app.get('/api/games/:id', async ({ params }) => {
@@ -5905,9 +6044,11 @@ const PORT = process.env.PORT ? parseInt(process.env.PORT) : 4000;
 try {
   await chessBot.start();
   console.log('[chess-bot] Stockfish engine started');
+  await gameAnalysisService.start();
+  console.log('[game-analysis] Stockfish engine started');
 } catch (error) {
   const message = error instanceof Error ? error.message : String(error);
-  console.error('[chess-bot] Failed to start Stockfish engine:', message);
+  console.error('[stockfish] Failed to start Stockfish engine:', message);
   process.exit(1);
 }
 
@@ -5927,9 +6068,11 @@ const shutdown = async (signal: string): Promise<void> => {
   try {
     await chessBot.stop();
     console.log('[chess-bot] Stockfish engine stopped');
+    await gameAnalysisService.stop();
+    console.log('[game-analysis] Stockfish engine stopped');
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error('[chess-bot] Error during shutdown:', message);
+    console.error('[stockfish] Error during shutdown:', message);
   }
 
   process.exit(0);

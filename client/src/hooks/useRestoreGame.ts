@@ -27,6 +27,10 @@ export const useRestoreGame = () => {
     }
 
     const checkStartedGame = async () => {
+        if (location.pathname.startsWith('/analyze/') || location.pathname.startsWith('/analize/')) {
+            return;
+        }
+
         const rawGameData = localStorage.getItem('gameData');
         if (!rawGameData) return;
 

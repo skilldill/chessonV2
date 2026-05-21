@@ -5,6 +5,8 @@ type OverviewStats = {
   gamesWithResult: number;
   gamesWithoutResult: number;
   totalRegisteredUsers: number;
+  totalGameAnalyses: number;
+  uniqueAnalysisViewers: number;
 };
 
 type AdminUser = {
@@ -39,7 +41,7 @@ const API_BASE_URL = '/api/api'; // прод
 const ADMIN_HEADER_NAME = 'x-admin-secret';
 const ADMIN_HEADER_VALUE = import.meta.env.VITE_ADMIN_API_KEY || 'local-chesson-admin-secret';
 
-async function adminRequest<T>(path: string, init?: RequestInit): Promise<T> {
+async function adminRequest<T extends object>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers: {
@@ -265,6 +267,14 @@ function App() {
           <article className="stat-card">
             <p>Registered users</p>
             <h2>{overview?.totalRegisteredUsers ?? '-'}</h2>
+          </article>
+          <article className="stat-card">
+            <p>Unique game analyses</p>
+            <h2>{overview?.totalGameAnalyses ?? '-'}</h2>
+          </article>
+          <article className="stat-card">
+            <p>Analysis unique viewers</p>
+            <h2>{overview?.uniqueAnalysisViewers ?? '-'}</h2>
           </article>
         </section>
 
