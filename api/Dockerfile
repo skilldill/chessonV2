@@ -7,7 +7,10 @@ RUN apt-get update \
   && apt-get install -y --no-install-recommends stockfish \
   && rm -rf /var/lib/apt/lists/*
 
-COPY package.json ./
+ENV BUN_CONFIG_MAX_HTTP_REQUESTS=2
+
+COPY package.json bun.lockb* ./
+
 RUN bun install --registry https://npm-mirror.gitverse.ru
 
 COPY . .
