@@ -3427,6 +3427,50 @@ app.get('/api/admin/stats/overview', async ({ headers, set }) => {
   }
 });
 
+app.get('/api/admin/analyses', async ({ headers, query, set }) => {
+  if (!hasAdminAccess(headers)) {
+    set.status = 401;
+    return {
+      success: false,
+      error: 'Unauthorized'
+    };
+  }
+
+  try {
+    const limit = Math.max(1, Math.min(Number((query as any)?.limit) || 20, 100));
+    const analyses = await GameAnalysis.find({})
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .select('gameId status progressCurrent progressTotal startedAt finishedAt createdAt updatedAt error result.summary.bestMoveText result.summary.keyMomentPly')
+      .lean();
+
+    return {
+      success: true,
+      analyses: analyses.map((analysis: any) => ({
+        id: analysis._id?.toString(),
+        gameId: analysis.gameId,
+        status: analysis.status,
+        progressCurrent: analysis.progressCurrent || 0,
+        progressTotal: analysis.progressTotal || 0,
+        startedAt: analysis.startedAt,
+        finishedAt: analysis.finishedAt || null,
+        createdAt: analysis.createdAt,
+        updatedAt: analysis.updatedAt,
+        error: analysis.error || null,
+        bestMoveText: analysis.result?.summary?.bestMoveText || null,
+        keyMomentPly: analysis.result?.summary?.keyMomentPly || null
+      }))
+    };
+  } catch (error: any) {
+    console.error('Admin analyses list error:', error);
+    set.status = 500;
+    return {
+      success: false,
+      error: error.message || 'Failed to get admin analyses'
+    };
+  }
+});
+
 app.get('/api/admin/users', async ({ headers, query, set }) => {
   if (!hasAdminAccess(headers)) {
     set.status = 401;

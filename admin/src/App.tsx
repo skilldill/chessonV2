@@ -24,6 +24,21 @@ type AdminUser = {
   updatedAt: string;
 };
 
+type AdminAnalysis = {
+  id: string;
+  gameId: string;
+  status: 'running' | 'done' | 'failed';
+  progressCurrent: number;
+  progressTotal: number;
+  startedAt: string;
+  finishedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  error: string | null;
+  bestMoveText: string | null;
+  keyMomentPly: number | null;
+};
+
 type Pagination = {
   page: number;
   limit: number;
@@ -38,6 +53,7 @@ type ApiFailure = {
 
 // const API_BASE_URL = '/api'; // локально
 const API_BASE_URL = '/api/api'; // прод
+const GAME_BASE_URL = import.meta.env.VITE_ADMIN_GAME_BASE_URL || 'https://game.chesson.me';
 const ADMIN_HEADER_NAME = 'x-admin-secret';
 const ADMIN_HEADER_VALUE = import.meta.env.VITE_ADMIN_API_KEY || 'local-chesson-admin-secret';
 
@@ -69,9 +85,11 @@ async function adminRequest<T extends object>(path: string, init?: RequestInit):
 function App() {
   const [overview, setOverview] = useState<OverviewStats | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
+  const [analyses, setAnalyses] = useState<AdminAnalysis[]>([]);
   const [usersPagination, setUsersPagination] = useState<Pagination | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
   const [loadingUsers, setLoadingUsers] = useState(true);
+  const [loadingAnalyses, setLoadingAnalyses] = useState(true);
   const [actionUserId, setActionUserId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -118,14 +136,24 @@ function App() {
     }
   }, [blockedFilter, page, search, verifiedFilter]);
 
+  const loadAnalyses = useCallback(async () => {
+    setLoadingAnalyses(true);
+    try {
+      const data = await adminRequest<{ success: true; analyses: AdminAnalysis[] }>('/admin/analyses?limit=30');
+      setAnalyses(data.analyses);
+    } finally {
+      setLoadingAnalyses(false);
+    }
+  }, []);
+
   const refreshAll = useCallback(async () => {
     setError(null);
     try {
-      await Promise.all([loadStats(), loadUsers()]);
+      await Promise.all([loadStats(), loadUsers(), loadAnalyses()]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     }
-  }, [loadStats, loadUsers]);
+  }, [loadAnalyses, loadStats, loadUsers]);
 
   useEffect(() => {
     void refreshAll();
@@ -226,7 +254,7 @@ function App() {
 
   const generatedAt = useMemo(
     () => new Date().toLocaleString(),
-    [overview, usersPagination, users, loadingStats, loadingUsers]
+    [overview, usersPagination, users, analyses, loadingStats, loadingUsers, loadingAnalyses]
   );
 
   const canGoPrev = (usersPagination?.page || 1) > 1;
@@ -244,8 +272,8 @@ function App() {
             <h1>Admin Dashboard</h1>
             <p className="hint">Users management + platform statistics</p>
           </div>
-          <button className="refresh-btn" onClick={() => void refreshAll()} disabled={loadingStats || loadingUsers}>
-            {loadingStats || loadingUsers ? 'Refreshing...' : 'Refresh All'}
+          <button className="refresh-btn" onClick={() => void refreshAll()} disabled={loadingStats || loadingUsers || loadingAnalyses}>
+            {loadingStats || loadingUsers || loadingAnalyses ? 'Refreshing...' : 'Refresh All'}
           </button>
         </header>
 
@@ -276,6 +304,66 @@ function App() {
             <p>Analysis unique viewers</p>
             <h2>{overview?.uniqueAnalysisViewers ?? '-'}</h2>
           </article>
+        </section>
+
+        <section className="users-section">
+          <div className="users-toolbar">
+            <div>
+              <h3>Game analyses</h3>
+              <p className="hint">Latest unique analyses with direct links</p>
+            </div>
+          </div>
+
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Game ID</th>
+                  <th>Status</th>
+                  <th>Progress</th>
+                  <th>Best move</th>
+                  <th>Created</th>
+                  <th>Finished</th>
+                  <th>Link</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loadingAnalyses ? (
+                  <tr>
+                    <td colSpan={7} className="empty">Loading analyses...</td>
+                  </tr>
+                ) : analyses.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="empty">No analyses found</td>
+                  </tr>
+                ) : (
+                  analyses.map((analysis) => {
+                    const analysisUrl = `${GAME_BASE_URL}/analyze/${encodeURIComponent(analysis.gameId)}`;
+
+                    return (
+                      <tr key={analysis.id}>
+                        <td className="mono-cell">{analysis.gameId}</td>
+                        <td>
+                          <span className={`pill ${analysis.status}`}>
+                            {analysis.status}
+                          </span>
+                        </td>
+                        <td>{analysis.progressCurrent} / {analysis.progressTotal}</td>
+                        <td>{analysis.bestMoveText || '-'}</td>
+                        <td>{new Date(analysis.createdAt).toLocaleString()}</td>
+                        <td>{analysis.finishedAt ? new Date(analysis.finishedAt).toLocaleString() : '-'}</td>
+                        <td>
+                          <a className="analysis-link" href={analysisUrl} target="_blank" rel="noreferrer">
+                            Open analysis
+                          </a>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
         </section>
 
         <section className="users-section">

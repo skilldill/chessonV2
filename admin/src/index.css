@@ -267,6 +267,38 @@ tbody td {
   color: #fef3c7;
 }
 
+.pill.done {
+  background: rgba(34, 197, 94, 0.18);
+  color: #dcfce7;
+}
+
+.pill.running {
+  background: rgba(37, 99, 235, 0.2);
+  color: #dbeafe;
+}
+
+.pill.failed {
+  background: rgba(220, 38, 38, 0.2);
+  color: #fee2e2;
+}
+
+.mono-cell {
+  font-family: 'IBM Plex Mono', monospace;
+  color: #cfe7ff;
+}
+
+.analysis-link {
+  color: #d9f5ff;
+  font-weight: 700;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(217, 245, 255, 0.45);
+}
+
+.analysis-link:hover {
+  color: #ffffff;
+  border-bottom-color: #ffffff;
+}
+
 .actions {
   display: flex;
   gap: 6px;

@@ -3,6 +3,7 @@
 interface ImportMetaEnv {
   readonly VITE_ADMIN_API_KEY?: string;
   readonly VITE_ADMIN_API_BASE_URL?: string;
+  readonly VITE_ADMIN_GAME_BASE_URL?: string;
 }
 
 interface ImportMeta {
