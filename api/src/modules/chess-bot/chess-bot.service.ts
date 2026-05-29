@@ -160,6 +160,8 @@ export class ChessBotService {
         const normalizedTo: [number, number] =
           movedPiece.color === 'white' && isLongCastle
             ? [1, 7]
+            : movedPiece.color === 'black' && isLongCastle
+              ? [1, 0]
             : to;
 
         return {
@@ -197,13 +199,13 @@ export class ChessBotService {
     if (fy === 7 && fx === 4 && ty === 7 && tx === 6) return 'e1g1';
     if (fy === 7 && fx === 4 && ty === 7 && (tx === 1 || tx === 2)) return 'e1c1';
     if (fy === 0 && fx === 4 && ty === 0 && tx === 6) return 'e8g8';
-    if (fy === 0 && fx === 4 && ty === 0 && tx === 2) return 'e8c8';
+    if (fy === 0 && fx === 4 && ty === 0 && (tx === 1 || tx === 2)) return 'e8c8';
 
     // Reversed board
     if (fy === 0 && fx === 3 && ty === 0 && tx === 1) return 'e1g1';
     if (fy === 0 && fx === 3 && ty === 0 && (tx === 6 || tx === 5)) return 'e1c1';
     if (fy === 7 && fx === 3 && ty === 7 && tx === 1) return 'e8g8';
-    if (fy === 7 && fx === 3 && ty === 7 && tx === 5) return 'e8c8';
+    if (fy === 7 && fx === 3 && ty === 7 && (tx === 6 || tx === 5)) return 'e8c8';
 
     return null;
   }
