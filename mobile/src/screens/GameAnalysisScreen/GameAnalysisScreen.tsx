@@ -348,25 +348,28 @@ function KeyMomentCard({ move, onClick }: { move: AnalyzedMove; onClick: () => v
     <button
       type="button"
       onClick={onClick}
-      className="rounded-lg border border-red-400/25 bg-red-500/10 p-3 text-left text-red-100 transition"
+      className="w-full rounded-lg border border-[#4F39F6]/40 bg-[#4F39F6]/20 p-3 text-left text-white transition active:scale-[0.99]"
     >
       <div className="text-sm font-semibold opacity-85">{t("analysis.turningPoint")}</div>
-      <div className="mt-1 text-base font-semibold text-white">{playedMove}</div>
-      <div className="mt-3 grid gap-2 text-sm text-white/70">
-        <div className="flex items-center justify-between gap-3 rounded-md bg-black/20 px-3 py-2">
-          <span>{t("analysis.playedMove")}</span>
-          <span className="font-semibold text-white">{move.notation}</span>
-        </div>
-        <div className="flex items-center justify-between gap-3 rounded-md bg-emerald-500/10 px-3 py-2 text-emerald-100">
-          <span>{t("analysis.bestAlternative")}</span>
-          <span className="font-semibold">{bestMove}</span>
-        </div>
-        <div className="flex items-center justify-between gap-3 rounded-md bg-black/20 px-3 py-2">
-          <span>{t("analysis.loss")}</span>
-          <span className="font-semibold text-white">{t("analysis.lossCp", { lossCp: move.lossCp })}</span>
-        </div>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <Counter
+          label={t("analysis.playedMove")}
+          value={playedMove}
+          className="text-white text-base"
+          contentClassName="col-span-2"
+        />
+        <Counter
+          label={t("analysis.bestAlternative")}
+          value={bestMove}
+          className="text-white text-base"
+        />
+        <Counter
+          label={t("analysis.loss")}
+          value={t("analysis.lossCp", { lossCp: move.lossCp })}
+          className="text-white text-base"
+        />
       </div>
-      <div className="mt-3 rounded-md border border-red-300/15 bg-red-950/20 px-3 py-2 text-sm text-red-50/85">
+      <div className="mt-3 rounded-md border border-yellow-300/20 bg-yellow-950/30 px-3 py-2 text-sm text-yellow-50/90">
         {outcome}
       </div>
     </button>
@@ -393,11 +396,21 @@ function CountersBlock({ title, counters }: { title: string; counters: AnalysisS
   );
 }
 
-function Counter({ label, value, className }: { label: string; value: number; className: string }) {
+function Counter({
+  label,
+  value,
+  className,
+  contentClassName = "",
+}: {
+  label: string;
+  value: number | string;
+  className: string;
+  contentClassName?: string;
+}) {
   return (
-    <div className="rounded-md bg-black/20 p-2.5">
+    <div className={`min-w-0 rounded-md bg-black/20 p-2.5 ${contentClassName}`}>
       <div className="text-sm text-white/45">{label}</div>
-      <div className={`text-2xl font-semibold ${className}`}>{value}</div>
+      <div className={`truncate text-2xl font-semibold ${className}`} title={String(value)}>{value}</div>
     </div>
   );
 }

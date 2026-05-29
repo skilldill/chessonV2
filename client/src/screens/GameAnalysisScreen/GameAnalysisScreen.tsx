@@ -142,10 +142,27 @@ export function GameAnalysisScreen() {
       `[data-analysis-ply="${selectedPly}"]`,
     );
 
-    selectedMoveElement?.scrollIntoView({
+    const historyListElement = historyListRef.current;
+    if (!historyListElement || !selectedMoveElement) {
+      return;
+    }
+
+    const containerRect = historyListElement.getBoundingClientRect();
+    const selectedRect = selectedMoveElement.getBoundingClientRect();
+    const isAbove = selectedRect.top < containerRect.top;
+    const isBelow = selectedRect.bottom > containerRect.bottom;
+
+    if (!isAbove && !isBelow) {
+      return;
+    }
+
+    const nextScrollTop = isAbove
+      ? historyListElement.scrollTop + selectedRect.top - containerRect.top
+      : historyListElement.scrollTop + selectedRect.bottom - containerRect.bottom;
+
+    historyListElement.scrollTo({
+      top: nextScrollTop,
       behavior: "smooth",
-      block: "nearest",
-      inline: "nearest",
     });
   }, [groupedMoves, selectedPly]);
 
@@ -358,6 +375,15 @@ function LinkIcon() {
   );
 }
 
+function Counter({ label, value, className }: { label: string; value: number | string; className: string }) {
+  return (
+    <div className="rounded-md bg-black/20 p-2.5">
+      <div className="text-sm text-white/45">{label}</div>
+      <div className={`text-2xl font-semibold ${className}`}>{value}</div>
+    </div>
+  );
+}
+
 function KeyMomentCard({ move, onClick }: { move: AnalyzedMove; onClick: () => void }) {
   const { t } = useTranslation();
   const playedMove = `${formatMovePrefix(move)} ${move.notation}`;
@@ -368,25 +394,15 @@ function KeyMomentCard({ move, onClick }: { move: AnalyzedMove; onClick: () => v
     <button
       type="button"
       onClick={onClick}
-      className="rounded-lg border border-red-400/25 bg-red-500/10 p-3 text-left text-red-100 transition hover:bg-red-500/15"
+      className="w-fit rounded-lg border border-[#4F39F6]/40 bg-[#4F39F6]/20 p-3 text-left text-red-100 transition hover:bg-[#4F39F6]/40 cursor-pointer"
     >
       <div className="text-sm font-semibold opacity-85">{t("analysis.turningPoint")}</div>
-      <div className="mt-1 text-base font-semibold text-white">{playedMove}</div>
-      <div className="mt-3 grid gap-2 text-sm text-white/70">
-        <div className="flex items-center justify-between gap-3 rounded-md bg-black/20 px-3 py-2">
-          <span>{t("analysis.playedMove")}</span>
-          <span className="font-semibold text-white">{move.notation}</span>
-        </div>
-        <div className="flex items-center justify-between gap-3 rounded-md bg-emerald-500/10 px-3 py-2 text-emerald-100">
-          <span>{t("analysis.bestAlternative")}</span>
-          <span className="font-semibold">{bestMove}</span>
-        </div>
-        <div className="flex items-center justify-between gap-3 rounded-md bg-black/20 px-3 py-2">
-          <span>{t("analysis.loss")}</span>
-          <span className="font-semibold text-white">{t("analysis.lossCp", { lossCp: move.lossCp })}</span>
-        </div>
+      <div className="mt-3 flex gap-3">
+        <Counter label={t("analysis.playedMove")} value={playedMove} className="text-white text-m" />
+        <Counter label={t("analysis.bestAlternative")} value={bestMove} className="text-white text-m" />
+        <Counter label={t("analysis.loss")} value={`${move.lossCp} cp`} className="text-white text-m" />
       </div>
-      <div className="mt-3 rounded-md border border-red-300/15 bg-red-950/20 px-3 py-2 text-sm text-red-50/85">
+      <div className="mt-3 rounded-md border border-yellow-300/20 bg-yellow-950/30 px-3 py-2 text-sm">
         {outcome}
       </div>
     </button>
@@ -409,15 +425,6 @@ function CountersBlock({ title, counters }: { title: string; counters: AnalysisS
         <Counter label={t("analysis.badMoves")} value={counters.bad} className="text-amber-200" />
         <Counter label={t("analysis.blunders")} value={counters.blunder} className="text-red-200" />
       </div>
-    </div>
-  );
-}
-
-function Counter({ label, value, className }: { label: string; value: number; className: string }) {
-  return (
-    <div className="rounded-md bg-black/20 p-2.5">
-      <div className="text-sm text-white/45">{label}</div>
-      <div className={`text-2xl font-semibold ${className}`}>{value}</div>
     </div>
   );
 }
