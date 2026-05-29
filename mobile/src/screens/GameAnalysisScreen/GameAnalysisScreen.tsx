@@ -4,8 +4,10 @@ import { useTranslation } from "react-i18next";
 import { useHistory, useParams } from "react-router-dom";
 import { ChessBoard } from "react-chessboard-ui";
 import { AnalysisEvaluationChart } from "../../components/AnalysisEvaluationChart/AnalysisEvaluationChart";
+import type { BotDifficulty } from "../../components/BotDifficultyModal/BotDifficultyModal";
 import { getChessboardConfig } from "../../components/ChessBoardConfigs/ChessBoardConfigs";
 import { useAppearance } from "../../hooks/useAppearance";
+import { useCreateRoom } from "../../hooks/useCreateRoom";
 import { useGameAnalysis } from "../../hooks/useGameAnalysis";
 import type { AnalysisSideSummary, AnalyzedMove, MoveQuality } from "../../types/analysis";
 
@@ -25,6 +27,8 @@ const QUALITY_CLASSES: Record<MoveQuality, string> = {
   blunder: "bg-red-500/16 text-red-200 border-red-400/25",
 };
 
+type BotPlayerColor = "white" | "black";
+
 export function GameAnalysisScreen() {
   const { t } = useTranslation();
   const { gameId } = useParams<{ gameId: string }>();
@@ -32,6 +36,7 @@ export function GameAnalysisScreen() {
   const { chessboardTheme } = useAppearance();
   const chessboardConfig = getChessboardConfig(chessboardTheme);
   const { status, progress, analysis, error, retry } = useGameAnalysis(gameId);
+  const { createRoom, isCreating, roomCreatingError } = useCreateRoom();
   const [selectedPly, setSelectedPly] = useState<number | null>(null);
   const [filter, setFilter] = useState<MoveQuality | "all">("all");
   const [viewport, setViewport] = useState(() => ({
@@ -39,6 +44,11 @@ export function GameAnalysisScreen() {
     height: window.innerHeight,
   }));
   const [isShareCopied, setIsShareCopied] = useState(false);
+  const [isCreateFromPositionOpen, setIsCreateFromPositionOpen] = useState(false);
+  const [createFromPositionMode, setCreateFromPositionMode] = useState<"bot" | "friend">("bot");
+  const [botDifficulty, setBotDifficulty] = useState<BotDifficulty>("medium");
+  const [botPlayerColor, setBotPlayerColor] = useState<BotPlayerColor>("white");
+  const [friendLinkStatus, setFriendLinkStatus] = useState<"idle" | "copied" | "failed">("idle");
 
   useEffect(() => {
     localStorage.removeItem("gameData");
@@ -58,6 +68,58 @@ export function GameAnalysisScreen() {
       window.setTimeout(() => setIsShareCopied(false), 1600);
     } catch {
       setIsShareCopied(false);
+    }
+  };
+
+  const handleOpenCreateFromPosition = () => {
+    setFriendLinkStatus("idle");
+    setIsCreateFromPositionOpen(true);
+  };
+
+  const handleChangeCreateFromPositionMode = (mode: "bot" | "friend") => {
+    setFriendLinkStatus("idle");
+    setCreateFromPositionMode(mode);
+  };
+
+  const handlePlayBotFromPosition = () => {
+    if (!selectedFen) return;
+
+    createRoom({
+      vsBot: true,
+      botDifficulty,
+      botMoveTimeMs: 800,
+      timeMinutes: 10,
+      incrementSeconds: 0,
+      color: botPlayerColor,
+      currentFEN: selectedFen,
+    });
+  };
+
+  const handleCopyFriendRoomFromPosition = async () => {
+    if (!selectedFen) return;
+
+    const roomId = await createRoom(
+      {
+        timeMinutes: 10,
+        incrementSeconds: 0,
+        withAIhints: false,
+        currentFEN: selectedFen,
+      },
+      { navigate: false },
+    );
+
+    if (!roomId) return;
+
+    const gameUrl = `${window.location.origin}/game/${roomId}`;
+
+    try {
+      await navigator.clipboard.writeText(gameUrl);
+      setFriendLinkStatus("copied");
+      window.setTimeout(() => {
+        window.location.href = `/game/${roomId}`;
+      }, 300);
+    } catch {
+      setFriendLinkStatus("failed");
     }
   };
 
@@ -205,6 +267,13 @@ export function GameAnalysisScreen() {
               />
             </div>
           )}
+          <button
+            type="button"
+            onClick={handleOpenCreateFromPosition}
+            className="mt-3 w-full rounded-md border border-[#4F39F6]/40 bg-[#4F39F6]/20 px-3 py-3 text-sm font-semibold text-white transition active:scale-[0.98]"
+          >
+            {t("analysis.createFromPosition")}
+          </button>
           <div className="mt-3 grid grid-cols-2 gap-2">
             <button
               type="button"
@@ -233,24 +302,12 @@ export function GameAnalysisScreen() {
           onPointClick={(point) => setSelectedPly(point.ply)}
         />
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          {analysis.summary.bestMoveText && (
-            <MomentButton
-              title={t("analysis.bestMoveOfGame")}
-              value={analysis.summary.bestMoveText}
-              tone="green"
-              onClick={() => analysis.summary.bestMovePly && setSelectedPly(analysis.summary.bestMovePly)}
-            />
-          )}
-          {keyMomentMove && (
-            <MomentButton
-              title={t("analysis.keyBlunder")}
-              value={`${formatMovePrefix(keyMomentMove)} ${keyMomentMove.notation}`}
-              tone="red"
-              onClick={() => setSelectedPly(keyMomentMove.ply)}
-            />
-          )}
-        </div>
+        {keyMomentMove && (
+          <KeyMomentCard
+            move={keyMomentMove}
+            onClick={() => setSelectedPly(keyMomentMove.ply)}
+          />
+        )}
 
         <div className="grid gap-3">
           <CountersBlock title={t("analysis.white")} counters={analysis.counters.white} />
@@ -292,6 +349,23 @@ export function GameAnalysisScreen() {
           </div>
         </section>
       </div>
+
+      <CreateFromPositionModal
+        isOpen={isCreateFromPositionOpen}
+        fen={selectedFen}
+        mode={createFromPositionMode}
+        botDifficulty={botDifficulty}
+        botPlayerColor={botPlayerColor}
+        isCreating={isCreating}
+        error={roomCreatingError}
+        friendLinkStatus={friendLinkStatus}
+        onClose={() => setIsCreateFromPositionOpen(false)}
+        onChangeMode={handleChangeCreateFromPositionMode}
+        onChangeBotDifficulty={setBotDifficulty}
+        onChangeBotPlayerColor={setBotPlayerColor}
+        onPlayBot={handlePlayBotFromPosition}
+        onCopyFriendLink={handleCopyFriendRoomFromPosition}
+      />
     </AnalysisPageShell>
   );
 }
@@ -350,25 +424,225 @@ function LinkIcon() {
   );
 }
 
-function MomentButton({
-  title,
-  value,
-  tone,
-  onClick,
+function CreateFromPositionModal({
+  isOpen,
+  fen,
+  mode,
+  botDifficulty,
+  botPlayerColor,
+  isCreating,
+  error,
+  friendLinkStatus,
+  onClose,
+  onChangeMode,
+  onChangeBotDifficulty,
+  onChangeBotPlayerColor,
+  onPlayBot,
+  onCopyFriendLink,
 }: {
-  title: string;
-  value: string;
-  tone: "green" | "red";
-  onClick: () => void;
+  isOpen: boolean;
+  fen?: string;
+  mode: "bot" | "friend";
+  botDifficulty: BotDifficulty;
+  botPlayerColor: BotPlayerColor;
+  isCreating: boolean;
+  error: string | null;
+  friendLinkStatus: "idle" | "copied" | "failed";
+  onClose: () => void;
+  onChangeMode: (mode: "bot" | "friend") => void;
+  onChangeBotDifficulty: (difficulty: BotDifficulty) => void;
+  onChangeBotPlayerColor: (color: BotPlayerColor) => void;
+  onPlayBot: () => void;
+  onCopyFriendLink: () => void;
 }) {
-  const toneClass = tone === "green"
-    ? "border-emerald-400/20 bg-emerald-500/10 text-emerald-100"
-    : "border-red-400/25 bg-red-500/10 text-red-100";
+  const { t } = useTranslation();
+  const levels = [
+    { key: "super_easy" as const, label: t("bot.super_easy.label"), subtitle: t("bot.super_easy.subtitle") },
+    { key: "easy" as const, label: t("bot.easy.label"), subtitle: t("bot.easy.subtitle") },
+    { key: "medium" as const, label: t("bot.medium.label"), subtitle: t("bot.medium.subtitle") },
+    { key: "hard" as const, label: t("bot.hard.label"), subtitle: t("bot.hard.subtitle") },
+  ];
+
+  if (!isOpen) {
+    return null;
+  }
 
   return (
-    <button type="button" onClick={onClick} className={`rounded-lg border p-3 text-left transition ${toneClass}`}>
-      <div className="text-sm font-semibold opacity-85">{title}</div>
-      <div className="mt-1 text-base font-semibold text-white">{value}</div>
+    <div className="fixed inset-0 z-[100] overflow-y-auto bg-black/70 p-3 backdrop-blur-sm">
+      <div className="mx-auto my-6 w-full max-w-[390px] rounded-[24px] border border-white/15 bg-[#121217] p-5 shadow-2xl">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-semibold text-white">{t("analysis.createFromPosition")}</h3>
+            <p className="mt-1 text-sm text-white/55">{t("analysis.createFromPositionTime")}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isCreating}
+            className="rounded-md px-2 py-1 text-sm font-semibold text-white/55 transition active:scale-[0.98] disabled:opacity-50"
+          >
+            {t("common.close")}
+          </button>
+        </div>
+
+        {fen && (
+          <div className="mt-4 rounded-md border border-white/10 bg-black/20 p-3">
+            <div className="text-sm font-semibold text-white/45">{t("bot.fenLabel")}</div>
+            <div className="mt-1 break-all text-sm text-white/70">{fen}</div>
+          </div>
+        )}
+
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => onChangeMode("bot")}
+            disabled={isCreating}
+            className={`rounded-md border px-3 py-3 text-sm font-semibold transition active:scale-[0.98] disabled:opacity-50 ${
+              mode === "bot" ? "border-[#4F39F6] bg-[#4F39F6]/20 text-white" : "border-white/10 bg-white/5 text-white/65"
+            }`}
+          >
+            {t("analysis.createModeBot")}
+          </button>
+          <button
+            type="button"
+            onClick={() => onChangeMode("friend")}
+            disabled={isCreating}
+            className={`rounded-md border px-3 py-3 text-sm font-semibold transition active:scale-[0.98] disabled:opacity-50 ${
+              mode === "friend" ? "border-[#4F39F6] bg-[#4F39F6]/20 text-white" : "border-white/10 bg-white/5 text-white/65"
+            }`}
+          >
+            {t("analysis.createModeFriend")}
+          </button>
+        </div>
+
+        {mode === "bot" ? (
+          <div className="mt-4 grid gap-2">
+            {levels.map((level) => (
+              <button
+                key={level.key}
+                type="button"
+                onClick={() => onChangeBotDifficulty(level.key)}
+                disabled={isCreating}
+                className={`rounded-md border px-3 py-3 text-left transition active:scale-[0.98] disabled:opacity-50 ${
+                  botDifficulty === level.key
+                    ? "border-[#4F39F6] bg-[#4F39F6]/20 text-white"
+                    : "border-white/10 bg-white/5 text-white/75"
+                }`}
+              >
+                <div className="text-sm font-semibold">{level.label}</div>
+                <div className="mt-1 text-sm text-white/45">{level.subtitle}</div>
+              </button>
+            ))}
+            <div className="mt-2">
+              <div className="mb-2 text-sm font-semibold text-white/70">{t("bot.playAs")}</div>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => onChangeBotPlayerColor("white")}
+                  disabled={isCreating}
+                  className={`rounded-md border px-3 py-3 text-sm font-semibold transition active:scale-[0.98] disabled:opacity-50 ${
+                    botPlayerColor === "white"
+                      ? "border-[#4F39F6] bg-[#4F39F6]/20 text-white"
+                      : "border-white/10 bg-white/5 text-white/65"
+                  }`}
+                >
+                  {t("bot.color.white")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onChangeBotPlayerColor("black")}
+                  disabled={isCreating}
+                  className={`rounded-md border px-3 py-3 text-sm font-semibold transition active:scale-[0.98] disabled:opacity-50 ${
+                    botPlayerColor === "black"
+                      ? "border-[#4F39F6] bg-[#4F39F6]/20 text-white"
+                      : "border-white/10 bg-white/5 text-white/65"
+                  }`}
+                >
+                  {t("bot.color.black")}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-4 rounded-md border border-white/10 bg-white/[0.03] p-3 text-sm text-white/60">
+            {t("analysis.createFriendDescription")}
+          </div>
+        )}
+
+        {error && (
+          <div className="mt-4 rounded-md border border-red-400/30 bg-red-500/10 px-3 py-2 text-sm text-red-100">
+            {error}
+          </div>
+        )}
+        {friendLinkStatus === "failed" && (
+          <div className="mt-4 rounded-md border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">
+            {t("analysis.copyFriendLinkFailed")}
+          </div>
+        )}
+
+        <div className="mt-5 grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isCreating}
+            className="rounded-md border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white/70 transition active:scale-[0.98] disabled:opacity-50"
+          >
+            {t("common.cancel")}
+          </button>
+          <button
+            type="button"
+            onClick={mode === "bot" ? onPlayBot : onCopyFriendLink}
+            disabled={isCreating || !fen}
+            className="rounded-md bg-[#4F39F6] px-4 py-3 text-sm font-semibold text-white transition active:scale-[0.98] disabled:opacity-50"
+          >
+            {isCreating
+              ? t("common.creating")
+              : mode === "bot"
+                ? t("analysis.playWithBot")
+                : friendLinkStatus === "copied"
+                  ? t("analysis.friendLinkCopied")
+                  : t("analysis.copyFriendLink")}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function KeyMomentCard({ move, onClick }: { move: AnalyzedMove; onClick: () => void }) {
+  const { t } = useTranslation();
+  const playedMove = `${formatMovePrefix(move)} ${move.notation}`;
+  const bestMove = move.bestMove?.notation ?? t("analysis.noBestMove");
+  const outcome = getKeyMomentOutcome(move.afterScore, t);
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full rounded-lg border border-[#4F39F6]/40 bg-[#4F39F6]/20 p-3 text-left text-white transition active:scale-[0.99]"
+    >
+      <div className="text-sm font-semibold opacity-85">{t("analysis.turningPoint")}</div>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <Counter
+          label={t("analysis.playedMove")}
+          value={playedMove}
+          className="text-white text-base"
+          contentClassName="col-span-2"
+        />
+        <Counter
+          label={t("analysis.bestAlternative")}
+          value={bestMove}
+          className="text-white text-base"
+        />
+        <Counter
+          label={t("analysis.loss")}
+          value={t("analysis.lossCp", { lossCp: move.lossCp })}
+          className="text-white text-base"
+        />
+      </div>
+      <div className="mt-3 rounded-md border border-yellow-300/20 bg-yellow-950/30 px-3 py-2 text-sm text-yellow-50/90">
+        {outcome}
+      </div>
     </button>
   );
 }
@@ -393,11 +667,21 @@ function CountersBlock({ title, counters }: { title: string; counters: AnalysisS
   );
 }
 
-function Counter({ label, value, className }: { label: string; value: number; className: string }) {
+function Counter({
+  label,
+  value,
+  className,
+  contentClassName = "",
+}: {
+  label: string;
+  value: number | string;
+  className: string;
+  contentClassName?: string;
+}) {
   return (
-    <div className="rounded-md bg-black/20 p-2.5">
+    <div className={`min-w-0 rounded-md bg-black/20 p-2.5 ${contentClassName}`}>
       <div className="text-sm text-white/45">{label}</div>
-      <div className={`text-2xl font-semibold ${className}`}>{value}</div>
+      <div className={`truncate text-2xl font-semibold ${className}`} title={String(value)}>{value}</div>
     </div>
   );
 }
@@ -508,4 +792,27 @@ function getQualityDescription(
   }
 
   return t(`analysis.qualityDescription.${move.quality}.zero`);
+}
+
+function getKeyMomentOutcome(
+  afterScore: number,
+  t: (key: string, options?: Record<string, unknown>) => string,
+): string {
+  if (afterScore <= -3) {
+    return t("analysis.outcome.blackDecisive");
+  }
+
+  if (afterScore >= 3) {
+    return t("analysis.outcome.whiteDecisive");
+  }
+
+  if (afterScore < 0) {
+    return t("analysis.outcome.blackBetter");
+  }
+
+  if (afterScore > 0) {
+    return t("analysis.outcome.whiteBetter");
+  }
+
+  return t("analysis.outcome.equal");
 }

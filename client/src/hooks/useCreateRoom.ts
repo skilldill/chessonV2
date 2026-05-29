@@ -15,12 +15,19 @@ type CreateRoomData = {
     currentFEN?: string;
 }
 
+type CreateRoomOptions = {
+    navigate?: boolean;
+    onCreated?: (roomId: string) => void;
+}
+
 export const useCreateRoom = () => {
     const [isCreating, setIsCreating] = useState(false);
     const [roomCreatingError, setRoomCreatingError] = useState<string | null>(null);
     const history = useHistory();
 
-    const createRoom = async (roomData: CreateRoomData) => {
+    const createRoom = async (roomData: CreateRoomData, options: CreateRoomOptions = {}) => {
+        const { navigate = true, onCreated } = options;
+
         try {
             setIsCreating(true);
             setRoomCreatingError(null);
@@ -60,8 +67,14 @@ export const useCreateRoom = () => {
                         })
                     );
                 }
-                // Редирект на созданную комнату
-                history.push(`/game/${data.roomId}`);
+                onCreated?.(data.roomId);
+                if (navigate) {
+                    history.push(`/game/${data.roomId}`);
+                } else {
+                    setIsCreating(false);
+                }
+
+                return data.roomId as string;
             } else {
                 throw new Error('Invalid response from server');
             }

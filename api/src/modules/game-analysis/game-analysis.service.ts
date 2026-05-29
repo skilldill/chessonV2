@@ -20,7 +20,7 @@ type Subscriber = {
 
 const DEFAULT_ANALYSIS_MOVE_TIME_MS = Number.parseInt(process.env.ANALYSIS_MOVE_TIME_MS || '100', 10);
 const STALE_RUNNING_MS = 10 * 60 * 1000;
-const ANALYSIS_VERSION = 8;
+const ANALYSIS_VERSION = 9;
 
 function emptyCounter(): AnalysisCounter {
   return {
