@@ -24,6 +24,7 @@ import CrossMarkRedPNG from "../../assets/cross-mark.png";
 import HandShakePNG from "../../assets/handshake.png";
 import AiIconPNG from "../../assets/ai-icon.png";
 import DoubleChevronesLeft from '../../assets/double-chevrones-left.svg';
+import { withRouter } from "react-router";
 
 const AnalyzeIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" height={18} width={18} aria-hidden="true">
@@ -324,6 +325,15 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
             approveText: t('game.confirm.resign'),
         },
     ];
+    
+    const activeForNextButtons = [
+        {
+            content: <AnalyzeIcon />,
+            onClick: () => {},
+            tooltip:  t('results.analyzeGame'),
+            withoutApprove: true,
+        }
+    ]
 
     const notActiveMagicButtonControls = [
         {
@@ -470,7 +480,8 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                         loading={waitAIhint}
                         notify={gameControlsNotify}
                         controls={actualMagicButtonControls()}
-                        notActiveControls={actualNotActiveMagicButtonControls()}
+                        // notActiveControls={actualNotActiveMagicButtonControls()}
+                        notActiveControls={activeForNextButtons}
                         highlightsControls={actualMagicButtonControls()}
 
                         // Пока что так, позже сделаю лучше

@@ -10,13 +10,24 @@ type CreateRoomData = {
     withAIhints?: boolean;
     botDifficulty?: 'super_easy' | 'easy' | 'medium' | 'hard';
     botMoveTimeMs?: number;
+    color?: 'white' | 'black';
+    currentFEN?: string;
+}
+
+type CreateRoomOptions = {
+    navigate?: boolean;
+    onCreated?: (roomId: string) => void;
+    onSuccess?: () => void;
 }
 
 export const useCreateRoom = () => {
     const [isCreating, setIsCreating] = useState(false);
     const [roomCreatingError, setRoomCreatingError] = useState<string | null>(null);
 
-    const createRoom = async (roomData: CreateRoomData, onSuccess?: () => void) => {
+    const createRoom = async (roomData: CreateRoomData, options: CreateRoomOptions | (() => void) = {}) => {
+        const normalizedOptions = typeof options === 'function' ? { onSuccess: options } : options;
+        const { navigate = true, onCreated, onSuccess } = normalizedOptions;
+
         try {
             setIsCreating(true);
             setRoomCreatingError(null);
@@ -36,7 +47,9 @@ export const useCreateRoom = () => {
                     vsBot: roomData.vsBot,
                     withAIhints: roomData.withAIhints,
                     botDifficulty: roomData.botDifficulty,
-                    botMoveTimeMs: roomData.botMoveTimeMs
+                    botMoveTimeMs: roomData.botMoveTimeMs,
+                    color: roomData.color,
+                    currentFEN: roomData.currentFEN,
                 }),
             });
 
@@ -60,9 +73,15 @@ export const useCreateRoom = () => {
                     );
                 }
                 onSuccess?.();
+                onCreated?.(data.roomId);
 
-                // Редирект на созданную комнату
-                window.location.href = `/game/${data.roomId}`;
+                if (navigate) {
+                    window.location.href = `/game/${data.roomId}`;
+                } else {
+                    setIsCreating(false);
+                }
+
+                return data.roomId as string;
             } else {
                 throw new Error('Invalid response from server');
             }
