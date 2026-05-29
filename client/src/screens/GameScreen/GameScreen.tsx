@@ -25,6 +25,12 @@ import HandShakePNG from "../../assets/handshake.png";
 import AiIconPNG from "../../assets/ai-icon.png";
 import DoubleChevronesLeft from '../../assets/double-chevrones-left.svg';
 
+const AnalyzeIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" height={18} width={18} aria-hidden="true">
+        <path d="M18.375 2.25c-1.035 0-1.875.84-1.875 1.875v15.75c0 1.035.84 1.875 1.875 1.875h.75c1.035 0 1.875-.84 1.875-1.875V4.125c0-1.036-.84-1.875-1.875-1.875h-.75ZM9.75 8.625c0-1.036.84-1.875 1.875-1.875h.75c1.036 0 1.875.84 1.875 1.875v11.25c0 1.035-.84 1.875-1.875 1.875h-.75a1.875 1.875 0 0 1-1.875-1.875V8.625ZM3 13.125c0-1.036.84-1.875 1.875-1.875h.75c1.036 0 1.875.84 1.875 1.875v6.75c0 1.035-.84 1.875-1.875 1.875h-.75A1.875 1.875 0 0 1 3 19.875v-6.75Z" />
+    </svg>
+);
+
 type GameScreenProps = {
     gameState: GameState;
     playerColor: ChessColor;
@@ -195,6 +201,12 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
         onSendAIHintRequest();
     }
 
+    const handleAnalyzeGame = () => {
+        if (!roomId) return;
+        removeGameData();
+        window.location.href = `/analyze/${roomId}`;
+    }
+
     useEffect(() => {
         if (aiHintArrow) {
             setWaitAIhint(false);
@@ -314,6 +326,12 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
     ];
 
     const notActiveMagicButtonControls = [
+        {
+            content: <AnalyzeIcon />,
+            onClick: () => handleAnalyzeGame(),
+            tooltip: t('results.analyzeGame'),
+            withoutApprove: true,
+        },
         {
             content: <img src={CrossMarkRedPNG} alt={t('game.controls.quitGame')} height={18} width={18} />,
             onClick: () => handleQuitGame(),
