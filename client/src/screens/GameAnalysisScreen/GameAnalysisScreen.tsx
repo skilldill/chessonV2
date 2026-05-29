@@ -233,24 +233,12 @@ export function GameAnalysisScreen() {
         </section>
 
         <aside className="flex min-w-0 flex-col gap-4">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-            {analysis.summary.bestMoveText && (
-              <MomentButton
-                title={t("analysis.bestMoveOfGame")}
-                value={analysis.summary.bestMoveText}
-                tone="green"
-                onClick={() => analysis.summary.bestMovePly && setSelectedPly(analysis.summary.bestMovePly)}
-              />
-            )}
-            {keyMomentMove && (
-              <MomentButton
-                title={t("analysis.keyBlunder")}
-                value={`${formatMovePrefix(keyMomentMove)} ${keyMomentMove.notation}`}
-                tone="red"
-                onClick={() => setSelectedPly(keyMomentMove.ply)}
-              />
-            )}
-          </div>
+          {keyMomentMove && (
+            <KeyMomentCard
+              move={keyMomentMove}
+              onClick={() => setSelectedPly(keyMomentMove.ply)}
+            />
+          )}
 
           <div className="grid gap-3 sm:grid-cols-2">
             <CountersBlock title={t("analysis.white")} counters={analysis.counters.white} />
@@ -370,29 +358,37 @@ function LinkIcon() {
   );
 }
 
-function MomentButton({
-  title,
-  value,
-  tone,
-  onClick,
-}: {
-  title: string;
-  value: string;
-  tone: "green" | "red";
-  onClick: () => void;
-}) {
-  const toneClass = tone === "green"
-    ? "border-emerald-400/20 bg-emerald-500/10 text-emerald-100 hover:bg-emerald-500/15"
-    : "border-red-400/25 bg-red-500/10 text-red-100 hover:bg-red-500/15";
+function KeyMomentCard({ move, onClick }: { move: AnalyzedMove; onClick: () => void }) {
+  const { t } = useTranslation();
+  const playedMove = `${formatMovePrefix(move)} ${move.notation}`;
+  const bestMove = move.bestMove?.notation ?? t("analysis.noBestMove");
+  const outcome = getKeyMomentOutcome(move.afterScore, t);
 
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-lg border p-3 text-left transition ${toneClass}`}
+      className="rounded-lg border border-red-400/25 bg-red-500/10 p-3 text-left text-red-100 transition hover:bg-red-500/15"
     >
-      <div className="text-sm font-semibold opacity-85">{title}</div>
-      <div className="mt-1 text-base font-semibold text-white">{value}</div>
+      <div className="text-sm font-semibold opacity-85">{t("analysis.turningPoint")}</div>
+      <div className="mt-1 text-base font-semibold text-white">{playedMove}</div>
+      <div className="mt-3 grid gap-2 text-sm text-white/70">
+        <div className="flex items-center justify-between gap-3 rounded-md bg-black/20 px-3 py-2">
+          <span>{t("analysis.playedMove")}</span>
+          <span className="font-semibold text-white">{move.notation}</span>
+        </div>
+        <div className="flex items-center justify-between gap-3 rounded-md bg-emerald-500/10 px-3 py-2 text-emerald-100">
+          <span>{t("analysis.bestAlternative")}</span>
+          <span className="font-semibold">{bestMove}</span>
+        </div>
+        <div className="flex items-center justify-between gap-3 rounded-md bg-black/20 px-3 py-2">
+          <span>{t("analysis.loss")}</span>
+          <span className="font-semibold text-white">{t("analysis.lossCp", { lossCp: move.lossCp })}</span>
+        </div>
+      </div>
+      <div className="mt-3 rounded-md border border-red-300/15 bg-red-950/20 px-3 py-2 text-sm text-red-50/85">
+        {outcome}
+      </div>
     </button>
   );
 }
@@ -529,4 +525,24 @@ function getQualityDescription(move: AnalyzedMove, t: ReturnType<typeof useTrans
   }
 
   return t(`analysis.qualityDescription.${move.quality}.zero`);
+}
+
+function getKeyMomentOutcome(afterScore: number, t: ReturnType<typeof useTranslation>["t"]): string {
+  if (afterScore <= -3) {
+    return t("analysis.outcome.blackDecisive");
+  }
+
+  if (afterScore >= 3) {
+    return t("analysis.outcome.whiteDecisive");
+  }
+
+  if (afterScore < 0) {
+    return t("analysis.outcome.blackBetter");
+  }
+
+  if (afterScore > 0) {
+    return t("analysis.outcome.whiteBetter");
+  }
+
+  return t("analysis.outcome.equal");
 }

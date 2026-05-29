@@ -56,6 +56,28 @@ function getOrCreateWsClientId() {
     return newId;
 }
 
+function getResultMessageFromGameState(gameState: GameState) {
+    if (!gameState.gameEnded) return undefined;
+
+    const gameResult = gameState.gameResult;
+    if (!gameResult) return "Game over";
+
+    if (gameResult.resultType === "mat") {
+        return `Checkmate! ${gameResult.winColor === "white" ? "White" : "Black"} wins!`;
+    }
+    if (gameResult.resultType === "pat") {
+        return "Stalemate! Draw!";
+    }
+    if (gameResult.resultType === "draw") {
+        return "Draw!";
+    }
+    if (gameResult.resultType === "resignation") {
+        return `Resignation! ${gameResult.winColor === "white" ? "White" : "Black"} wins!`;
+    }
+
+    return "Game over";
+}
+
 export const useRoomWS = (roomId: string) => {
     const refWS = useRef<WebSocket | null>(null);
     const reconnectAttemptsRef = useRef<number>(0);
@@ -93,6 +115,13 @@ export const useRoomWS = (roomId: string) => {
         }
     }, [gameState.currentColor]);
 
+    const applyGameState = (nextGameState: GameState) => {
+        setGameState(nextGameState);
+        setMovesHistory(nextGameState.moveHistory);
+        setCurrentColorMove(nextGameState.currentColor as FigureColor);
+        setResultMessage(getResultMessageFromGameState(nextGameState));
+    };
+
     const handleMessage = (data: WSServerMessage) => {
         // Обновляем время последнего pong при получении любого сообщения
         lastPongTimeRef.current = Date.now();
@@ -115,18 +144,13 @@ export const useRoomWS = (roomId: string) => {
                     if (data.gameState.isSpectator) {
                         setUserColor(undefined);
                     }
-                    setGameState(data.gameState);
-                    setMovesHistory(data.gameState.moveHistory);
-                    // Обновляем currentColorMove на основе currentColor
-                    setCurrentColorMove(data.gameState.currentColor as FigureColor);
+                    applyGameState(data.gameState);
                 }
                 break;
 
             case 'gameStart':
                 if (data.gameState) {
-                    setGameState(data.gameState);
-                    // Обновляем currentColorMove на основе currentColor
-                    setCurrentColorMove(data.gameState.currentColor as FigureColor);
+                    applyGameState(data.gameState);
                 }
                 break;
 
@@ -147,12 +171,9 @@ export const useRoomWS = (roomId: string) => {
 
             case 'move':
                 if (data.gameState) {
-                    setGameState(data.gameState);
+                    applyGameState(data.gameState);
                     setLastMove(data.moveData);
-                    setMovesHistory(data.gameState.moveHistory);
                     setAiHintArrow(null);
-                    // Обновляем currentColorMove на основе currentColor
-                    setCurrentColorMove(data.gameState.currentColor as FigureColor);
                 }
                 break;
 
@@ -168,9 +189,7 @@ export const useRoomWS = (roomId: string) => {
 
             case 'gameResult':
                 if (data.gameState) {
-                    setGameState(data.gameState);
-                    // Обновляем currentColorMove на основе currentColor
-                    setCurrentColorMove(data.gameState.currentColor as FigureColor);
+                    applyGameState(data.gameState);
                 }
                 break;
 

@@ -88,6 +88,8 @@ const GameScreen: React.FC<GameScreenProps> = ({
     initialOpponentTime,
     initialPlayerTime,
   } = useTimers({ timer, playerColor, gameState });
+  const gameIsFinished = Boolean(resultMessage) || gameState.gameEnded;
+  const visibleResultMessage = resultMessage || (gameState.gameEnded ? t("results.gameOver") : undefined);
 
   // Отслеживаем позицию курсора
   useEffect(() => {
@@ -344,7 +346,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
                 onDeclineDraw={() => onSendDrawOffer('decline')}
             /> */}
         <ResultsActions
-          message={resultMessage}
+          message={visibleResultMessage}
           onClose={handleCloseResults}
           tournamentId={gameState.gameType === "tournament" ? gameState.tournamentId : undefined}
           tournamentGameRoomId={gameState.gameType === "tournament" ? roomId : undefined}
@@ -414,8 +416,8 @@ const GameScreen: React.FC<GameScreenProps> = ({
       </div>
       <div className="p-[12px] flex justify-center">
         <GameScreenControls
-          key={resultMessage}
-          isNotActive={!!resultMessage}
+          key={visibleResultMessage}
+          isNotActive={gameIsFinished}
           loading={waitAIhint}
           notify={gameControlsNotify}
           controls={actualMagicButtonControls()}

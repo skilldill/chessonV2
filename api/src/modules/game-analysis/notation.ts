@@ -17,7 +17,7 @@ type FenPiece = {
 };
 
 export function getReadableAnalysisNotation(move: AnalysisMoveData, previousFen: string): string {
-  const castling = getCastlingNotation(move);
+  const castling = getCastlingNotation(move, previousFen);
   if (castling) {
     return castling;
   }
@@ -72,20 +72,32 @@ export function uciToCoords(uci: string): { from: [number, number]; to: [number,
   };
 }
 
-function getCastlingNotation(move: AnalysisMoveData): string | null {
+function getCastlingNotation(move: AnalysisMoveData, previousFen: string): string | null {
   if (move.figure.type !== 'king') {
     return null;
   }
 
-  const [fromX] = move.from;
-  const [toX] = move.to;
-  const distance = Math.abs(toX - fromX);
+  const castlingRights = previousFen.split(' ')[2] ?? '-';
+  const [fromX, fromY] = move.from;
+  const [toX, toY] = move.to;
+  const isWhite = move.figure.color === 'white';
+  const homeRank = isWhite ? 7 : 0;
+  const kingSideRight = isWhite ? 'K' : 'k';
+  const queenSideRight = isWhite ? 'Q' : 'q';
 
-  if (distance < 2 && toX !== 1 && toX !== 6) {
+  if (fromX !== 4 || fromY !== homeRank || toY !== homeRank) {
     return null;
   }
 
-  return toX > fromX || toX === 6 ? '0-0' : '0-0-0';
+  if (toX === 6 && castlingRights.includes(kingSideRight)) {
+    return '0-0';
+  }
+
+  if (toX === 2 && castlingRights.includes(queenSideRight)) {
+    return '0-0-0';
+  }
+
+  return null;
 }
 
 function getPromotionSuffix(move: AnalysisMoveData, previousFen: string): string {

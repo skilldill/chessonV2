@@ -93,6 +93,8 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
         initialOpponentTime,
         initialPlayerTime,
     } = useTimers({ timer, playerColor, gameState });
+    const gameIsFinished = Boolean(resultMessage) || gameState.gameEnded;
+    const visibleResultMessage = resultMessage || (gameState.gameEnded ? t("results.gameOver") : undefined);
 
     // Отслеживаем позицию курсора
     useEffect(() => {
@@ -263,7 +265,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
         },
         {
             content: <img src={CrossMarkRedPNG} alt={t('game.controls.quitGame')} height={18} width={18} />,
-            onClick: () => handleQuitGame(),
+            onClick: () => onSendDrawOffer('offer'),
             tooltip: t('game.controls.leave'),
             approveText: t('game.confirm.leave'),
         },
@@ -353,7 +355,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                 onDeclineDraw={() => onSendDrawOffer('decline')}
             /> */}
             <ResultsActions
-                message={resultMessage}
+                message={visibleResultMessage}
                 onClose={handleCloseResults}
                 tournamentId={gameState.gameType === "tournament" ? gameState.tournamentId : undefined}
                 tournamentGameRoomId={gameState.gameType === "tournament" ? roomId : undefined}
@@ -363,7 +365,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                 message={t('game.connectionLost')}
                 show={connectionLost}
             />
-            {!resultMessage && (
+            {!gameIsFinished && (
                 <GameCursorProfile
                     opponentCursor={opponentCursor}
                     playerColor={playerColor}
@@ -445,8 +447,8 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                 />
                 <div className={`absolute ${screenSize === "L" ? "bottom-[-100px]" : "bottom-[-86px]"} left-0 right-0 flex justify-center`}>
                     <GameScreenControls
-                        key={resultMessage}
-                        isNotActive={!!resultMessage}
+                        key={visibleResultMessage}
+                        isNotActive={gameIsFinished}
                         loading={waitAIhint}
                         notify={gameControlsNotify}
                         controls={actualMagicButtonControls()}
