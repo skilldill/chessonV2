@@ -40,7 +40,6 @@ export function GameAnalysisScreen() {
   const [selectedPly, setSelectedPly] = useState<number | null>(null);
   const [filter, setFilter] = useState<MoveQuality | "all">("all");
   const [viewportHeight, setViewportHeight] = useState(() => window.innerHeight);
-  const [isShareCopied, setIsShareCopied] = useState(false);
   const [isCreateFromPositionOpen, setIsCreateFromPositionOpen] = useState(false);
   const [createFromPositionMode, setCreateFromPositionMode] = useState<"bot" | "friend">("bot");
   const [botDifficulty, setBotDifficulty] = useState<BotDifficulty>("medium");
@@ -51,23 +50,6 @@ export function GameAnalysisScreen() {
   useEffect(() => {
     localStorage.removeItem("gameData");
   }, []);
-
-  const handleGoHome = () => {
-    localStorage.removeItem("gameData");
-    history.push("/main");
-  };
-
-  const handleShareGame = async () => {
-    const shareUrl = `${window.location.origin}/analyze/${gameId}`;
-
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      setIsShareCopied(true);
-      window.setTimeout(() => setIsShareCopied(false), 1600);
-    } catch {
-      setIsShareCopied(false);
-    }
-  };
 
   const handleOpenCreateFromPosition = () => {
     setFriendLinkStatus("idle");
@@ -226,7 +208,7 @@ export function GameAnalysisScreen() {
 
   if (status === "loading" || status === "running" || status === "idle") {
     return (
-      <AnalysisPageShell onGoHome={handleGoHome} onShareGame={handleShareGame} isShareCopied={isShareCopied}>
+      <AnalysisPageShell>
         <div className="mx-auto flex min-h-[70vh] w-full max-w-xl flex-col items-center justify-center gap-5 text-center">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#4F39F6] border-t-transparent" />
           <div>
@@ -252,7 +234,7 @@ export function GameAnalysisScreen() {
 
   if (status === "failed") {
     return (
-      <AnalysisPageShell onGoHome={handleGoHome} onShareGame={handleShareGame} isShareCopied={isShareCopied}>
+      <AnalysisPageShell>
         <div className="mx-auto flex min-h-[70vh] w-full max-w-xl flex-col items-center justify-center gap-4 text-center">
           <h1 className="text-xl font-semibold text-white">{t("analysis.failedTitle")}</h1>
           <p className="text-sm text-white/60">{error || t("analysis.failedText")}</p>
@@ -273,7 +255,7 @@ export function GameAnalysisScreen() {
   }
 
   return (
-    <AnalysisPageShell onGoHome={handleGoHome} onShareGame={handleShareGame} isShareCopied={isShareCopied}>
+    <AnalysisPageShell>
       <div className="mx-auto grid w-full max-w-[1500px] gap-5 lg:grid-cols-[minmax(660px,780px)_minmax(380px,1fr)] lg:items-start">
         <section className="flex min-w-0 flex-col gap-4">
           <div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
@@ -386,76 +368,11 @@ export function GameAnalysisScreen() {
   );
 }
 
-function AnalysisPageShell({
-  children,
-  onGoHome,
-  onShareGame,
-  isShareCopied,
-}: {
-  children: ReactNode;
-  onGoHome: () => void;
-  onShareGame: () => void;
-  isShareCopied: boolean;
-}) {
-  const { t } = useTranslation();
-
+function AnalysisPageShell({ children }: { children: ReactNode }) {
   return (
     <main className="min-h-screen bg-back-primary text-white">
-      <div className="sticky left-0 right-0 top-0 z-30 border-b border-white/10 bg-black/25 backdrop-blur-md">
-        <div className="relative mx-auto flex h-14 w-full max-w-[1500px] items-center justify-center px-4 sm:px-6 lg:px-8">
-          <button
-            type="button"
-            onClick={onGoHome}
-            className="absolute left-4 flex h-9 items-center gap-1 rounded-md px-2 text-sm font-semibold text-white/80 transition hover:bg-white/10 active:scale-[0.98] sm:left-6 lg:left-8"
-          >
-            <span className="h-2.5 w-2.5 rotate-45 border-b-2 border-l-2 border-current" aria-hidden="true" />
-            <span className="hidden sm:inline">{t("analysis.goHome")}</span>
-          </button>
-
-          <img src="/chesson-logo.svg" alt="Chesson" className="h-6 w-auto" />
-
-          <button
-            type="button"
-            onClick={onShareGame}
-            className="absolute right-4 flex h-9 items-center gap-2 rounded-md border border-white/15 bg-white/5 px-3 text-sm font-semibold text-white/80 transition hover:bg-white/10 active:scale-[0.98] sm:right-6 lg:right-8"
-          >
-            <LinkIcon />
-            {isShareCopied ? t("analysis.shareCopied") : t("analysis.shareGame")}
-          </button>
-        </div>
-      </div>
       <div className="px-4 py-5 sm:px-6 lg:px-8">{children}</div>
     </main>
-  );
-}
-
-function LinkIcon() {
-  return (
-    <svg
-      className="h-4 w-4 shrink-0"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M10 13.5L14 9.5"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-      <path
-        d="M9.3 7.7L10.8 6.2C12.5 4.5 15.3 4.5 17 6.2C18.7 7.9 18.7 10.7 17 12.4L15.5 13.9"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-      <path
-        d="M14.7 16.3L13.2 17.8C11.5 19.5 8.7 19.5 7 17.8C5.3 16.1 5.3 13.3 7 11.6L8.5 10.1"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </svg>
   );
 }
 

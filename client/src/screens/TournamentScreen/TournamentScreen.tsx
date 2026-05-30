@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useHistory, useLocation, useParams } from "react-router-dom";
 import { API_PREFIX, TOURNAMENT_WS_URL } from "../../constants/api";
 import { TOURNAMENT_MAX_PLAYERS, TOURNAMENT_MAX_ROUNDS } from "../../constants/tournament";
-import { AppTopBar } from "../../components/AppTopBar/AppTopBar";
 import { RoomTimeModal } from "../../components/RoomTimeModal/RoomTimeModal";
 import { getRoomTimeSettingsFromStorage, setRoomTimeSettingsToStorage } from "../../utils/roomTimeStorage";
 import { useTranslation } from "react-i18next";
@@ -290,8 +289,7 @@ export function CreateTournamentScreen() {
   };
 
   return (
-    <div className="min-h-[100vh] text-white px-4 py-20">
-      <AppTopBar />
+    <div className="min-h-[100vh] text-white px-4 py-10">
       <main className="mx-auto flex w-full max-w-[520px] flex-col gap-5">
         <h1 className="text-2xl font-bold">{t("tournament.newTitle")}</h1>
         <label className="flex flex-col gap-2 text-sm text-white/70">
@@ -714,8 +712,7 @@ export function TournamentRoomScreen() {
     (tournament?.creatorUserId && currentUserId && tournament.creatorUserId === currentUserId)
   );
   return (
-    <div className="min-h-[100vh] text-white px-4 py-20">
-      {!isViewOnly && <AppTopBar />}
+    <div className="min-h-[100vh] text-white px-4 py-10">
       <main className="mx-auto grid w-full max-w-[1120px] gap-5 lg:grid-cols-[360px_1fr]">
         <section className="flex flex-col gap-4">
           {!isViewOnly && <Link to="/main" className="text-sm text-white/60 hover:text-white">{t("common.back")}</Link>}

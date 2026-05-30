@@ -11,7 +11,7 @@ import { CreateRoomScreen } from "./screens/CreateRoomScreen/CreateRoomScreen";
 import { QuickPlayWaitingScreen } from "./screens/QuickPlayWaitingScreen/QuickPlayWaitingScreen";
 import { HomeRedirect } from "./components/HomeRedirect/HomeRedirect";
 import { MainAuthGuard } from "./components/HomeRedirect/MainAuthGuard";
-import { BrowserRouter as Router, Switch, Route, Redirect } from "react-router-dom";
+import { BrowserRouter as Router, Switch, Route, Redirect, useLocation } from "react-router-dom";
 import 'react-chessboard-ui/dist/index.css';
 
 import { useImagePreloader } from "./hooks/useImagePreloader";
@@ -38,6 +38,7 @@ import { useUserAppearancePreload } from "./hooks/useUserAppearancePreload";
 import { CreateCustomFenRoomScreen } from "./screens/CreateCustomFenRoomScreen/CreateCustomFenRoomScreen";
 import { CreateTournamentScreen, TournamentRoomScreen } from "./screens/TournamentScreen/TournamentScreen";
 import { GameAnalysisScreen } from "./screens/GameAnalysisScreen/GameAnalysisScreen";
+import { AppTopBar } from "./components/AppTopBar/AppTopBar";
 
 // Все изображения для предзагрузки (вынесено за пределы компонента)
 const ALL_IMAGES = [
@@ -61,31 +62,36 @@ const ALL_IMAGES = [
 
 function AppRoutes() {
   useRestoreGame();
+  const location = useLocation();
+  const hideAppTopBar = location.pathname.startsWith("/game/");
 
   return (
-    <Switch>
-      <Route exact path="/" component={HomeRedirect} />
-      <Route exact path="/main" component={MainAuthGuard} />
-      <Route exact path="/quick-play" component={QuickPlayWaitingScreen} />
-      <Route exact path="/create-room" component={CreateRoomScreen} />
-      <Route exact path="/tournaments/new" component={CreateTournamentScreen} />
-      <Route exact path="/tournaments/:tournamentId" component={TournamentRoomScreen} />
-      <Route path="/game/:roomId" component={AppScreen} />
-      <Route exact path="/analyze/:gameId" component={GameAnalysisScreen} />
-      <Route
-        exact
-        path="/analize/:gameId"
-        render={({ match }: any) => <Redirect to={`/analyze/${match.params.gameId}`} />}
-      />
-      <Route exact path="/custom/room" component={CreateCustomFenRoomScreen} />
-      <Route exact path="/verify-email" component={VerifyEmailScreen} />
-      <Route exact path="/login" component={LoginScreen} />
-      <Route exact path="/signup" component={SignupScreen} />
-      <Route exact path="/signup-success" component={SignupSuccessScreen} />
-      <Route exact path="/forgot-password" component={ForgotPasswordScreen} />
-      <Route exact path="/reset-password" component={ResetPasswordScreen} />
-      <Route exact path="/profile" component={ProfileScreen} />
-    </Switch>
+    <>
+      {!hideAppTopBar && <AppTopBar />}
+      <Switch>
+        <Route exact path="/" component={HomeRedirect} />
+        <Route exact path="/main" component={MainAuthGuard} />
+        <Route exact path="/quick-play" component={QuickPlayWaitingScreen} />
+        <Route exact path="/create-room" component={CreateRoomScreen} />
+        <Route exact path="/tournaments/new" component={CreateTournamentScreen} />
+        <Route exact path="/tournaments/:tournamentId" component={TournamentRoomScreen} />
+        <Route path="/game/:roomId" component={AppScreen} />
+        <Route exact path="/analyze/:gameId" component={GameAnalysisScreen} />
+        <Route
+          exact
+          path="/analize/:gameId"
+          render={({ match }: any) => <Redirect to={`/analyze/${match.params.gameId}`} />}
+        />
+        <Route exact path="/custom/room" component={CreateCustomFenRoomScreen} />
+        <Route exact path="/verify-email" component={VerifyEmailScreen} />
+        <Route exact path="/login" component={LoginScreen} />
+        <Route exact path="/signup" component={SignupScreen} />
+        <Route exact path="/signup-success" component={SignupSuccessScreen} />
+        <Route exact path="/forgot-password" component={ForgotPasswordScreen} />
+        <Route exact path="/reset-password" component={ResetPasswordScreen} />
+        <Route exact path="/profile" component={ProfileScreen} />
+      </Switch>
+    </>
   );
 }
 
