@@ -39,7 +39,7 @@ export const HomeRedirect = () => {
   // Показываем загрузку во время проверки авторизации
   if (checking) {
     return (
-      <div className="w-full h-[100vh] flex justify-center items-center">
+      <div className="w-full min-h-[calc(100vh-77px)] flex justify-center items-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#4F39F6] border-t-transparent mx-auto"></div>
         </div>
@@ -54,7 +54,7 @@ export const HomeRedirect = () => {
 
   // Если авторизован, редирект уже произошел, но на всякий случай показываем загрузку
   return (
-    <div className="w-full h-[100vh] flex justify-center items-center">
+    <div className="w-full min-h-[calc(100vh-77px)] flex justify-center items-center">
       <div className="text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#4F39F6] border-t-transparent mx-auto"></div>
       </div>

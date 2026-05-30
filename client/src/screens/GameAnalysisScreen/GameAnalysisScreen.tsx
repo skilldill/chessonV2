@@ -370,7 +370,7 @@ export function GameAnalysisScreen() {
 
 function AnalysisPageShell({ children }: { children: ReactNode }) {
   return (
-    <main className="min-h-screen bg-back-primary text-white">
+    <main className="min-h-[calc(100vh-77px)] bg-back-primary text-white">
       <div className="px-4 py-5 sm:px-6 lg:px-8">{children}</div>
     </main>
   );

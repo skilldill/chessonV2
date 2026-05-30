@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 export const SignupSuccessScreen = () => {
   const { t } = useTranslation();
   return (
-    <div className="w-full h-[100vh] flex justify-center items-center bg-gradient-to-br from-green-50 to-blue-50">
+    <div className="w-full min-h-[calc(100vh-77px)] flex justify-center items-center bg-gradient-to-br from-green-50 to-blue-50">
       <div className="max-w-md w-full mx-4 bg-white rounded-lg shadow-lg p-8 text-center">
         <div className="mb-4">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100">

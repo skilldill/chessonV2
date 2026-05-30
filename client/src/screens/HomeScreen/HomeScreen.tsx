@@ -89,7 +89,7 @@ export const HomeDashboard = () => {
   };
 
   return (
-    <main className="min-h-screen bg-[#050507] text-white">
+    <main className="min-h-[calc(100vh-77px)] bg-[#050507] text-white">
       <div className="mx-auto flex w-full max-w-[1120px] flex-col gap-6 px-6 py-8">
         <button
           type="button"

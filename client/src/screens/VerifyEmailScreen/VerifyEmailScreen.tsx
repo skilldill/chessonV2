@@ -6,7 +6,7 @@ export const VerifyEmailScreen = () => {
   const { status, message, goToProfile } = useVerifyEmail();
 
   return (
-    <div className="w-full h-[100vh] flex justify-center items-center bg-gradient-to-br from-green-50 to-blue-50">
+    <div className="w-full min-h-[calc(100vh-77px)] flex justify-center items-center bg-gradient-to-br from-green-50 to-blue-50">
       <div className="max-w-md w-full mx-4 bg-white rounded-lg shadow-lg p-8 text-center">
         {status === 'loading' && (
           <>

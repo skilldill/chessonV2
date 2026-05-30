@@ -62,7 +62,7 @@ export const CreateCustomFenRoomScreen = () => {
     // }, [history]);
 
     return (
-        <div className="w-full h-[100vh] flex justify-center items-center">
+        <div className="w-full min-h-[calc(100vh-77px)] flex justify-center items-center">
             {isCreating ? (
                 <p>Creating room...</p>
             ) : (

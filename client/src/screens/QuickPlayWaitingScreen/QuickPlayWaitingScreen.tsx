@@ -210,7 +210,7 @@ export const QuickPlayWaitingScreen = () => {
   }, [history, incrementSeconds, t, timeMinutes]);
 
   return (
-    <div className="w-full h-[100vh] flex justify-center items-center overflow-y-auto py-4">
+    <div className="w-full min-h-[calc(100vh-77px)] flex justify-center items-center overflow-y-auto py-4">
       <div className="max-w-[432px] w-full flex flex-col items-center gap-6 px-4">
         <div className="flex items-center gap-2">
           <h2 className="text-white text-3xl font-semibold text-center">

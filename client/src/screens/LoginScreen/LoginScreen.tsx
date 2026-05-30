@@ -61,7 +61,7 @@ export const LoginScreen = () => {
   };
 
   return (
-    <div className="w-full h-[100vh] flex justify-center items-center">
+    <div className="w-full min-h-[calc(100vh-77px)] flex justify-center items-center">
       <div className="w-[432px] relative rounded-xl border-[1px] border-[#364153] rounded-3xl overflow-hidden select-none fadeIn">
         <div className="w-[348px] h-[348px] rounded-full absolute top-[-174px] left-[-104px] bg-[#155DFC] z-30 blur-[200px]" />
         

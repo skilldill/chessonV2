@@ -60,14 +60,14 @@ export const ProfileScreen = () => {
 
   if (loading) {
     return (
-      <div className="w-full h-[100vh] flex justify-center items-center">
+      <div className="w-full min-h-[calc(100vh-77px)] flex justify-center items-center">
         <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#4F39F6] border-t-transparent"></div>
       </div>
     );
   }
 
   return (
-    <div className="w-full min-h-[100vh] flex justify-center items-center overflow-y-auto px-4 py-8 relative">
+    <div className="w-full min-h-[calc(100vh-77px)] flex justify-center items-center overflow-y-auto px-4 py-8 relative">
       <div className="max-w-[420px] w-full">
         <div className="py-[20px]">
           <BackButton to="/main" />
