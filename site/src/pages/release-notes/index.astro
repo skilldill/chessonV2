@@ -1,0 +1,248 @@
+---
+import Layout from "../../layouts/Layout.astro";
+
+const releases = [
+	{
+		version: "v1.1.0",
+		title: "Game analysis and position setup",
+		items: [
+			"Create a game from a chosen position.",
+			"Open analysis right after a game ends.",
+			"Improved the app layout on large desktop screens.",
+			"Fixed analysis refresh behavior.",
+			"Fixed long castling.",
+			"Fixed fullscreen scrolling.",
+			"Improved bot game stability.",
+		],
+	},
+	{
+		version: "v1.0.0",
+		title: "Full game analysis",
+		items: [
+			"Added full post-game analysis.",
+			"Added an analysis screen after the game.",
+			"Added an evaluation chart.",
+			"Added accuracy scoring.",
+			"Added highlights for strong and weak moves.",
+			"Added saved bot games.",
+			"Added analysis on mobile.",
+		],
+	},
+	{
+		version: "v0.33.0",
+		title: "Online tournaments",
+		items: [
+			"Added online tournaments.",
+			"Added tournament grids and rounds.",
+			"Added online tournaments on mobile.",
+			"Added tie-breaks.",
+			"Added breaks between rounds.",
+			"Improved tournament display.",
+			"Improved tournament stability.",
+		],
+	},
+	{
+		version: "v0.25.0",
+		title: "Faster game start",
+		items: [
+			"Made starting a game simpler.",
+			"Removed the need to enter a name and choose an avatar before every game.",
+			"Names and avatars can now be assigned automatically.",
+			"Improved game controls on desktop and mobile.",
+		],
+	},
+	{
+		version: "v0.24.0",
+		title: "Bot games from custom positions",
+		items: [
+			"Improved bot games.",
+			"Added the ability to play against the bot from a chosen position.",
+			"Fixed AI hint issues.",
+			"Fixed several game control issues.",
+		],
+	},
+	{
+		version: "v0.23.0",
+		title: "Move rollback",
+		items: [
+			"Added move rollback.",
+			"Added tooltips for game controls.",
+			"Improved in-game controls.",
+		],
+	},
+	{
+		version: "v0.22.0",
+		title: "Languages and new board theme",
+		items: [
+			"Added multiple language support.",
+			"Added the Legends of Dagestan board and pieces theme.",
+			"Improved the mobile version.",
+			"Improved buttons and screens.",
+			"Improved SEO pages.",
+			"Fixed mobile page refresh behavior.",
+			"Fixed in-app navigation.",
+		],
+	},
+	{
+		version: "v0.12.0",
+		title: "AI hints",
+		items: [
+			"Added AI hints during the game.",
+			"Added a move hint arrow.",
+			"Added onboarding for AI hints.",
+			"AI hints are now shown only for your color.",
+			"Limited AI hints to suitable game types.",
+			"Added in-game notifications.",
+			"Improved button styling on desktop and mobile.",
+		],
+	},
+	{
+		version: "v0.11.1",
+		title: "Stability fixes",
+		items: [
+			"Fixed leaving the waiting screen.",
+			"Fixed restoring bot games after page reload.",
+			"Added keyboard control for move history.",
+		],
+	},
+	{
+		version: "v0.10.4",
+		title: "Bot mode",
+		items: [
+			"Added bot games.",
+			"Added bot game modes.",
+			"Added a create game button.",
+			"Improved the room creation screen.",
+			"Fixed pawn promotion in bot games.",
+			"Fixed castling in bot games.",
+			"Improved time selection when creating a game.",
+		],
+	},
+	{
+		version: "v0.9.0",
+		title: "Tournaments",
+		items: [
+			"Added tournaments.",
+			"Added tournament creation.",
+			"Added participants, groups, and rounds.",
+			"Added tournament completion.",
+			"Fixed tournament generation.",
+			"Added tournaments to the main app.",
+		],
+	},
+	{
+		version: "v0.8.0",
+		title: "Quick play",
+		items: [
+			"Added quick play.",
+			"Find a random opponent faster.",
+			"Added quick play on mobile.",
+			"Improved the game connection screen.",
+			"Added player game count in the admin area.",
+		],
+	},
+	{
+		version: "v0.7.2",
+		title: "Profiles and account verification",
+		items: [
+			"Added email verification.",
+			"Improved sign up and login.",
+			"Added player profiles.",
+			"Added chessboard appearance settings.",
+			"Improved mobile profiles.",
+			"Added an admin area.",
+			"Added new website pages.",
+		],
+	},
+	{
+		version: "v0.6.0",
+		title: "Accounts and saved games",
+		items: [
+			"Added player accounts.",
+			"Added saved games.",
+			"Added interactive move history.",
+			"Added display of recently captured pieces.",
+			"Improved support for small screens.",
+			"Improved mobile player support.",
+		],
+	},
+	{
+		version: "v0.5.7",
+		title: "First public game experience",
+		items: [
+			"Added the main online chess game.",
+			"Added game rooms by link.",
+			"Added player connection through live rooms.",
+			"Added game recovery after reconnecting.",
+			"Added timers.",
+			"Added move history.",
+			"Added captured pieces.",
+			"Added player names and avatars.",
+			"Added the waiting screen.",
+			"Added shareable game links.",
+			"Added opponent cursor display.",
+			"Added draw by threefold repetition.",
+			"Added draw by insufficient material.",
+			"Added custom position games.",
+			"Added mobile version.",
+		],
+	},
+];
+---
+
+<Layout
+	lang="en"
+	title="Release Notes | Chesson"
+	description="See what is new in each Chesson release: game analysis, online tournaments, AI hints, bot games, profiles, and more."
+	canonicalUrl="https://chesson.me/release-notes/"
+	ogImage="https://chesson.me/og.png"
+	locale="en_US"
+	alternates={[
+		{ lang: "en", url: "https://chesson.me/release-notes/" },
+		{ lang: "ru", url: "https://chesson.me/ru/release-notes/" },
+		{ lang: "x-default", url: "https://chesson.me/release-notes/" },
+	]}
+>
+	<main class="min-h-screen bg-[#070707] text-white">
+		<header class="border-b border-white/10">
+			<div class="mx-auto flex w-[calc(100%-2rem)] max-w-5xl items-center justify-between py-6">
+				<a href="/" class="flex items-center">
+					<img src="/chesson-logo.svg" alt="Chesson" class="h-8 w-auto" />
+				</a>
+				<nav class="flex items-center gap-4 text-sm text-white/65">
+					<a href="/ru/release-notes/" class="hover:text-white">RU</a>
+					<a href="https://t.me/chessonme" class="hover:text-white" target="_blank" rel="noopener noreferrer">Telegram</a>
+				</nav>
+			</div>
+		</header>
+
+		<section class="mx-auto w-[calc(100%-2rem)] max-w-5xl py-14 sm:py-20">
+			<p class="text-sm font-semibold uppercase tracking-[0.18em] text-white/50">Chesson updates</p>
+			<h1 class="mt-4 text-4xl font-bold leading-tight sm:text-5xl">Release notes</h1>
+			<p class="mt-5 max-w-2xl text-lg leading-relaxed text-white/70">
+				A simple history of what changed in Chesson: new features, improvements, and fixes.
+			</p>
+		</section>
+
+		<section class="mx-auto w-[calc(100%-2rem)] max-w-5xl pb-20">
+			<div class="space-y-5">
+				{releases.map((release) => (
+					<article class="rounded-lg border border-white/10 bg-[#101010] p-5 sm:p-6">
+						<div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
+							<h2 class="text-2xl font-bold">{release.version}</h2>
+							<p class="text-sm font-semibold text-white/55">{release.title}</p>
+						</div>
+						<ul class="mt-5 grid gap-2 text-sm leading-relaxed text-white/78 sm:text-base">
+							{release.items.map((item) => (
+								<li class="flex gap-3">
+									<span class="mt-2 h-1.5 w-1.5 flex-none rounded-full bg-[#FFE600]"></span>
+									<span>{item}</span>
+								</li>
+							))}
+						</ul>
+					</article>
+				))}
+			</div>
+		</section>
+	</main>
+</Layout>
