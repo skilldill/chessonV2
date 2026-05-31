@@ -18,6 +18,24 @@ services:
     networks:
       - app-network
 
+  puzzle-generator:
+    build: ./api
+    container_name: chesson-puzzle-generator
+    command: bun run puzzle-generator
+    restart: "no"
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/chesson
+      - STOCKFISH_PATH=/usr/games/stockfish
+      - PUZZLE_GENERATOR_LIMIT=${PUZZLE_GENERATOR_LIMIT:-50}
+      - PUZZLE_GENERATOR_MOVE_TIME_MS=${PUZZLE_GENERATOR_MOVE_TIME_MS:-150}
+      - PUZZLE_GENERATOR_MULTIPV=${PUZZLE_GENERATOR_MULTIPV:-3}
+      - PUZZLE_GENERATOR_STALE_RUNNING_JOB_MS=${PUZZLE_GENERATOR_STALE_RUNNING_JOB_MS:-1800000}
+      - PUZZLE_GENERATOR_STATUS=${PUZZLE_GENERATOR_STATUS:-draft}
+    depends_on:
+      - mongodb
+    networks:
+      - app-network
+
   client:
     build: ./client
     container_name: chesson-client

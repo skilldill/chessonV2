@@ -1,4 +1,4 @@
-import { type FC, useMemo, useRef } from 'react';
+import { type FC, useEffect, useMemo, useRef, useState } from 'react';
 
 export interface ChessboardWrapProps {
     reverse?: boolean;
@@ -12,6 +12,27 @@ export const ChessboardWrap: FC<ChessboardWrapProps> = (
 ) => {
     const { renderChessboard, reverse = false } = props;
     const innerWrapRef = useRef<HTMLDivElement>(null);
+    const [containerWidth, setContainerWidth] = useState(0);
+
+    useEffect(() => {
+        const element = innerWrapRef.current;
+        if (!element) {
+            return;
+        }
+
+        const updateWidth = () => {
+            setContainerWidth(element.offsetWidth);
+        };
+
+        updateWidth();
+
+        const resizeObserver = new ResizeObserver(updateWidth);
+        resizeObserver.observe(element);
+
+        return () => {
+            resizeObserver.disconnect();
+        };
+    }, []);
 
     // Подготовка букв для отрисовки
     const preparedLetters = useMemo(
@@ -53,7 +74,7 @@ export const ChessboardWrap: FC<ChessboardWrapProps> = (
             <div className="grid grid-cols-[24px_1fr_24px]">
                 {numbersRow}
                 <div ref={innerWrapRef} className="overflow-hidden rounded-xl shadow-[0_0_20px_rgba(255,255,255,0.40)]">
-                    {innerWrapRef.current && renderChessboard(innerWrapRef.current.offsetWidth)}
+                    {containerWidth > 0 && renderChessboard(containerWidth)}
                 </div>
                 {numbersRow}
             </div>

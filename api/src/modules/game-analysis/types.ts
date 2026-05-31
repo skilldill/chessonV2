@@ -19,6 +19,14 @@ export type EngineEvaluation = {
   depth?: number;
 };
 
+export type EngineTopMove = {
+  uci: string;
+  scoreCp: number;
+  mateIn?: number;
+  depth?: number;
+  multipv: number;
+};
+
 export type AnalysisBestMove = {
   uci: string;
   notation: string;

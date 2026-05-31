@@ -39,6 +39,8 @@ import { CreateCustomFenRoomScreen } from "./screens/CreateCustomFenRoomScreen/C
 import { CreateTournamentScreen, TournamentRoomScreen } from "./screens/TournamentScreen/TournamentScreen";
 import { GameAnalysisScreen } from "./screens/GameAnalysisScreen/GameAnalysisScreen";
 import { AppTopBar } from "./components/AppTopBar/AppTopBar";
+import { PuzzleListScreen } from "./screens/PuzzleListScreen/PuzzleListScreen";
+import { PuzzleScreen } from "./screens/PuzzleScreen/PuzzleScreen";
 
 // Все изображения для предзагрузки (вынесено за пределы компонента)
 const ALL_IMAGES = [
@@ -63,7 +65,7 @@ const ALL_IMAGES = [
 function AppRoutes() {
   useRestoreGame();
   const location = useLocation();
-  const hideAppTopBar = location.pathname.startsWith("/game/");
+  const hideAppTopBar = location.pathname.startsWith("/game/") || location.pathname.startsWith("/puzzles/");
 
   return (
     <>
@@ -77,6 +79,8 @@ function AppRoutes() {
         <Route exact path="/tournaments/:tournamentId" component={TournamentRoomScreen} />
         <Route path="/game/:roomId" component={AppScreen} />
         <Route exact path="/analyze/:gameId" component={GameAnalysisScreen} />
+        <Route exact path="/puzzles" component={PuzzleListScreen} />
+        <Route exact path="/puzzles/:puzzleId" component={PuzzleScreen} />
         <Route
           exact
           path="/analize/:gameId"

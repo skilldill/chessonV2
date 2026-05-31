@@ -39,6 +39,23 @@ type AdminAnalysis = {
   keyMomentPly: number | null;
 };
 
+type AdminPuzzle = {
+  id: string;
+  sourceGameId: string;
+  sourcePly: number;
+  sideToMove: 'white' | 'black';
+  solutionLength: number;
+  difficulty: 'easy' | 'medium' | 'hard';
+  themes: string[];
+  status: 'draft' | 'published' | 'rejected';
+  likesCount: number;
+  dislikesCount: number;
+  isBlocked: boolean;
+  blockedAt: string | null;
+  blockedReason: string | null;
+  createdAt: string;
+};
+
 type Pagination = {
   page: number;
   limit: number;
@@ -83,14 +100,19 @@ async function adminRequest<T extends object>(path: string, init?: RequestInit):
 }
 
 function App() {
+  const [activeTab, setActiveTab] = useState<'overview' | 'puzzles' | 'users'>('overview');
   const [overview, setOverview] = useState<OverviewStats | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [analyses, setAnalyses] = useState<AdminAnalysis[]>([]);
+  const [puzzles, setPuzzles] = useState<AdminPuzzle[]>([]);
   const [usersPagination, setUsersPagination] = useState<Pagination | null>(null);
+  const [puzzlesPagination, setPuzzlesPagination] = useState<Pagination | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [loadingAnalyses, setLoadingAnalyses] = useState(true);
+  const [loadingPuzzles, setLoadingPuzzles] = useState(true);
   const [actionUserId, setActionUserId] = useState<string | null>(null);
+  const [actionPuzzleId, setActionPuzzleId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const [searchInput, setSearchInput] = useState('');
@@ -98,6 +120,9 @@ function App() {
   const [blockedFilter, setBlockedFilter] = useState<'all' | 'blocked' | 'active'>('all');
   const [verifiedFilter, setVerifiedFilter] = useState<'all' | 'verified' | 'unverified'>('all');
   const [page, setPage] = useState(1);
+  const [puzzlesPage, setPuzzlesPage] = useState(1);
+  const [puzzleStatusFilter, setPuzzleStatusFilter] = useState<'all' | 'draft' | 'published' | 'rejected'>('all');
+  const [puzzleBlockedFilter, setPuzzleBlockedFilter] = useState<'all' | 'active' | 'blocked'>('all');
 
   const loadStats = useCallback(async () => {
     setLoadingStats(true);
@@ -146,14 +171,37 @@ function App() {
     }
   }, []);
 
+  const loadPuzzles = useCallback(async () => {
+    setLoadingPuzzles(true);
+    try {
+      const params = new URLSearchParams({
+        page: String(puzzlesPage),
+        limit: '50',
+        status: puzzleStatusFilter,
+        blocked: puzzleBlockedFilter,
+      });
+
+      const data = await adminRequest<{
+        success: true;
+        puzzles: AdminPuzzle[];
+        pagination: Pagination;
+      }>(`/admin/puzzles?${params.toString()}`);
+
+      setPuzzles(data.puzzles);
+      setPuzzlesPagination(data.pagination);
+    } finally {
+      setLoadingPuzzles(false);
+    }
+  }, [puzzleBlockedFilter, puzzleStatusFilter, puzzlesPage]);
+
   const refreshAll = useCallback(async () => {
     setError(null);
     try {
-      await Promise.all([loadStats(), loadUsers(), loadAnalyses()]);
+      await Promise.all([loadStats(), loadUsers(), loadAnalyses(), loadPuzzles()]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     }
-  }, [loadAnalyses, loadStats, loadUsers]);
+  }, [loadAnalyses, loadPuzzles, loadStats, loadUsers]);
 
   useEffect(() => {
     void refreshAll();
@@ -162,6 +210,10 @@ function App() {
   useEffect(() => {
     setPage(1);
   }, [search, blockedFilter, verifiedFilter]);
+
+  useEffect(() => {
+    setPuzzlesPage(1);
+  }, [puzzleBlockedFilter, puzzleStatusFilter]);
 
   const executeUserAction = useCallback(
     async (userId: string, runner: () => Promise<void>) => {
@@ -252,13 +304,53 @@ function App() {
     [executeUserAction]
   );
 
+  const executePuzzleAction = useCallback(
+    async (puzzleId: string, runner: () => Promise<void>) => {
+      setActionPuzzleId(puzzleId);
+      setError(null);
+      try {
+        await runner();
+        await loadPuzzles();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error');
+      } finally {
+        setActionPuzzleId(null);
+      }
+    },
+    [loadPuzzles]
+  );
+
+  const handleBlockPuzzle = useCallback(
+    async (puzzle: AdminPuzzle) => {
+      const reason = window.prompt('Reason for blocking (optional):', puzzle.blockedReason || '');
+      await executePuzzleAction(puzzle.id, async () => {
+        await adminRequest(`/admin/puzzles/${puzzle.id}/block`, {
+          method: 'PATCH',
+          body: JSON.stringify({ reason: reason || undefined }),
+        });
+      });
+    },
+    [executePuzzleAction]
+  );
+
+  const handleUnblockPuzzle = useCallback(
+    async (puzzle: AdminPuzzle) => {
+      await executePuzzleAction(puzzle.id, async () => {
+        await adminRequest(`/admin/puzzles/${puzzle.id}/unblock`, { method: 'PATCH' });
+      });
+    },
+    [executePuzzleAction]
+  );
+
   const generatedAt = useMemo(
     () => new Date().toLocaleString(),
-    [overview, usersPagination, users, analyses, loadingStats, loadingUsers, loadingAnalyses]
+    [overview, usersPagination, puzzlesPagination, users, analyses, puzzles, loadingStats, loadingUsers, loadingAnalyses, loadingPuzzles]
   );
 
   const canGoPrev = (usersPagination?.page || 1) > 1;
   const canGoNext = (usersPagination?.page || 1) < (usersPagination?.totalPages || 1);
+  const canGoPuzzlesPrev = (puzzlesPagination?.page || 1) > 1;
+  const canGoPuzzlesNext = (puzzlesPagination?.page || 1) < (puzzlesPagination?.totalPages || 1);
 
   return (
     <div className="page">
@@ -273,11 +365,23 @@ function App() {
             <p className="hint">Users management + platform statistics</p>
           </div>
           <button className="refresh-btn" onClick={() => void refreshAll()} disabled={loadingStats || loadingUsers || loadingAnalyses}>
-            {loadingStats || loadingUsers || loadingAnalyses ? 'Refreshing...' : 'Refresh All'}
+            {loadingStats || loadingUsers || loadingAnalyses || loadingPuzzles ? 'Refreshing...' : 'Refresh All'}
           </button>
         </header>
 
         {error && <div className="error-box">Request error: {error}</div>}
+
+        <nav className="tabbar" aria-label="Admin sections">
+          <button className={activeTab === 'overview' ? 'tab active' : 'tab'} onClick={() => setActiveTab('overview')}>
+            Overview
+          </button>
+          <button className={activeTab === 'puzzles' ? 'tab active' : 'tab'} onClick={() => setActiveTab('puzzles')}>
+            Puzzles
+          </button>
+          <button className={activeTab === 'users' ? 'tab active' : 'tab'} onClick={() => setActiveTab('users')}>
+            Users
+          </button>
+        </nav>
 
         <section className="cards-grid">
           <article className="stat-card">
@@ -304,9 +408,13 @@ function App() {
             <p>Analysis unique viewers</p>
             <h2>{overview?.uniqueAnalysisViewers ?? '-'}</h2>
           </article>
+          <article className="stat-card">
+            <p>Total puzzles</p>
+            <h2>{puzzlesPagination?.total ?? '-'}</h2>
+          </article>
         </section>
 
-        <section className="users-section">
+        {activeTab === 'overview' && <section className="users-section">
           <div className="users-toolbar">
             <div>
               <h3>Game analyses</h3>
@@ -364,9 +472,129 @@ function App() {
               </tbody>
             </table>
           </div>
-        </section>
+        </section>}
 
-        <section className="users-section">
+        {activeTab === 'puzzles' && <section className="users-section">
+          <div className="users-toolbar">
+            <div>
+              <h3>Puzzles</h3>
+              <p className="hint">Generated tasks, user rating and publishing safety</p>
+            </div>
+            <div className="toolbar-controls">
+              <select value={puzzleStatusFilter} onChange={(e) => setPuzzleStatusFilter(e.target.value as typeof puzzleStatusFilter)}>
+                <option value="all">All statuses</option>
+                <option value="draft">Draft</option>
+                <option value="published">Published</option>
+                <option value="rejected">Rejected</option>
+              </select>
+              <select value={puzzleBlockedFilter} onChange={(e) => setPuzzleBlockedFilter(e.target.value as typeof puzzleBlockedFilter)}>
+                <option value="all">All puzzles</option>
+                <option value="active">Only active</option>
+                <option value="blocked">Only blocked</option>
+              </select>
+              <button className="btn" onClick={() => void loadPuzzles()} disabled={loadingPuzzles}>
+                Refresh puzzles
+              </button>
+            </div>
+          </div>
+
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Source</th>
+                  <th>Side</th>
+                  <th>Difficulty</th>
+                  <th>Line</th>
+                  <th>Rating</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                  <th>Link</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loadingPuzzles ? (
+                  <tr>
+                    <td colSpan={9} className="empty">Loading puzzles...</td>
+                  </tr>
+                ) : puzzles.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="empty">No puzzles found</td>
+                  </tr>
+                ) : (
+                  puzzles.map((puzzle) => {
+                    const puzzleUrl = `${GAME_BASE_URL}/puzzles/${encodeURIComponent(puzzle.id)}`;
+                    const analysisUrl = `${GAME_BASE_URL}/analyze/${encodeURIComponent(puzzle.sourceGameId)}`;
+
+                    return (
+                      <tr key={puzzle.id}>
+                        <td>
+                          <div className="mono-cell">{puzzle.sourceGameId}</div>
+                          <div className="subtle">ply {puzzle.sourcePly}</div>
+                        </td>
+                        <td>{puzzle.sideToMove}</td>
+                        <td>{puzzle.difficulty}</td>
+                        <td>{puzzle.solutionLength} plies</td>
+                        <td>
+                          <span className="rating-cell">👍 {puzzle.likesCount}</span>
+                          <span className="rating-cell">👎 {puzzle.dislikesCount}</span>
+                        </td>
+                        <td>
+                          <span className={`pill ${puzzle.isBlocked ? 'blocked' : 'active'}`}>
+                            {puzzle.isBlocked ? 'Blocked' : puzzle.status}
+                          </span>
+                        </td>
+                        <td>{new Date(puzzle.createdAt).toLocaleString()}</td>
+                        <td>
+                          <div className="actions">
+                            <a className="analysis-link" href={puzzleUrl} target="_blank" rel="noreferrer">Open puzzle</a>
+                            <a className="analysis-link" href={analysisUrl} target="_blank" rel="noreferrer">Analysis</a>
+                          </div>
+                        </td>
+                        <td>
+                          {puzzle.isBlocked ? (
+                            <button
+                              className="btn success"
+                              onClick={() => void handleUnblockPuzzle(puzzle)}
+                              disabled={actionPuzzleId === puzzle.id}
+                            >
+                              Unblock
+                            </button>
+                          ) : (
+                            <button
+                              className="btn warning"
+                              onClick={() => void handleBlockPuzzle(puzzle)}
+                              disabled={actionPuzzleId === puzzle.id}
+                            >
+                              Block
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="pagination-row">
+            <span>
+              Page {puzzlesPagination?.page || 1} / {puzzlesPagination?.totalPages || 1} | Total puzzles: {puzzlesPagination?.total || 0}
+            </span>
+            <div className="actions">
+              <button className="btn" disabled={!canGoPuzzlesPrev || loadingPuzzles} onClick={() => setPuzzlesPage((p) => p - 1)}>
+                Prev
+              </button>
+              <button className="btn" disabled={!canGoPuzzlesNext || loadingPuzzles} onClick={() => setPuzzlesPage((p) => p + 1)}>
+                Next
+              </button>
+            </div>
+          </div>
+        </section>}
+
+        {activeTab === 'users' && <section className="users-section">
           <div className="users-toolbar">
             <h3>Users</h3>
             <div className="toolbar-controls">
@@ -502,7 +730,7 @@ function App() {
               </button>
             </div>
           </div>
-        </section>
+        </section>}
 
         <footer className="footer-row">
           <span>API base: {API_BASE_URL}</span>

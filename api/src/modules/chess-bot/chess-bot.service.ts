@@ -78,6 +78,14 @@ export class ChessBotService {
     });
   }
 
+  async getFenAfterUciMove(input: { fen: string; uci: string }): Promise<string> {
+    return this.mutex.runExclusive(async () => this.engine.getFenAfterUciMove(input));
+  }
+
+  toRoomMoveData(input: { uci: string; previousFen: string; nextFen: string }): RoomMoveData {
+    return this.uciToRoomMoveData(input);
+  }
+
   roomMoveToUci(
     moveData: Pick<RoomMoveData, 'from' | 'to' | 'figure' | 'FEN'>,
     previousFen?: string,

@@ -6,6 +6,7 @@
     "start": "bun run index.ts",
     "dev": "WITHOUT_MONGO=true bun --watch run index.ts",
     "dev:db": "bun --watch run index.ts",
+    "puzzle-generator": "bun run puzzle-generator.ts",
     "test": "bun test"
   },
   "devDependencies": {

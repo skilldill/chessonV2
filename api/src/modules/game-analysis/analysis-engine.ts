@@ -1,5 +1,5 @@
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
-import type { EngineEvaluation } from './types';
+import type { EngineEvaluation, EngineTopMove } from './types';
 
 type Deferred<T> = {
   resolve: (value: T) => void;
@@ -7,8 +7,13 @@ type Deferred<T> = {
   timeout: ReturnType<typeof setTimeout>;
 };
 
-type PendingEvaluation = Deferred<EngineEvaluation> & {
+type PendingEvaluation = Deferred<EngineEvaluationWithTopMoves> & {
   result: Partial<EngineEvaluation>;
+  topMoves: Map<number, Partial<EngineTopMove>>;
+};
+
+type EngineEvaluationWithTopMoves = EngineEvaluation & {
+  topMoves: Map<number, Partial<EngineTopMove>>;
 };
 
 type Task<T> = () => Promise<T>;
@@ -117,6 +122,42 @@ export class AnalysisEngine {
     });
   }
 
+  async evaluateFenTopMoves(input: { fen: string; moveTimeMs?: number; multiPv?: number }): Promise<EngineTopMove[]> {
+    return this.mutex.runExclusive(async () => {
+      const fen = input.fen.trim();
+      const multiPv = Math.max(1, Math.min(input.multiPv ?? 3, 10));
+
+      await this.ensureRunning();
+      await this.sendIsReady();
+      await this.sendCommand(`setoption name MultiPV value ${multiPv}`);
+      await this.sendIsReady();
+      await this.sendCommand(`position fen ${fen}`);
+
+      try {
+        const evaluation = await this.executeGo(input.moveTimeMs ?? DEFAULT_MOVE_TIME_MS);
+        const sideToMove = getSideToMove(fen);
+
+        return [...evaluation.topMoves.values()]
+          .filter((move): move is EngineTopMove => Boolean(move.uci && move.scoreCp !== undefined && move.multipv))
+          .map((move) => ({
+            ...move,
+            scoreCp: sideToMove === 'b' ? -move.scoreCp : move.scoreCp,
+            mateIn: move.mateIn === undefined
+              ? undefined
+              : sideToMove === 'b'
+                ? -move.mateIn
+                : move.mateIn,
+          }))
+          .sort((a, b) => a.multipv - b.multipv);
+      } finally {
+        if (multiPv !== 1) {
+          await this.sendCommand('setoption name MultiPV value 1');
+          await this.sendIsReady();
+        }
+      }
+    });
+  }
+
   private async bootProcess(): Promise<void> {
     const child = spawn(this.options.stockfishPath, [], {
       stdio: ['pipe', 'pipe', 'pipe'],
@@ -160,7 +201,7 @@ export class AnalysisEngine {
     await this.start();
   }
 
-  private executeGo(moveTimeMs: number): Promise<EngineEvaluation> {
+  private executeGo(moveTimeMs: number): Promise<EngineEvaluationWithTopMoves> {
     if (this.pendingEvaluation) {
       return Promise.reject(new Error('Analysis engine is already evaluating a position'));
     }
@@ -176,12 +217,13 @@ export class AnalysisEngine {
       request.reject(new Error('Analysis evaluation timed out'));
     });
 
-    const promise = new Promise<EngineEvaluation>((resolve, reject) => {
+    const promise = new Promise<EngineEvaluationWithTopMoves>((resolve, reject) => {
       this.pendingEvaluation = {
         resolve,
         reject,
         timeout,
         result: {},
+        topMoves: new Map(),
       };
     });
 
@@ -267,6 +309,10 @@ export class AnalysisEngine {
     }
 
     const depthMatch = line.match(/\bdepth\s+(\d+)/);
+    const multiPvMatch = line.match(/\bmultipv\s+(\d+)/);
+    const pvMoveMatch = line.match(/\bpv\s+(\S+)/);
+    const multiPv = multiPvMatch ? Number.parseInt(multiPvMatch[1], 10) : 1;
+
     if (depthMatch) {
       this.pendingEvaluation.result.depth = Number.parseInt(depthMatch[1], 10);
     }
@@ -281,6 +327,26 @@ export class AnalysisEngine {
       const mateIn = Number.parseInt(mateMatch[1], 10);
       this.pendingEvaluation.result.mateIn = mateIn;
       this.pendingEvaluation.result.scoreCp = mateIn > 0 ? MATE_SCORE_CP : -MATE_SCORE_CP;
+    }
+
+    if (pvMoveMatch && (cpMatch || mateMatch)) {
+      const existing = this.pendingEvaluation.topMoves.get(multiPv) ?? {};
+      const depth = depthMatch ? Number.parseInt(depthMatch[1], 10) : existing.depth;
+      const mateIn = mateMatch ? Number.parseInt(mateMatch[1], 10) : undefined;
+      const scoreCp = cpMatch
+        ? Number.parseInt(cpMatch[1], 10)
+        : mateIn !== undefined
+          ? mateIn > 0 ? MATE_SCORE_CP : -MATE_SCORE_CP
+          : existing.scoreCp;
+
+      this.pendingEvaluation.topMoves.set(multiPv, {
+        ...existing,
+        uci: pvMoveMatch[1],
+        depth,
+        scoreCp,
+        mateIn,
+        multipv: multiPv,
+      });
     }
   }
 
@@ -299,6 +365,7 @@ export class AnalysisEngine {
       mateIn: request.result.mateIn,
       bestMove: bestMove && bestMove !== '(none)' ? bestMove : undefined,
       depth: request.result.depth,
+      topMoves: request.topMoves,
     });
   }
 
