@@ -15,6 +15,7 @@ import {
 import { User } from './models/User';
 import { Game } from './models/Game';
 import { GameAnalysis } from './models/GameAnalysis';
+import { Puzzle } from './models/Puzzle';
 import { Tournament } from './models/Tournament';
 import { hashPassword, comparePassword } from './utils/password';
 import { createToken, verifyToken } from './utils/jwt';
@@ -4592,6 +4593,120 @@ app.get('/api/rooms/:roomId', async ({ params }) => {
   return {
     gameState: room.gameState
   };
+});
+
+app.get('/api/puzzles', async ({ query }) => {
+  try {
+    const pageParam = typeof query === 'object' && query !== null && 'page' in query ? query.page : undefined;
+    const limitParam = typeof query === 'object' && query !== null && 'limit' in query ? query.limit : undefined;
+    const statusParam = typeof query === 'object' && query !== null && 'status' in query ? query.status : undefined;
+    const page = parseInt(String(pageParam || '1')) || 1;
+    const limit = Math.min(parseInt(String(limitParam || '30')) || 30, 100);
+    const skip = (page - 1) * limit;
+    const filter: Record<string, unknown> = {};
+
+    if (statusParam) {
+      const statuses = String(statusParam)
+        .split(',')
+        .map((status) => status.trim())
+        .filter((status) => ['draft', 'published', 'rejected'].includes(status));
+
+      if (statuses.length === 1) {
+        filter.status = statuses[0];
+      } else if (statuses.length > 1) {
+        filter.status = { $in: statuses };
+      }
+    }
+
+    const puzzles = await Puzzle.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .select('sourceGameId sourcePly initialFEN sideToMove solution difficulty themes status engineMeta createdAt')
+      .lean();
+
+    const total = await Puzzle.countDocuments(filter);
+
+    return {
+      success: true,
+      puzzles: puzzles.map((puzzle) => ({
+        id: (puzzle._id as mongoose.Types.ObjectId).toString(),
+        sourceGameId: puzzle.sourceGameId,
+        sourcePly: puzzle.sourcePly,
+        initialFEN: puzzle.initialFEN,
+        sideToMove: puzzle.sideToMove,
+        solutionLength: Array.isArray(puzzle.solution) ? puzzle.solution.length : 0,
+        difficulty: puzzle.difficulty,
+        themes: puzzle.themes,
+        status: puzzle.status,
+        engineMeta: puzzle.engineMeta,
+        createdAt: puzzle.createdAt,
+      })),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  } catch (error: any) {
+    console.error('Get puzzles error:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to get puzzles',
+    };
+  }
+}, {
+  query: t.Object({
+    page: t.Optional(t.String()),
+    limit: t.Optional(t.String()),
+    status: t.Optional(t.String()),
+  })
+});
+
+app.get('/api/puzzles/:id', async ({ params, set }) => {
+  try {
+    const { id } = params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      set.status = 400;
+      return {
+        success: false,
+        error: 'Invalid puzzle ID',
+      };
+    }
+
+    const puzzle = await Puzzle.findById(id).lean();
+    if (!puzzle) {
+      set.status = 404;
+      return {
+        success: false,
+        error: 'Puzzle not found',
+      };
+    }
+
+    return {
+      success: true,
+      puzzle: {
+        id: (puzzle._id as mongoose.Types.ObjectId).toString(),
+        sourceGameId: puzzle.sourceGameId,
+        sourcePly: puzzle.sourcePly,
+        initialFEN: puzzle.initialFEN,
+        sideToMove: puzzle.sideToMove,
+        solution: puzzle.solution,
+        difficulty: puzzle.difficulty,
+        themes: puzzle.themes,
+        status: puzzle.status,
+        engineMeta: puzzle.engineMeta,
+        createdAt: puzzle.createdAt,
+      },
+    };
+  } catch (error: any) {
+    console.error('Get puzzle error:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to get puzzle',
+    };
+  }
 });
 
 // Get games by player ID endpoint - игры конкретного пользователя
