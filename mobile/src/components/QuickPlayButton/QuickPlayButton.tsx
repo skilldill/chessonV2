@@ -25,11 +25,12 @@ export const QuickPlayButton: React.FC<QuickPlayButtonProps> = ({
   };
   const { title, sub } = copyByVariant[variant];
 
-  return (
+    return (
     <CreateGameButton 
       title={`${title} · ${sub}`}
       subtitle={`${timeLabel}`} // ${playersInQueue > 0 && ` · ${playersInQueue} waiting`}
       onClick={onClick}
+      className={className}
     />
   );
 };

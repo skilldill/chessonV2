@@ -40,11 +40,11 @@ export function PuzzleListScreen() {
   }, [history, t]);
 
   return (
-    <main className="min-h-screen bg-[#10141f] px-4 py-8 text-white">
-      <div className="mx-auto flex min-h-[70vh] w-full max-w-xl flex-col items-center justify-center gap-5 text-center">
+    <main className="min-h-screen bg-back-primary px-4 py-8 text-white">
+      <div className="mx-auto flex min-h-[70vh] w-full max-w-sm flex-col items-center justify-center gap-5 text-center">
         <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#58C4A7] border-t-transparent" />
         <div>
-          <h1 className="text-2xl font-semibold tracking-normal">{t("puzzles.pickingTitle")}</h1>
+          <h1 className="text-2xl font-semibold">{t("puzzles.pickingTitle")}</h1>
           <p className="mt-2 text-sm text-white/60">{t("puzzles.pickingSubtitle")}</p>
         </div>
 
@@ -57,7 +57,7 @@ export function PuzzleListScreen() {
         {error && (
           <Link
             to="/main"
-            className="inline-flex h-10 items-center justify-center rounded-md border border-white/12 px-4 text-sm font-medium text-white/80 transition hover:border-white/25 hover:bg-white/8"
+            className="inline-flex h-10 items-center justify-center rounded-md border border-white/12 px-4 text-sm font-medium text-white/80"
           >
             {t("puzzles.goHome")}
           </Link>
@@ -66,3 +66,5 @@ export function PuzzleListScreen() {
     </main>
   );
 }
+
+export default PuzzleListScreen;

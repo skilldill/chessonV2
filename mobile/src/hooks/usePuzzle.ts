@@ -164,22 +164,6 @@ export function usePuzzle(puzzleId: string) {
     stableFen,
   ]);
 
-  const resetPuzzle = useCallback(() => {
-    if (!puzzle) return;
-
-    clearResetTimeout();
-    clearSystemMoveTimeout();
-    setBoardFen(puzzle.initialFEN);
-    setStableFen(puzzle.initialFEN);
-    setCurrentIndex(0);
-    setMovesHistory([]);
-    setExternalChangeMove(undefined);
-    setHintArrow(null);
-    setBoardResetVersion((value) => value + 1);
-    setMessage(null);
-    setIsLocked(false);
-  }, [clearResetTimeout, clearSystemMoveTimeout, puzzle]);
-
   const requestHint = useCallback(() => {
     if (!expectedMove || isLocked || isSolved) {
       return;
@@ -197,8 +181,6 @@ export function usePuzzle(puzzleId: string) {
     puzzle,
     boardFen,
     playerColor,
-    currentIndex,
-    expectedMove,
     movesHistory,
     externalChangeMove,
     hintArrow,
@@ -208,7 +190,6 @@ export function usePuzzle(puzzleId: string) {
     isSolved,
     submitMove,
     requestHint,
-    resetPuzzle,
     reload: loadPuzzle,
   };
 }

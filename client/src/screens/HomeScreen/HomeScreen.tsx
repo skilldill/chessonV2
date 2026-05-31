@@ -103,7 +103,7 @@ export const HomeDashboard = () => {
             title={t('puzzles.puzzles')}
             subtitle={t('puzzles.findTheBestMove')}
             icon={<PuzzleIcon />}
-            badges={[t("puzzles.hints")]}
+            badges={[t("puzzles.hints"), t("puzzles.moveHistory")]}
             tone="rose"
             to="/puzzles"
           />

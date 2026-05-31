@@ -56,6 +56,7 @@ type ControlProps = {
 
 type GameScreenControlsProps = {
     isNotActive?: boolean;
+    keepButtonsOpen?: boolean;
     loading?: boolean;
     notify?: { text: string };
 
@@ -71,6 +72,7 @@ type GameScreenControlsProps = {
 
 export const GameScreenControls: FC<GameScreenControlsProps> = ({
     isNotActive,
+    keepButtonsOpen = false,
     loading = false,
     notify,
 
@@ -93,6 +95,12 @@ export const GameScreenControls: FC<GameScreenControlsProps> = ({
     const [showDrawOffer, setShowDrawOffer] = useState(false);
 
     const handleClickPlasmaButton = (event?: React.MouseEvent<HTMLButtonElement>) => {
+        if (keepButtonsOpen) {
+            setShowButtons(true);
+            event?.stopPropagation();
+            return;
+        }
+
         if (showOnboarding) {
             setShowOnboarding(false);
         };
@@ -115,6 +123,10 @@ export const GameScreenControls: FC<GameScreenControlsProps> = ({
     }
 
     const hideButtons = () => {
+        if (keepButtonsOpen) {
+            return;
+        }
+
         setShowButtons(false);
     }
 
@@ -139,7 +151,15 @@ export const GameScreenControls: FC<GameScreenControlsProps> = ({
         return () => {
             window.removeEventListener("click", hideButtons);
         };
-    }, []);
+    }, [keepButtonsOpen]);
+
+    useEffect(() => {
+        if (keepButtonsOpen) {
+            setShowButtons(true);
+            setShowConfirm(false);
+            setShowDrawOffer(false);
+        }
+    }, [keepButtonsOpen])
 
     useEffect(() => {
         if (!isNotActive) {

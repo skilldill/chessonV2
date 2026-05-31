@@ -1,18 +1,20 @@
-import { QuickPlayButton } from '../../components/QuickPlayButton/QuickPlayButton';
 import { useEffect, useState } from 'react';
 import { useCreateRoom } from '../../hooks/useCreateRoom';
 import { useQuickPlayEntry } from '../../hooks/useQuickPlayEntry';
 import { BotDifficultyModal, type BotDifficulty } from '../../components/BotDifficultyModal/BotDifficultyModal';
 import { RoomTimeModal } from '../../components/RoomTimeModal/RoomTimeModal';
-import { CHESSBOARD_THEMES } from '../../components/ChessBoardConfigs/ChessBoardConfigs';
-import { ChessboardThemeModal } from '../../components/ChessboardThemeModal/ChessboardThemeModal';
-import { getChessboardThemeFromStorage, setChessboardThemeToStorage } from '../../utils/appearanceStorage';
 import { getRoomTimeSettingsFromStorage, setRoomTimeSettingsToStorage } from '../../utils/roomTimeStorage';
-import { CreateGameButton } from '../../components/CreateGameButton/CreateGameButton';
 import { AppVersionCaption } from '../../components/AppVersionCaption/AppVersionCaption';
 import { AppTopBar } from '../../components/AppTopBar/AppTopBar';
-import AIiconPNG from '../../assets/ai-icon.png';
-import SigninSVG from '../../assets/signin.svg';
+import {
+    BotIcon,
+    FriendsIcon,
+    LightningIcon,
+    MobileModeCard,
+    MobilePrimaryFeatureButton,
+    PuzzleIcon,
+    TrophyIcon,
+} from '../../components/MobileHomeCards/MobileHomeCards';
 import { useTranslation } from 'react-i18next';
 
 const initialRoomTime = getRoomTimeSettingsFromStorage();
@@ -21,23 +23,17 @@ const CreateRoomScreen: React.FC = () => {
     const { t } = useTranslation();
     const [isBotModalOpen, setIsBotModalOpen] = useState(false);
     const [isTimeModalOpen, setIsTimeModalOpen] = useState(false);
-    const [isThemeModalOpen, setIsThemeModalOpen] = useState(false);
     const [botDifficulty, setBotDifficulty] = useState<BotDifficulty>('medium');
     const [timeMinutes, setTimeMinutes] = useState(initialRoomTime.timeMinutes);
     const [incrementSeconds, setIncrementSeconds] = useState(initialRoomTime.incrementSeconds);
     const [withAIhints, setWithAIhints] = useState(false);
-    const [activeTheme, setActiveTheme] = useState(getChessboardThemeFromStorage());
-    const [selectedTheme, setSelectedTheme] = useState(getChessboardThemeFromStorage());
 
     useEffect(() => {
         setRoomTimeSettingsToStorage(timeMinutes, incrementSeconds);
     }, [timeMinutes, incrementSeconds]);
 
     const { createRoom, isCreating } = useCreateRoom();
-    const { openQuickPlay, quickPlayLabel, playersInRandomQueue } = useQuickPlayEntry();
-
-    const availableThemes = Object.keys(CHESSBOARD_THEMES);
-    const activeThemeLabel = activeTheme === 'magic' ? t("profile.magicTheme") : t("profile.defaultTheme");
+    const { openQuickPlay, quickPlayLabel } = useQuickPlayEntry();
 
     const handleCreateBotRoom = () => {
         createRoom({
@@ -57,96 +53,60 @@ const CreateRoomScreen: React.FC = () => {
         });
     };
 
-    const handleSaveThemeToStorage = () => {
-        setChessboardThemeToStorage(selectedTheme);
-        setActiveTheme(selectedTheme);
-        setIsThemeModalOpen(false);
-    };
-
     return (
         <>
-            <div className="relative w-full min-h-full flex justify-center items-center overflow-y-auto py-4"  style={{ height: window.innerHeight }}>
-                <AppTopBar />
-                <div className="max-w-[432px] w-full flex flex-col items-center gap-6 px-4">
-                    <div className='w-full flex flex-col gap-6'>
-                        <div
-                            onClick={() => { window.location.href = '/login' }}
-                            className="flex justify-center items-center w-full h-[48px] gap-[8px] rounded-xl border border-white/15 bg-white/5 active:bg-white/10 transition-colors duration-200 text-white text-[18px] font-semibold"
-                        >
-                            {t("room.signIn")} <img src={SigninSVG} alt="signin" />
-                        </div>
-
-                        {/* Временно заблокирую, потому что не знаю насколько актуально */}
-                        {/* <CreateGameButton
-                                title={(
-                                    <span className="flex gap-[4px]">
-                                        Chessboard theme
-                                        <span className="flex font-extrabold bg-gradient-to-r from-[#10D6E8] to-[#D079DF] bg-clip-text text-transparent">
-                                            + New theme
-                                        </span>
-                                    </span>
-                                )}
-                                subtitle={activeThemeLabel}
-                                onClick={() => {
-                                    setSelectedTheme(activeTheme);
-                                    setIsThemeModalOpen(true);
-                                }}
-                                theme="neutral"
-                            /> */}
-
-                        <CreateGameButton
-                            title={(
-                                <span>
-                                    {t("tournament.create")}
-                                    <span className="italic font-extrabold bg-gradient-to-r from-[#00F5A0] to-[#00D9F5] bg-clip-text text-transparent">
-                                        {' '} NEW
-                                    </span>
-                                </span>
-                            )}
-                            subtitle={t("tournament.homeSubtitle")}
-                            onClick={() => { window.location.href = '/tournaments/new'; }}
-                            theme="neutral"
-                            disabled={isCreating}
-                        />
-
-                        <QuickPlayButton
+            <div className="relative min-h-full w-full overflow-y-auto bg-[#050507] text-white" style={{ height: window.innerHeight }}>
+                <div className="fixed top-0 left-0 right-0 z-1">
+                    <AppTopBar />
+                </div>
+                <div className="mx-auto flex w-full max-w-[432px] flex-col gap-4 px-4 pb-8 pt-[74px]">
+                    <div className="grid gap-4">
+                        <MobilePrimaryFeatureButton
+                            title={t("room.quickPlay")}
+                            subtitle={t("room.randomOpponent")}
+                            badges={[quickPlayLabel]}
+                            tone="purple"
+                            icon={<LightningIcon />}
                             onClick={openQuickPlay}
-                            timeLabel={quickPlayLabel}
-                            playersInQueue={playersInRandomQueue}
                         />
 
-                        <CreateGameButton
-                            title={(
-                                <span className="flex gap-[4px]">
-                                    {t("room.playVsBot")}
-                                    <span className="flex font-extrabold bg-gradient-to-r from-[#E810A7] to-[#FFE600] bg-clip-text text-transparent">
-                                        + {t("room.aiHints")} <img className="w-[14px] h-[14px]" src={AIiconPNG} />
-                                    </span>
-                                </span>
-                            )}
-                            subtitle={t("room.botSubtitle")}
+                        <MobilePrimaryFeatureButton
+                            title={t("puzzles.puzzles")}
+                            subtitle={t("puzzles.findTheBestMove")}
+                            badges={[t("puzzles.hints"), t("puzzles.moveHistory")]}
+                            tone="rose"
+                            icon={<PuzzleIcon />}
+                            to="/puzzles"
+                        />
+                        <MobilePrimaryFeatureButton
+                            title={t("room.playVsBot")}
+                            subtitle={t("home.botFeature.difficulty")}
+                            tone="green"
+                            icon={<BotIcon />}
+                            badges={["30 min + 0 sec", t("room.aiHints")]}
                             onClick={() => setIsBotModalOpen(true)}
-                            theme="success"
                             disabled={isCreating}
                         />
-
-                        <CreateGameButton
-                            title={(
-                                <span className="flex gap-[4px]">
-                                    {t("room.createRoom")}
-                                    <span className="flex font-extrabold bg-gradient-to-r from-[#E810A7] to-[#FFE600] bg-clip-text text-transparent">
-                                        + {t("room.aiHints")} <img className="w-[14px] h-[14px]" src={AIiconPNG} />
-                                    </span>
-                                </span>
-                            )}
-                            subtitle={t("room.timeSummary", { timeMinutes, incrementSeconds })}
+                        <MobilePrimaryFeatureButton
+                            title={t("room.createRoom")}
+                            subtitle={t("home.roomFeature.link")}
+                            tone="blue"
+                            icon={<FriendsIcon />}
+                            badges={[t("room.aiHints")]}
                             onClick={() => setIsTimeModalOpen(true)}
-                            theme="success"
                             disabled={isCreating}
                         />
-
-                        <AppVersionCaption />
+                        <MobilePrimaryFeatureButton
+                            title={t("tournament.create")}
+                            subtitle={t("home.tournamentFeature.swiss")}
+                            tone="yellow"
+                            icon={<TrophyIcon />}
+                            badges={[t("tournament.defaultTitle")]}
+                            to="/tournaments/new"
+                        />
                     </div>
+
+                    <AppVersionCaption />
                 </div>
             </div>
 
@@ -172,14 +132,6 @@ const CreateRoomScreen: React.FC = () => {
                 onConfirm={handleCreateFriendRoom}
             />
 
-            <ChessboardThemeModal
-                isOpen={isThemeModalOpen}
-                selectedTheme={selectedTheme}
-                availableThemes={availableThemes}
-                onSelectTheme={setSelectedTheme}
-                onClose={() => setIsThemeModalOpen(false)}
-                onConfirm={handleSaveThemeToStorage}
-            />
         </>
     );
 };

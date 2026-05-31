@@ -21,6 +21,8 @@ import { MainAuthGuard } from './components/HomeRedirect/MainAuthGuard';
 import { useRestoreGame } from './hooks/useRestoreGame';
 import { useUserAppearancePreload } from './hooks/useUserAppearancePreload';
 import { GameAnalysisScreen } from './screens/GameAnalysisScreen/GameAnalysisScreen';
+import PuzzleListScreen from './screens/PuzzleListScreen/PuzzleListScreen';
+import PuzzleScreen from './screens/PuzzleScreen/PuzzleScreen';
 
 const App: React.FC = () => {
   useRestoreGame();
@@ -34,6 +36,12 @@ const App: React.FC = () => {
         </Route>
         <Route exact path="/analyze/:gameId">
           <GameAnalysisScreen />
+        </Route>
+        <Route exact path="/puzzles">
+          <PuzzleListScreen />
+        </Route>
+        <Route exact path="/puzzles/:puzzleId">
+          <PuzzleScreen />
         </Route>
         <Route
           exact

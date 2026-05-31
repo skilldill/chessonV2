@@ -14,8 +14,10 @@ import type { PuzzleListItem } from "../../types/puzzle";
 
 import AiIconPNG from "../../assets/ai-icon.png";
 import CrossMarkRedPNG from "../../assets/cross-mark.png";
+import { useTranslation } from "react-i18next";
 
 export function PuzzleScreen() {
+  const { t } = useTranslation();
   const { puzzleId } = useParams<{ puzzleId: string }>();
   const history = useHistory();
   const { chessboardTheme } = useAppearance();
@@ -111,7 +113,7 @@ export function PuzzleScreen() {
   }, [puzzleId]);
 
   const handleLeave = useCallback(() => {
-    history.push("/puzzles");
+    history.push("/");
   }, [history]);
 
   const handleNextPuzzle = useCallback(() => {
@@ -155,33 +157,33 @@ export function PuzzleScreen() {
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        throw new Error(data.error || "Не удалось оценить задачу");
+        throw new Error(data.error || t("puzzles.rateError"));
       }
 
       setRatingStatus("sent");
     } catch {
       setRatingStatus("error");
     }
-  }, [hasRated, puzzle]);
+  }, [hasRated, puzzle, t]);
 
   const leaveControl = useMemo(() => ({
-    content: <img src={CrossMarkRedPNG} alt="Уйти" height={18} width={18} />,
+    content: <img src={CrossMarkRedPNG} alt={t("puzzles.controls.leave")} height={18} width={18} />,
     onClick: handleLeave,
-    tooltip: "Уйти",
+    tooltip: t('puzzles.controls.leave'),
     withoutApprove: true,
-  }), [handleLeave]);
+  }), [handleLeave, t]);
 
   const hintControl = useMemo(() => ({
-    content: <img src={AiIconPNG} alt="Подсказка" height={18} width={18} />,
+    content: <img src={AiIconPNG} alt={t("puzzles.controls.hint")} height={18} width={18} />,
     onClick: requestHint,
-    tooltip: "Подсказка",
+    tooltip: t('puzzles.controls.hint'),
     withoutApprove: true,
-  }), [requestHint]);
+  }), [requestHint, t]);
 
   const nextControl = useMemo(() => ({
     content: <span className="text-xl leading-none text-white">›</span>,
     onClick: handleNextPuzzle,
-    tooltip: "Следующая",
+    tooltip: t('puzzles.controls.next'),
     withoutApprove: true,
   }), [handleNextPuzzle]);
 
@@ -214,13 +216,13 @@ export function PuzzleScreen() {
     return (
       <PuzzleShell>
         <div className="mx-auto mt-16 max-w-xl rounded-lg border border-red-400/25 bg-red-500/10 p-6 text-center text-red-100">
-          <p className="text-base font-medium">{error || "Задача не найдена"}</p>
+          <p className="text-base font-medium">{error || t("puzzles.notFound")}</p>
           <button
             type="button"
             onClick={() => void reload()}
             className="mt-5 h-10 rounded-md bg-white px-4 text-sm font-semibold text-[#10141f] transition hover:bg-white/90"
           >
-            Повторить
+            {t("puzzles.retry")}
           </button>
         </div>
       </PuzzleShell>
@@ -274,7 +276,7 @@ export function PuzzleScreen() {
 
               {message === "incorrect" && (
                 <div className="absolute inset-x-4 top-4 z-50 rounded-md border border-red-300/30 bg-red-500/90 px-4 py-3 text-center text-sm font-semibold text-white shadow-lg">
-                  Неверный ход
+                  {t("puzzles.incorrectMove")}
                 </div>
               )}
 
@@ -285,21 +287,21 @@ export function PuzzleScreen() {
                   onMouseDown={(event) => event.stopPropagation()}
                   onPointerDown={(event) => event.stopPropagation()}
                 >
-                  <div>Задача решена</div>
+                  <div>{t("puzzles.solved")}</div>
                   {hasRated ? (
                     <div className="mt-3 flex flex-col items-center gap-3">
-                      <div className="text-xs font-medium text-white/85">Спасибо за оценку!</div>
+                      <div className="text-xs font-medium text-white/85">{t("puzzles.thankYou")}</div>
                       <button
                         type="button"
                         onClick={handleNextPuzzle}
                         className="h-9 rounded-md bg-white px-4 text-sm font-semibold text-[#15866e] transition hover:bg-white/90"
                       >
-                        К следующей задаче
+                        {t("puzzles.nextPuzzle")}
                       </button>
                     </div>
                   ) : (
                     <>
-                      <div className="mt-3 text-xs font-medium text-white/85">Пожалуйста оцените задачу</div>
+                      <div className="mt-3 text-xs font-medium text-white/85">{t("puzzles.ratePrompt")}</div>
                       <div className="mt-2 flex justify-center gap-3">
                         <button
                           type="button"
@@ -321,7 +323,7 @@ export function PuzzleScreen() {
                     </>
                   )}
                   {ratingStatus === "error" && (
-                    <div className="mt-2 text-xs font-medium text-red-100">Не удалось сохранить оценку</div>
+                    <div className="mt-2 text-xs font-medium text-red-100">{t("puzzles.saveRateError")}</div>
                   )}
                 </div>
               )}
@@ -358,11 +360,13 @@ function reverseCoords(coords: [number, number]): [number, number] {
 }
 
 function PuzzleShell({ children }: { children: ReactNode }) {
+  const { t } = useTranslation();
+
   return (
     <main className="min-h-screen bg-[#10141f] px-4 py-8 text-white">
       <div className="mx-auto mb-6 flex w-full max-w-6xl items-center justify-between gap-4">
         <Link to="/puzzles" className="text-sm font-medium text-white/65 transition hover:text-white">
-          Назад к задачам
+          {t("puzzles.backToPuzzles")}
         </Link>
       </div>
       {children}
