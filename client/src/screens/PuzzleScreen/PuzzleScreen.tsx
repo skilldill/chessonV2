@@ -22,6 +22,8 @@ export function PuzzleScreen() {
   const gridColsClass = useScreenHeightForChessboard();
   const chessboardConfig = getChessboardConfig(chessboardTheme);
   const [nextPuzzleId, setNextPuzzleId] = useState<string | null>(null);
+  const [ratingStatus, setRatingStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [hasRated, setHasRated] = useState(false);
   const [isHistoryMode, setIsHistoryMode] = useState(false);
   const [selectedHistoryMove, setSelectedHistoryMove] = useState<MoveData>();
   const {
@@ -104,6 +106,8 @@ export function PuzzleScreen() {
   useEffect(() => {
     setIsHistoryMode(false);
     setSelectedHistoryMove(undefined);
+    setRatingStatus("idle");
+    setHasRated(false);
   }, [puzzleId]);
 
   const handleLeave = useCallback(() => {
@@ -111,13 +115,54 @@ export function PuzzleScreen() {
   }, [history]);
 
   const handleNextPuzzle = useCallback(() => {
-    if (nextPuzzleId) {
-      history.push(`/puzzles/${nextPuzzleId}`);
+    async function openRandomPuzzle() {
+      try {
+        const response = await fetch(`${API_PREFIX}/puzzles/random?status=draft,published&exclude=${encodeURIComponent(puzzleId)}`);
+        const data = await response.json();
+
+        if (response.ok && data.success && data.puzzle?.id) {
+          history.push(`/puzzles/${data.puzzle.id}`);
+          return;
+        }
+      } catch {
+        // Fall back to the preloaded neighbor below.
+      }
+
+      if (nextPuzzleId) {
+        history.push(`/puzzles/${nextPuzzleId}`);
+        return;
+      }
+
+      history.push("/puzzles");
+    }
+
+    void openRandomPuzzle();
+  }, [history, nextPuzzleId, puzzleId]);
+
+  const handleRatePuzzle = useCallback(async (rating: "like" | "dislike") => {
+    if (!puzzle || hasRated) {
       return;
     }
 
-    history.push("/puzzles");
-  }, [history, nextPuzzleId]);
+    setHasRated(true);
+    setRatingStatus("sending");
+    try {
+      const response = await fetch(`${API_PREFIX}/puzzles/${puzzle.id}/rate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rating }),
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Не удалось оценить задачу");
+      }
+
+      setRatingStatus("sent");
+    } catch {
+      setRatingStatus("error");
+    }
+  }, [hasRated, puzzle]);
 
   const leaveControl = useMemo(() => ({
     content: <img src={CrossMarkRedPNG} alt="Уйти" height={18} width={18} />,
@@ -228,14 +273,56 @@ export function PuzzleScreen() {
               </div>
 
               {message === "incorrect" && (
-                <div className="absolute inset-x-4 top-4 rounded-md border border-red-300/30 bg-red-500/90 px-4 py-3 text-center text-sm font-semibold text-white shadow-lg">
+                <div className="absolute inset-x-4 top-4 z-50 rounded-md border border-red-300/30 bg-red-500/90 px-4 py-3 text-center text-sm font-semibold text-white shadow-lg">
                   Неверный ход
                 </div>
               )}
 
               {message === "solved" && (
-                <div className="absolute inset-x-4 top-4 rounded-md border border-[#9BE3CF]/40 bg-[#15866e]/95 px-4 py-3 text-center text-sm font-semibold text-white shadow-lg">
-                  Задача решена
+                <div
+                  className="absolute inset-x-4 top-4 z-50 rounded-md border border-[#9BE3CF]/40 bg-[#15866e]/95 px-4 py-3 text-center text-sm font-semibold text-white shadow-lg"
+                  onClick={(event) => event.stopPropagation()}
+                  onMouseDown={(event) => event.stopPropagation()}
+                  onPointerDown={(event) => event.stopPropagation()}
+                >
+                  <div>Задача решена</div>
+                  {hasRated ? (
+                    <div className="mt-3 flex flex-col items-center gap-3">
+                      <div className="text-xs font-medium text-white/85">Спасибо за оценку!</div>
+                      <button
+                        type="button"
+                        onClick={handleNextPuzzle}
+                        className="h-9 rounded-md bg-white px-4 text-sm font-semibold text-[#15866e] transition hover:bg-white/90"
+                      >
+                        К следующей задаче
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="mt-3 text-xs font-medium text-white/85">Пожалуйста оцените задачу</div>
+                      <div className="mt-2 flex justify-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => void handleRatePuzzle("like")}
+                          disabled={ratingStatus === "sending"}
+                          className="flex h-9 w-12 items-center justify-center rounded-md bg-white/15 text-lg transition hover:bg-white/25 disabled:opacity-60"
+                        >
+                          👍
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void handleRatePuzzle("dislike")}
+                          disabled={ratingStatus === "sending"}
+                          className="flex h-9 w-12 items-center justify-center rounded-md bg-white/15 text-lg transition hover:bg-white/25 disabled:opacity-60"
+                        >
+                          👎
+                        </button>
+                      </div>
+                    </>
+                  )}
+                  {ratingStatus === "error" && (
+                    <div className="mt-2 text-xs font-medium text-red-100">Не удалось сохранить оценку</div>
+                  )}
                 </div>
               )}
             </div>

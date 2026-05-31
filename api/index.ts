@@ -3472,6 +3472,163 @@ app.get('/api/admin/analyses', async ({ headers, query, set }) => {
   }
 });
 
+app.get('/api/admin/puzzles', async ({ headers, query, set }) => {
+  if (!hasAdminAccess(headers)) {
+    set.status = 401;
+    return {
+      success: false,
+      error: 'Unauthorized'
+    };
+  }
+
+  try {
+    const page = Math.max(1, Number((query as any)?.page) || 1);
+    const limit = Math.max(1, Math.min(Number((query as any)?.limit) || 50, 100));
+    const status = String((query as any)?.status || 'all');
+    const blocked = String((query as any)?.blocked || 'all');
+    const skip = (page - 1) * limit;
+    const filter: any = {};
+
+    if (['draft', 'published', 'rejected'].includes(status)) {
+      filter.status = status;
+    }
+
+    if (blocked === 'blocked') {
+      filter.isBlocked = true;
+    } else if (blocked === 'active') {
+      filter.isBlocked = { $ne: true };
+    }
+
+    const [puzzles, total] = await Promise.all([
+      Puzzle.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .select('sourceGameId sourcePly initialFEN sideToMove solution difficulty themes status likesCount dislikesCount isBlocked blockedAt blockedReason createdAt')
+        .lean(),
+      Puzzle.countDocuments(filter),
+    ]);
+
+    return {
+      success: true,
+      puzzles: puzzles.map((puzzle: any) => ({
+        id: puzzle._id?.toString(),
+        sourceGameId: puzzle.sourceGameId,
+        sourcePly: puzzle.sourcePly,
+        initialFEN: puzzle.initialFEN,
+        sideToMove: puzzle.sideToMove,
+        solutionLength: Array.isArray(puzzle.solution) ? puzzle.solution.length : 0,
+        difficulty: puzzle.difficulty,
+        themes: puzzle.themes || [],
+        status: puzzle.status,
+        likesCount: puzzle.likesCount || 0,
+        dislikesCount: puzzle.dislikesCount || 0,
+        isBlocked: Boolean(puzzle.isBlocked),
+        blockedAt: puzzle.blockedAt || null,
+        blockedReason: puzzle.blockedReason || null,
+        createdAt: puzzle.createdAt,
+      })),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  } catch (error: any) {
+    console.error('Admin puzzles error:', error);
+    set.status = 500;
+    return {
+      success: false,
+      error: error.message || 'Failed to get admin puzzles'
+    };
+  }
+});
+
+app.patch('/api/admin/puzzles/:id/block', async ({ headers, params, body, set }) => {
+  if (!hasAdminAccess(headers)) {
+    set.status = 401;
+    return {
+      success: false,
+      error: 'Unauthorized'
+    };
+  }
+
+  try {
+    const { id } = params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      set.status = 400;
+      return { success: false, error: 'Invalid puzzle ID' };
+    }
+
+    const reason = typeof (body as any)?.reason === 'string' ? (body as any).reason.trim() : '';
+    const puzzle = await Puzzle.findByIdAndUpdate(
+      id,
+      {
+        $set: {
+          isBlocked: true,
+          blockedAt: new Date(),
+          blockedReason: reason || undefined,
+        },
+      },
+      { new: true },
+    ).lean();
+
+    if (!puzzle) {
+      set.status = 404;
+      return { success: false, error: 'Puzzle not found' };
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Admin block puzzle error:', error);
+    set.status = 500;
+    return { success: false, error: error.message || 'Failed to block puzzle' };
+  }
+}, {
+  body: t.Object({
+    reason: t.Optional(t.String()),
+  })
+});
+
+app.patch('/api/admin/puzzles/:id/unblock', async ({ headers, params, set }) => {
+  if (!hasAdminAccess(headers)) {
+    set.status = 401;
+    return {
+      success: false,
+      error: 'Unauthorized'
+    };
+  }
+
+  try {
+    const { id } = params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      set.status = 400;
+      return { success: false, error: 'Invalid puzzle ID' };
+    }
+
+    const puzzle = await Puzzle.findByIdAndUpdate(
+      id,
+      {
+        $set: { isBlocked: false },
+        $unset: { blockedAt: '', blockedReason: '' },
+      },
+      { new: true },
+    ).lean();
+
+    if (!puzzle) {
+      set.status = 404;
+      return { success: false, error: 'Puzzle not found' };
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Admin unblock puzzle error:', error);
+    set.status = 500;
+    return { success: false, error: error.message || 'Failed to unblock puzzle' };
+  }
+});
+
 app.get('/api/admin/users', async ({ headers, query, set }) => {
   if (!hasAdminAccess(headers)) {
     set.status = 401;
@@ -4603,7 +4760,9 @@ app.get('/api/puzzles', async ({ query }) => {
     const page = parseInt(String(pageParam || '1')) || 1;
     const limit = Math.min(parseInt(String(limitParam || '30')) || 30, 100);
     const skip = (page - 1) * limit;
-    const filter: Record<string, unknown> = {};
+    const filter: Record<string, unknown> = {
+      isBlocked: { $ne: true },
+    };
 
     if (statusParam) {
       const statuses = String(statusParam)
@@ -4622,7 +4781,7 @@ app.get('/api/puzzles', async ({ query }) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .select('sourceGameId sourcePly initialFEN sideToMove solution difficulty themes status engineMeta createdAt')
+      .select('sourceGameId sourcePly initialFEN sideToMove solution difficulty themes status likesCount dislikesCount engineMeta createdAt')
       .lean();
 
     const total = await Puzzle.countDocuments(filter);
@@ -4639,6 +4798,8 @@ app.get('/api/puzzles', async ({ query }) => {
         difficulty: puzzle.difficulty,
         themes: puzzle.themes,
         status: puzzle.status,
+        likesCount: puzzle.likesCount || 0,
+        dislikesCount: puzzle.dislikesCount || 0,
         engineMeta: puzzle.engineMeta,
         createdAt: puzzle.createdAt,
       })),
@@ -4664,6 +4825,76 @@ app.get('/api/puzzles', async ({ query }) => {
   })
 });
 
+app.get('/api/puzzles/random', async ({ query, set }) => {
+  try {
+    const statusParam = typeof query === 'object' && query !== null && 'status' in query ? query.status : undefined;
+    const excludeParam = typeof query === 'object' && query !== null && 'exclude' in query ? query.exclude : undefined;
+    const filter: any = {
+      isBlocked: { $ne: true },
+    };
+
+    if (statusParam) {
+      const statuses = String(statusParam)
+        .split(',')
+        .map((status) => status.trim())
+        .filter((status) => ['draft', 'published', 'rejected'].includes(status));
+
+      if (statuses.length === 1) {
+        filter.status = statuses[0];
+      } else if (statuses.length > 1) {
+        filter.status = { $in: statuses };
+      }
+    }
+
+    if (excludeParam && mongoose.Types.ObjectId.isValid(String(excludeParam))) {
+      filter._id = { $ne: new mongoose.Types.ObjectId(String(excludeParam)) };
+    }
+
+    const [puzzle] = await Puzzle.aggregate([
+      { $match: filter },
+      { $sample: { size: 1 } },
+    ]);
+
+    if (!puzzle) {
+      set.status = 404;
+      return {
+        success: false,
+        error: 'Puzzle not found',
+      };
+    }
+
+    return {
+      success: true,
+      puzzle: {
+        id: puzzle._id.toString(),
+        sourceGameId: puzzle.sourceGameId,
+        sourcePly: puzzle.sourcePly,
+        initialFEN: puzzle.initialFEN,
+        sideToMove: puzzle.sideToMove,
+        solution: puzzle.solution,
+        difficulty: puzzle.difficulty,
+        themes: puzzle.themes,
+        status: puzzle.status,
+        likesCount: puzzle.likesCount || 0,
+        dislikesCount: puzzle.dislikesCount || 0,
+        engineMeta: puzzle.engineMeta,
+        createdAt: puzzle.createdAt,
+      },
+    };
+  } catch (error: any) {
+    console.error('Get random puzzle error:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to get random puzzle',
+    };
+  }
+}, {
+  query: t.Object({
+    status: t.Optional(t.String()),
+    exclude: t.Optional(t.String()),
+  })
+});
+
 app.get('/api/puzzles/:id', async ({ params, set }) => {
   try {
     const { id } = params;
@@ -4676,7 +4907,7 @@ app.get('/api/puzzles/:id', async ({ params, set }) => {
     }
 
     const puzzle = await Puzzle.findById(id).lean();
-    if (!puzzle) {
+    if (!puzzle || puzzle.isBlocked) {
       set.status = 404;
       return {
         success: false,
@@ -4696,6 +4927,8 @@ app.get('/api/puzzles/:id', async ({ params, set }) => {
         difficulty: puzzle.difficulty,
         themes: puzzle.themes,
         status: puzzle.status,
+        likesCount: puzzle.likesCount || 0,
+        dislikesCount: puzzle.dislikesCount || 0,
         engineMeta: puzzle.engineMeta,
         createdAt: puzzle.createdAt,
       },
@@ -4707,6 +4940,58 @@ app.get('/api/puzzles/:id', async ({ params, set }) => {
       error: error.message || 'Failed to get puzzle',
     };
   }
+});
+
+app.post('/api/puzzles/:id/rate', async ({ params, body, set }) => {
+  try {
+    const { id } = params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      set.status = 400;
+      return {
+        success: false,
+        error: 'Invalid puzzle ID',
+      };
+    }
+
+    const rating = (body as any)?.rating;
+    if (rating !== 'like' && rating !== 'dislike') {
+      set.status = 400;
+      return {
+        success: false,
+        error: 'Invalid rating',
+      };
+    }
+
+    const puzzle = await Puzzle.findOneAndUpdate(
+      { _id: id, isBlocked: { $ne: true } },
+      rating === 'like' ? { $inc: { likesCount: 1 } } : { $inc: { dislikesCount: 1 } },
+      { new: true },
+    ).lean();
+
+    if (!puzzle) {
+      set.status = 404;
+      return {
+        success: false,
+        error: 'Puzzle not found',
+      };
+    }
+
+    return {
+      success: true,
+      likesCount: puzzle.likesCount || 0,
+      dislikesCount: puzzle.dislikesCount || 0,
+    };
+  } catch (error: any) {
+    console.error('Rate puzzle error:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to rate puzzle',
+    };
+  }
+}, {
+  body: t.Object({
+    rating: t.Union([t.Literal('like'), t.Literal('dislike')]),
+  })
 });
 
 // Get games by player ID endpoint - игры конкретного пользователя

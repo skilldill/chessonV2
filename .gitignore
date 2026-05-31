@@ -9,6 +9,7 @@ mockUsers.md
 # Logs
 *.log
 npm-debug.log*
+*.tsbuildinfo
 
 # Build output
 dist/

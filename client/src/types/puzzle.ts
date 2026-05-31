@@ -13,6 +13,8 @@ export interface PuzzleListItem {
   difficulty: PuzzleDifficulty;
   themes: string[];
   status: PuzzleStatus;
+  likesCount: number;
+  dislikesCount: number;
   createdAt: string;
 }
 

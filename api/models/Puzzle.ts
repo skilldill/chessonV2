@@ -25,6 +25,11 @@ export interface IPuzzle extends Document {
   difficulty: 'easy' | 'medium' | 'hard';
   themes: string[];
   status: PuzzleStatus;
+  likesCount: number;
+  dislikesCount: number;
+  isBlocked: boolean;
+  blockedAt?: Date;
+  blockedReason?: string;
   engineMeta: {
     name: string;
     depth?: number;
@@ -114,6 +119,24 @@ const PuzzleSchema = new Schema<IPuzzle>(
       default: 'draft',
       index: true,
     },
+    likesCount: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
+    dislikesCount: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
+    isBlocked: {
+      type: Boolean,
+      required: true,
+      default: false,
+      index: true,
+    },
+    blockedAt: Date,
+    blockedReason: String,
     engineMeta: {
       name: { type: String, required: true },
       depth: { type: Number, required: false },
@@ -129,6 +152,6 @@ const PuzzleSchema = new Schema<IPuzzle>(
 );
 
 PuzzleSchema.index({ sourceGameId: 1, sourcePly: 1 }, { unique: true });
-PuzzleSchema.index({ status: 1, difficulty: 1, createdAt: -1 });
+PuzzleSchema.index({ status: 1, isBlocked: 1, difficulty: 1, createdAt: -1 });
 
 export const Puzzle = mongoose.model<IPuzzle>('Puzzle', PuzzleSchema);
