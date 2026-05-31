@@ -1,0 +1,78 @@
+---
+const {
+	phrases,
+	label,
+} = Astro.props as {
+	phrases: string[];
+	label: string;
+};
+---
+
+<h1
+	class="typing-hero-title font-bold mb-8 max-w-4xl mx-auto text-3xl sm:text-4xl md:text-5xl lg:text-7xl"
+	aria-label={label}
+	data-fade-hero-title
+>
+	<span class="typing-hero-title__stage" aria-hidden="true">
+		{phrases.map((phrase, index) => (
+			<span class:list={["typing-hero-title__phrase", { "is-active": index === 0 }]}>
+				{phrase}
+			</span>
+		))}
+	</span>
+</h1>
+
+<script>
+	const titles = document.querySelectorAll<HTMLElement>('[data-fade-hero-title]');
+
+	titles.forEach((title) => {
+		const phrases = Array.from(title.querySelectorAll<HTMLElement>('.typing-hero-title__phrase'));
+		if (phrases.length < 2 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+			return;
+		}
+
+		let activeIndex = 0;
+		window.setInterval(() => {
+			phrases[activeIndex]?.classList.remove('is-active');
+			activeIndex = (activeIndex + 1) % phrases.length;
+			phrases[activeIndex]?.classList.add('is-active');
+		}, 5200);
+	});
+</script>
+
+<style>
+	.typing-hero-title {
+		line-height: 1.08;
+	}
+
+	.typing-hero-title__stage {
+		display: grid;
+		align-items: center;
+	}
+
+	.typing-hero-title__phrase {
+		grid-area: 1 / 1;
+		opacity: 0;
+		transform: translateY(0.1em);
+		transition:
+			opacity 1100ms cubic-bezier(0.22, 1, 0.36, 1),
+			transform 1100ms cubic-bezier(0.22, 1, 0.36, 1);
+		will-change: opacity, transform;
+	}
+
+	.typing-hero-title__phrase.is-active {
+		opacity: 1;
+		transform: translateY(0);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.typing-hero-title__phrase {
+			transition: none;
+		}
+
+		.typing-hero-title__phrase:first-child {
+			opacity: 1;
+			transform: none;
+		}
+	}
+</style>

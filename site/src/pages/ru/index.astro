@@ -1,6 +1,7 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 import { Chessboard3D } from "../../components/Chessboard3D";
+import TypingHeroTitle from "../../components/TypingHeroTitle.astro";
 
 const faqSchema = {
 	"@context": "https://schema.org",
@@ -67,11 +68,16 @@ const faqSchema = {
 			<div
 				class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 text-center w-[calc(100%-2rem)] max-w-4xl flex flex-col justify-center items-center h-full"
 			>
-				<h1 class="font-bold mb-8 max-w-4xl mx-auto text-3xl sm:text-4xl md:text-5xl lg:text-7xl">
-					Играй в шахматы онлайн бесплатно <br> с соперниками и ботом
-				</h1>
+				<TypingHeroTitle
+					phrases={[
+						"Играть в шахматы онлайн бесплатно и без регистрации",
+						"Решать шахматные задачи онлайн бесплатно",
+						"Проводить шахматные турниры по швейцарской системе",
+					]}
+					label="Играть в шахматы онлайн бесплатно и без регистрации. Решать шахматные задачи онлайн бесплатно. Проводить шахматные турниры по швейцарской системе."
+				/>
 				<h2 class="mb-10 font-normal text-3xl">
-					Создай комнату за секунду и начни партию без регистрации
+					Играй в шахматы онлайн бесплатно в браузере с друзьями, соперниками или ботом без регистрации
 				</h2>
 				<div class="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 w-full sm:w-auto">
 					<a
@@ -94,93 +100,86 @@ const faqSchema = {
 			</div>
 		</section>
 
-		<section class="mx-auto w-[calc(100%-2rem)] max-w-6xl pt-16 sm:pt-20">
-			<div class="relative overflow-hidden rounded-3xl border border-[#555ab9b3] bg-[#0F0F0F] p-6 sm:p-8 md:p-10">
-				<div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(79,57,246,0.42),transparent_34%),linear-gradient(135deg,rgba(79,57,246,0.24),rgba(232,16,167,0.12),rgba(255,230,0,0.08))]"></div>
-				<div class="relative grid gap-8 lg:grid-cols-[1fr_340px] lg:items-center">
-					<div>
-						<div class="mb-4 inline-flex rounded-full border border-[#555ab9b3] bg-[#4f39f633] px-3 py-1 text-xs font-extrabold uppercase tracking-[0.18em] text-white">
-							<span class="bg-gradient-to-r from-[#00F5A0] via-[#00D9F5] to-[#FFE600] bg-clip-text text-transparent">New</span>
-						</div>
-						<h2 class="text-2xl sm:text-3xl md:text-5xl font-bold leading-tight">
-							Создайте онлайн-турнир по швейцарской системе
-						</h2>
-						<p class="mt-4 max-w-2xl text-base sm:text-lg leading-relaxed text-white/78">
-							Задайте название, количество туров, время партий и перерывы, а затем отправьте игрокам одну ссылку. Создать турнир можно без регистрации.
-						</p>
-					</div>
-					<div class="rounded-2xl border border-white/15 bg-black/25 p-5">
-						<div class="grid gap-3 text-sm text-white/75">
-							<p class="rounded-xl border border-white/10 bg-white/5 px-4 py-3">Швейцарская система пар</p>
-							<p class="rounded-xl border border-white/10 bg-white/5 px-4 py-3">Ссылка на турнирную комнату</p>
-							<p class="rounded-xl border border-white/10 bg-white/5 px-4 py-3">Создание без регистрации</p>
-						</div>
-						<a
-							href="https://game.chesson.me/tournaments/new"
-							class="mt-5 inline-flex w-full items-center justify-center rounded-md bg-white px-5 py-3 font-bold text-black hover:bg-gray-200 transition-colors"
-						>
-							Создать онлайн-турнир
-						</a>
-					</div>
-				</div>
-			</div>
-		</section>
-
 		<section class="mx-auto w-[calc(100%-2rem)] max-w-6xl py-16 sm:py-20">
-			<div class="mb-8 sm:mb-10">
-				<h2 class="mt-3 text-2xl sm:text-3xl md:text-4xl font-semibold">Все, чтобы быстро начать шахматную партию</h2>
+			<div class="grid gap-5 min-[900px]:grid-cols-2">
+				<a href="https://game.chesson.me/quick-play?timeMinutes=10&incrementSeconds=0" class="group relative min-h-[190px] overflow-hidden rounded-xl border border-[#6D5DF6]/70 bg-[#140F35] p-8 text-left transition hover:border-[#8B7CFF] hover:bg-[#181043] active:scale-[0.995]">
+					<div class="absolute inset-0 opacity-35 [background:linear-gradient(90deg,rgba(79,57,246,0.4),rgba(8,10,18,0.2)),linear-gradient(135deg,transparent_0%,transparent_62%,rgba(255,255,255,0.06)_62%,rgba(255,255,255,0.06)_100%)]"></div>
+					<div class="relative flex h-full flex-col items-start justify-between gap-6 min-[1180px]:flex-row min-[1180px]:items-center">
+						<div class="flex flex-col gap-5 min-[1180px]:flex-row min-[1180px]:items-start min-[1180px]:gap-7">
+							<div class="flex h-16 w-16 shrink-0 aspect-square items-center justify-center rounded-full border border-[#8B7CFF]/50 bg-[#4F39F6]/25 text-[#C9C2FF]">
+								<svg class="h-9 w-9" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.4 2.1 4.7 13.4c-.3.4 0 1 .5 1h5.4l-1.2 7.2c-.1.7.8 1 1.2.5l8.7-11.3c.3-.4 0-1-.5-1h-5.4l1.2-7.2c.1-.7-.8-1-1.2-.5Z" /></svg>
+							</div>
+							<div>
+								<h2 class="text-3xl font-bold leading-tight text-white min-[1180px]:text-4xl">Быстрая игра</h2>
+								<p class="mt-3 text-lg text-white/75">Играй в шахматы онлайн бесплатно со случайным соперником.</p>
+								<div class="mt-6 flex flex-wrap gap-3">
+									<span class="rounded-lg bg-white/[0.08] px-4 py-2 text-sm font-semibold text-white/85">10 мин + 0 сек</span>
+								</div>
+							</div>
+						</div>
+						<svg class="h-10 w-10 text-white/85 transition group-hover:translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
+					</div>
+				</a>
+
+				<a href="https://game.chesson.me/puzzles" class="group relative min-h-[190px] overflow-hidden rounded-xl border border-rose-500/40 bg-rose-950/20 p-8 text-left transition hover:border-rose-400/70 hover:bg-[#35102d] active:scale-[0.995]">
+					<div class="absolute inset-0 opacity-35 [background:linear-gradient(90deg,rgba(190,24,93,0.45),rgba(79,57,246,0.18)),linear-gradient(135deg,transparent_0%,transparent_62%,rgba(255,255,255,0.06)_62%,rgba(255,255,255,0.06)_100%)]"></div>
+					<div class="relative flex h-full flex-col items-start justify-between gap-6 min-[1180px]:flex-row min-[1180px]:items-center">
+						<div class="flex flex-col gap-5 min-[1180px]:flex-row min-[1180px]:items-start min-[1180px]:gap-7">
+							<div class="flex h-16 w-16 shrink-0 aspect-square items-center justify-center rounded-full border border-rose-400/40 bg-rose-500/[0.18] text-rose-200">
+								<svg class="h-9 w-9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.25 6.087c0-.355.186-.676.401-.959.221-.29.349-.634.349-1.003 0-1.036-1.007-1.875-2.25-1.875s-2.25.84-2.25 1.875c0 .369.128.713.349 1.003.215.283.401.604.401.959a.64.64 0 0 1-.657.643 48.39 48.39 0 0 1-4.163-.3c.186 1.613.293 3.25.315 4.907a.656.656 0 0 1-.658.663c-.355 0-.676-.186-.959-.401a1.647 1.647 0 0 0-1.003-.349c-1.036 0-1.875 1.007-1.875 2.25s.84 2.25 1.875 2.25c.369 0 .713-.128 1.003-.349.283-.215.604-.401.959-.401.31 0 .555.26.532.57a48.039 48.039 0 0 1-.642 5.056c1.518.19 3.058.309 4.616.354a.64.64 0 0 0 .657-.643c0-.355-.186-.676-.401-.959a1.647 1.647 0 0 1-.349-1.003c0-1.035 1.008-1.875 2.25-1.875 1.243 0 2.25.84 2.25 1.875 0 .369-.128.713-.349 1.003-.215.283-.4.604-.4.959 0 .333.277.599.61.58a48.1 48.1 0 0 0 5.427-.63 48.05 48.05 0 0 0 .582-4.717.532.532 0 0 0-.533-.57c-.355 0-.676.186-.959.401-.29.221-.634.349-1.003.349-1.035 0-1.875-1.007-1.875-2.25s.84-2.25 1.875-2.25c.37 0 .713.128 1.003.349.283.215.604.401.96.401a.656.656 0 0 0 .658-.663 48.422 48.422 0 0 0-.37-5.36c-1.886.342-3.81.574-5.766.689a.578.578 0 0 1-.61-.58Z" /></svg>
+							</div>
+							<div>
+								<h2 class="text-3xl font-bold leading-tight text-white min-[1180px]:text-4xl">Шахматные задачи</h2>
+								<p class="mt-3 text-lg text-white/75">Решай тактику из реальных партий с подсказками и историей ходов.</p>
+								<div class="mt-6 flex flex-wrap gap-3">
+									<span class="rounded-lg bg-rose-500/[0.14] px-4 py-2 text-sm font-semibold text-rose-100">Задачи</span>
+									<span class="rounded-lg bg-rose-500/[0.14] px-4 py-2 text-sm font-semibold text-rose-100">Подсказки</span>
+								</div>
+							</div>
+						</div>
+						<svg class="h-10 w-10 text-white/85 transition group-hover:translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
+					</div>
+				</a>
 			</div>
 
-			<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-				<article class="rounded-2xl border border-[#252525] bg-[#0F0F0F] p-6 sm:p-7 lg:col-span-2">
-					<h3 class="text-xl sm:text-2xl font-semibold">Создать турнирную сетку для оффлайн-игры</h3>
-					<p class="mt-3 text-white/75 leading-relaxed">
-						Используй инструмент сетки, чтобы организовать оффлайн-турнир, вести раунды и фиксировать победителей в одном месте.
-					</p>
-					<a
-						href="/tournaments"
-						class="mt-6 inline-flex w-full items-center justify-center rounded-md bg-white px-5 py-2.5 font-semibold text-black hover:bg-gray-200 transition-colors"
-					>
-						Создать турнирную сетку
-					</a>
-				</article>
-
-				<article class="rounded-2xl border border-[#252525] bg-[#0F0F0F] p-6 sm:p-7">
-					<h3 class="text-xl font-semibold">Быстрый старт игры</h3>
-					<p class="mt-3 text-white/75">Без регистрации. Случайные соперники, игра с ботом и подсказки от AI.</p>
-					<a
-						id="cta-play-now-btn"
-						href="https://game.chesson.me/"
-						class="mt-6 inline-flex w-full items-center justify-center rounded-md bg-white px-5 py-2.5 font-semibold text-black hover:bg-gray-200 transition-colors"
-					>
-						Играть сейчас
-					</a>
-				</article>
-
-				<article class="rounded-2xl border border-[#252525] bg-[#0F0F0F] p-6 sm:p-7">
-					<h3 class="text-xl font-semibold">Случайный соперник онлайн</h3>
-					<p class="mt-3 text-white/75">Быстро подключайся к живой партии и начинай игру за секунды.</p>
-				</article>
-
-				<article class="rounded-2xl border border-[#252525] bg-[#0F0F0F] p-6 sm:p-7">
-					<h3 class="text-xl font-semibold">Игра с ботом</h3>
-					<p class="mt-3 text-white/75">Тренируйся на 3 уровнях сложности в удобном темпе.</p>
-				</article>
-
-				<article class="rounded-2xl border border-[#252525] bg-[#0F0F0F] p-6 sm:p-7">
-					<h3 class="text-xl font-semibold">Подсказки от AI</h3>
-					<p class="mt-3 text-white/75">Получай полезные подсказки и развивай шахматное мышление.</p>
-				</article>
-
-				<article class="rounded-2xl border border-[#252525] bg-[#0F0F0F] p-6 sm:p-7 lg:col-span-3">
-					<h3 class="text-xl sm:text-2xl font-semibold">Почему chesson?</h3>
-					<div class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 text-sm">
-						<p class="rounded-xl border border-[#222] bg-[#121212] px-4 py-3">Играй без регистрации</p>
-						<p class="rounded-xl border border-[#222] bg-[#121212] px-4 py-3">Быстрый старт игры</p>
-						<p class="rounded-xl border border-[#222] bg-[#121212] px-4 py-3">Работает на телефоне и ПК</p>
-						<p class="rounded-xl border border-[#222] bg-[#121212] px-4 py-3">Бесплатно и без ограничений</p>
+			<div class="mt-5 grid gap-5 min-[900px]:grid-cols-2">
+				<a href="https://chesson.me/tournaments/" class="group relative min-h-[190px] overflow-hidden rounded-xl border border-sky-500/40 bg-sky-950/20 p-8 text-left transition hover:border-sky-400/70 hover:bg-sky-950/30 active:scale-[0.995]">
+					<div class="absolute inset-0 opacity-35 [background:linear-gradient(90deg,rgba(14,165,233,0.34),rgba(8,10,18,0.18)),linear-gradient(135deg,transparent_0%,transparent_62%,rgba(255,255,255,0.06)_62%,rgba(255,255,255,0.06)_100%)]"></div>
+					<div class="relative flex h-full flex-col items-start justify-between gap-6 min-[1180px]:flex-row min-[1180px]:items-center">
+						<div class="flex flex-col gap-5 min-[1180px]:flex-row min-[1180px]:items-start min-[1180px]:gap-7">
+							<div class="flex h-16 w-16 shrink-0 aspect-square items-center justify-center rounded-full border border-sky-400/35 bg-sky-500/15 text-sky-300">
+								<svg class="h-9 w-9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16" /><path d="M4 12h16" /><path d="M4 17h10" /></svg>
+							</div>
+							<div>
+								<h2 class="text-3xl font-bold leading-tight text-white min-[1180px]:text-4xl">Турнирная сетка</h2>
+								<p class="mt-3 text-lg text-white/75">Создай шахматную турнирную сетку для оффлайн-игр и событий.</p>
+								<div class="mt-6 flex flex-wrap gap-3">
+									<span class="rounded-lg bg-sky-500/[0.12] px-4 py-2 text-sm font-semibold text-sky-100">Сетка</span>
+								</div>
+							</div>
+						</div>
+						<svg class="h-10 w-10 text-white/85 transition group-hover:translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
 					</div>
-				</article>
+				</a>
+
+				<a href="https://game.chesson.me/tournaments/new" class="group relative min-h-[190px] overflow-hidden rounded-xl border border-yellow-500/40 bg-yellow-950/20 p-8 text-left transition hover:border-yellow-400/70 hover:bg-yellow-950/30 active:scale-[0.995]">
+					<div class="absolute inset-0 opacity-35 [background:linear-gradient(90deg,rgba(234,179,8,0.34),rgba(8,10,18,0.18)),linear-gradient(135deg,transparent_0%,transparent_62%,rgba(255,255,255,0.06)_62%,rgba(255,255,255,0.06)_100%)]"></div>
+					<div class="relative flex h-full flex-col items-start justify-between gap-6 min-[1180px]:flex-row min-[1180px]:items-center">
+						<div class="flex flex-col gap-5 min-[1180px]:flex-row min-[1180px]:items-start min-[1180px]:gap-7">
+							<div class="flex h-16 w-16 shrink-0 aspect-square items-center justify-center rounded-full border border-yellow-400/35 bg-yellow-500/15 text-yellow-300">
+								<svg class="h-9 w-9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8" /><path d="M12 17v4" /><path d="M7 4h10v4a5 5 0 0 1-10 0V4Z" /><path d="M5 5H3v2a4 4 0 0 0 4 4" /><path d="M19 5h2v2a4 4 0 0 1-4 4" /></svg>
+							</div>
+							<div>
+								<h2 class="text-3xl font-bold leading-tight text-white min-[1180px]:text-4xl">Создать онлайн-турнир</h2>
+								<p class="mt-3 text-lg text-white/75">Проводи шахматный турнир по швейцарской системе с автоматическими парами.</p>
+								<div class="mt-6 flex flex-wrap gap-3">
+									<span class="rounded-lg bg-yellow-500/[0.12] px-4 py-2 text-sm font-semibold text-yellow-100">Швейцарская система</span>
+								</div>
+							</div>
+						</div>
+						<svg class="h-10 w-10 text-white/85 transition group-hover:translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
+					</div>
+				</a>
 			</div>
 		</section>
 
