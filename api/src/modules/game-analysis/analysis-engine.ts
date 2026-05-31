@@ -58,7 +58,7 @@ export class AnalysisEngine {
   ) {}
 
   async start(): Promise<void> {
-    if (this.process) {
+    if (this.isProcessUsable()) {
       return;
     }
 
@@ -66,6 +66,7 @@ export class AnalysisEngine {
       return this.startupPromise;
     }
 
+    this.isStopping = false;
     this.startupPromise = this.bootProcess();
 
     try {
@@ -91,7 +92,7 @@ export class AnalysisEngine {
       };
 
       processRef.once('exit', onExit);
-      this.safeWrite('quit');
+      this.writeIfRunning('quit');
 
       setTimeout(() => {
         if (!processRef.killed) {
@@ -182,9 +183,7 @@ export class AnalysisEngine {
     });
 
     child.on('exit', (code, signal) => {
-      this.process = null;
-      this.stdoutBuffer = '';
-      this.failAllPending(new Error(`Analysis Stockfish exited (code=${code ?? 'null'}, signal=${signal ?? 'null'})`));
+      this.handleExit(code, signal);
     });
 
     await this.sendUciHandshake();
@@ -194,10 +193,11 @@ export class AnalysisEngine {
   }
 
   private async ensureRunning(): Promise<void> {
-    if (this.process) {
+    if (this.isProcessUsable()) {
       return;
     }
 
+    this.process = null;
     await this.start();
   }
 
@@ -213,7 +213,7 @@ export class AnalysisEngine {
 
       const request = this.pendingEvaluation;
       this.pendingEvaluation = null;
-      this.safeWrite('stop');
+      this.writeIfRunning('stop');
       request.reject(new Error('Analysis evaluation timed out'));
     });
 
@@ -377,6 +377,16 @@ export class AnalysisEngine {
     }
   }
 
+  private handleExit(code: number | null, signal: NodeJS.Signals | null): void {
+    this.process = null;
+    this.stdoutBuffer = '';
+    this.failAllPending(new Error(`Analysis Stockfish exited (code=${code ?? 'null'}, signal=${signal ?? 'null'})`));
+
+    if (!this.isStopping) {
+      console.error('[game-analysis] stockfish exited unexpectedly');
+    }
+  }
+
   private failAllPending(error: Error): void {
     this.rejectAndClear(this.pendingUci, error);
     this.pendingUci = null;
@@ -402,12 +412,30 @@ export class AnalysisEngine {
   }
 
   private safeWrite(command: string): void {
-    const processRef = this.process;
-    if (!processRef || processRef.stdin.destroyed) {
+    if (!this.isProcessUsable()) {
+      this.process = null;
       throw new Error('Analysis Stockfish process is not running');
     }
 
-    processRef.stdin.write(`${command}\n`);
+    this.process!.stdin.write(`${command}\n`);
+  }
+
+  private writeIfRunning(command: string): void {
+    if (!this.isProcessUsable()) {
+      this.process = null;
+      return;
+    }
+
+    this.process!.stdin.write(`${command}\n`);
+  }
+
+  private isProcessUsable(): boolean {
+    return Boolean(
+      this.process
+        && !this.process.stdin.destroyed
+        && !this.process.killed
+        && this.process.exitCode === null,
+    );
   }
 
   private createTimeout(durationMs: number, onTimeout: () => void): ReturnType<typeof setTimeout> {
