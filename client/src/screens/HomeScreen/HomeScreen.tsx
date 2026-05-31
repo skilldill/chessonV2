@@ -100,10 +100,10 @@ export const HomeDashboard = () => {
             onClick={openQuickPlay}
           />
           <HomePrimaryCard
-            title="Решение задач"
-            subtitle="Тактика из сыгранных партий"
+            title={t('puzzles.puzzles')}
+            subtitle={t('puzzles.findTheBestMove')}
             icon={<PuzzleIcon />}
-            badges={["Подсказки", "История ходов"]}
+            badges={[t("puzzles.hints")]}
             tone="rose"
             to="/puzzles"
           />
@@ -120,7 +120,7 @@ export const HomeDashboard = () => {
               t("home.botFeature.fen"),
               t("home.feature.aiHints"),
             ]}
-            badges={["30+0", t("room.aiHints")]}
+            badges={["30 min + 0 sec", t("room.aiHints")]}
             onClick={() => setIsBotModalOpen(true)}
             disabled={isCreating}
           />
@@ -134,7 +134,7 @@ export const HomeDashboard = () => {
               t("home.feature.aiHints"),
               t("home.botFeature.fen"),
             ]}
-            badges={[t("room.timeSummary", { timeMinutes, incrementSeconds }), t("room.aiHints")]}
+            badges={[t("room.aiHints")]}
             onClick={() => setIsTimeModalOpen(true)}
             disabled={isCreating}
           />

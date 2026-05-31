@@ -313,6 +313,9 @@ export const resources = {
       "tournament.tieBreakDescription": "Several players in the top 3 have equal points. Ask them if they want a tie-break, or keep the prize places shared.",
       "tournament.createTieBreak": "Create tie-break",
       "tournament.sharePrizePlaces": "Share prize places",
+      "puzzles.puzzles": "Puzzles",
+      "puzzles.findTheBestMove": "Find the Best Move",
+      "puzzles.hints": "Hints",
     },
   },
   ru: {
@@ -624,6 +627,9 @@ export const resources = {
       "tournament.tieBreakDescription": "В топ-3 есть игроки с одинаковыми очками. Можно узнать у участников, хотят ли они тай-брейк, или оставить призовые места разделенными.",
       "tournament.createTieBreak": "Сформировать тай-брейк",
       "tournament.sharePrizePlaces": "Разделить призовые места",
+      "puzzles.puzzles": "Решение задач",
+      "puzzles.findTheBestMove": "Найди лучший ход",
+      "puzzles.hints": "Подсказки",
     },
   },
 } as const;
