@@ -10,7 +10,6 @@ import {
     BotIcon,
     FriendsIcon,
     LightningIcon,
-    MobileModeCard,
     MobilePrimaryFeatureButton,
     PuzzleIcon,
     TrophyIcon,
