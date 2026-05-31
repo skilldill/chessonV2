@@ -1,16 +1,29 @@
-import { Link, useParams } from "react-router-dom";
-import { ChessBoard } from "react-chessboard-ui";
-import type { ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { Link, useHistory, useParams } from "react-router-dom";
+import { ChessBoard, JSChessEngine } from "react-chessboard-ui";
 import { ChessboardWrap } from "../../components/ChessboardWrap/ChessboardWrap";
+import { GameScreenControls } from "../../components/GameScreenControls/GameScreenControls";
+import { HistoryMoves } from "../../components/HistoryMoves/HistoryMoves";
 import { getChessboardConfig } from "../../components/ChessBoardConfigs/ChessBoardConfigs";
+import { API_PREFIX } from "../../constants/api";
 import { useAppearance } from "../../hooks/useAppearance";
 import { usePuzzle } from "../../hooks/usePuzzle";
+import { useScreenHeightForChessboard } from "../../hooks/useScreenHeightForChessboard";
 import type { MoveData } from "../../types";
+import type { PuzzleListItem } from "../../types/puzzle";
+
+import AiIconPNG from "../../assets/ai-icon.png";
+import CrossMarkRedPNG from "../../assets/cross-mark.png";
 
 export function PuzzleScreen() {
   const { puzzleId } = useParams<{ puzzleId: string }>();
+  const history = useHistory();
   const { chessboardTheme } = useAppearance();
+  const gridColsClass = useScreenHeightForChessboard();
   const chessboardConfig = getChessboardConfig(chessboardTheme);
+  const [nextPuzzleId, setNextPuzzleId] = useState<string | null>(null);
+  const [isHistoryMode, setIsHistoryMode] = useState(false);
+  const [selectedHistoryMove, setSelectedHistoryMove] = useState<MoveData>();
   const {
     status,
     error,
@@ -19,17 +32,128 @@ export function PuzzleScreen() {
     playerColor,
     movesHistory,
     externalChangeMove,
+    hintArrow,
     boardResetVersion,
     message,
     isLocked,
     isSolved,
     submitMove,
-    resetPuzzle,
+    requestHint,
     reload,
   } = usePuzzle(puzzleId);
 
   const reverseBoard = playerColor === "black";
   const initialBoardFen = boardFen || puzzle?.initialFEN || "";
+  const mappedHintArrow = useMemo(() => {
+    if (!hintArrow || isHistoryMode) {
+      return [];
+    }
+
+    if (playerColor !== "black") {
+      return [{ start: hintArrow.from, end: hintArrow.to }];
+    }
+
+    return [{ start: reverseCoords(hintArrow.from), end: reverseCoords(hintArrow.to) }];
+  }, [hintArrow, isHistoryMode, playerColor]);
+
+  const selectedHistoryMoveHighlight = useMemo(() => {
+    if (!selectedHistoryMove) {
+      return undefined;
+    }
+
+    if (playerColor === "black") {
+      const reversedMove = JSChessEngine.reverseMove(selectedHistoryMove) as MoveData;
+      return [reversedMove.from, reversedMove.to] as [[number, number], [number, number]];
+    }
+
+    return [selectedHistoryMove.from, selectedHistoryMove.to] as [[number, number], [number, number]];
+  }, [playerColor, selectedHistoryMove]);
+
+  useEffect(() => {
+    let ignore = false;
+
+    async function loadNextPuzzle() {
+      try {
+        const response = await fetch(`${API_PREFIX}/puzzles?status=draft,published&limit=100`);
+        const data = await response.json();
+        if (!response.ok || !data.success) return;
+
+        const puzzles = data.puzzles as PuzzleListItem[];
+        const currentIndex = puzzles.findIndex((item) => item.id === puzzleId);
+        const nextPuzzle = currentIndex >= 0
+          ? puzzles[currentIndex + 1] ?? puzzles.find((item) => item.id !== puzzleId)
+          : puzzles.find((item) => item.id !== puzzleId);
+
+        if (!ignore) {
+          setNextPuzzleId(nextPuzzle?.id ?? null);
+        }
+      } catch {
+        if (!ignore) {
+          setNextPuzzleId(null);
+        }
+      }
+    }
+
+    void loadNextPuzzle();
+
+    return () => {
+      ignore = true;
+    };
+  }, [puzzleId]);
+
+  useEffect(() => {
+    setIsHistoryMode(false);
+    setSelectedHistoryMove(undefined);
+  }, [puzzleId]);
+
+  const handleLeave = useCallback(() => {
+    history.push("/puzzles");
+  }, [history]);
+
+  const handleNextPuzzle = useCallback(() => {
+    if (nextPuzzleId) {
+      history.push(`/puzzles/${nextPuzzleId}`);
+      return;
+    }
+
+    history.push("/puzzles");
+  }, [history, nextPuzzleId]);
+
+  const leaveControl = useMemo(() => ({
+    content: <img src={CrossMarkRedPNG} alt="Уйти" height={18} width={18} />,
+    onClick: handleLeave,
+    tooltip: "Уйти",
+    withoutApprove: true,
+  }), [handleLeave]);
+
+  const hintControl = useMemo(() => ({
+    content: <img src={AiIconPNG} alt="Подсказка" height={18} width={18} />,
+    onClick: requestHint,
+    tooltip: "Подсказка",
+    withoutApprove: true,
+  }), [requestHint]);
+
+  const nextControl = useMemo(() => ({
+    content: <span className="text-xl leading-none text-white">›</span>,
+    onClick: handleNextPuzzle,
+    tooltip: "Следующая",
+    withoutApprove: true,
+  }), [handleNextPuzzle]);
+
+  const activeControls = useMemo(
+    () => [hintControl, nextControl, leaveControl],
+    [hintControl, leaveControl, nextControl],
+  );
+
+  const solvedControls = useMemo(
+    () => [nextControl, leaveControl],
+    [leaveControl, nextControl],
+  );
+
+  const handleSelectHistoryMove = useCallback((historyMoveData: { moveData: MoveData; isLastMove: boolean }) => {
+    setIsHistoryMode(!historyMoveData.isLastMove);
+    setSelectedHistoryMove(historyMoveData.moveData);
+  }, []);
 
   if (status === "loading" || status === "idle") {
     return (
@@ -59,13 +183,33 @@ export function PuzzleScreen() {
   }
 
   return (
-    <PuzzleShell>
-      <div className="mx-auto grid w-full max-w-6xl gap-6 lg:grid-cols-[minmax(320px,640px)_minmax(280px,1fr)]">
-        <section className="min-w-0">
-          <ChessboardWrap
-            reverse={reverseBoard}
-            renderChessboard={(wrapWidth) => (
-              <div className="relative">
+    <div className={`bg-back-primary grid h-screen items-center relative ${gridColsClass}`}>
+      <div />
+
+      <div className="relative">
+        <ChessboardWrap
+          reverse={reverseBoard}
+          renderChessboard={(wrapWidth) => (
+            <div className="relative">
+              {isHistoryMode && (
+                <div className="absolute left-0 top-0 z-10">
+                  <ChessBoard
+                    key="puzzleHistoryBoard"
+                    FEN={selectedHistoryMove?.FEN || initialBoardFen}
+                    onChange={() => undefined}
+                    onEndGame={() => undefined}
+                    reversed={reverseBoard}
+                    viewOnly={true}
+                    moveHighlight={selectedHistoryMoveHighlight}
+                    config={{
+                      squareSize: wrapWidth / 8,
+                      ...chessboardConfig,
+                    }}
+                  />
+                </div>
+              )}
+
+              <div style={{ opacity: isHistoryMode ? 0 : 1 }}>
                 <ChessBoard
                   key={`puzzle-board-${boardResetVersion}`}
                   FEN={initialBoardFen}
@@ -75,100 +219,55 @@ export function PuzzleScreen() {
                   viewOnly={isLocked || isSolved}
                   change={externalChangeMove}
                   playerColor={playerColor}
+                  moveArrows={mappedHintArrow}
                   config={{
                     squareSize: wrapWidth / 8,
                     ...chessboardConfig,
                   }}
                 />
-
-                {message === "incorrect" && (
-                  <div className="absolute inset-x-4 top-4 rounded-md border border-red-300/30 bg-red-500/90 px-4 py-3 text-center text-sm font-semibold text-white shadow-lg">
-                    Неверный ход
-                  </div>
-                )}
-
-                {message === "solved" && (
-                  <div className="absolute inset-x-4 top-4 rounded-md border border-[#9BE3CF]/40 bg-[#15866e]/95 px-4 py-3 text-center text-sm font-semibold text-white shadow-lg">
-                    Задача решена
-                  </div>
-                )}
               </div>
-            )}
-          />
-        </section>
 
-        <aside className="flex min-w-0 flex-col gap-4">
-          <div className="rounded-lg border border-white/10 bg-white/[0.04] p-5">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded bg-[#58C4A7]/15 px-2 py-1 text-xs font-medium text-[#9BE3CF]">
-                {playerColor === "white" ? "Ход белых" : "Ход черных"}
-              </span>
-              <span className="rounded bg-white/10 px-2 py-1 text-xs font-medium text-white/70">
-                {difficultyLabel[puzzle.difficulty]}
-              </span>
-              {puzzle.status === "draft" && (
-                <span className="rounded bg-amber-400/15 px-2 py-1 text-xs font-medium text-amber-100">draft</span>
+              {message === "incorrect" && (
+                <div className="absolute inset-x-4 top-4 rounded-md border border-red-300/30 bg-red-500/90 px-4 py-3 text-center text-sm font-semibold text-white shadow-lg">
+                  Неверный ход
+                </div>
+              )}
+
+              {message === "solved" && (
+                <div className="absolute inset-x-4 top-4 rounded-md border border-[#9BE3CF]/40 bg-[#15866e]/95 px-4 py-3 text-center text-sm font-semibold text-white shadow-lg">
+                  Задача решена
+                </div>
               )}
             </div>
+          )}
+        />
 
-            <h1 className="mt-4 text-2xl font-semibold tracking-normal">Решите задачу</h1>
-            <p className="mt-2 text-sm text-white/60">
-              Сделайте лучший ход. Ответ соперника будет выполнен автоматически.
-            </p>
-
-            <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
-              <div className="rounded-md bg-black/20 p-3">
-                <div className="text-white/45">Ходы игрока</div>
-                <div className="mt-1 font-semibold">{Math.ceil(puzzle.solution.length / 2)}</div>
-              </div>
-              <div className="rounded-md bg-black/20 p-3">
-                <div className="text-white/45">Сделано</div>
-                <div className="mt-1 font-semibold">{Math.ceil(movesHistory.length / 2)}</div>
-              </div>
-            </div>
-
-            <div className="mt-5 flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={resetPuzzle}
-                className="h-10 rounded-md border border-white/12 px-4 text-sm font-medium text-white/80 transition hover:border-white/25 hover:bg-white/8"
-              >
-                Сначала
-              </button>
-              <Link
-                to="/puzzles"
-                className="inline-flex h-10 items-center justify-center rounded-md border border-white/12 px-4 text-sm font-medium text-white/80 transition hover:border-white/25 hover:bg-white/8"
-              >
-                К списку
-              </Link>
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-white/10 bg-white/[0.04] p-5">
-            <h2 className="text-sm font-semibold uppercase tracking-[0.08em] text-white/45">Прогресс</h2>
-            <div className="mt-4 flex flex-col gap-2">
-              {puzzle.solution.map((move, index) => {
-                const isDone = index < movesHistory.length;
-                const isPlayerMove = index % 2 === 0;
-
-                return (
-                  <div
-                    key={`${move.from.join("-")}-${move.to.join("-")}-${index}`}
-                    className={`flex items-center justify-between rounded-md px-3 py-2 text-sm ${
-                      isDone ? "bg-[#58C4A7]/12 text-[#BFF0E3]" : "bg-black/20 text-white/45"
-                    }`}
-                  >
-                    <span>{isPlayerMove ? "Ваш ход" : "Ответ"}</span>
-                    <span>{isDone ? "готово" : isSolved ? "готово" : "ожидание"}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </aside>
+        <div className="absolute bottom-[-100px] left-0 right-0 flex justify-center">
+          <GameScreenControls
+            key={isSolved ? "solved" : "active"}
+            isNotActive={isSolved}
+            keepButtonsOpen={isSolved}
+            controls={activeControls}
+            highlightsControls={activeControls}
+            notActiveControls={solvedControls}
+            offeredDraw={false}
+            onAcceptDraw={() => undefined}
+            onDeclineDraw={() => undefined}
+          />
+        </div>
       </div>
-    </PuzzleShell>
+
+      <div className="flex justify-start p-[28px]">
+        <div className="fixed top-[40px] right-[40px] z-40 scale-on-small-height">
+          <HistoryMoves moves={movesHistory} onSelectMove={handleSelectHistoryMove} />
+        </div>
+      </div>
+    </div>
   );
+}
+
+function reverseCoords(coords: [number, number]): [number, number] {
+  return [7 - coords[0], 7 - coords[1]];
 }
 
 function PuzzleShell({ children }: { children: ReactNode }) {
@@ -183,9 +282,3 @@ function PuzzleShell({ children }: { children: ReactNode }) {
     </main>
   );
 }
-
-const difficultyLabel = {
-  easy: "Легкая",
-  medium: "Средняя",
-  hard: "Сложная",
-};

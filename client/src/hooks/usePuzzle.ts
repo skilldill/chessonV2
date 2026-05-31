@@ -19,6 +19,7 @@ export function usePuzzle(puzzleId: string) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [movesHistory, setMovesHistory] = useState<MoveData[]>([]);
   const [externalChangeMove, setExternalChangeMove] = useState<{ move: MoveData; withTransition: boolean } | undefined>();
+  const [hintArrow, setHintArrow] = useState<{ from: [number, number]; to: [number, number] } | null>(null);
   const [boardResetVersion, setBoardResetVersion] = useState(0);
   const [message, setMessage] = useState<PuzzleMessage>(null);
   const [isLocked, setIsLocked] = useState(false);
@@ -56,6 +57,7 @@ export function usePuzzle(puzzleId: string) {
     setMessage(null);
     setIsLocked(false);
     setExternalChangeMove(undefined);
+    setHintArrow(null);
 
     try {
       const response = await fetch(`${API_PREFIX}/puzzles/${puzzleId}`);
@@ -92,6 +94,8 @@ export function usePuzzle(puzzleId: string) {
       return;
     }
 
+    setHintArrow(null);
+
     const moveData = playerColor === "black"
       ? JSChessEngine.reverseMove(rawMoveData) as MoveData
       : rawMoveData;
@@ -108,6 +112,7 @@ export function usePuzzle(puzzleId: string) {
         setBoardResetVersion((value) => value + 1);
         setMessage(null);
         setIsLocked(false);
+        setHintArrow(null);
       }, WRONG_MOVE_RESET_MS);
       return;
     }
@@ -115,11 +120,12 @@ export function usePuzzle(puzzleId: string) {
     const nextHistory = [...movesHistory, expected];
     const nextIndexAfterUser = currentIndex + 1;
     const systemMove = puzzle.solution[nextIndexAfterUser];
+    const hasNextUserMove = Boolean(puzzle.solution[nextIndexAfterUser + 1]);
 
-    if (!systemMove) {
+    if (!systemMove || !hasNextUserMove) {
       setMovesHistory(nextHistory);
       setStableFen(expected.FEN);
-      setCurrentIndex(nextIndexAfterUser);
+      setCurrentIndex(puzzle.solution.length);
       setMessage("solved");
       setIsLocked(true);
       return;
@@ -166,10 +172,22 @@ export function usePuzzle(puzzleId: string) {
     setCurrentIndex(0);
     setMovesHistory([]);
     setExternalChangeMove(undefined);
+    setHintArrow(null);
     setBoardResetVersion((value) => value + 1);
     setMessage(null);
     setIsLocked(false);
   }, [clearResetTimeout, clearSystemMoveTimeout, puzzle]);
+
+  const requestHint = useCallback(() => {
+    if (!expectedMove || isLocked || isSolved) {
+      return;
+    }
+
+    setHintArrow({
+      from: expectedMove.from,
+      to: expectedMove.to,
+    });
+  }, [expectedMove, isLocked, isSolved]);
 
   return {
     status,
@@ -181,11 +199,13 @@ export function usePuzzle(puzzleId: string) {
     expectedMove,
     movesHistory,
     externalChangeMove,
+    hintArrow,
     boardResetVersion,
     message,
     isLocked,
     isSolved,
     submitMove,
+    requestHint,
     resetPuzzle,
     reload: loadPuzzle,
   };

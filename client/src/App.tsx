@@ -65,7 +65,7 @@ const ALL_IMAGES = [
 function AppRoutes() {
   useRestoreGame();
   const location = useLocation();
-  const hideAppTopBar = location.pathname.startsWith("/game/");
+  const hideAppTopBar = location.pathname.startsWith("/game/") || location.pathname.startsWith("/puzzles/");
 
   return (
     <>
