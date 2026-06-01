@@ -4846,8 +4846,18 @@ app.get('/api/puzzles/random', async ({ query, set }) => {
       }
     }
 
-    if (excludeParam && mongoose.Types.ObjectId.isValid(String(excludeParam))) {
-      filter._id = { $ne: new mongoose.Types.ObjectId(String(excludeParam)) };
+    if (excludeParam) {
+      const excludedIds = String(excludeParam)
+        .split(',')
+        .map((id) => id.trim())
+        .filter((id) => mongoose.Types.ObjectId.isValid(id))
+        .map((id) => new mongoose.Types.ObjectId(id));
+
+      if (excludedIds.length === 1) {
+        filter._id = { $ne: excludedIds[0] };
+      } else if (excludedIds.length > 1) {
+        filter._id = { $nin: excludedIds };
+      }
     }
 
     const [puzzle] = await Puzzle.aggregate([
@@ -4991,6 +5001,57 @@ app.post('/api/puzzles/:id/rate', async ({ params, body, set }) => {
 }, {
   body: t.Object({
     rating: t.Union([t.Literal('like'), t.Literal('dislike')]),
+  })
+});
+
+app.post('/api/puzzles/:id/report-invalid', async ({ params, body, set }) => {
+  try {
+    const { id } = params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      set.status = 400;
+      return {
+        success: false,
+        error: 'Invalid puzzle ID',
+      };
+    }
+
+    const reason = String((body as any)?.reason || 'Client validation failed').trim().slice(0, 500);
+    const puzzle = await Puzzle.findByIdAndUpdate(
+      id,
+      {
+        $set: {
+          isBlocked: true,
+          blockedAt: new Date(),
+          blockedReason: reason || 'Client validation failed',
+        },
+      },
+      { new: true },
+    ).lean();
+
+    if (!puzzle) {
+      set.status = 404;
+      return {
+        success: false,
+        error: 'Puzzle not found',
+      };
+    }
+
+    return {
+      success: true,
+      isBlocked: Boolean(puzzle.isBlocked),
+      blockedReason: puzzle.blockedReason || null,
+    };
+  } catch (error: any) {
+    console.error('Report invalid puzzle error:', error);
+    set.status = 500;
+    return {
+      success: false,
+      error: error.message || 'Failed to report invalid puzzle',
+    };
+  }
+}, {
+  body: t.Object({
+    reason: t.Optional(t.String()),
   })
 });
 

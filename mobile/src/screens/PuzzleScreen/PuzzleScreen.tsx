@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useHistory, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ChessBoard } from "react-chessboard-ui";
@@ -25,6 +25,31 @@ export function PuzzleScreen() {
   const [nextPuzzleId, setNextPuzzleId] = useState<string | null>(null);
   const [ratingStatus, setRatingStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [hasRated, setHasRated] = useState(false);
+  const invalidPuzzleIdsRef = useRef(new Set<string>());
+  const handleInvalidPuzzle = useCallback(async (invalidPuzzleId: string) => {
+    invalidPuzzleIdsRef.current.add(invalidPuzzleId);
+
+    void fetch(`${API_PREFIX}/puzzles/${invalidPuzzleId}/report-invalid`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reason: "Client validation failed before puzzle render" }),
+    }).catch(() => undefined);
+
+    try {
+      const exclude = encodeURIComponent([...invalidPuzzleIdsRef.current].join(","));
+      const response = await fetch(`${API_PREFIX}/puzzles/random?status=draft,published&exclude=${exclude}`);
+      const data = await response.json();
+
+      if (response.ok && data.success && data.puzzle?.id && data.puzzle.id !== puzzleId) {
+        history.replace(`/puzzles/${data.puzzle.id}`);
+        return;
+      }
+    } catch {
+      // Keep the fallback below.
+    }
+
+    history.replace("/puzzles");
+  }, [history, puzzleId]);
   const {
     status,
     error,
@@ -41,7 +66,7 @@ export function PuzzleScreen() {
     submitMove,
     requestHint,
     reload,
-  } = usePuzzle(puzzleId);
+  } = usePuzzle(puzzleId, { onInvalidPuzzle: handleInvalidPuzzle });
 
   const reverseBoard = playerColor === "black";
   const initialBoardFen = boardFen || puzzle?.initialFEN || "";
@@ -91,6 +116,7 @@ export function PuzzleScreen() {
   useEffect(() => {
     setRatingStatus("idle");
     setHasRated(false);
+    invalidPuzzleIdsRef.current.delete(puzzleId);
   }, [puzzleId]);
 
   const handleLeave = useCallback(() => {

@@ -4,6 +4,7 @@ import { JSChessEngine } from "react-chessboard-ui";
 import { API_PREFIX } from "../constants/api";
 import type { ChessColor, MoveData } from "../types";
 import type { Puzzle } from "../types/puzzle";
+import { isPuzzlePlayable } from "../utils/puzzleValidation";
 
 type PuzzleStatus = "idle" | "loading" | "ready" | "error";
 type PuzzleMessage = "incorrect" | "solved" | null;
@@ -11,7 +12,8 @@ type PuzzleMessage = "incorrect" | "solved" | null;
 const WRONG_MOVE_RESET_MS = 1500;
 const SYSTEM_MOVE_DELAY_MS = 1000;
 
-export function usePuzzle(puzzleId: string) {
+export function usePuzzle(puzzleId: string, options: { onInvalidPuzzle?: (puzzleId: string) => void } = {}) {
+  const { onInvalidPuzzle } = options;
   const { t } = useTranslation();
   const [status, setStatus] = useState<PuzzleStatus>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -70,6 +72,11 @@ export function usePuzzle(puzzleId: string) {
       }
 
       const loadedPuzzle = data.puzzle as Puzzle;
+      if (!isPuzzlePlayable(loadedPuzzle)) {
+        onInvalidPuzzle?.(loadedPuzzle.id);
+        return;
+      }
+
       setPuzzle(loadedPuzzle);
       setBoardFen(loadedPuzzle.initialFEN);
       setStableFen(loadedPuzzle.initialFEN);
@@ -81,7 +88,7 @@ export function usePuzzle(puzzleId: string) {
       setStatus("error");
       setError(loadError instanceof Error ? loadError.message : t("puzzles.loadError"));
     }
-  }, [clearResetTimeout, clearSystemMoveTimeout, puzzleId, t]);
+  }, [clearResetTimeout, clearSystemMoveTimeout, onInvalidPuzzle, puzzleId, t]);
 
   useEffect(() => {
     void loadPuzzle();

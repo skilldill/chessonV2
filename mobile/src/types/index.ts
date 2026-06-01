@@ -10,6 +10,7 @@ export interface MoveData {
   FEN: string;
   from: [number, number];
   to: [number, number];
+  type?: "transform";
   figure: {
     color: ChessColor;
     type: ChessPieceType;

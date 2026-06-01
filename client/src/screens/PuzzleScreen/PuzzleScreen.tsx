@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useHistory, useParams } from "react-router-dom";
 import { ChessBoard, JSChessEngine } from "react-chessboard-ui";
 import { ChessboardWrap } from "../../components/ChessboardWrap/ChessboardWrap";
@@ -28,6 +28,31 @@ export function PuzzleScreen() {
   const [hasRated, setHasRated] = useState(false);
   const [isHistoryMode, setIsHistoryMode] = useState(false);
   const [selectedHistoryMove, setSelectedHistoryMove] = useState<MoveData>();
+  const invalidPuzzleIdsRef = useRef(new Set<string>());
+  const handleInvalidPuzzle = useCallback(async (invalidPuzzleId: string) => {
+    invalidPuzzleIdsRef.current.add(invalidPuzzleId);
+
+    void fetch(`${API_PREFIX}/puzzles/${invalidPuzzleId}/report-invalid`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reason: "Client validation failed before puzzle render" }),
+    }).catch(() => undefined);
+
+    try {
+      const exclude = encodeURIComponent([...invalidPuzzleIdsRef.current].join(","));
+      const response = await fetch(`${API_PREFIX}/puzzles/random?status=draft,published&exclude=${exclude}`);
+      const data = await response.json();
+
+      if (response.ok && data.success && data.puzzle?.id && data.puzzle.id !== puzzleId) {
+        history.replace(`/puzzles/${data.puzzle.id}`);
+        return;
+      }
+    } catch {
+      // Keep the fallback below.
+    }
+
+    history.replace("/puzzles");
+  }, [history, puzzleId]);
   const {
     status,
     error,
@@ -44,7 +69,7 @@ export function PuzzleScreen() {
     submitMove,
     requestHint,
     reload,
-  } = usePuzzle(puzzleId);
+  } = usePuzzle(puzzleId, { onInvalidPuzzle: handleInvalidPuzzle });
 
   const reverseBoard = playerColor === "black";
   const initialBoardFen = boardFen || puzzle?.initialFEN || "";
@@ -110,6 +135,7 @@ export function PuzzleScreen() {
     setSelectedHistoryMove(undefined);
     setRatingStatus("idle");
     setHasRated(false);
+    invalidPuzzleIdsRef.current.delete(puzzleId);
   }, [puzzleId]);
 
   const handleLeave = useCallback(() => {

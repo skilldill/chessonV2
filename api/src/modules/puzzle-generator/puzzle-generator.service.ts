@@ -4,6 +4,7 @@ import { PuzzleGenerationJob } from '../../../models/PuzzleGenerationJob';
 import { ChessBotService } from '../chess-bot/chess-bot.service';
 import { AnalysisEngine } from '../game-analysis/analysis-engine';
 import type { AnalysisMoveData, EngineTopMove } from '../game-analysis/types';
+import { isPuzzleSolutionPlayable } from './puzzle-validator';
 
 type PuzzleGeneratorOptions = {
   limit: number;
@@ -253,6 +254,10 @@ export class PuzzleGeneratorService {
 
       const solution = await this.buildSolutionLine(candidate.fen, input.options);
       if (solution.length < 3) {
+        continue;
+      }
+
+      if (!isPuzzleSolutionPlayable(candidate.fen, solution)) {
         continue;
       }
 
