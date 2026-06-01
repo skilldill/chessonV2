@@ -36,6 +36,25 @@ services:
     networks:
       - app-network
 
+  # ONLY LOCAL USING
+  # fen-puzzle-generator:
+  #   build: ./api
+  #   container_name: chesson-fen-puzzle-generator
+  #   command: bun run fen-puzzle-generator
+  #   restart: "no"
+  #   environment:
+  #     - STOCKFISH_PATH=/usr/games/stockfish
+  #     - FEN_PUZZLE_INPUT_FILE=${FEN_PUZZLE_INPUT_FILE:-/app/fen-puzzles/input/fens.txt}
+  #     - FEN_PUZZLE_OUTPUT_FILE=${FEN_PUZZLE_OUTPUT_FILE:-/app/fen-puzzles/output/puzzles.json}
+  #     - FEN_PUZZLE_LIMIT=${FEN_PUZZLE_LIMIT:-50}
+  #     - FEN_PUZZLE_MOVE_TIME_MS=${FEN_PUZZLE_MOVE_TIME_MS:-150}
+  #     - FEN_PUZZLE_MULTIPV=${FEN_PUZZLE_MULTIPV:-3}
+  #     - FEN_PUZZLE_STATUS=${FEN_PUZZLE_STATUS:-draft}
+  #   volumes:
+  #     - ./fen-puzzles:/app/fen-puzzles
+  #   networks:
+  #     - app-network
+
   client:
     build: ./client
     container_name: chesson-client

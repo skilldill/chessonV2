@@ -6,7 +6,7 @@ import { AnalysisEngine } from '../game-analysis/analysis-engine';
 import type { AnalysisMoveData, EngineTopMove } from '../game-analysis/types';
 import { isPuzzleSolutionPlayable } from './puzzle-validator';
 
-type PuzzleGeneratorOptions = {
+export type PuzzleGeneratorOptions = {
   limit: number;
   moveTimeMs: number;
   multiPv: number;
@@ -36,7 +36,7 @@ type CandidatePosition = {
   topMoves: EngineTopMove[];
 };
 
-type BuiltPuzzle = {
+export type BuiltPuzzle = {
   initialFEN: string;
   sideToMove: PuzzleSide;
   sourcePly: number;
@@ -212,6 +212,40 @@ export class PuzzleGeneratorService {
     return stats;
   }
 
+  async generateFromFen(input: {
+    fen: string;
+    sourcePly?: number;
+    options?: Partial<PuzzleGeneratorOptions>;
+  }): Promise<BuiltPuzzle | null> {
+    const options = {
+      ...this.getOptions(),
+      ...input.options,
+    };
+
+    const topMoves = await this.engine.evaluateFenTopMoves({
+      fen: input.fen,
+      moveTimeMs: options.moveTimeMs,
+      multiPv: options.multiPv,
+    });
+
+    if (!isStrongCandidate(input.fen, topMoves, options)) {
+      return null;
+    }
+
+    const solution = await this.buildSolutionLine(input.fen, options);
+    if (solution.length < 3 || !isPuzzleSolutionPlayable(input.fen, solution)) {
+      return null;
+    }
+
+    return {
+      initialFEN: input.fen,
+      sideToMove: getSideToMove(input.fen),
+      sourcePly: input.sourcePly ?? 0,
+      solution,
+      topMoves,
+    };
+  }
+
   private async generateFromGame(input: {
     gameId: string;
     initialFEN: string;
@@ -366,7 +400,7 @@ function getCandidateScore(candidate: CandidatePosition): number {
   return mateBonus + bestAdvantage + Math.max(0, bestAdvantage - secondAdvantage);
 }
 
-function classifyDifficulty(solutionLength: number, bestMove: EngineTopMove, secondMove: EngineTopMove | undefined, side: PuzzleSide) {
+export function classifyDifficulty(solutionLength: number, bestMove: EngineTopMove, secondMove: EngineTopMove | undefined, side: PuzzleSide) {
   const bestAdvantage = getScoreForSide(bestMove.scoreCp, side);
   const secondAdvantage = secondMove ? getScoreForSide(secondMove.scoreCp, side) : bestAdvantage;
   const gap = bestAdvantage - secondAdvantage;
@@ -380,7 +414,7 @@ function classifyDifficulty(solutionLength: number, bestMove: EngineTopMove, sec
   return 'medium';
 }
 
-function inferThemes(bestMove: EngineTopMove): string[] {
+export function inferThemes(bestMove: EngineTopMove): string[] {
   if (bestMove.mateIn !== undefined) {
     return ['mate'];
   }

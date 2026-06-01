@@ -231,6 +231,52 @@ h1 {
   min-width: 260px;
 }
 
+.import-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 12px 0;
+  border: 1px solid rgba(230, 237, 247, 0.12);
+  border-radius: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.import-panel h4 {
+  margin: 0 0 4px;
+  font-size: 16px;
+}
+
+.import-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.import-controls input[type='file'] {
+  max-width: 260px;
+  color: #c9d7e6;
+  font-size: 13px;
+}
+
+.import-result {
+  width: 100%;
+  margin-top: 10px;
+  color: #c8f7d5;
+  font-size: 13px;
+}
+
+.import-errors {
+  margin-top: 8px;
+  color: #ffd2a6;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+}
+
 .table-wrap {
   overflow-x: auto;
 }

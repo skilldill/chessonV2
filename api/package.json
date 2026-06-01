@@ -7,6 +7,7 @@
     "dev": "WITHOUT_MONGO=true bun --watch run index.ts",
     "dev:db": "bun --watch run index.ts",
     "puzzle-generator": "bun run puzzle-generator.ts",
+    "fen-puzzle-generator": "bun run fen-puzzle-generator.ts",
     "test": "bun test"
   },
   "devDependencies": {

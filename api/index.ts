@@ -15,13 +15,14 @@ import {
 import { User } from './models/User';
 import { Game } from './models/Game';
 import { GameAnalysis } from './models/GameAnalysis';
-import { Puzzle } from './models/Puzzle';
+import { Puzzle, type IPuzzleMoveData, type PuzzleStatus } from './models/Puzzle';
 import { Tournament } from './models/Tournament';
 import { hashPassword, comparePassword } from './utils/password';
 import { createToken, verifyToken } from './utils/jwt';
 import { sendVerificationEmail, sendPasswordResetEmail, sendTestEmail } from './utils/email';
 import { chessBot, type BotDifficulty } from './src/modules/chess-bot';
 import { gameAnalysisService } from './src/modules/game-analysis/game-analysis.service';
+import { isPuzzleSolutionPlayable } from './src/modules/puzzle-generator/puzzle-validator';
 import mongoose from 'mongoose';
 import crypto from 'crypto';
 
@@ -57,6 +58,15 @@ function generateShortId(): string {
 function assignRandomColor(): "white" | "black" {
   const colors: ("white" | "black")[] = ["white", "black"];
   return colors[Math.floor(Math.random() * colors.length)];
+}
+
+function normalizePuzzleStatus(value: unknown): PuzzleStatus | null {
+  return value === 'draft' || value === 'published' || value === 'rejected' ? value : null;
+}
+
+function createImportedPuzzleSourceId(initialFEN: unknown, index: number): string {
+  const source = typeof initialFEN === 'string' && initialFEN.trim() ? initialFEN.trim() : `puzzle-${index}`;
+  return `import:${crypto.createHash('sha1').update(source).digest('hex').slice(0, 20)}`;
 }
 
 type MoveData = {
@@ -3542,6 +3552,105 @@ app.get('/api/admin/puzzles', async ({ headers, query, set }) => {
       success: false,
       error: error.message || 'Failed to get admin puzzles'
     };
+  }
+});
+
+app.post('/api/admin/puzzles/import', async ({ headers, body, set }) => {
+  if (!hasAdminAccess(headers)) {
+    set.status = 401;
+    return {
+      success: false,
+      error: 'Unauthorized'
+    };
+  }
+
+  try {
+    const payload = body as any;
+    const rawPuzzles = Array.isArray(payload?.puzzles) ? payload.puzzles : null;
+    const statusOverride = normalizePuzzleStatus(payload?.status);
+
+    if (!rawPuzzles) {
+      set.status = 400;
+      return { success: false, error: 'Body must contain puzzles array' };
+    }
+
+    const errors: Array<{ index: number; sourceGameId?: string; error: string }> = [];
+    let importedCount = 0;
+    let duplicateCount = 0;
+    let invalidCount = 0;
+
+    for (const [index, rawPuzzle] of rawPuzzles.entries()) {
+      const sourceGameId = typeof rawPuzzle?.sourceGameId === 'string' && rawPuzzle.sourceGameId.trim()
+        ? rawPuzzle.sourceGameId.trim()
+        : createImportedPuzzleSourceId(rawPuzzle?.initialFEN, index);
+      const sourcePly = Number.isInteger(rawPuzzle?.sourcePly) ? rawPuzzle.sourcePly : index;
+      const initialFEN = typeof rawPuzzle?.initialFEN === 'string' ? rawPuzzle.initialFEN.trim() : '';
+      const solution = Array.isArray(rawPuzzle?.solution) ? rawPuzzle.solution as IPuzzleMoveData[] : [];
+
+      if (!initialFEN || solution.length === 0) {
+        invalidCount += 1;
+        errors.push({ index, sourceGameId, error: 'Missing initialFEN or solution' });
+        continue;
+      }
+
+      if (!isPuzzleSolutionPlayable(initialFEN, solution)) {
+        invalidCount += 1;
+        errors.push({ index, sourceGameId, error: 'Puzzle solution is not playable from initialFEN' });
+        continue;
+      }
+
+      const sideToMove = rawPuzzle?.sideToMove === 'black' ? 'black' : 'white';
+      const difficulty = ['easy', 'medium', 'hard'].includes(rawPuzzle?.difficulty) ? rawPuzzle.difficulty : 'medium';
+      const status = statusOverride || normalizePuzzleStatus(rawPuzzle?.status) || 'draft';
+      const engineMeta = rawPuzzle?.engineMeta || {};
+
+      const result = await Puzzle.updateOne(
+        { sourceGameId, sourcePly },
+        {
+          $setOnInsert: {
+            sourceGameId,
+            sourcePly,
+            initialFEN,
+            sideToMove,
+            solution,
+            difficulty,
+            themes: Array.isArray(rawPuzzle?.themes) ? rawPuzzle.themes.filter((theme: unknown) => typeof theme === 'string') : ['tactic'],
+            status,
+            likesCount: 0,
+            dislikesCount: 0,
+            isBlocked: false,
+            engineMeta: {
+              name: typeof engineMeta.name === 'string' ? engineMeta.name : 'stockfish',
+              depth: typeof engineMeta.depth === 'number' ? engineMeta.depth : undefined,
+              moveTimeMs: typeof engineMeta.moveTimeMs === 'number' ? engineMeta.moveTimeMs : 150,
+              multiPv: typeof engineMeta.multiPv === 'number' ? engineMeta.multiPv : 3,
+              bestMoveScoreCp: typeof engineMeta.bestMoveScoreCp === 'number' ? engineMeta.bestMoveScoreCp : 0,
+              secondMoveScoreCp: typeof engineMeta.secondMoveScoreCp === 'number' ? engineMeta.secondMoveScoreCp : undefined,
+            },
+          },
+        },
+        { upsert: true, runValidators: true },
+      );
+
+      if (result.upsertedCount > 0) {
+        importedCount += 1;
+      } else {
+        duplicateCount += 1;
+      }
+    }
+
+    return {
+      success: true,
+      importedCount,
+      duplicateCount,
+      invalidCount,
+      totalCount: rawPuzzles.length,
+      errors: errors.slice(0, 20),
+    };
+  } catch (error: any) {
+    console.error('Admin puzzle import error:', error);
+    set.status = 500;
+    return { success: false, error: error.message || 'Failed to import puzzles' };
   }
 });
 

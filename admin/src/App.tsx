@@ -68,6 +68,19 @@ type ApiFailure = {
   error: string;
 };
 
+type PuzzleImportResult = {
+  success: true;
+  importedCount: number;
+  duplicateCount: number;
+  invalidCount: number;
+  totalCount: number;
+  errors: Array<{
+    index: number;
+    sourceGameId?: string;
+    error: string;
+  }>;
+};
+
 // const API_BASE_URL = '/api'; // локально
 const API_BASE_URL = '/api/api'; // прод
 const GAME_BASE_URL = import.meta.env.VITE_ADMIN_GAME_BASE_URL || 'https://game.chesson.me';
@@ -123,6 +136,9 @@ function App() {
   const [puzzlesPage, setPuzzlesPage] = useState(1);
   const [puzzleStatusFilter, setPuzzleStatusFilter] = useState<'all' | 'draft' | 'published' | 'rejected'>('all');
   const [puzzleBlockedFilter, setPuzzleBlockedFilter] = useState<'all' | 'active' | 'blocked'>('all');
+  const [puzzleImportFile, setPuzzleImportFile] = useState<File | null>(null);
+  const [puzzleImportResult, setPuzzleImportResult] = useState<PuzzleImportResult | null>(null);
+  const [importingPuzzles, setImportingPuzzles] = useState(false);
 
   const loadStats = useCallback(async () => {
     setLoadingStats(true);
@@ -342,6 +358,43 @@ function App() {
     [executePuzzleAction]
   );
 
+  const handleImportPuzzles = useCallback(async () => {
+    if (!puzzleImportFile) {
+      setError('Choose generated puzzles JSON file first');
+      return;
+    }
+
+    setImportingPuzzles(true);
+    setPuzzleImportResult(null);
+    setError(null);
+
+    try {
+      const text = await puzzleImportFile.text();
+      const parsed = JSON.parse(text) as unknown;
+      const puzzlesToImport = Array.isArray(parsed)
+        ? parsed
+        : parsed && typeof parsed === 'object' && Array.isArray((parsed as { puzzles?: unknown }).puzzles)
+          ? (parsed as { puzzles: unknown[] }).puzzles
+          : null;
+
+      if (!puzzlesToImport) {
+        throw new Error('JSON must be an array of puzzles or an object with puzzles array');
+      }
+
+      const result = await adminRequest<PuzzleImportResult>('/admin/puzzles/import', {
+        method: 'POST',
+        body: JSON.stringify({ puzzles: puzzlesToImport }),
+      });
+
+      setPuzzleImportResult(result);
+      await loadPuzzles();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown import error');
+    } finally {
+      setImportingPuzzles(false);
+    }
+  }, [loadPuzzles, puzzleImportFile]);
+
   const generatedAt = useMemo(
     () => new Date().toLocaleString(),
     [overview, usersPagination, puzzlesPagination, users, analyses, puzzles, loadingStats, loadingUsers, loadingAnalyses, loadingPuzzles]
@@ -420,6 +473,40 @@ function App() {
               <h3>Game analyses</h3>
               <p className="hint">Latest unique analyses with direct links</p>
             </div>
+          </div>
+
+          <div className="import-panel">
+            <div>
+              <h4>Import generated puzzles</h4>
+              <p className="hint">Upload JSON produced by local FEN generator. Existing sourceGameId + sourcePly pairs are skipped.</p>
+            </div>
+            <div className="import-controls">
+              <input
+                type="file"
+                accept="application/json,.json"
+                onChange={(event) => {
+                  setPuzzleImportFile(event.target.files?.[0] || null);
+                  setPuzzleImportResult(null);
+                }}
+              />
+              <button className="btn success" onClick={() => void handleImportPuzzles()} disabled={!puzzleImportFile || importingPuzzles}>
+                {importingPuzzles ? 'Importing...' : 'Import JSON'}
+              </button>
+            </div>
+            {puzzleImportResult && (
+              <div className="import-result">
+                Imported {puzzleImportResult.importedCount} / {puzzleImportResult.totalCount}. Duplicates: {puzzleImportResult.duplicateCount}. Invalid: {puzzleImportResult.invalidCount}.
+                {puzzleImportResult.errors.length > 0 && (
+                  <div className="import-errors">
+                    {puzzleImportResult.errors.map((item) => (
+                      <div key={`${item.index}-${item.sourceGameId || 'unknown'}`}>
+                        #{item.index + 1} {item.sourceGameId ? `(${item.sourceGameId}) ` : ''}{item.error}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="table-wrap">
