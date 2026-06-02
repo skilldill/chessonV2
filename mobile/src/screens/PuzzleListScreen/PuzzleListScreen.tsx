@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useHistory } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { API_PREFIX } from "../../constants/api";
+import { getPuzzleExcludeParam } from "../../utils/recentPuzzles";
 
 export function PuzzleListScreen() {
   const { t } = useTranslation();
@@ -15,7 +16,8 @@ export function PuzzleListScreen() {
       setError(null);
 
       try {
-        const response = await fetch(`${API_PREFIX}/puzzles/random?status=draft,published`);
+        const exclude = getPuzzleExcludeParam();
+        const response = await fetch(`${API_PREFIX}/puzzles/random?status=draft,published&exclude=${exclude}`);
         const data = await response.json();
 
         if (!response.ok || !data.success || !data.puzzle?.id) {

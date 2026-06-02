@@ -9,6 +9,7 @@ import { API_PREFIX } from "../../constants/api";
 import { useAppearance } from "../../hooks/useAppearance";
 import { usePuzzle } from "../../hooks/usePuzzle";
 import { useScreenHeightForChessboard } from "../../hooks/useScreenHeightForChessboard";
+import { getPuzzleExcludeParam, getRecentPuzzleIds, rememberRecentPuzzleId } from "../../utils/recentPuzzles";
 import type { MoveData } from "../../types";
 import type { PuzzleListItem } from "../../types/puzzle";
 
@@ -39,7 +40,7 @@ export function PuzzleScreen() {
     }).catch(() => undefined);
 
     try {
-      const exclude = encodeURIComponent([...invalidPuzzleIdsRef.current].join(","));
+      const exclude = getPuzzleExcludeParam([...invalidPuzzleIdsRef.current]);
       const response = await fetch(`${API_PREFIX}/puzzles/random?status=draft,published&exclude=${exclude}`);
       const data = await response.json();
 
@@ -107,7 +108,8 @@ export function PuzzleScreen() {
         const data = await response.json();
         if (!response.ok || !data.success) return;
 
-        const puzzles = data.puzzles as PuzzleListItem[];
+        const recentPuzzleIds = new Set(getRecentPuzzleIds());
+        const puzzles = (data.puzzles as PuzzleListItem[]).filter((item) => item.id !== puzzleId && !recentPuzzleIds.has(item.id));
         const currentIndex = puzzles.findIndex((item) => item.id === puzzleId);
         const nextPuzzle = currentIndex >= 0
           ? puzzles[currentIndex + 1] ?? puzzles.find((item) => item.id !== puzzleId)
@@ -136,6 +138,7 @@ export function PuzzleScreen() {
     setRatingStatus("idle");
     setHasRated(false);
     invalidPuzzleIdsRef.current.delete(puzzleId);
+    rememberRecentPuzzleId(puzzleId);
   }, [puzzleId]);
 
   const handleLeave = useCallback(() => {
@@ -145,7 +148,8 @@ export function PuzzleScreen() {
   const handleNextPuzzle = useCallback(() => {
     async function openRandomPuzzle() {
       try {
-        const response = await fetch(`${API_PREFIX}/puzzles/random?status=draft,published&exclude=${encodeURIComponent(puzzleId)}`);
+        const exclude = getPuzzleExcludeParam([puzzleId]);
+        const response = await fetch(`${API_PREFIX}/puzzles/random?status=draft,published&exclude=${exclude}`);
         const data = await response.json();
 
         if (response.ok && data.success && data.puzzle?.id) {

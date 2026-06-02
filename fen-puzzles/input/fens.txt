@@ -1,6 +1,21 @@
 # Paste FEN positions here, one per line.
 6k1/5ppp/8/8/8/8/5PPP/6KQ w - - 0 1
 6k1/5ppp/8/8/8/8/5PPP/R5K1 w - - 0 1
-6k1/5ppp/8/8/8/8/5PPP/5BK1 w - - 0 1
-6k1/5ppp/8/8/8/5N2/5PPP/6K1 w - - 0 1
 7k/6pp/8/8/8/6K1/6PP/7Q w - - 0 1
+r5k1/5ppp/8/8/8/8/5PPP/6KQ w - - 0 1
+6k1/6pp/8/8/8/8/5PPP/5RK1 w - - 0 1
+5rk1/5ppp/8/8/8/8/5PPP/6KQ w - - 0 1
+7k/5Kpp/8/8/8/8/8/7Q w - - 0 1
+6k1/6pp/8/8/8/8/5PPP/4R1K1 w - - 0 1
+8/6pk/6pp/8/8/8/5PPP/6KQ w - - 0 1
+6k1/5ppp/8/8/8/8/5PPP/3R2K1 w - - 0 1
+6k1/5ppp/8/8/8/8/5PPP/5QK1 w - - 0 1
+7k/6pp/8/8/8/8/5PPP/6KR w - - 0 1
+6k1/5ppp/8/8/8/5N2/5PPP/6K1 w - - 0 1
+7k/6pp/8/8/8/6N1/6PP/6K1 w - - 0 1
+6k1/5ppp/8/8/8/8/5PPP/5BK1 w - - 0 1
+
+6k1/5ppp/8/8/8/8/5PPP/5QK1 w - - 0 1
+7k/6pp/8/8/8/8/5PPP/5RK1 w - - 0 1
+6k1/5ppp/8/8/8/8/5PPP/4Q1K1 w - - 0 1
+6k1/5ppp/8/8/8/8/5PPP/3R2K1 w - - 0 1
