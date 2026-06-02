@@ -475,40 +475,6 @@ function App() {
             </div>
           </div>
 
-          <div className="import-panel">
-            <div>
-              <h4>Import generated puzzles</h4>
-              <p className="hint">Upload JSON produced by local FEN generator. Existing sourceGameId + sourcePly pairs are skipped.</p>
-            </div>
-            <div className="import-controls">
-              <input
-                type="file"
-                accept="application/json,.json"
-                onChange={(event) => {
-                  setPuzzleImportFile(event.target.files?.[0] || null);
-                  setPuzzleImportResult(null);
-                }}
-              />
-              <button className="btn success" onClick={() => void handleImportPuzzles()} disabled={!puzzleImportFile || importingPuzzles}>
-                {importingPuzzles ? 'Importing...' : 'Import JSON'}
-              </button>
-            </div>
-            {puzzleImportResult && (
-              <div className="import-result">
-                Imported {puzzleImportResult.importedCount} / {puzzleImportResult.totalCount}. Duplicates: {puzzleImportResult.duplicateCount}. Invalid: {puzzleImportResult.invalidCount}.
-                {puzzleImportResult.errors.length > 0 && (
-                  <div className="import-errors">
-                    {puzzleImportResult.errors.map((item) => (
-                      <div key={`${item.index}-${item.sourceGameId || 'unknown'}`}>
-                        #{item.index + 1} {item.sourceGameId ? `(${item.sourceGameId}) ` : ''}{item.error}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
           <div className="table-wrap">
             <table>
               <thead>
@@ -583,6 +549,42 @@ function App() {
                 Refresh puzzles
               </button>
             </div>
+          </div>
+
+          <div className="import-panel">
+            <div>
+              <h4>Import generated puzzles</h4>
+              <p className="hint">Upload JSON produced by local FEN generator. Existing sourceGameId + sourcePly pairs are skipped.</p>
+              {puzzleImportFile && <p className="selected-file">Selected: {puzzleImportFile.name}</p>}
+            </div>
+            <div className="import-controls">
+              <input
+                type="file"
+                accept="application/json,.json"
+                onChange={(event) => {
+                  setPuzzleImportFile(event.target.files?.[0] || null);
+                  setPuzzleImportResult(null);
+                  setError(null);
+                }}
+              />
+              <button className="btn success" onClick={() => void handleImportPuzzles()} disabled={!puzzleImportFile || importingPuzzles}>
+                {importingPuzzles ? 'Importing...' : 'Import JSON'}
+              </button>
+            </div>
+            {puzzleImportResult && (
+              <div className="import-result">
+                Imported {puzzleImportResult.importedCount} / {puzzleImportResult.totalCount}. Duplicates: {puzzleImportResult.duplicateCount}. Invalid: {puzzleImportResult.invalidCount}.
+                {puzzleImportResult.errors.length > 0 && (
+                  <div className="import-errors">
+                    {puzzleImportResult.errors.map((item) => (
+                      <div key={`${item.index}-${item.sourceGameId || 'unknown'}`}>
+                        #{item.index + 1} {item.sourceGameId ? `(${item.sourceGameId}) ` : ''}{item.error}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="table-wrap">

@@ -16,9 +16,11 @@ export type PuzzleGeneratorOptions = {
   minContinuationGapCp: number;
   minFirstMoveAdvantageCp: number;
   maxSolutionPlies: number;
+  minSolutionPlies: number;
   maxPuzzlesPerGame: number;
   staleRunningJobMs: number;
   status: PuzzleStatus;
+  acceptAnyBestMove: boolean;
 };
 
 type PuzzleGeneratorStats = {
@@ -54,9 +56,11 @@ const DEFAULT_OPTIONS: PuzzleGeneratorOptions = {
   minContinuationGapCp: 60,
   minFirstMoveAdvantageCp: 120,
   maxSolutionPlies: 5,
+  minSolutionPlies: 3,
   maxPuzzlesPerGame: 1,
   staleRunningJobMs: 30 * 60 * 1000,
   status: 'draft',
+  acceptAnyBestMove: false,
 };
 
 export class PuzzleGeneratorService {
@@ -228,12 +232,17 @@ export class PuzzleGeneratorService {
       multiPv: options.multiPv,
     });
 
-    if (!isStrongCandidate(input.fen, topMoves, options)) {
+    const bestMove = topMoves[0];
+    if (!bestMove?.uci || bestMove.uci === '(none)') {
+      return null;
+    }
+
+    if (!options.acceptAnyBestMove && !isStrongCandidate(input.fen, topMoves, options)) {
       return null;
     }
 
     const solution = await this.buildSolutionLine(input.fen, options);
-    if (solution.length < 3 || !isPuzzleSolutionPlayable(input.fen, solution)) {
+    if (solution.length < options.minSolutionPlies || !isPuzzleSolutionPlayable(input.fen, solution)) {
       return null;
     }
 
@@ -287,7 +296,7 @@ export class PuzzleGeneratorService {
       }
 
       const solution = await this.buildSolutionLine(candidate.fen, input.options);
-      if (solution.length < 3) {
+      if (solution.length < input.options.minSolutionPlies) {
         continue;
       }
 
@@ -323,7 +332,11 @@ export class PuzzleGeneratorService {
         break;
       }
 
-      if (ply % 2 === 0 && !hasEnoughGap(currentFen, topMoves, ply === 0 ? options.minFirstMoveGapCp : options.minContinuationGapCp)) {
+      if (
+        !options.acceptAnyBestMove
+        && ply % 2 === 0
+        && !hasEnoughGap(currentFen, topMoves, ply === 0 ? options.minFirstMoveGapCp : options.minContinuationGapCp)
+      ) {
         break;
       }
 
@@ -441,9 +454,11 @@ export function getPuzzleGeneratorOptionsFromEnv(): PuzzleGeneratorOptions {
     minContinuationGapCp: readIntEnv('PUZZLE_GENERATOR_MIN_CONTINUATION_GAP_CP', DEFAULT_OPTIONS.minContinuationGapCp),
     minFirstMoveAdvantageCp: readIntEnv('PUZZLE_GENERATOR_MIN_ADVANTAGE_CP', DEFAULT_OPTIONS.minFirstMoveAdvantageCp),
     maxSolutionPlies: readIntEnv('PUZZLE_GENERATOR_MAX_SOLUTION_PLIES', DEFAULT_OPTIONS.maxSolutionPlies),
+    minSolutionPlies: readIntEnv('PUZZLE_GENERATOR_MIN_SOLUTION_PLIES', DEFAULT_OPTIONS.minSolutionPlies),
     maxPuzzlesPerGame: readIntEnv('PUZZLE_GENERATOR_MAX_PUZZLES_PER_GAME', DEFAULT_OPTIONS.maxPuzzlesPerGame),
     staleRunningJobMs: readIntEnv('PUZZLE_GENERATOR_STALE_RUNNING_JOB_MS', DEFAULT_OPTIONS.staleRunningJobMs),
     status: process.env.PUZZLE_GENERATOR_STATUS === 'published' ? 'published' : 'draft',
+    acceptAnyBestMove: process.env.PUZZLE_GENERATOR_ACCEPT_ANY_BEST_MOVE === 'true',
   };
 }
 

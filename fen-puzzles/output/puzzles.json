@@ -1,0 +1,448 @@
+[
+  {
+    "sourceGameId": "fen:b03c798dac266aa187ea",
+    "sourcePly": 0,
+    "initialFEN": "6k1/5ppp/8/8/8/8/5PPP/6KQ w - - 0 1",
+    "sideToMove": "white",
+    "solution": [
+      {
+        "FEN": "6k1/5ppp/8/8/8/6P1/5P1P/6KQ b - - 0 1",
+        "from": [
+          6,
+          6
+        ],
+        "to": [
+          6,
+          5
+        ],
+        "figure": {
+          "color": "white",
+          "type": "pawn",
+          "touched": true
+        }
+      },
+      {
+        "FEN": "6k1/6pp/5p2/8/8/6P1/5P1P/6KQ w - - 0 2",
+        "from": [
+          5,
+          1
+        ],
+        "to": [
+          5,
+          2
+        ],
+        "figure": {
+          "color": "black",
+          "type": "pawn",
+          "touched": true
+        }
+      },
+      {
+        "FEN": "6k1/6pp/5p2/3Q4/8/6P1/5P1P/6K1 b - - 1 2",
+        "from": [
+          7,
+          7
+        ],
+        "to": [
+          3,
+          3
+        ],
+        "figure": {
+          "color": "white",
+          "type": "queen",
+          "touched": true
+        }
+      },
+      {
+        "FEN": "5k2/6pp/5p2/3Q4/8/6P1/5P1P/6K1 w - - 2 3",
+        "from": [
+          6,
+          0
+        ],
+        "to": [
+          5,
+          0
+        ],
+        "figure": {
+          "color": "black",
+          "type": "king",
+          "touched": true
+        }
+      },
+      {
+        "FEN": "5k2/6pp/4Qp2/8/8/6P1/5P1P/6K1 b - - 3 3",
+        "from": [
+          3,
+          3
+        ],
+        "to": [
+          4,
+          2
+        ],
+        "figure": {
+          "color": "white",
+          "type": "queen",
+          "touched": true
+        }
+      }
+    ],
+    "difficulty": "hard",
+    "themes": [
+      "tactic"
+    ],
+    "status": "draft",
+    "engineMeta": {
+      "name": "stockfish",
+      "depth": 17,
+      "moveTimeMs": 150,
+      "multiPv": 3,
+      "bestMoveScoreCp": 708,
+      "secondMoveScoreCp": 681
+    },
+    "createdAt": "2026-06-02T18:49:52.845Z"
+  },
+  {
+    "sourceGameId": "fen:2dc92d38983d8e43751f",
+    "sourcePly": 0,
+    "initialFEN": "6k1/5ppp/8/8/8/8/5PPP/R5K1 w - - 0 1",
+    "sideToMove": "white",
+    "solution": [
+      {
+        "FEN": "R5k1/5ppp/8/8/8/8/5PPP/6K1 b - - 1 1",
+        "from": [
+          0,
+          7
+        ],
+        "to": [
+          0,
+          0
+        ],
+        "figure": {
+          "color": "white",
+          "type": "rook",
+          "touched": true
+        }
+      }
+    ],
+    "difficulty": "easy",
+    "themes": [
+      "mate"
+    ],
+    "status": "draft",
+    "engineMeta": {
+      "name": "stockfish",
+      "depth": 18,
+      "moveTimeMs": 150,
+      "multiPv": 3,
+      "bestMoveScoreCp": 10000,
+      "secondMoveScoreCp": 649
+    },
+    "createdAt": "2026-06-02T18:49:53.148Z"
+  },
+  {
+    "sourceGameId": "fen:187a41bddce6bf0f9184",
+    "sourcePly": 0,
+    "initialFEN": "6k1/5ppp/8/8/8/8/5PPP/5BK1 w - - 0 1",
+    "sideToMove": "white",
+    "solution": [
+      {
+        "FEN": "6k1/5ppp/8/8/8/3B4/5PPP/6K1 b - - 1 1",
+        "from": [
+          5,
+          7
+        ],
+        "to": [
+          3,
+          5
+        ],
+        "figure": {
+          "color": "white",
+          "type": "bishop",
+          "touched": true
+        }
+      },
+      {
+        "FEN": "6k1/5pp1/7p/8/8/3B4/5PPP/6K1 w - - 0 2",
+        "from": [
+          7,
+          1
+        ],
+        "to": [
+          7,
+          2
+        ],
+        "figure": {
+          "color": "black",
+          "type": "pawn",
+          "touched": true
+        }
+      },
+      {
+        "FEN": "6k1/5pp1/7p/8/2B5/8/5PPP/6K1 b - - 1 2",
+        "from": [
+          3,
+          5
+        ],
+        "to": [
+          2,
+          4
+        ],
+        "figure": {
+          "color": "white",
+          "type": "bishop",
+          "touched": true
+        }
+      },
+      {
+        "FEN": "5k2/5pp1/7p/8/2B5/8/5PPP/6K1 w - - 2 3",
+        "from": [
+          6,
+          0
+        ],
+        "to": [
+          5,
+          0
+        ],
+        "figure": {
+          "color": "black",
+          "type": "king",
+          "touched": true
+        }
+      },
+      {
+        "FEN": "5k2/5pp1/7p/8/2B5/8/5PPP/5K2 b - - 3 3",
+        "from": [
+          6,
+          7
+        ],
+        "to": [
+          5,
+          7
+        ],
+        "figure": {
+          "color": "white",
+          "type": "king",
+          "touched": true
+        }
+      }
+    ],
+    "difficulty": "hard",
+    "themes": [
+      "tactic"
+    ],
+    "status": "draft",
+    "engineMeta": {
+      "name": "stockfish",
+      "depth": 16,
+      "moveTimeMs": 150,
+      "multiPv": 3,
+      "bestMoveScoreCp": 509,
+      "secondMoveScoreCp": 487
+    },
+    "createdAt": "2026-06-02T18:49:54.059Z"
+  },
+  {
+    "sourceGameId": "fen:c82b6507d7870332946b",
+    "sourcePly": 0,
+    "initialFEN": "6k1/5ppp/8/8/8/5N2/5PPP/6K1 w - - 0 1",
+    "sideToMove": "white",
+    "solution": [
+      {
+        "FEN": "6k1/5ppp/8/8/8/5N2/5PPP/5K2 b - - 1 1",
+        "from": [
+          6,
+          7
+        ],
+        "to": [
+          5,
+          7
+        ],
+        "figure": {
+          "color": "white",
+          "type": "king",
+          "touched": true
+        }
+      },
+      {
+        "FEN": "5k2/5ppp/8/8/8/5N2/5PPP/5K2 w - - 2 2",
+        "from": [
+          6,
+          0
+        ],
+        "to": [
+          5,
+          0
+        ],
+        "figure": {
+          "color": "black",
+          "type": "king",
+          "touched": true
+        }
+      },
+      {
+        "FEN": "5k2/5ppp/8/8/8/5N2/4KPPP/8 b - - 3 2",
+        "from": [
+          5,
+          7
+        ],
+        "to": [
+          4,
+          6
+        ],
+        "figure": {
+          "color": "white",
+          "type": "king",
+          "touched": true
+        }
+      },
+      {
+        "FEN": "8/4kppp/8/8/8/5N2/4KPPP/8 w - - 4 3",
+        "from": [
+          5,
+          0
+        ],
+        "to": [
+          4,
+          1
+        ],
+        "figure": {
+          "color": "black",
+          "type": "king",
+          "touched": true
+        }
+      },
+      {
+        "FEN": "8/4kppp/8/8/8/4KN2/5PPP/8 b - - 5 3",
+        "from": [
+          4,
+          6
+        ],
+        "to": [
+          4,
+          5
+        ],
+        "figure": {
+          "color": "white",
+          "type": "king",
+          "touched": true
+        }
+      }
+    ],
+    "difficulty": "hard",
+    "themes": [
+      "tactic"
+    ],
+    "status": "draft",
+    "engineMeta": {
+      "name": "stockfish",
+      "depth": 15,
+      "moveTimeMs": 150,
+      "multiPv": 3,
+      "bestMoveScoreCp": 538,
+      "secondMoveScoreCp": 532
+    },
+    "createdAt": "2026-06-02T18:49:54.969Z"
+  },
+  {
+    "sourceGameId": "fen:616965bf1b669d3a1bb3",
+    "sourcePly": 0,
+    "initialFEN": "7k/6pp/8/8/8/6K1/6PP/7Q w - - 0 1",
+    "sideToMove": "white",
+    "solution": [
+      {
+        "FEN": "7k/6pp/8/8/8/6K1/6PP/4Q3 b - - 1 1",
+        "from": [
+          7,
+          7
+        ],
+        "to": [
+          4,
+          7
+        ],
+        "figure": {
+          "color": "white",
+          "type": "queen",
+          "touched": true
+        }
+      },
+      {
+        "FEN": "7k/6p1/7p/8/8/6K1/6PP/4Q3 w - - 0 2",
+        "from": [
+          7,
+          1
+        ],
+        "to": [
+          7,
+          2
+        ],
+        "figure": {
+          "color": "black",
+          "type": "pawn",
+          "touched": true
+        }
+      },
+      {
+        "FEN": "7k/6p1/7p/8/6K1/8/6PP/4Q3 b - - 1 2",
+        "from": [
+          6,
+          5
+        ],
+        "to": [
+          6,
+          4
+        ],
+        "figure": {
+          "color": "white",
+          "type": "king",
+          "touched": true
+        }
+      },
+      {
+        "FEN": "7k/8/6pp/8/6K1/8/6PP/4Q3 w - - 0 3",
+        "from": [
+          6,
+          1
+        ],
+        "to": [
+          6,
+          2
+        ],
+        "figure": {
+          "color": "black",
+          "type": "pawn",
+          "touched": true
+        }
+      },
+      {
+        "FEN": "7k/4Q3/6pp/8/6K1/8/6PP/8 b - - 1 3",
+        "from": [
+          4,
+          7
+        ],
+        "to": [
+          4,
+          1
+        ],
+        "figure": {
+          "color": "white",
+          "type": "queen",
+          "touched": true
+        }
+      }
+    ],
+    "difficulty": "hard",
+    "themes": [
+      "mate"
+    ],
+    "status": "draft",
+    "engineMeta": {
+      "name": "stockfish",
+      "depth": 23,
+      "moveTimeMs": 150,
+      "multiPv": 3,
+      "bestMoveScoreCp": 10000,
+      "secondMoveScoreCp": 10000
+    },
+    "createdAt": "2026-06-02T18:49:55.876Z"
+  }
+]

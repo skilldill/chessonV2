@@ -50,6 +50,8 @@ services:
   #     - FEN_PUZZLE_MOVE_TIME_MS=${FEN_PUZZLE_MOVE_TIME_MS:-150}
   #     - FEN_PUZZLE_MULTIPV=${FEN_PUZZLE_MULTIPV:-3}
   #     - FEN_PUZZLE_STATUS=${FEN_PUZZLE_STATUS:-draft}
+  #     - FEN_PUZZLE_ACCEPT_ANY_BEST_MOVE=${FEN_PUZZLE_ACCEPT_ANY_BEST_MOVE:-true}
+  #     - FEN_PUZZLE_MIN_SOLUTION_PLIES=${FEN_PUZZLE_MIN_SOLUTION_PLIES:-1}
   #   volumes:
   #     - ./fen-puzzles:/app/fen-puzzles
   #   networks:

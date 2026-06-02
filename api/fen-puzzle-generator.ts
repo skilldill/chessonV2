@@ -48,6 +48,12 @@ async function main(): Promise<void> {
   const status = process.env.FEN_PUZZLE_STATUS === 'published' ? 'published' : 'draft';
   const limit = readPositiveInt('FEN_PUZZLE_LIMIT', Number.POSITIVE_INFINITY);
   const options = getFenGeneratorOptions();
+
+  console.log('[fen-puzzle-generator] booting', {
+    inputFile,
+    outputFile,
+  });
+
   const inputs = (await readFenInputs(inputFile)).slice(0, limit);
 
   const generator = new PuzzleGeneratorService(
@@ -186,6 +192,8 @@ function getFenGeneratorOptions(): PuzzleGeneratorOptions {
     minContinuationGapCp: readPositiveInt('FEN_PUZZLE_MIN_CONTINUATION_GAP_CP', baseOptions.minContinuationGapCp),
     minFirstMoveAdvantageCp: readPositiveInt('FEN_PUZZLE_MIN_ADVANTAGE_CP', baseOptions.minFirstMoveAdvantageCp),
     maxSolutionPlies: readPositiveInt('FEN_PUZZLE_MAX_SOLUTION_PLIES', baseOptions.maxSolutionPlies),
+    minSolutionPlies: readPositiveInt('FEN_PUZZLE_MIN_SOLUTION_PLIES', baseOptions.minSolutionPlies),
+    acceptAnyBestMove: process.env.FEN_PUZZLE_ACCEPT_ANY_BEST_MOVE === 'true' || baseOptions.acceptAnyBestMove,
   };
 }
 
