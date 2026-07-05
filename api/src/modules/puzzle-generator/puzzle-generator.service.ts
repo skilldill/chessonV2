@@ -99,6 +99,8 @@ export class PuzzleGeneratorService {
     const games = await Game
       .find({
         roomId: { $nin: processedGameIds },
+        gameMode: { $ne: 'twoQueens' },
+        excludedFromPuzzles: { $ne: true },
         [`moveHistory.${options.minMoveHistoryLength - 1}`]: { $exists: true },
       })
       .sort({ endedAt: -1 })

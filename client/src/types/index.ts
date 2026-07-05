@@ -58,7 +58,10 @@ export interface PlayerInfo {
 
 // Типы для состояния игры
 export interface GameState {
-  gameType?: "tournament";
+  gameType?: "tournament" | "twoQueens";
+  gameMode?: "standard" | "twoQueens";
+  excludedFromAnalysis?: boolean;
+  excludedFromPuzzles?: boolean;
   tournamentId?: string;
   isSpectator?: boolean;
   spectatorsCount?: number;

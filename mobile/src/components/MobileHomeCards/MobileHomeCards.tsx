@@ -240,6 +240,15 @@ export function PuzzleIcon() {
   );
 }
 
+export function LabsIcon() {
+  return (
+    <svg className="h-7 w-7" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M10 3h4M10.5 3v5.3L5.8 17a2.6 2.6 0 0 0 2.3 3.8h7.8a2.6 2.6 0 0 0 2.3-3.8l-4.7-8.7V3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M8.2 15.2h7.6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function ArrowIcon({ className }: { className: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">

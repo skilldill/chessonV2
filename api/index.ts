@@ -2,7 +2,7 @@ import { Elysia, t } from 'elysia';
 import { connectDB } from './config/database';
 import { ElysiaWS } from 'elysia/ws';
 import { v4 as uuidv4 } from 'uuid';
-import { INITIAL_FEN } from './constants/chess';
+import { INITIAL_FEN, TWO_QUEENS_FEN } from './constants/chess';
 import {
   TOURNAMENT_MAX_PLAYERS,
   TOURNAMENT_MAX_ROUNDS,
@@ -104,6 +104,8 @@ type TimerState = {
     initialBlackTime: number; // изначальное время черных в секундах
 };
 
+type GameMode = "standard" | "twoQueens";
+
 type PlayerInfo = {
     userId: string;
     userName: string;
@@ -112,7 +114,10 @@ type PlayerInfo = {
 };
 
 type GameState = {
-    gameType?: "tournament";
+    gameType?: "tournament" | "twoQueens";
+    gameMode?: GameMode;
+    excludedFromAnalysis?: boolean;
+    excludedFromPuzzles?: boolean;
     tournamentId?: string;
     isSpectator?: boolean;
     spectatorsCount?: number;
@@ -154,6 +159,9 @@ type Room = {
     users: Map<string, UserData>;
     spectators: Map<string, UserData>;
     initialFEN: string;
+    gameMode?: GameMode;
+    excludedFromAnalysis?: boolean;
+    excludedFromPuzzles?: boolean;
     gameState: GameState;
     firstPlayerColor?: "white" | "black"; // Цвет для первого подключившегося игрока
     gameStartedAt?: Date; // Время начала игры
@@ -605,6 +613,9 @@ async function saveGameToDatabase(room: Room, roomId: string) {
         finalFEN: room.gameState.currentFEN,
         moveHistory: filteredMoveHistory,
         result: room.gameState.gameResult,
+        gameMode: room.gameMode,
+        excludedFromAnalysis: room.excludedFromAnalysis === true,
+        excludedFromPuzzles: room.excludedFromPuzzles === true,
         timer: room.gameState.timer,
         startedAt: room.gameStartedAt || new Date(),
         endedAt: new Date(),
@@ -761,13 +772,17 @@ function parseTimerConfig(rawConfig: any) {
   const normalizedBlackTimer = Number.isFinite(blackTimer) && blackTimer > 0 ? Math.floor(blackTimer) : DEFAULT_TIME_SECONDS;
   const normalizedIncrement = Number.isFinite(increment) && increment >= 0 ? Math.floor(increment) : 0;
 
-  const currentFEN = (rawConfig?.currentFEN && typeof rawConfig.currentFEN === 'string' && rawConfig.currentFEN.trim())
-    ? rawConfig.currentFEN
-    : INITIAL_FEN;
+  const gameMode: GameMode = rawConfig?.gameMode === "twoQueens" ? "twoQueens" : "standard";
+  const currentFEN = gameMode === "twoQueens"
+    ? TWO_QUEENS_FEN
+    : ((rawConfig?.currentFEN && typeof rawConfig.currentFEN === 'string' && rawConfig.currentFEN.trim())
+      ? rawConfig.currentFEN
+      : INITIAL_FEN);
   const firstPlayerColor = (rawConfig?.color === "white" || rawConfig?.color === "black")
     ? rawConfig.color
     : undefined;
   const botEnabled = rawConfig?.vsBot === true || rawConfig?.vsBot === 'true';
+  const effectiveBotEnabled = gameMode === "twoQueens" ? false : botEnabled;
   const forceDisableAIhints = rawConfig?.forceDisableAIhints === true || rawConfig?.forceDisableAIhints === 'true';
   const botDifficulty: BotDifficulty = rawConfig?.botDifficulty === 'super_easy' || rawConfig?.botDifficulty === 'easy' || rawConfig?.botDifficulty === 'hard'
     ? rawConfig.botDifficulty
@@ -776,9 +791,9 @@ function parseTimerConfig(rawConfig: any) {
   const botMoveTimeMs = Number.isFinite(botMoveTimeMsRaw) && botMoveTimeMsRaw > 0
     ? Math.floor(botMoveTimeMsRaw)
     : 800;
-  const withAIhints = forceDisableAIhints
+  const withAIhints = forceDisableAIhints || gameMode === "twoQueens"
     ? false
-    : (botEnabled || rawConfig?.withAIhints === true || rawConfig?.withAIhints === 'true');
+    : (effectiveBotEnabled || rawConfig?.withAIhints === true || rawConfig?.withAIhints === 'true');
 
   return {
     whiteTimer: normalizedWhiteTimer,
@@ -786,11 +801,14 @@ function parseTimerConfig(rawConfig: any) {
     increment: normalizedIncrement,
     currentFEN,
     firstPlayerColor,
-    botEnabled,
+    botEnabled: effectiveBotEnabled,
     botDifficulty,
     botMoveTimeMs,
     withAIhints,
-    forceDisableAIhints
+    forceDisableAIhints: forceDisableAIhints || gameMode === "twoQueens",
+    gameMode,
+    excludedFromAnalysis: gameMode === "twoQueens",
+    excludedFromPuzzles: gameMode === "twoQueens",
   };
 }
 
@@ -847,7 +865,14 @@ function createRoomWithConfig(rawConfig: any) {
     users: new Map(),
     spectators: new Map(),
     initialFEN: timerConfig.currentFEN,
+    gameMode: timerConfig.gameMode,
+    excludedFromAnalysis: timerConfig.excludedFromAnalysis,
+    excludedFromPuzzles: timerConfig.excludedFromPuzzles,
     gameState: {
+      gameType: timerConfig.gameMode === "twoQueens" ? "twoQueens" : undefined,
+      gameMode: timerConfig.gameMode,
+      excludedFromAnalysis: timerConfig.excludedFromAnalysis,
+      excludedFromPuzzles: timerConfig.excludedFromPuzzles,
       currentFEN: timerConfig.currentFEN,
       moveHistory: [],
       currentPlayer: currentPlayer,
@@ -1960,6 +1985,57 @@ function countPieces(fenPosition: string): { white: { [piece: string]: number },
     }
     
     return pieces;
+}
+
+function getTwoQueensEliminationWinner(fenPosition: string): "white" | "black" | undefined {
+    const pieces = countPieces(fenPosition);
+    const whitePiecesCount = pieces.white.K + pieces.white.Q + pieces.white.R + pieces.white.B + pieces.white.N + pieces.white.P;
+    const blackPiecesCount = pieces.black.k + pieces.black.q + pieces.black.r + pieces.black.b + pieces.black.n + pieces.black.p;
+
+    if (whitePiecesCount === 0 && blackPiecesCount > 0) {
+        return "black";
+    }
+
+    if (blackPiecesCount === 0 && whitePiecesCount > 0) {
+        return "white";
+    }
+
+    return undefined;
+}
+
+function declareTwoQueensElimination(room: Room, roomId: string, winColor: "white" | "black") {
+    const lostColor = winColor === "white" ? "Black" : "White";
+    const winnerLabel = winColor === "white" ? "White" : "Black";
+
+    room.gameState.gameEnded = true;
+    room.gameState.gameResult = {
+        resultType: "mat",
+        winColor
+    };
+
+    clearRoomTimer(roomId);
+    saveGameToDatabase(room, roomId);
+
+    for (const { id, userData, spectator } of getRoomRecipients(room)) {
+        if (userData.isConnected && userData.ws) {
+            userData.ws.send({
+                type: "gameResult",
+                gameResult: room.gameState.gameResult,
+                gameState: getRecipientGameState(room, id, spectator),
+                time: Date.now()
+            });
+        }
+    }
+
+    for (const { userData } of getRoomRecipients(room)) {
+        if (userData.isConnected && userData.ws) {
+            userData.ws.send({
+                system: true,
+                message: `2 Queens: ${lostColor} has no pieces left. ${winnerLabel} wins!`,
+                type: "gameEnd"
+            });
+        }
+    }
 }
 
 // Функция для проверки недостаточного материала (ничья)
@@ -4830,6 +4906,7 @@ app.post('/api/rooms', async ({ body }) => {
     success: true,
     roomId,
     message: 'Room created successfully',
+    gameMode: room.gameMode,
     vsBot: room.botSettings?.enabled ?? false,
     withAIhints: room.gameState.withAIhints,
     botDifficulty: room.botSettings?.difficulty,
@@ -5366,6 +5443,14 @@ app.get('/api/games', async ({ query }) => {
 app.get('/api/analysis/:gameId', async ({ params, headers }) => {
   try {
     const { gameId } = params;
+    const game = await Game.findOne({ roomId: gameId }).select('excludedFromAnalysis gameMode').lean();
+    if (game?.excludedFromAnalysis || game?.gameMode === "twoQueens") {
+      return {
+        success: false,
+        error: 'Analysis is disabled for this game mode',
+      };
+    }
+
     const analysis = await gameAnalysisService.getOrStart(gameId);
     const viewerKey = getAnalysisViewerKey(headers);
 
@@ -5397,6 +5482,14 @@ app.get('/api/analysis/:gameId', async ({ params, headers }) => {
 app.post('/api/analysis/:gameId/retry', async ({ params }) => {
   try {
     const { gameId } = params;
+    const game = await Game.findOne({ roomId: gameId }).select('excludedFromAnalysis gameMode').lean();
+    if (game?.excludedFromAnalysis || game?.gameMode === "twoQueens") {
+      return {
+        success: false,
+        error: 'Analysis is disabled for this game mode',
+      };
+    }
+
     const analysis = await gameAnalysisService.retry(gameId);
 
     return {
@@ -6123,17 +6216,20 @@ app.ws('/ws/room', {
           // Обновляем currentColor синхронно с currentPlayer
           syncCurrentColor(room);
 
-          // Проверяем троекратное повторение позиции
-          if (checkThreefoldRepetition(room)) {
+          // Для экспериментальных режимов не применяем обычные шахматные окончания.
+          if (room.gameMode !== "twoQueens" && checkThreefoldRepetition(room)) {
               declareDrawByThreefoldRepetition(room, roomId);
               return; // Прерываем обработку, игра завершена
           }
 
-          // Проверяем недостаточный материал (ничья)
-          if (checkInsufficientMaterial(room)) {
+          if (room.gameMode !== "twoQueens" && checkInsufficientMaterial(room)) {
               declareDrawByInsufficientMaterial(room, roomId);
               return; // Прерываем обработку, игра завершена
           }
+
+          const twoQueensWinner = room.gameMode === "twoQueens"
+            ? getTwoQueensEliminationWinner(room.gameState.currentFEN)
+            : undefined;
 
           // Отправляем ход всем игрокам кроме отправителя
           for (const { id, userData, spectator } of getRoomRecipients(room)) {
@@ -6150,6 +6246,11 @@ app.ws('/ws/room', {
                       time: Date.now()
                   });
               }
+          }
+
+          if (twoQueensWinner) {
+            declareTwoQueensElimination(room, roomId, twoQueensWinner);
+            return;
           }
 
           if (room.botSettings?.enabled) {

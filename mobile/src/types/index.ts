@@ -58,6 +58,9 @@ export interface PlayerInfo {
 
 // Типы для состояния игры
 export interface GameState {
+  gameMode?: "standard" | "twoQueens";
+  excludedFromAnalysis?: boolean;
+  excludedFromPuzzles?: boolean;
   currentFEN: string;
   moveHistory: MoveData[];
   currentPlayer: ChessColor;
@@ -72,7 +75,7 @@ export interface GameState {
   timer?: TimerState;
   player?: PlayerInfo;
   opponent?: PlayerInfo;
-  gameType?: "tournament";
+  gameType?: "tournament" | "twoQueens";
   tournamentId?: string;
   isSpectator?: boolean;
   spectatorsCount?: number;

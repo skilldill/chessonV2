@@ -101,6 +101,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
     } = useTimers({ timer, playerColor, gameState });
     const gameIsFinished = Boolean(resultMessage) || gameState.gameEnded;
     const visibleResultMessage = resultMessage || (gameState.gameEnded ? t("results.gameOver") : undefined);
+    const isAnalysisExcluded = gameState.excludedFromAnalysis === true || gameState.gameMode === "twoQueens" || gameState.gameType === "twoQueens";
 
     // Отслеживаем позицию курсора
     useEffect(() => {
@@ -358,9 +359,12 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
     }
 
     const actualNotActiveMagicButtonControls = () => {
-        if (isSpectator) return notActiveMagicButtonControls;
+        const controls = isAnalysisExcluded
+            ? notActiveMagicButtonControls.filter((control) => control.tooltip !== t('results.analyzeGame'))
+            : notActiveMagicButtonControls;
+        if (isSpectator) return controls;
         if (gameState.gameType === "tournament") return tournamentNotActiveMagicButtonControls;
-        return notActiveMagicButtonControls;
+        return controls;
     }
 
     return (
@@ -378,6 +382,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                 tournamentId={gameState.gameType === "tournament" ? gameState.tournamentId : undefined}
                 tournamentGameRoomId={gameState.gameType === "tournament" ? roomId : undefined}
                 roomId={roomId}
+                showAnalysis={!isAnalysisExcluded}
             />
             <ConnectionNotification
                 message={t('game.connectionLost')}
@@ -454,6 +459,7 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                                     change={externalChangeMove}
                                     playerColor={playerColor}
                                     moveArrows={mappedHintArrow}
+                                    toggleTurn={gameState.gameMode === "twoQueens" || gameState.gameType === "twoQueens"}
                                     config={{
                                         squareSize: wrapWidth / 8,
                                         ...chessboardConfig,

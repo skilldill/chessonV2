@@ -158,6 +158,9 @@ export class GameAnalysisService {
       if (!game) {
         throw new Error('Game not found');
       }
+      if (game.excludedFromAnalysis || game.gameMode === 'twoQueens') {
+        throw new Error('Analysis is disabled for this game mode');
+      }
 
       const moveHistory = Array.isArray(game.moveHistory) ? game.moveHistory as AnalysisMoveData[] : [];
       if (moveHistory.length === 0) {

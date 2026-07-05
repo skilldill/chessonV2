@@ -96,6 +96,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
   } = useTimers({ timer, playerColor, gameState });
   const gameIsFinished = Boolean(resultMessage) || gameState.gameEnded;
   const visibleResultMessage = resultMessage || (gameState.gameEnded ? t("results.gameOver") : undefined);
+  const isAnalysisExcluded = gameState.excludedFromAnalysis === true || gameState.gameMode === "twoQueens" || gameState.gameType === "twoQueens";
 
   // Отслеживаем позицию курсора
   useEffect(() => {
@@ -350,9 +351,12 @@ const GameScreen: React.FC<GameScreenProps> = ({
   };
 
   const actualNotActiveMagicButtonControls = () => {
-    if (isSpectator) return notActiveMagicButtonControls;
+    const controls = isAnalysisExcluded
+      ? notActiveMagicButtonControls.filter((control) => control.tooltip !== t('results.analyzeGame'))
+      : notActiveMagicButtonControls;
+    if (isSpectator) return controls;
     if (gameState.gameType === "tournament") return tournamentNotActiveMagicButtonControls;
-    return notActiveMagicButtonControls;
+    return controls;
   };
 
   return (
@@ -369,6 +373,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
           tournamentId={gameState.gameType === "tournament" ? gameState.tournamentId : undefined}
           tournamentGameRoomId={gameState.gameType === "tournament" ? roomId : undefined}
           roomId={roomId}
+          showAnalysis={!isAnalysisExcluded}
         />
         <ConnectionNotification
           message={t('game.connectionLost')}
@@ -406,6 +411,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
           change={externalChangeMove}
           playerColor={playerColor}
           moveArrows={mappedHintArrow}
+          toggleTurn={gameState.gameMode === "twoQueens" || gameState.gameType === "twoQueens"}
           config={{
             squareSize: cellSize,
             ...themeConfig
