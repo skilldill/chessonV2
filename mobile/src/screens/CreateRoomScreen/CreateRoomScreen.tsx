@@ -9,12 +9,14 @@ import { AppTopBar } from '../../components/AppTopBar/AppTopBar';
 import {
     BotIcon,
     FriendsIcon,
+    LabsIcon,
     LightningIcon,
     MobilePrimaryFeatureButton,
     PuzzleIcon,
     TrophyIcon,
 } from '../../components/MobileHomeCards/MobileHomeCards';
 import { useTranslation } from 'react-i18next';
+import { TWO_QUEENS_FEN, TWO_QUEENS_GAME_MODE } from '../../constants/chess';
 
 const initialRoomTime = getRoomTimeSettingsFromStorage();
 
@@ -22,6 +24,7 @@ const CreateRoomScreen: React.FC = () => {
     const { t } = useTranslation();
     const [isBotModalOpen, setIsBotModalOpen] = useState(false);
     const [isTimeModalOpen, setIsTimeModalOpen] = useState(false);
+    const [isLabsModalOpen, setIsLabsModalOpen] = useState(false);
     const [botDifficulty, setBotDifficulty] = useState<BotDifficulty>('medium');
     const [timeMinutes, setTimeMinutes] = useState(initialRoomTime.timeMinutes);
     const [incrementSeconds, setIncrementSeconds] = useState(initialRoomTime.incrementSeconds);
@@ -52,6 +55,18 @@ const CreateRoomScreen: React.FC = () => {
         });
     };
 
+    const handleCreateTwoQueensRoom = () => {
+        createRoom({
+            timeMinutes,
+            incrementSeconds,
+            withAIhints: false,
+            currentFEN: TWO_QUEENS_FEN,
+            gameMode: TWO_QUEENS_GAME_MODE,
+        }, () => {
+            setIsLabsModalOpen(false);
+        });
+    };
+
     return (
         <>
             <div className="relative min-h-full w-full overflow-y-auto bg-[#050507] text-white" style={{ height: window.innerHeight }}>
@@ -76,6 +91,16 @@ const CreateRoomScreen: React.FC = () => {
                             tone="rose"
                             icon={<PuzzleIcon />}
                             to="/puzzles"
+                        />
+                        <MobilePrimaryFeatureButton
+                            title={t("labs.title")}
+                            subtitle={t("labs.cardSubtitle")}
+                            tone="purple"
+                            icon={<LabsIcon />}
+                            badges={[t("labs.badge"), t("labs.noKingsBadge")]}
+                            featuredBadge={t("labs.newBadge")}
+                            onClick={() => setIsLabsModalOpen(true)}
+                            disabled={isCreating}
                         />
                         <MobilePrimaryFeatureButton
                             title={t("room.playVsBot")}
@@ -131,8 +156,66 @@ const CreateRoomScreen: React.FC = () => {
                 onConfirm={handleCreateFriendRoom}
             />
 
+            <LabsModal
+                isOpen={isLabsModalOpen}
+                isCreating={isCreating}
+                onClose={() => setIsLabsModalOpen(false)}
+                onCreateTwoQueens={handleCreateTwoQueensRoom}
+            />
+
         </>
     );
 };
+
+function LabsModal({
+    isOpen,
+    isCreating,
+    onClose,
+    onCreateTwoQueens,
+}: {
+    isOpen: boolean;
+    isCreating: boolean;
+    onClose: () => void;
+    onCreateTwoQueens: () => void;
+}) {
+    const { t } = useTranslation();
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+            <div className="w-full max-w-[392px] rounded-xl border border-[#8B7CFF]/30 bg-[#0B0B12] p-5 text-white shadow-2xl">
+                <div className="flex items-start justify-between gap-3">
+                    <div>
+                        <h2 className="m-0 text-xl font-bold">{t("labs.modalTitle")}</h2>
+                        <p className="m-0 mt-1.5 text-sm text-white/60">{t("labs.modalSubtitle")}</p>
+                    </div>
+                    <button type="button" onClick={onClose} className="rounded-lg px-3 py-2 text-sm text-white/60 transition hover:bg-white/10 hover:text-white">
+                        {t("common.close")}
+                    </button>
+                </div>
+
+                <div className="mt-5 grid gap-3">
+                    <button
+                        type="button"
+                        onClick={onCreateTwoQueens}
+                        disabled={isCreating}
+                        className="flex items-center justify-between gap-3 rounded-lg border border-[#8B7CFF]/45 bg-[#4F39F6]/15 p-4 text-left transition hover:border-[#B8AEFF] hover:bg-[#4F39F6]/25 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                        <span>
+                            <span className="block text-base font-semibold">{t("labs.twoQueens.title")}</span>
+                            <span className="mt-1 block text-sm text-white/60">{t("labs.twoQueens.subtitle")}</span>
+                        </span>
+                        <span className="text-xl text-white/70">›</span>
+                    </button>
+
+                    <p className="m-0 rounded-lg border border-white/10 bg-white/[0.03] p-4 text-sm text-white/55">
+                        {t("labs.moreComingSoon")}
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
+}
 
 export default CreateRoomScreen;

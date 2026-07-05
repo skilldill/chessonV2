@@ -13,6 +13,7 @@ type CreateRoomData = {
     botMoveTimeMs?: number;
     color?: 'white' | 'black';
     currentFEN?: string;
+    gameMode?: 'standard' | 'twoQueens';
 }
 
 type CreateRoomOptions = {
@@ -48,7 +49,8 @@ export const useCreateRoom = () => {
                     botDifficulty: roomData.botDifficulty,
                     botMoveTimeMs: roomData.botMoveTimeMs,
                     color: roomData.color,
-                    currentFEN: roomData.currentFEN
+                    currentFEN: roomData.currentFEN,
+                    gameMode: roomData.gameMode
                 })
             });
 

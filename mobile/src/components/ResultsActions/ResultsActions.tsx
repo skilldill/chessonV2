@@ -10,6 +10,7 @@ type ResultsActionsProps = {
     tournamentId?: string;
     tournamentGameRoomId?: string;
     roomId?: string;
+    showAnalysis?: boolean;
 }
 
 export const ResultsActions: FC<ResultsActionsProps> = ({ 
@@ -17,7 +18,8 @@ export const ResultsActions: FC<ResultsActionsProps> = ({
     onClose,
     tournamentId,
     tournamentGameRoomId,
-    roomId
+    roomId,
+    showAnalysis = true
 }) => {
     const { t } = useTranslation();
     const [isClosing, setIsClosing] = useState(false);
@@ -123,7 +125,7 @@ export const ResultsActions: FC<ResultsActionsProps> = ({
                 </p>
 
                 <div className="w-full flex flex-col gap-3">
-                    {roomId && (
+                    {roomId && showAnalysis && (
                         <ChessButton
                             className={`w-full rounded-md text-sm font-semibold px-4 py-3 text-white cursor-pointer transition-all duration-300 active:scale-95 focus:outline-none ${styles.analysisButton}`}
                             onClick={handleAnalyzeGame}

@@ -6,61 +6,29 @@
     "sideToMove": "white",
     "solution": [
       {
-        "FEN": "6k1/5ppp/8/8/8/8/5PPP/5K1Q b - - 1 1",
+        "FEN": "6k1/5ppp/8/8/6P1/8/5P1P/6KQ b - - 0 1",
         "from": [
           6,
-          7
+          6
         ],
         "to": [
-          5,
-          7
+          6,
+          4
         ],
         "figure": {
           "color": "white",
-          "type": "king",
-          "touched": true
-        }
-      },
-      {
-        "FEN": "6k1/5pp1/7p/8/8/8/5PPP/5K1Q w - - 0 2",
-        "from": [
-          7,
-          1
-        ],
-        "to": [
-          7,
-          2
-        ],
-        "figure": {
-          "color": "black",
           "type": "pawn",
           "touched": true
         }
       },
       {
-        "FEN": "6k1/5pp1/7p/8/8/8/4KPPP/7Q b - - 1 2",
+        "FEN": "6k1/5p1p/8/6p1/6P1/8/5P1P/6KQ w - - 0 2",
         "from": [
-          5,
-          7
+          6,
+          1
         ],
         "to": [
-          4,
-          6
-        ],
-        "figure": {
-          "color": "white",
-          "type": "king",
-          "touched": true
-        }
-      },
-      {
-        "FEN": "6k1/5pp1/8/7p/8/8/4KPPP/7Q w - - 0 3",
-        "from": [
-          7,
-          2
-        ],
-        "to": [
-          7,
+          6,
           3
         ],
         "figure": {
@@ -70,14 +38,46 @@
         }
       },
       {
-        "FEN": "6k1/5pp1/8/7p/8/8/4KPPP/1Q6 b - - 1 3",
+        "FEN": "Q5k1/5p1p/8/6p1/6P1/8/5P1P/6K1 b - - 1 2",
         "from": [
           7,
           7
         ],
         "to": [
-          1,
-          7
+          0,
+          0
+        ],
+        "figure": {
+          "color": "white",
+          "type": "queen",
+          "touched": true
+        }
+      },
+      {
+        "FEN": "Q7/5pkp/8/6p1/6P1/8/5P1P/6K1 w - - 2 3",
+        "from": [
+          6,
+          0
+        ],
+        "to": [
+          6,
+          1
+        ],
+        "figure": {
+          "color": "black",
+          "type": "king",
+          "touched": true
+        }
+      },
+      {
+        "FEN": "8/5pkp/8/3Q2p1/6P1/8/5P1P/6K1 b - - 3 3",
+        "from": [
+          0,
+          0
+        ],
+        "to": [
+          3,
+          3
         ],
         "figure": {
           "color": "white",
@@ -99,7 +99,7 @@
       "bestMoveScoreCp": 708,
       "secondMoveScoreCp": 681
     },
-    "createdAt": "2026-06-02T19:12:47.014Z"
+    "createdAt": "2026-07-05T10:57:53.331Z"
   },
   {
     "sourceGameId": "fen:2dc92d38983d8e43751f",
@@ -135,9 +135,9 @@
       "moveTimeMs": 150,
       "multiPv": 3,
       "bestMoveScoreCp": 10000,
-      "secondMoveScoreCp": 668
+      "secondMoveScoreCp": 651
     },
-    "createdAt": "2026-06-02T19:12:47.316Z"
+    "createdAt": "2026-07-05T10:57:53.635Z"
   },
   {
     "sourceGameId": "fen:616965bf1b669d3a1bb3",
@@ -162,14 +162,46 @@
         }
       },
       {
-        "FEN": "6k1/6pp/8/8/8/6K1/6PP/3Q4 w - - 2 2",
+        "FEN": "7k/6p1/8/7p/8/6K1/6PP/3Q4 w - - 0 2",
+        "from": [
+          7,
+          1
+        ],
+        "to": [
+          7,
+          3
+        ],
+        "figure": {
+          "color": "black",
+          "type": "pawn",
+          "touched": true
+        }
+      },
+      {
+        "FEN": "7k/6p1/8/7p/7K/8/6PP/3Q4 b - - 1 2",
+        "from": [
+          6,
+          5
+        ],
+        "to": [
+          7,
+          4
+        ],
+        "figure": {
+          "color": "white",
+          "type": "king",
+          "touched": true
+        }
+      },
+      {
+        "FEN": "8/6pk/8/7p/7K/8/6PP/3Q4 w - - 2 3",
         "from": [
           7,
           0
         ],
         "to": [
-          6,
-          0
+          7,
+          1
         ],
         "figure": {
           "color": "black",
@@ -178,50 +210,18 @@
         }
       },
       {
-        "FEN": "6k1/6pp/8/3Q4/8/6K1/6PP/8 b - - 3 2",
+        "FEN": "8/6pk/8/6Kp/8/8/6PP/3Q4 b - - 3 3",
         "from": [
-          3,
-          7
+          7,
+          4
         ],
         "to": [
-          3,
-          3
-        ],
-        "figure": {
-          "color": "white",
-          "type": "queen",
-          "touched": true
-        }
-      },
-      {
-        "FEN": "5k2/6pp/8/3Q4/8/6K1/6PP/8 w - - 4 3",
-        "from": [
           6,
-          0
-        ],
-        "to": [
-          5,
-          0
-        ],
-        "figure": {
-          "color": "black",
-          "type": "king",
-          "touched": true
-        }
-      },
-      {
-        "FEN": "5k2/6pp/4Q3/8/8/6K1/6PP/8 b - - 5 3",
-        "from": [
-          3,
           3
-        ],
-        "to": [
-          4,
-          2
         ],
         "figure": {
           "color": "white",
-          "type": "queen",
+          "type": "king",
           "touched": true
         }
       }
@@ -236,10 +236,10 @@
       "depth": 17,
       "moveTimeMs": 150,
       "multiPv": 3,
-      "bestMoveScoreCp": 915,
-      "secondMoveScoreCp": 911
+      "bestMoveScoreCp": 864,
+      "secondMoveScoreCp": 855
     },
-    "createdAt": "2026-06-02T19:12:48.225Z"
+    "createdAt": "2026-07-05T10:57:54.544Z"
   },
   {
     "sourceGameId": "fen:3860f9ada75f0f31de46",
@@ -335,13 +335,13 @@
     "status": "draft",
     "engineMeta": {
       "name": "stockfish",
-      "depth": 14,
+      "depth": 13,
       "moveTimeMs": 150,
       "multiPv": 3,
-      "bestMoveScoreCp": 0,
-      "secondMoveScoreCp": -4
+      "bestMoveScoreCp": -16,
+      "secondMoveScoreCp": -17
     },
-    "createdAt": "2026-06-02T19:12:49.135Z"
+    "createdAt": "2026-07-05T10:57:55.455Z"
   },
   {
     "sourceGameId": "fen:21fe96e1855564561cb5",
@@ -350,7 +350,109 @@
     "sideToMove": "white",
     "solution": [
       {
-        "FEN": "6k1/6pp/8/8/8/6P1/5P1P/5RK1 b - - 0 1",
+        "FEN": "6k1/6pp/8/8/8/8/5PPP/R5K1 b - - 1 1",
+        "from": [
+          5,
+          7
+        ],
+        "to": [
+          0,
+          7
+        ],
+        "figure": {
+          "color": "white",
+          "type": "rook",
+          "touched": true
+        }
+      },
+      {
+        "FEN": "5k2/6pp/8/8/8/8/5PPP/R5K1 w - - 2 2",
+        "from": [
+          6,
+          0
+        ],
+        "to": [
+          5,
+          0
+        ],
+        "figure": {
+          "color": "black",
+          "type": "king",
+          "touched": true
+        }
+      },
+      {
+        "FEN": "5k2/R5pp/8/8/8/8/5PPP/6K1 b - - 3 2",
+        "from": [
+          0,
+          7
+        ],
+        "to": [
+          0,
+          1
+        ],
+        "figure": {
+          "color": "white",
+          "type": "rook",
+          "touched": true
+        }
+      },
+      {
+        "FEN": "6k1/R5pp/8/8/8/8/5PPP/6K1 w - - 4 3",
+        "from": [
+          5,
+          0
+        ],
+        "to": [
+          6,
+          0
+        ],
+        "figure": {
+          "color": "black",
+          "type": "king",
+          "touched": true
+        }
+      },
+      {
+        "FEN": "6k1/R5pp/8/8/8/6P1/5P1P/6K1 b - - 0 3",
+        "from": [
+          6,
+          6
+        ],
+        "to": [
+          6,
+          5
+        ],
+        "figure": {
+          "color": "white",
+          "type": "pawn",
+          "touched": true
+        }
+      }
+    ],
+    "difficulty": "hard",
+    "themes": [
+      "tactic"
+    ],
+    "status": "draft",
+    "engineMeta": {
+      "name": "stockfish",
+      "depth": 18,
+      "moveTimeMs": 150,
+      "multiPv": 3,
+      "bestMoveScoreCp": 674,
+      "secondMoveScoreCp": 667
+    },
+    "createdAt": "2026-07-05T10:57:56.368Z"
+  },
+  {
+    "sourceGameId": "fen:f38621c5aaad2e24ffb5",
+    "sourcePly": 0,
+    "initialFEN": "5rk1/5ppp/8/8/8/8/5PPP/6KQ w - - 0 1",
+    "sideToMove": "white",
+    "solution": [
+      {
+        "FEN": "5rk1/5ppp/8/8/8/6P1/5P1P/6KQ b - - 0 1",
         "from": [
           6,
           6
@@ -366,141 +468,7 @@
         }
       },
       {
-        "FEN": "8/5kpp/8/8/8/6P1/5P1P/5RK1 w - - 1 2",
-        "from": [
-          6,
-          0
-        ],
-        "to": [
-          5,
-          1
-        ],
-        "figure": {
-          "color": "black",
-          "type": "king",
-          "touched": true
-        }
-      },
-      {
-        "FEN": "8/5kpp/8/8/8/6P1/5P1P/4R1K1 b - - 2 2",
-        "from": [
-          5,
-          7
-        ],
-        "to": [
-          4,
-          7
-        ],
-        "figure": {
-          "color": "white",
-          "type": "rook",
-          "touched": true
-        }
-      },
-      {
-        "FEN": "8/6pp/6k1/8/8/6P1/5P1P/4R1K1 w - - 3 3",
-        "from": [
-          5,
-          1
-        ],
-        "to": [
-          6,
-          2
-        ],
-        "figure": {
-          "color": "black",
-          "type": "king",
-          "touched": true
-        }
-      },
-      {
-        "FEN": "8/6pp/6k1/8/8/6P1/5PKP/4R3 b - - 4 3",
-        "from": [
-          6,
-          7
-        ],
-        "to": [
-          6,
-          6
-        ],
-        "figure": {
-          "color": "white",
-          "type": "king",
-          "touched": true
-        }
-      }
-    ],
-    "difficulty": "hard",
-    "themes": [
-      "tactic"
-    ],
-    "status": "draft",
-    "engineMeta": {
-      "name": "stockfish",
-      "depth": 18,
-      "moveTimeMs": 150,
-      "multiPv": 3,
-      "bestMoveScoreCp": 662,
-      "secondMoveScoreCp": 642
-    },
-    "createdAt": "2026-06-02T19:12:50.041Z"
-  },
-  {
-    "sourceGameId": "fen:f38621c5aaad2e24ffb5",
-    "sourcePly": 0,
-    "initialFEN": "5rk1/5ppp/8/8/8/8/5PPP/6KQ w - - 0 1",
-    "sideToMove": "white",
-    "solution": [
-      {
-        "FEN": "5rk1/5ppp/8/8/6P1/8/5P1P/6KQ b - - 0 1",
-        "from": [
-          6,
-          6
-        ],
-        "to": [
-          6,
-          4
-        ],
-        "figure": {
-          "color": "white",
-          "type": "pawn",
-          "touched": true
-        }
-      },
-      {
-        "FEN": "5rk1/5p1p/6p1/8/6P1/8/5P1P/6KQ w - - 0 2",
-        "from": [
-          6,
-          1
-        ],
-        "to": [
-          6,
-          2
-        ],
-        "figure": {
-          "color": "black",
-          "type": "pawn",
-          "touched": true
-        }
-      },
-      {
-        "FEN": "5rk1/5p1p/6p1/8/6PP/8/5P2/6KQ b - - 0 2",
-        "from": [
-          7,
-          6
-        ],
-        "to": [
-          7,
-          4
-        ],
-        "figure": {
-          "color": "white",
-          "type": "pawn",
-          "touched": true
-        }
-      },
-      {
-        "FEN": "4r1k1/5p1p/6p1/8/6PP/8/5P2/6KQ w - - 1 3",
+        "FEN": "4r1k1/5ppp/8/8/8/6P1/5P1P/6KQ w - - 1 2",
         "from": [
           5,
           0
@@ -516,18 +484,50 @@
         }
       },
       {
-        "FEN": "4r1k1/5p1p/6p1/3Q4/6PP/8/5P2/6K1 b - - 2 3",
+        "FEN": "4r1k1/5ppp/2Q5/8/8/6P1/5P1P/6K1 b - - 2 2",
         "from": [
           7,
           7
         ],
         "to": [
-          3,
-          3
+          2,
+          2
         ],
         "figure": {
           "color": "white",
           "type": "queen",
+          "touched": true
+        }
+      },
+      {
+        "FEN": "3r2k1/5ppp/2Q5/8/8/6P1/5P1P/6K1 w - - 3 3",
+        "from": [
+          4,
+          0
+        ],
+        "to": [
+          3,
+          0
+        ],
+        "figure": {
+          "color": "black",
+          "type": "rook",
+          "touched": true
+        }
+      },
+      {
+        "FEN": "3r2k1/5ppp/2Q5/8/8/6P1/5PKP/8 b - - 4 3",
+        "from": [
+          6,
+          7
+        ],
+        "to": [
+          6,
+          6
+        ],
+        "figure": {
+          "color": "white",
+          "type": "king",
           "touched": true
         }
       }
@@ -542,10 +542,10 @@
       "depth": 17,
       "moveTimeMs": 150,
       "multiPv": 3,
-      "bestMoveScoreCp": 340,
-      "secondMoveScoreCp": 318
+      "bestMoveScoreCp": 308,
+      "secondMoveScoreCp": 306
     },
-    "createdAt": "2026-06-02T19:12:50.947Z"
+    "createdAt": "2026-07-05T10:57:57.332Z"
   },
   {
     "sourceGameId": "fen:4399b197370336f1cc6f",
@@ -583,7 +583,7 @@
       "bestMoveScoreCp": 10000,
       "secondMoveScoreCp": 10000
     },
-    "createdAt": "2026-06-02T19:12:50.959Z"
+    "createdAt": "2026-07-05T10:57:57.349Z"
   },
   {
     "sourceGameId": "fen:03d5f3541d8873766326",
@@ -592,14 +592,14 @@
     "sideToMove": "white",
     "solution": [
       {
-        "FEN": "6k1/6pp/8/8/8/8/5PPP/R5K1 b - - 1 1",
+        "FEN": "6k1/6pp/4R3/8/8/8/5PPP/6K1 b - - 1 1",
         "from": [
           4,
           7
         ],
         "to": [
-          0,
-          7
+          4,
+          2
         ],
         "figure": {
           "color": "white",
@@ -608,7 +608,7 @@
         }
       },
       {
-        "FEN": "8/5kpp/8/8/8/8/5PPP/R5K1 w - - 2 2",
+        "FEN": "8/5kpp/4R3/8/8/8/5PPP/6K1 w - - 2 2",
         "from": [
           6,
           0
@@ -624,42 +624,10 @@
         }
       },
       {
-        "FEN": "8/5kpp/8/8/8/6P1/5P1P/R5K1 b - - 0 2",
+        "FEN": "8/5kpp/R7/8/8/8/5PPP/6K1 b - - 3 2",
         "from": [
-          6,
-          6
-        ],
-        "to": [
-          6,
-          5
-        ],
-        "figure": {
-          "color": "white",
-          "type": "pawn",
-          "touched": true
-        }
-      },
-      {
-        "FEN": "8/5k1p/8/6p1/8/6P1/5P1P/R5K1 w - - 0 3",
-        "from": [
-          6,
-          1
-        ],
-        "to": [
-          6,
-          3
-        ],
-        "figure": {
-          "color": "black",
-          "type": "pawn",
-          "touched": true
-        }
-      },
-      {
-        "FEN": "8/5k1p/R7/6p1/8/6P1/5P1P/6K1 b - - 1 3",
-        "from": [
-          0,
-          7
+          4,
+          2
         ],
         "to": [
           0,
@@ -668,6 +636,38 @@
         "figure": {
           "color": "white",
           "type": "rook",
+          "touched": true
+        }
+      },
+      {
+        "FEN": "8/5kp1/R6p/8/8/8/5PPP/6K1 w - - 0 3",
+        "from": [
+          7,
+          1
+        ],
+        "to": [
+          7,
+          2
+        ],
+        "figure": {
+          "color": "black",
+          "type": "pawn",
+          "touched": true
+        }
+      },
+      {
+        "FEN": "8/5kp1/R6p/8/6P1/8/5P1P/6K1 b - - 0 3",
+        "from": [
+          6,
+          6
+        ],
+        "to": [
+          6,
+          4
+        ],
+        "figure": {
+          "color": "white",
+          "type": "pawn",
           "touched": true
         }
       }
@@ -679,13 +679,13 @@
     "status": "draft",
     "engineMeta": {
       "name": "stockfish",
-      "depth": 21,
+      "depth": 19,
       "moveTimeMs": 150,
       "multiPv": 3,
-      "bestMoveScoreCp": 733,
-      "secondMoveScoreCp": 733
+      "bestMoveScoreCp": 705,
+      "secondMoveScoreCp": 702
     },
-    "createdAt": "2026-06-02T19:12:51.864Z"
+    "createdAt": "2026-07-05T10:57:58.262Z"
   },
   {
     "sourceGameId": "fen:c0aaa73834b5ad4473d4",
@@ -710,30 +710,30 @@
         }
       },
       {
-        "FEN": "6k1/6p1/6pp/8/6P1/8/5P1P/6KQ w - - 1 2",
+        "FEN": "8/6pk/7p/6p1/6P1/8/5P1P/6KQ w - - 0 2",
         "from": [
-          7,
-          1
+          6,
+          2
         ],
         "to": [
           6,
-          0
+          3
         ],
         "figure": {
           "color": "black",
-          "type": "king",
+          "type": "pawn",
           "touched": true
         }
       },
       {
-        "FEN": "Q5k1/6p1/6pp/8/6P1/8/5P1P/6K1 b - - 2 2",
+        "FEN": "8/6pk/7p/3Q2p1/6P1/8/5P1P/6K1 b - - 1 2",
         "from": [
           7,
           7
         ],
         "to": [
-          0,
-          0
+          3,
+          3
         ],
         "figure": {
           "color": "white",
@@ -742,14 +742,14 @@
         }
       },
       {
-        "FEN": "Q7/5kp1/6pp/8/6P1/8/5P1P/6K1 w - - 3 3",
+        "FEN": "7k/6p1/7p/3Q2p1/6P1/8/5P1P/6K1 w - - 2 3",
         "from": [
-          6,
-          0
+          7,
+          1
         ],
         "to": [
-          5,
-          1
+          7,
+          0
         ],
         "figure": {
           "color": "black",
@@ -758,14 +758,14 @@
         }
       },
       {
-        "FEN": "8/5kp1/6pp/3Q4/6P1/8/5P1P/6K1 b - - 4 3",
+        "FEN": "7k/6p1/4Q2p/6p1/6P1/8/5P1P/6K1 b - - 3 3",
         "from": [
-          0,
-          0
-        ],
-        "to": [
           3,
           3
+        ],
+        "to": [
+          4,
+          2
         ],
         "figure": {
           "color": "white",
@@ -781,13 +781,13 @@
     "status": "draft",
     "engineMeta": {
       "name": "stockfish",
-      "depth": 18,
+      "depth": 17,
       "moveTimeMs": 150,
       "multiPv": 3,
-      "bestMoveScoreCp": 780,
-      "secondMoveScoreCp": 737
+      "bestMoveScoreCp": 732,
+      "secondMoveScoreCp": 729
     },
-    "createdAt": "2026-06-02T19:12:52.769Z"
+    "createdAt": "2026-07-05T10:57:59.172Z"
   },
   {
     "sourceGameId": "fen:882cdf669774bffb6bf8",
@@ -819,13 +819,13 @@
     "status": "draft",
     "engineMeta": {
       "name": "stockfish",
-      "depth": 18,
+      "depth": 17,
       "moveTimeMs": 150,
       "multiPv": 3,
       "bestMoveScoreCp": 10000,
-      "secondMoveScoreCp": 638
+      "secondMoveScoreCp": 641
     },
-    "createdAt": "2026-06-02T19:12:53.070Z"
+    "createdAt": "2026-07-05T10:57:59.475Z"
   },
   {
     "sourceGameId": "fen:d52b1a0b9e42c391d3f7",
@@ -834,13 +834,13 @@
     "sideToMove": "white",
     "solution": [
       {
-        "FEN": "6k1/5ppp/8/8/8/8/5PPP/3Q2K1 b - - 1 1",
+        "FEN": "6k1/5ppp/8/8/8/8/5PPP/2Q3K1 b - - 1 1",
         "from": [
           5,
           7
         ],
         "to": [
-          3,
+          2,
           7
         ],
         "figure": {
@@ -850,7 +850,7 @@
         }
       },
       {
-        "FEN": "6k1/5p1p/6p1/8/8/8/5PPP/3Q2K1 w - - 0 2",
+        "FEN": "6k1/5p1p/6p1/8/8/8/5PPP/2Q3K1 w - - 0 2",
         "from": [
           6,
           1
@@ -866,23 +866,23 @@
         }
       },
       {
-        "FEN": "6k1/5p1p/6p1/8/8/8/5PPP/3Q1K2 b - - 1 2",
+        "FEN": "2Q3k1/5p1p/6p1/8/8/8/5PPP/6K1 b - - 1 2",
         "from": [
-          6,
+          2,
           7
         ],
         "to": [
-          5,
-          7
+          2,
+          0
         ],
         "figure": {
           "color": "white",
-          "type": "king",
+          "type": "queen",
           "touched": true
         }
       },
       {
-        "FEN": "8/5pkp/6p1/8/8/8/5PPP/3Q1K2 w - - 2 3",
+        "FEN": "2Q5/5pkp/6p1/8/8/8/5PPP/6K1 w - - 2 3",
         "from": [
           6,
           0
@@ -898,18 +898,18 @@
         }
       },
       {
-        "FEN": "8/5pkp/6p1/3Q4/8/8/5PPP/5K2 b - - 3 3",
+        "FEN": "2Q5/5pkp/6p1/8/8/8/5PPP/5K2 b - - 3 3",
         "from": [
-          3,
+          6,
           7
         ],
         "to": [
-          3,
-          3
+          5,
+          7
         ],
         "figure": {
           "color": "white",
-          "type": "queen",
+          "type": "king",
           "touched": true
         }
       }
@@ -924,10 +924,10 @@
       "depth": 17,
       "moveTimeMs": 150,
       "multiPv": 3,
-      "bestMoveScoreCp": 739,
-      "secondMoveScoreCp": 725
+      "bestMoveScoreCp": 710,
+      "secondMoveScoreCp": 704
     },
-    "createdAt": "2026-06-02T19:12:53.976Z"
+    "createdAt": "2026-07-05T10:58:00.389Z"
   },
   {
     "sourceGameId": "fen:fcefe92bad7f474413a2",
@@ -952,14 +952,14 @@
         }
       },
       {
-        "FEN": "7k/7p/8/6p1/8/6P1/5P1P/6KR w - - 0 2",
+        "FEN": "7k/7p/6p1/8/8/6P1/5P1P/6KR w - - 0 2",
         "from": [
           6,
           1
         ],
         "to": [
           6,
-          3
+          2
         ],
         "figure": {
           "color": "black",
@@ -968,7 +968,7 @@
         }
       },
       {
-        "FEN": "7k/7p/8/6p1/8/6P1/5PKP/7R b - - 1 2",
+        "FEN": "7k/7p/6p1/8/8/6P1/5PKP/7R b - - 1 2",
         "from": [
           6,
           7
@@ -984,34 +984,34 @@
         }
       },
       {
-        "FEN": "7k/7p/8/8/6p1/6P1/5PKP/7R w - - 0 3",
+        "FEN": "8/6kp/6p1/8/8/6P1/5PKP/7R w - - 2 3",
         "from": [
-          6,
-          3
+          7,
+          0
         ],
         "to": [
           6,
-          4
+          1
         ],
         "figure": {
           "color": "black",
-          "type": "pawn",
+          "type": "king",
           "touched": true
         }
       },
       {
-        "FEN": "7k/7p/8/8/6p1/6P1/5PKP/R7 b - - 1 3",
+        "FEN": "8/6kp/6p1/8/8/5KP1/5P1P/7R b - - 3 3",
         "from": [
-          7,
-          7
+          6,
+          6
         ],
         "to": [
-          0,
-          7
+          5,
+          5
         ],
         "figure": {
           "color": "white",
-          "type": "rook",
+          "type": "king",
           "touched": true
         }
       }
@@ -1026,10 +1026,10 @@
       "depth": 18,
       "moveTimeMs": 150,
       "multiPv": 3,
-      "bestMoveScoreCp": 730,
-      "secondMoveScoreCp": 696
+      "bestMoveScoreCp": 695,
+      "secondMoveScoreCp": 662
     },
-    "createdAt": "2026-06-02T19:12:54.881Z"
+    "createdAt": "2026-07-05T10:58:01.321Z"
   },
   {
     "sourceGameId": "fen:c82b6507d7870332946b",
@@ -1038,23 +1038,23 @@
     "sideToMove": "white",
     "solution": [
       {
-        "FEN": "6k1/5ppp/8/8/8/5N2/5PPP/5K2 b - - 1 1",
+        "FEN": "6k1/5ppp/8/8/8/5NP1/5P1P/6K1 b - - 0 1",
         "from": [
           6,
-          7
+          6
         ],
         "to": [
-          5,
-          7
+          6,
+          5
         ],
         "figure": {
           "color": "white",
-          "type": "king",
+          "type": "pawn",
           "touched": true
         }
       },
       {
-        "FEN": "5k2/5ppp/8/8/8/5N2/5PPP/5K2 w - - 2 2",
+        "FEN": "5k2/5ppp/8/8/8/5NP1/5P1P/6K1 w - - 1 2",
         "from": [
           6,
           0
@@ -1070,13 +1070,115 @@
         }
       },
       {
-        "FEN": "5k2/5ppp/8/8/8/5N2/4KPPP/8 b - - 3 2",
+        "FEN": "5k2/5ppp/8/8/8/6P1/5P1P/4N1K1 b - - 2 2",
         "from": [
           5,
-          7
+          5
         ],
         "to": [
           4,
+          7
+        ],
+        "figure": {
+          "color": "white",
+          "type": "knight",
+          "touched": true
+        }
+      },
+      {
+        "FEN": "4k3/5ppp/8/8/8/6P1/5P1P/4N1K1 w - - 3 3",
+        "from": [
+          5,
+          0
+        ],
+        "to": [
+          4,
+          0
+        ],
+        "figure": {
+          "color": "black",
+          "type": "king",
+          "touched": true
+        }
+      },
+      {
+        "FEN": "4k3/5ppp/8/8/8/6P1/5PKP/4N3 b - - 4 3",
+        "from": [
+          6,
+          7
+        ],
+        "to": [
+          6,
+          6
+        ],
+        "figure": {
+          "color": "white",
+          "type": "king",
+          "touched": true
+        }
+      }
+    ],
+    "difficulty": "hard",
+    "themes": [
+      "tactic"
+    ],
+    "status": "draft",
+    "engineMeta": {
+      "name": "stockfish",
+      "depth": 14,
+      "moveTimeMs": 150,
+      "multiPv": 3,
+      "bestMoveScoreCp": 565,
+      "secondMoveScoreCp": 565
+    },
+    "createdAt": "2026-07-05T10:58:02.252Z"
+  },
+  {
+    "sourceGameId": "fen:60cab98831ccce6e2142",
+    "sourcePly": 0,
+    "initialFEN": "7k/6pp/8/8/8/6N1/6PP/6K1 w - - 0 1",
+    "sideToMove": "white",
+    "solution": [
+      {
+        "FEN": "7k/6pp/8/8/8/8/4N1PP/6K1 b - - 1 1",
+        "from": [
+          6,
+          5
+        ],
+        "to": [
+          4,
+          6
+        ],
+        "figure": {
+          "color": "white",
+          "type": "knight",
+          "touched": true
+        }
+      },
+      {
+        "FEN": "6k1/6pp/8/8/8/8/4N1PP/6K1 w - - 2 2",
+        "from": [
+          7,
+          0
+        ],
+        "to": [
+          6,
+          0
+        ],
+        "figure": {
+          "color": "black",
+          "type": "king",
+          "touched": true
+        }
+      },
+      {
+        "FEN": "6k1/6pp/8/8/8/8/4NKPP/8 b - - 3 2",
+        "from": [
+          6,
+          7
+        ],
+        "to": [
+          5,
           6
         ],
         "figure": {
@@ -1086,13 +1188,13 @@
         }
       },
       {
-        "FEN": "8/4kppp/8/8/8/5N2/4KPPP/8 w - - 4 3",
+        "FEN": "8/5kpp/8/8/8/8/4NKPP/8 w - - 4 3",
         "from": [
-          5,
+          6,
           0
         ],
         "to": [
-          4,
+          5,
           1
         ],
         "figure": {
@@ -1102,13 +1204,13 @@
         }
       },
       {
-        "FEN": "8/4kppp/8/8/8/3K1N2/5PPP/8 b - - 5 3",
+        "FEN": "8/5kpp/8/8/8/5K2/4N1PP/8 b - - 5 3",
         "from": [
-          4,
+          5,
           6
         ],
         "to": [
-          3,
+          5,
           5
         ],
         "figure": {
@@ -1128,41 +1230,41 @@
       "depth": 16,
       "moveTimeMs": 150,
       "multiPv": 3,
-      "bestMoveScoreCp": 547,
-      "secondMoveScoreCp": 545
+      "bestMoveScoreCp": 554,
+      "secondMoveScoreCp": 540
     },
-    "createdAt": "2026-06-02T19:12:55.789Z"
+    "createdAt": "2026-07-05T10:58:03.164Z"
   },
   {
-    "sourceGameId": "fen:60cab98831ccce6e2142",
+    "sourceGameId": "fen:187a41bddce6bf0f9184",
     "sourcePly": 0,
-    "initialFEN": "7k/6pp/8/8/8/6N1/6PP/6K1 w - - 0 1",
+    "initialFEN": "6k1/5ppp/8/8/8/8/5PPP/5BK1 w - - 0 1",
     "sideToMove": "white",
     "solution": [
       {
-        "FEN": "7k/6pp/8/8/4N3/8/6PP/6K1 b - - 1 1",
+        "FEN": "6k1/5ppp/8/8/2B5/8/5PPP/6K1 b - - 1 1",
         "from": [
-          6,
-          5
+          5,
+          7
         ],
         "to": [
-          4,
+          2,
           4
         ],
         "figure": {
           "color": "white",
-          "type": "knight",
+          "type": "bishop",
           "touched": true
         }
       },
       {
-        "FEN": "6k1/6pp/8/8/4N3/8/6PP/6K1 w - - 2 2",
+        "FEN": "5k2/5ppp/8/8/2B5/8/5PPP/6K1 w - - 2 2",
         "from": [
-          7,
+          6,
           0
         ],
         "to": [
-          6,
+          5,
           0
         ],
         "figure": {
@@ -1172,29 +1274,29 @@
         }
       },
       {
-        "FEN": "6k1/6pp/8/8/4N3/8/5KPP/8 b - - 3 2",
+        "FEN": "5k2/5ppp/8/8/2B4P/8/5PP1/6K1 b - - 0 2",
         "from": [
-          6,
-          7
+          7,
+          6
         ],
         "to": [
-          5,
-          6
+          7,
+          4
         ],
         "figure": {
           "color": "white",
-          "type": "king",
+          "type": "pawn",
           "touched": true
         }
       },
       {
-        "FEN": "8/5kpp/8/8/4N3/8/5KPP/8 w - - 4 3",
+        "FEN": "8/4kppp/8/8/2B4P/8/5PP1/6K1 w - - 1 3",
         "from": [
-          6,
+          5,
           0
         ],
         "to": [
-          5,
+          4,
           1
         ],
         "figure": {
@@ -1204,14 +1306,14 @@
         }
       },
       {
-        "FEN": "8/5kpp/8/8/4N3/4K3/6PP/8 b - - 5 3",
+        "FEN": "8/4kppp/8/8/2B4P/8/5PPK/8 b - - 2 3",
         "from": [
-          5,
-          6
+          6,
+          7
         ],
         "to": [
-          4,
-          5
+          7,
+          6
         ],
         "figure": {
           "color": "white",
@@ -1230,112 +1332,10 @@
       "depth": 15,
       "moveTimeMs": 150,
       "multiPv": 3,
-      "bestMoveScoreCp": 539,
-      "secondMoveScoreCp": 519
+      "bestMoveScoreCp": 489,
+      "secondMoveScoreCp": 466
     },
-    "createdAt": "2026-06-02T19:12:56.697Z"
-  },
-  {
-    "sourceGameId": "fen:187a41bddce6bf0f9184",
-    "sourcePly": 0,
-    "initialFEN": "6k1/5ppp/8/8/8/8/5PPP/5BK1 w - - 0 1",
-    "sideToMove": "white",
-    "solution": [
-      {
-        "FEN": "6k1/5ppp/8/8/8/3B4/5PPP/6K1 b - - 1 1",
-        "from": [
-          5,
-          7
-        ],
-        "to": [
-          3,
-          5
-        ],
-        "figure": {
-          "color": "white",
-          "type": "bishop",
-          "touched": true
-        }
-      },
-      {
-        "FEN": "7k/5ppp/8/8/8/3B4/5PPP/6K1 w - - 2 2",
-        "from": [
-          6,
-          0
-        ],
-        "to": [
-          7,
-          0
-        ],
-        "figure": {
-          "color": "black",
-          "type": "king",
-          "touched": true
-        }
-      },
-      {
-        "FEN": "7k/5ppp/8/8/8/3B4/5PPP/5K2 b - - 3 2",
-        "from": [
-          6,
-          7
-        ],
-        "to": [
-          5,
-          7
-        ],
-        "figure": {
-          "color": "white",
-          "type": "king",
-          "touched": true
-        }
-      },
-      {
-        "FEN": "6k1/5ppp/8/8/8/3B4/5PPP/5K2 w - - 4 3",
-        "from": [
-          7,
-          0
-        ],
-        "to": [
-          6,
-          0
-        ],
-        "figure": {
-          "color": "black",
-          "type": "king",
-          "touched": true
-        }
-      },
-      {
-        "FEN": "6k1/5ppp/8/8/8/3B4/4KPPP/8 b - - 5 3",
-        "from": [
-          5,
-          7
-        ],
-        "to": [
-          4,
-          6
-        ],
-        "figure": {
-          "color": "white",
-          "type": "king",
-          "touched": true
-        }
-      }
-    ],
-    "difficulty": "hard",
-    "themes": [
-      "tactic"
-    ],
-    "status": "draft",
-    "engineMeta": {
-      "name": "stockfish",
-      "depth": 16,
-      "moveTimeMs": 150,
-      "multiPv": 3,
-      "bestMoveScoreCp": 482,
-      "secondMoveScoreCp": 490
-    },
-    "createdAt": "2026-06-02T19:12:57.604Z"
+    "createdAt": "2026-07-05T10:58:04.074Z"
   },
   {
     "sourceGameId": "fen:d52b1a0b9e42c391d3f7",
@@ -1344,13 +1344,13 @@
     "sideToMove": "white",
     "solution": [
       {
-        "FEN": "6k1/5ppp/8/8/8/8/5PPP/3Q2K1 b - - 1 1",
+        "FEN": "6k1/5ppp/8/8/8/8/5PPP/2Q3K1 b - - 1 1",
         "from": [
           5,
           7
         ],
         "to": [
-          3,
+          2,
           7
         ],
         "figure": {
@@ -1360,13 +1360,13 @@
         }
       },
       {
-        "FEN": "6k1/5pp1/8/7p/8/8/5PPP/3Q2K1 w - - 0 2",
+        "FEN": "6k1/6pp/8/5p2/8/8/5PPP/2Q3K1 w - - 0 2",
         "from": [
-          7,
+          5,
           1
         ],
         "to": [
-          7,
+          5,
           3
         ],
         "figure": {
@@ -1376,14 +1376,14 @@
         }
       },
       {
-        "FEN": "3Q2k1/5pp1/8/7p/8/8/5PPP/6K1 b - - 1 2",
+        "FEN": "6k1/6pp/8/5p2/2Q5/8/5PPP/6K1 b - - 1 2",
         "from": [
-          3,
+          2,
           7
         ],
         "to": [
-          3,
-          0
+          2,
+          4
         ],
         "figure": {
           "color": "white",
@@ -1392,14 +1392,14 @@
         }
       },
       {
-        "FEN": "3Q4/5ppk/8/7p/8/8/5PPP/6K1 w - - 2 3",
+        "FEN": "5k2/6pp/8/5p2/2Q5/8/5PPP/6K1 w - - 2 3",
         "from": [
           6,
           0
         ],
         "to": [
-          7,
-          1
+          5,
+          0
         ],
         "figure": {
           "color": "black",
@@ -1408,18 +1408,18 @@
         }
       },
       {
-        "FEN": "3Q4/5ppk/8/7p/8/8/5PPP/5K2 b - - 3 3",
+        "FEN": "5k2/6pp/8/2Q2p2/8/8/5PPP/6K1 b - - 3 3",
         "from": [
-          6,
-          7
+          2,
+          4
         ],
         "to": [
-          5,
-          7
+          2,
+          3
         ],
         "figure": {
           "color": "white",
-          "type": "king",
+          "type": "queen",
           "touched": true
         }
       }
@@ -1431,13 +1431,13 @@
     "status": "draft",
     "engineMeta": {
       "name": "stockfish",
-      "depth": 18,
+      "depth": 17,
       "moveTimeMs": 150,
       "multiPv": 3,
-      "bestMoveScoreCp": 786,
-      "secondMoveScoreCp": 776
+      "bestMoveScoreCp": 769,
+      "secondMoveScoreCp": 767
     },
-    "createdAt": "2026-06-02T19:12:58.508Z"
+    "createdAt": "2026-07-05T10:58:04.980Z"
   },
   {
     "sourceGameId": "fen:9d14a22f91a2fc4456ef",
@@ -1478,23 +1478,23 @@
         }
       },
       {
-        "FEN": "6k1/6pp/8/8/8/6P1/5P1P/R5K1 b - - 0 2",
+        "FEN": "6k1/6pp/R7/8/8/8/5PPP/6K1 b - - 3 2",
         "from": [
-          6,
-          6
+          0,
+          7
         ],
         "to": [
-          6,
-          5
+          0,
+          2
         ],
         "figure": {
           "color": "white",
-          "type": "pawn",
+          "type": "rook",
           "touched": true
         }
       },
       {
-        "FEN": "8/5kpp/8/8/8/6P1/5P1P/R5K1 w - - 1 3",
+        "FEN": "8/5kpp/R7/8/8/8/5PPP/6K1 w - - 4 3",
         "from": [
           6,
           0
@@ -1510,18 +1510,18 @@
         }
       },
       {
-        "FEN": "8/5kpp/8/8/8/6P1/5PKP/R7 b - - 2 3",
+        "FEN": "8/5kpp/R7/8/8/6P1/5P1P/6K1 b - - 0 3",
         "from": [
-          6,
-          7
-        ],
-        "to": [
           6,
           6
         ],
+        "to": [
+          6,
+          5
+        ],
         "figure": {
           "color": "white",
-          "type": "king",
+          "type": "pawn",
           "touched": true
         }
       }
@@ -1533,13 +1533,13 @@
     "status": "draft",
     "engineMeta": {
       "name": "stockfish",
-      "depth": 19,
+      "depth": 18,
       "moveTimeMs": 150,
       "multiPv": 3,
-      "bestMoveScoreCp": 759,
-      "secondMoveScoreCp": 752
+      "bestMoveScoreCp": 763,
+      "secondMoveScoreCp": 739
     },
-    "createdAt": "2026-06-02T19:12:59.414Z"
+    "createdAt": "2026-07-05T10:58:05.896Z"
   },
   {
     "sourceGameId": "fen:00415f773e10895242b7",
@@ -1575,9 +1575,9 @@
       "moveTimeMs": 150,
       "multiPv": 3,
       "bestMoveScoreCp": 10000,
-      "secondMoveScoreCp": 811
+      "secondMoveScoreCp": 788
     },
-    "createdAt": "2026-06-02T19:12:59.716Z"
+    "createdAt": "2026-07-05T10:58:06.200Z"
   },
   {
     "sourceGameId": "fen:882cdf669774bffb6bf8",
@@ -1613,8 +1613,8 @@
       "moveTimeMs": 150,
       "multiPv": 3,
       "bestMoveScoreCp": 10000,
-      "secondMoveScoreCp": 654
+      "secondMoveScoreCp": 655
     },
-    "createdAt": "2026-06-02T19:13:00.018Z"
+    "createdAt": "2026-07-05T10:58:06.502Z"
   }
 ]

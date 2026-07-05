@@ -27,6 +27,9 @@ export interface IGame extends Document {
     resultType: "mat" | "pat" | "draw" | "resignation";
     winColor?: "white" | "black";
   };
+  gameMode?: "standard" | "twoQueens";
+  excludedFromAnalysis?: boolean;
+  excludedFromPuzzles?: boolean;
   timer?: {
     whiteTime: number;
     blackTime: number;
@@ -128,6 +131,22 @@ const GameSchema = new Schema<IGame>(
         enum: ["white", "black"],
         required: false
       }
+    },
+    gameMode: {
+      type: String,
+      enum: ["standard", "twoQueens"],
+      default: "standard",
+      index: true
+    },
+    excludedFromAnalysis: {
+      type: Boolean,
+      default: false,
+      index: true
+    },
+    excludedFromPuzzles: {
+      type: Boolean,
+      default: false,
+      index: true
     },
     timer: {
       whiteTime: Number,

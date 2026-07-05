@@ -10,6 +10,40 @@
   50% { opacity: 0.9; }
 }
 
+@keyframes labsCardGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 1px rgba(139, 124, 255, 0.18), 0 0 28px rgba(79, 57, 246, 0.18);
+  }
+  50% {
+    box-shadow: 0 0 0 1px rgba(217, 70, 239, 0.42), 0 0 42px rgba(217, 70, 239, 0.34);
+  }
+}
+
+@keyframes labsBadgePulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+.labs-featured-card {
+  animation: labsCardGlow 2.8s ease-in-out infinite;
+}
+
+.labs-new-badge {
+  /* animation: labsBadgePulse 1.9s ease-in-out infinite; */
+  font-style: italic;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .labs-featured-card,
+  .labs-new-badge {
+    animation: none;
+  }
+}
+
 @theme {
   --color-back-primary: #09090B;
   --color-back-secondary: #18181B;

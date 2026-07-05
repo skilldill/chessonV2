@@ -15,8 +15,11 @@ import { WS_URL, API_PREFIX } from "../constants/api";
 
 // В режиме разработки используем прокси Vite, в production - прямой URL
 
-const INITIAL_GAME_STATE = {
+const INITIAL_GAME_STATE: GameState = {
     gameType: undefined,
+    gameMode: "standard",
+    excludedFromAnalysis: false,
+    excludedFromPuzzles: false,
     tournamentId: undefined,
     isSpectator: false,
     spectatorsCount: 0,
@@ -62,6 +65,13 @@ function getResultMessageFromGameState(gameState: GameState) {
 
     const gameResult = gameState.gameResult;
     if (!gameResult) return "Game over";
+
+    if (gameState.gameMode === "twoQueens" || gameState.gameType === "twoQueens") {
+        if (gameResult.winColor) {
+            return `2 Queens: ${gameResult.winColor === "white" ? "White" : "Black"} wins!`;
+        }
+        return "2 Queens: Game over";
+    }
 
     if (gameResult.resultType === "mat") {
         return `Checkmate! ${gameResult.winColor === "white" ? "White" : "Black"} wins!`;
