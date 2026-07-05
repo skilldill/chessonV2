@@ -411,7 +411,6 @@ const GameScreen: React.FC<GameScreenProps> = ({
           change={externalChangeMove}
           playerColor={playerColor}
           moveArrows={mappedHintArrow}
-          toggleTurn={gameState.gameMode === "twoQueens" || gameState.gameType === "twoQueens"}
           config={{
             squareSize: cellSize,
             ...themeConfig

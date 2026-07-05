@@ -459,7 +459,6 @@ export const GameScreen: React.FC<GameScreenProps> = memo(({
                                     change={externalChangeMove}
                                     playerColor={playerColor}
                                     moveArrows={mappedHintArrow}
-                                    toggleTurn={gameState.gameMode === "twoQueens" || gameState.gameType === "twoQueens"}
                                     config={{
                                         squareSize: wrapWidth / 8,
                                         ...chessboardConfig,
