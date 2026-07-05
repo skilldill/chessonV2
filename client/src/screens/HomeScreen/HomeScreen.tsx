@@ -123,6 +123,19 @@ export const HomeDashboard = () => {
 
         <div className="grid gap-5 min-[900px]:grid-cols-2 min-[1180px]:grid-cols-4">
           <HomeModeCard
+            title={t("labs.title")}
+            tone="purple"
+            icon={<LabsIcon />}
+            features={[
+              t("labs.feature.experimental"),
+              t("labs.feature.tryNoKingsNow"),
+            ]}
+            badges={[t("labs.badge")]}
+            featuredBadge={t("labs.newBadge")}
+            onClick={() => setIsLabsModalOpen(true)}
+            disabled={isCreating}
+          />
+          <HomeModeCard
             title={t("room.playVsBot")}
             tone="green"
             icon={<BotIcon />}
@@ -161,19 +174,6 @@ export const HomeDashboard = () => {
             ]}
             badges={[t("tournament.defaultTitle")]}
             to="/tournaments/new"
-          />
-          <HomeModeCard
-            title={t("labs.title")}
-            tone="purple"
-            icon={<LabsIcon />}
-            features={[
-              t("labs.feature.experimental"),
-              t("labs.feature.friendOnly"),
-              t("labs.feature.noAnalysis"),
-            ]}
-            badges={[t("labs.badge")]}
-            onClick={() => setIsLabsModalOpen(true)}
-            disabled={isCreating}
           />
         </div>
 
@@ -285,6 +285,7 @@ function HomeModeCard({
   icon,
   features,
   badges,
+  featuredBadge,
   tone,
   onClick,
   to,
@@ -294,6 +295,7 @@ function HomeModeCard({
   icon: ReactNode;
   features: string[];
   badges: string[];
+  featuredBadge?: string;
   tone: Tone;
   onClick?: () => void;
   to?: string;
@@ -301,6 +303,11 @@ function HomeModeCard({
 }) {
   const content = (
     <>
+      {featuredBadge ? (
+        <span className="labs-new-badge absolute right-4 top-4 rounded-full border border-fuchsia-300/50 bg-fuchsia-500 px-3 py-1 text-xs font-black uppercase tracking-[0.12em] text-white shadow-[0_0_24px_rgba(217,70,239,0.65)]">
+          {featuredBadge}
+        </span>
+      ) : null}
       <HomeIconBadge tone={tone}>{icon}</HomeIconBadge>
       <h2 className="mt-7 text-2xl font-bold text-white">{title}</h2>
       <div className="mt-6 flex flex-col gap-3">
@@ -319,12 +326,12 @@ function HomeModeCard({
             </HomeBadge>
           ))}
         </div>
-        <ArrowIcon className="h-7 w-7 text-white/85 transition group-hover:translate-x-1" />
+        <ArrowIcon className="h-7 w-7 shrink-0 text-white/85 transition group-hover:translate-x-1" />
       </div>
     </>
   );
 
-  const className = `group flex min-h-[300px] flex-col rounded-xl border p-7 text-left transition active:scale-[0.995] min-[900px]:min-h-[340px] ${toneCardClass(tone)} ${
+  const className = `group relative flex min-h-[300px] flex-col overflow-hidden rounded-xl border p-7 text-left transition active:scale-[0.995] min-[900px]:min-h-[340px] ${featuredBadge ? "labs-featured-card" : ""} ${toneCardClass(tone)} ${
     disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"
   }`;
 
@@ -507,17 +514,9 @@ function LabsModal({
             <ArrowIcon className="h-6 w-6 text-white/80 transition group-hover:translate-x-1" />
           </button>
 
-          {["Atomic", "Fog of war", "Duck chess"].map((mode) => (
-            <button
-              key={mode}
-              type="button"
-              disabled
-              className="flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.03] p-4 text-left opacity-55"
-            >
-              <span className="text-base font-semibold">{mode}</span>
-              <span className="text-sm text-white/50">{t("labs.comingSoon")}</span>
-            </button>
-          ))}
+          <p className="rounded-lg border border-white/10 bg-white/[0.03] p-4 text-sm text-white/55">
+            {t("labs.moreComingSoon")}
+          </p>
         </div>
       </div>
     </div>

@@ -95,6 +95,16 @@ const HomeScreen: React.FC = () => {
             to="/puzzles"
           />
           <MobilePrimaryFeatureButton
+            title={t("labs.title")}
+            subtitle={t("labs.cardSubtitle")}
+            tone="purple"
+            icon={<LabsIcon />}
+            badges={[t("labs.badge"), t("labs.noKingsBadge")]}
+            featuredBadge={t("labs.newBadge")}
+            onClick={() => setIsLabsModalOpen(true)}
+            disabled={isCreating}
+          />
+          <MobilePrimaryFeatureButton
             title={t("room.playVsBot")}
             subtitle={t("home.botFeature.difficulty")}
             tone="green"
@@ -119,15 +129,6 @@ const HomeScreen: React.FC = () => {
             icon={<TrophyIcon />}
             badges={[t("tournament.defaultTitle")]}
             to="/tournaments/new"
-          />
-          <MobilePrimaryFeatureButton
-            title={t("labs.title")}
-            subtitle={t("labs.feature.experimental")}
-            tone="purple"
-            icon={<LabsIcon />}
-            badges={[t("labs.badge")]}
-            onClick={() => setIsLabsModalOpen(true)}
-            disabled={isCreating}
           />
         </div>
 
@@ -208,17 +209,9 @@ function LabsModal({
             <span className="text-xl text-white/70">›</span>
           </button>
 
-          {["Atomic", "Fog of war", "Duck chess"].map((mode) => (
-            <button
-              key={mode}
-              type="button"
-              disabled
-              className="flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.03] p-4 text-left opacity-55"
-            >
-              <span className="text-base font-semibold">{mode}</span>
-              <span className="text-sm text-white/50">{t("labs.comingSoon")}</span>
-            </button>
-          ))}
+          <p className="m-0 rounded-lg border border-white/10 bg-white/[0.03] p-4 text-sm text-white/55">
+            {t("labs.moreComingSoon")}
+          </p>
         </div>
       </div>
     </div>

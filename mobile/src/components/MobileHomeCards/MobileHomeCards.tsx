@@ -12,16 +12,22 @@ type MobilePrimaryFeatureButtonProps = {
   onClick?: () => void;
   to?: string;
   disabled?: boolean;
+  featuredBadge?: string;
 };
 
-export function MobilePrimaryFeatureButton({ title, subtitle, badges, tone, icon, onClick, to, disabled }: MobilePrimaryFeatureButtonProps) {
+export function MobilePrimaryFeatureButton({ title, subtitle, badges, tone, icon, onClick, to, disabled, featuredBadge }: MobilePrimaryFeatureButtonProps) {
   const isRose = tone === "rose";
-  const className = `group relative min-h-[128px] w-full overflow-hidden rounded-xl border p-4 text-left text-white transition active:scale-[0.98] ${primaryToneCardClass(tone)} ${
+  const className = `group relative min-h-[128px] w-full overflow-hidden rounded-xl border p-4 text-left text-white transition active:scale-[0.98] ${featuredBadge ? "labs-featured-card" : ""} ${primaryToneCardClass(tone)} ${
     disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"
   }`;
   const content = (
     <>
       <div className={`absolute inset-0 opacity-35 ${primaryToneOverlayClass(tone)}`} />
+      {featuredBadge ? (
+        <span className="labs-new-badge absolute right-3 top-3 rounded-full border border-fuchsia-300/50 bg-fuchsia-500 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-white shadow-[0_0_20px_rgba(217,70,239,0.65)]">
+          {featuredBadge}
+        </span>
+      ) : null}
       <div className="relative flex h-full items-start justify-between gap-3">
         <div className="flex items-start gap-3">
           <HomeIconBadge tone={isRose ? "rose" : tone}>{icon}</HomeIconBadge>
