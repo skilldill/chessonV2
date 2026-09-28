@@ -10,6 +10,7 @@ type CreateTournamentSectionProps = {
   groupName: string
   setGroupName: (value: string) => void
   addGroup: (event: FormEvent) => void
+  setAvoidSameGroupPairings: (enabled: boolean) => void
   updateGroupName: (groupId: string, nextName: string) => void
   removeGroup: (groupId: string) => void
 }
@@ -22,6 +23,7 @@ export const CreateTournamentSection = ({
   groupName,
   setGroupName,
   addGroup,
+  setAvoidSameGroupPairings,
   updateGroupName,
   removeGroup,
 }: CreateTournamentSectionProps) => {
@@ -50,6 +52,23 @@ export const CreateTournamentSection = ({
           <p className="muted">
             {t('create.status')} <strong>{t(`status.${tournament.status}`)}</strong>
           </p>
+          <div className="tournament-settings">
+            <h3>{t('create.settingsTitle')}</h3>
+            <label className="toggle-setting">
+              <input
+                type="checkbox"
+                checked={tournament.avoidSameGroupPairings ?? true}
+                disabled={tournament.status === 'finished'}
+                onChange={(event) =>
+                  setAvoidSameGroupPairings(event.target.checked)
+                }
+              />
+              <span>
+                <strong>{t('create.avoidSameGroupPairings')}</strong>
+                <small>{t('create.avoidSameGroupPairingsHint')}</small>
+              </span>
+            </label>
+          </div>
           <form className="row" onSubmit={addGroup}>
             <label className="field grow">
               {t('create.addGroup')}

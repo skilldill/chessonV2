@@ -34,6 +34,7 @@ export const TournamentScreen = () => {
     canManageRoster,
     createTournament,
     addGroup,
+    setAvoidSameGroupPairings,
     updateGroupName,
     removeGroup,
     addParticipant,
@@ -150,6 +151,7 @@ export const TournamentScreen = () => {
           groupName={groupName}
           setGroupName={setGroupName}
           addGroup={addGroup}
+          setAvoidSameGroupPairings={setAvoidSameGroupPairings}
           updateGroupName={updateGroupName}
           removeGroup={removeGroup}
         />

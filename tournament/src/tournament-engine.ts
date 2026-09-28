@@ -33,6 +33,7 @@ export type Tournament = {
   id: string
   name: string
   status: TournamentStatus
+  avoidSameGroupPairings?: boolean
   groups: Group[]
   participants: Participant[]
   rounds: Round[]
@@ -249,6 +250,7 @@ const getPairWeight = (
   candidate: Participant,
   standingsById: Map<string, Standing>,
   diversityPriority: boolean,
+  avoidSameGroupPairings: boolean,
 ) => {
   const playerStanding = standingsById.get(player.id)
   const candidateStanding = standingsById.get(candidate.id)
@@ -259,7 +261,8 @@ const getPairWeight = (
   const buchholzDiff = Math.abs(
     (playerStanding?.buchholz ?? 0) - (candidateStanding?.buchholz ?? 0),
   )
-  const sameGroup = player.groupId === candidate.groupId
+  const sameGroup =
+    avoidSameGroupPairings && player.groupId === candidate.groupId
 
   return (
     scoreDiff * 8 + buchholzDiff * 1.5 + (sameGroup ? (diversityPriority ? 50 : 7) : 0)
@@ -271,6 +274,7 @@ const buildPairsWithoutRepeats = (
   standingsById: Map<string, Standing>,
   previousOpponents: Map<string, Set<string>>,
   diversityPriority: boolean,
+  avoidSameGroupPairings: boolean,
 ): Array<[Participant, Participant]> | null => {
   if (players.length === 0) {
     return []
@@ -281,7 +285,13 @@ const buildPairsWithoutRepeats = (
     .filter((candidate) => !previousOpponents.get(player.id)?.has(candidate.id))
     .map((candidate) => ({
       candidate,
-      weight: getPairWeight(player, candidate, standingsById, diversityPriority),
+      weight: getPairWeight(
+        player,
+        candidate,
+        standingsById,
+        diversityPriority,
+        avoidSameGroupPairings,
+      ),
     }))
     .sort((left, right) => left.weight - right.weight)
 
@@ -294,6 +304,7 @@ const buildPairsWithoutRepeats = (
       standingsById,
       previousOpponents,
       diversityPriority,
+      avoidSameGroupPairings,
     )
 
     if (tailPairs) {
@@ -311,6 +322,7 @@ export const generateSwissRound = (tournament: Tournament): Round => {
     (round) => round.status === 'completed',
   ).length
   const diversityPriority = !leadersAreDefined(standings, completedRounds)
+  const avoidSameGroupPairings = tournament.avoidSameGroupPairings ?? true
 
   const activeParticipants = tournament.participants.filter(
     (participant) => (participant.isActive ?? true),
@@ -350,6 +362,7 @@ export const generateSwissRound = (tournament: Tournament): Round => {
       standingsById,
       previousOpponents,
       diversityPriority,
+      avoidSameGroupPairings,
     )
 
     if (!pairs) {

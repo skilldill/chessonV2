@@ -47,6 +47,10 @@ const translations: Record<Language, Record<string, string>> = {
     'create.tournamentNamePlaceholder': 'Например, Кубок организаций',
     'create.createButton': 'Создать',
     'create.status': 'Статус:',
+    'create.settingsTitle': 'Настройки сетки',
+    'create.avoidSameGroupPairings': 'Разводить участников одной группы',
+    'create.avoidSameGroupPairingsHint':
+      'При выключении участники из одной группы смогут попасть в одну пару. Изменение применяется при формировании следующего тура.',
     'create.addGroup': 'Добавить группу',
     'create.groupPlaceholder': 'Например, Организация А',
     'create.addButton': 'Добавить',
@@ -137,6 +141,10 @@ const translations: Record<Language, Record<string, string>> = {
     'create.tournamentNamePlaceholder': 'For example, Organizations Cup',
     'create.createButton': 'Create',
     'create.status': 'Status:',
+    'create.settingsTitle': 'Pairing settings',
+    'create.avoidSameGroupPairings': 'Keep same-group participants apart',
+    'create.avoidSameGroupPairingsHint':
+      'When disabled, participants from the same group may be paired. The change applies when the next round is generated.',
     'create.addGroup': 'Add group',
     'create.groupPlaceholder': 'For example, Organization A',
     'create.addButton': 'Add',

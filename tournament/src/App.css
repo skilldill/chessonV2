@@ -229,6 +229,39 @@ tr:last-child td {
   min-width: 180px;
 }
 
+.tournament-settings {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.toggle-setting {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-alt);
+  cursor: pointer;
+}
+
+.toggle-setting input {
+  width: 1.1rem;
+  height: 1.1rem;
+  margin: 0.1rem 0 0;
+  accent-color: var(--accent);
+}
+
+.toggle-setting span {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.toggle-setting small {
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
 .status-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));

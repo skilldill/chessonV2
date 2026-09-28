@@ -160,6 +160,7 @@ export const useTournament = () => {
       id: uid(),
       name: cleanedName,
       status: 'setup',
+      avoidSameGroupPairings: true,
       groups: [],
       participants: [],
       rounds: [],
@@ -205,6 +206,17 @@ export const useTournament = () => {
     if (!participantGroupId) {
       setParticipantGroupId(nextGroup.id)
     }
+  }
+
+  const setAvoidSameGroupPairings = (enabled: boolean) => {
+    if (!tournament || tournament.status === 'finished') {
+      return
+    }
+
+    setTournament({
+      ...tournament,
+      avoidSameGroupPairings: enabled,
+    })
   }
 
   const updateGroupName = (groupId: string, nextName: string) => {
@@ -600,6 +612,7 @@ export const useTournament = () => {
     prizeTieGroups,
     createTournament,
     addGroup,
+    setAvoidSameGroupPairings,
     updateGroupName,
     removeGroup,
     addParticipant,
