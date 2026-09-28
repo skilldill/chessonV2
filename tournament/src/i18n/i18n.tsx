@@ -38,6 +38,10 @@ const translations: Record<Language, Record<string, string>> = {
       'В турнире есть несколько игроков с одинаковыми очками и коэффициентом Бухгольца на границе призовых мест. Сформировать тай-брейк?',
     'screen.tieBreakAction': 'Сформировать тай-брейк',
     'screen.finishAnyway': 'Завершить турнир',
+    'screen.recreateRoundTitle': 'Пересоздать тур?',
+    'screen.recreateRoundDescription':
+      'В текущем туре еще нет игровых результатов. Новый участник попадет в этот тур, а пары будут сформированы заново.',
+    'screen.recreateRoundConfirm': 'Пересоздать тур',
     'create.newTournament': 'Создать турнир',
     'create.tournamentName': 'Название турнира',
     'create.tournamentNamePlaceholder': 'Например, Кубок организаций',
@@ -51,7 +55,7 @@ const translations: Record<Language, Record<string, string>> = {
     'create.delete': 'Удалить',
     'participants.title': 'Участники',
     'participants.hint':
-      'После запуска турнира можно добавлять участников только между турами, до формирования следующего тура.',
+      'После запуска турнира можно добавлять участников между турами и во время тура: без результатов тур можно пересоздать, с результатами участник начнет со следующего тура с 0 очков.',
     'participants.name': 'Имя участника',
     'participants.namePlaceholder': 'ФИО',
     'participants.group': 'Группа',
@@ -124,6 +128,10 @@ const translations: Record<Language, Record<string, string>> = {
       'There are multiple players with equal points and Buchholz on the prize boundary. Generate tie-break matches?',
     'screen.tieBreakAction': 'Generate tie-break',
     'screen.finishAnyway': 'Finish tournament',
+    'screen.recreateRoundTitle': 'Regenerate round?',
+    'screen.recreateRoundDescription':
+      'The current round has no played results yet. The new participant will be added to this round and pairings will be generated again.',
+    'screen.recreateRoundConfirm': 'Regenerate round',
     'create.newTournament': 'Create tournament',
     'create.tournamentName': 'Tournament name',
     'create.tournamentNamePlaceholder': 'For example, Organizations Cup',
@@ -137,7 +145,7 @@ const translations: Record<Language, Record<string, string>> = {
     'create.delete': 'Delete',
     'participants.title': 'Participants',
     'participants.hint':
-      'After tournament start, participants can be added only between rounds before the next round is generated.',
+      'After tournament start, participants can be added between rounds or during a round: if there are no results, the round can be regenerated; if results exist, the participant starts next round with 0 points.',
     'participants.name': 'Participant name',
     'participants.namePlaceholder': 'Full name',
     'participants.group': 'Group',

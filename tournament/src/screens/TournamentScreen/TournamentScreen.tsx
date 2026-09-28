@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { FormEvent } from 'react'
 import { AppFooter } from '../../components/AppFooter/AppFooter'
 import { AppHeader } from '../../components/AppHeader/AppHeader'
 import { AppTabs } from '../../components/AppTabs/AppTabs'
@@ -10,12 +11,12 @@ import { useTournament } from '../../hooks/useTournament'
 import { useI18n } from '../../i18n/i18n'
 
 type Tab = 'create' | 'participants' | 'rounds'
-type FinishDialogMode = 'finish' | 'tie-break' | null
+type DialogMode = 'finish' | 'tie-break' | 'recreate-round' | null
 
 export const TournamentScreen = () => {
   const { t } = useI18n()
   const [tab, setTab] = useState<Tab>('create')
-  const [finishDialogMode, setFinishDialogMode] = useState<FinishDialogMode>(null)
+  const [dialogMode, setDialogMode] = useState<DialogMode>(null)
   const {
     tournament,
     tournamentName,
@@ -66,17 +67,30 @@ export const TournamentScreen = () => {
 
   const handleFinishTournament = () => {
     if (prizeTieGroups.length > 0) {
-      setFinishDialogMode('tie-break')
+      setDialogMode('tie-break')
       return
     }
 
-    setFinishDialogMode('finish')
+    setDialogMode('finish')
+  }
+
+  const handleAddParticipant = (event: FormEvent) => {
+    const result = addParticipant(event)
+    if (result === 'needs-recreate-confirm') {
+      setDialogMode('recreate-round')
+    }
   }
 
   const handleConfirmFinishTournament = () => {
-    if (finishDialogMode === 'tie-break') {
+    if (dialogMode === 'recreate-round') {
+      addParticipant(undefined, { recreateActiveRound: true })
+      setDialogMode(null)
+      return
+    }
+
+    if (dialogMode === 'tie-break') {
       const created = createPrizeBoundaryTieBreak()
-      setFinishDialogMode(null)
+      setDialogMode(null)
       if (created) {
         setTab('rounds')
       }
@@ -84,23 +98,23 @@ export const TournamentScreen = () => {
     }
 
     const finished = finishTournament()
-    setFinishDialogMode(null)
+    setDialogMode(null)
     if (finished) {
       setTab('rounds')
     }
   }
 
   const handleCancelFinishDialog = () => {
-    if (finishDialogMode === 'tie-break') {
+    if (dialogMode === 'tie-break') {
       const finished = finishTournament()
-      setFinishDialogMode(null)
+      setDialogMode(null)
       if (finished) {
         setTab('rounds')
       }
       return
     }
 
-    setFinishDialogMode(null)
+    setDialogMode(null)
   }
 
   return (
@@ -150,7 +164,7 @@ export const TournamentScreen = () => {
           setParticipantGroupId={setParticipantGroupId}
           canAddParticipantsAfterStart={canAddParticipantsAfterStart}
           canManageRoster={canManageRoster}
-          addParticipant={addParticipant}
+          addParticipant={handleAddParticipant}
           updateParticipantName={updateParticipantName}
           updateParticipantGroup={updateParticipantGroup}
           removeParticipant={removeParticipant}
@@ -177,30 +191,36 @@ export const TournamentScreen = () => {
       <AppFooter />
 
       <ConfirmDialog
-        isOpen={finishDialogMode !== null}
+        isOpen={dialogMode !== null}
         title={
-          finishDialogMode === 'tie-break'
+          dialogMode === 'recreate-round'
+            ? t('screen.recreateRoundTitle')
+            : dialogMode === 'tie-break'
             ? t('screen.tieBreakTitle')
             : t('screen.finishTitle')
         }
         description={
-          finishDialogMode === 'tie-break'
+          dialogMode === 'recreate-round'
+            ? t('screen.recreateRoundDescription')
+            : dialogMode === 'tie-break'
             ? t('screen.tieBreakDescription')
             : t('screen.finishDescription')
         }
         confirmLabel={
-          finishDialogMode === 'tie-break'
+          dialogMode === 'recreate-round'
+            ? t('screen.recreateRoundConfirm')
+            : dialogMode === 'tie-break'
             ? t('screen.tieBreakAction')
             : t('screen.finishConfirm')
         }
         cancelLabel={
-          finishDialogMode === 'tie-break'
+          dialogMode === 'tie-break'
             ? t('screen.finishAnyway')
             : t('confirm.cancel')
         }
-        confirmVariant={finishDialogMode === 'tie-break' ? 'default' : 'danger'}
-        closeOnOverlay={finishDialogMode !== 'tie-break'}
-        closeOnEscape={finishDialogMode !== 'tie-break'}
+        confirmVariant={dialogMode === 'finish' ? 'danger' : 'default'}
+        closeOnOverlay={dialogMode !== 'tie-break'}
+        closeOnEscape={dialogMode !== 'tie-break'}
         onConfirm={handleConfirmFinishTournament}
         onCancel={handleCancelFinishDialog}
       />

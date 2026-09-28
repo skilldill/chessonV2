@@ -14,6 +14,8 @@ import {
 
 const STORAGE_KEY = 'chess-swiss-tournament-v1'
 
+type AddParticipantResult = 'added' | 'needs-recreate-confirm' | 'skipped'
+
 export const useTournament = () => {
   const [tournament, setTournament] = useState<Tournament | null>(() => {
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -81,12 +83,8 @@ export const useTournament = () => {
       return true
     }
 
-    if (tournament.status !== 'running') {
-      return false
-    }
-
-    return !activeRound
-  }, [activeRound, tournament])
+    return tournament.status === 'running'
+  }, [tournament])
 
   const canManageRoster = useMemo(() => {
     if (!tournament) {
@@ -252,37 +250,79 @@ export const useTournament = () => {
     }
   }
 
-  const addParticipant = (event: FormEvent) => {
-    event.preventDefault()
+  const addParticipant = (
+    event?: FormEvent,
+    options: { recreateActiveRound?: boolean } = {},
+  ): AddParticipantResult => {
+    event?.preventDefault()
 
     if (!tournament || !canAddParticipantsAfterStart) {
-      return
+      return 'skipped'
     }
 
     const cleanedName = participantName.trim()
     if (!cleanedName || !participantGroupId) {
-      return
+      return 'skipped'
     }
 
     const hasGroup = tournament.groups.some((group) => group.id === participantGroupId)
     if (!hasGroup) {
-      return
+      return 'skipped'
+    }
+
+    const nextParticipant = {
+      id: uid(),
+      name: cleanedName,
+      groupId: participantGroupId,
+      isActive: true,
+    }
+
+    const nextParticipants = [...tournament.participants, nextParticipant]
+
+    if (tournament.status === 'running' && activeRound) {
+      const hasEnteredResults = activeRound.matches.some(
+        (match) => match.playerBId && match.result !== null,
+      )
+
+      if (!hasEnteredResults && !options.recreateActiveRound) {
+        return 'needs-recreate-confirm'
+      }
+
+      if (!hasEnteredResults && options.recreateActiveRound) {
+        const roundsBeforeActive = tournament.rounds.filter(
+          (round) => round.id !== activeRound.id,
+        )
+        const tournamentForPairing = {
+          ...tournament,
+          participants: nextParticipants,
+          rounds: roundsBeforeActive,
+        }
+
+        let recreatedRound: Round
+        try {
+          recreatedRound = generateSwissRound(tournamentForPairing)
+        } catch {
+          return 'skipped'
+        }
+
+        setTournament({
+          ...tournament,
+          participants: nextParticipants,
+          rounds: [...roundsBeforeActive, recreatedRound],
+        })
+
+        setParticipantName('')
+        return 'added'
+      }
     }
 
     setTournament({
       ...tournament,
-      participants: [
-        ...tournament.participants,
-        {
-          id: uid(),
-          name: cleanedName,
-          groupId: participantGroupId,
-          isActive: true,
-        },
-      ],
+      participants: nextParticipants,
     })
 
     setParticipantName('')
+    return 'added'
   }
 
   const updateParticipantName = (participantId: string, nextName: string) => {
