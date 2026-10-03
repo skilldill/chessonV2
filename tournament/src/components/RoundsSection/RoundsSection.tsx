@@ -98,7 +98,11 @@ export const RoundsSection = ({
     )
   }, [tournament.groups])
 
-  const renderPlayerWithTeam = (playerId: string, fallbackText: string) => {
+  const renderPlayerWithTeam = (
+    playerId: string,
+    fallbackText: string,
+    color?: 'white' | 'black',
+  ) => {
     const participant = participantsById.get(playerId)
     if (!participant) {
       return <span>{fallbackText}</span>
@@ -109,6 +113,11 @@ export const RoundsSection = ({
 
     return (
       <span className="player-row">
+        {color ? (
+          <span className={`color-label color-label-${color}`}>
+            {t(`rounds.${color}`)}
+          </span>
+        ) : null}
         <span>{participant.name}</span>
         <span className="team-label" style={teamColor}>
           {teamName}
@@ -161,10 +170,18 @@ export const RoundsSection = ({
                 >
                   <p className="match-title">{t('rounds.pair', { number: index + 1 })}</p>
                   <div className="match-players">
-                    {renderPlayerWithTeam(match.playerAId, t('common.unknown'))}
+                    {renderPlayerWithTeam(
+                      match.playerAId,
+                      t('common.unknown'),
+                      match.playerBId ? 'white' : undefined,
+                    )}
                     <span className="match-vs">vs</span>
                     {match.playerBId ? (
-                      renderPlayerWithTeam(match.playerBId, t('common.unknown'))
+                      renderPlayerWithTeam(
+                        match.playerBId,
+                        t('common.unknown'),
+                        'black',
+                      )
                     ) : (
                       <span className="player-row">
                         <span>BYE</span>
@@ -319,10 +336,18 @@ export const RoundsSection = ({
                   return (
                     <li key={match.id}>
                       <span className="history-match-line">
-                        {renderPlayerWithTeam(match.playerAId, t('common.unknown'))}
+                        {renderPlayerWithTeam(
+                          match.playerAId,
+                          t('common.unknown'),
+                          match.playerBId ? 'white' : undefined,
+                        )}
                         <span className="history-separator">-</span>
                         {match.playerBId ? (
-                          renderPlayerWithTeam(match.playerBId, t('common.unknown'))
+                          renderPlayerWithTeam(
+                            match.playerBId,
+                            t('common.unknown'),
+                            'black',
+                          )
                         ) : (
                           <span className="player-row">
                             <span>BYE</span>

@@ -308,6 +308,27 @@ tr:last-child td {
   flex-wrap: wrap;
 }
 
+.color-label {
+  display: inline-flex;
+  align-items: center;
+  min-width: 58px;
+  padding: 0.1rem 0.4rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.color-label-white {
+  background: #f7f7f2;
+  color: #1c1c1c;
+}
+
+.color-label-black {
+  background: #202124;
+  color: #f7f7f2;
+}
+
 .team-label {
   display: inline-flex;
   align-items: center;
@@ -423,10 +444,15 @@ tr:last-child td {
   box-shadow: 0 10px 40px var(--shadow);
 }
 
+.confirm-dialog-wide {
+  width: min(620px, 100%);
+}
+
 .confirm-dialog-actions {
   display: flex;
   gap: 0.55rem;
   justify-content: flex-end;
+  flex-wrap: wrap;
 }
 
 @media (max-width: 640px) {

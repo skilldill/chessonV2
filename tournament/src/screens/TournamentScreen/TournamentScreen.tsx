@@ -106,16 +106,15 @@ export const TournamentScreen = () => {
   }
 
   const handleCancelFinishDialog = () => {
-    if (dialogMode === 'tie-break') {
-      const finished = finishTournament()
-      setDialogMode(null)
-      if (finished) {
-        setTab('rounds')
-      }
-      return
-    }
-
     setDialogMode(null)
+  }
+
+  const handleFinishWithoutTieBreak = () => {
+    const finished = finishTournament()
+    setDialogMode(null)
+    if (finished) {
+      setTab('rounds')
+    }
   }
 
   return (
@@ -215,16 +214,17 @@ export const TournamentScreen = () => {
             ? t('screen.tieBreakAction')
             : t('screen.finishConfirm')
         }
-        cancelLabel={
-          dialogMode === 'tie-break'
-            ? t('screen.finishAnyway')
-            : t('confirm.cancel')
+        cancelLabel={t('confirm.cancel')}
+        alternateLabel={
+          dialogMode === 'tie-break' ? t('screen.finishAnyway') : undefined
         }
+        alternateVariant="danger"
         confirmVariant={dialogMode === 'finish' ? 'danger' : 'default'}
-        closeOnOverlay={dialogMode !== 'tie-break'}
-        closeOnEscape={dialogMode !== 'tie-break'}
         onConfirm={handleConfirmFinishTournament}
         onCancel={handleCancelFinishDialog}
+        onAlternate={
+          dialogMode === 'tie-break' ? handleFinishWithoutTieBreak : undefined
+        }
       />
     </main>
   )

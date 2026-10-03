@@ -52,10 +52,25 @@ export type Standing = {
   byes: number
 }
 
+type PlayerColor = 'white' | 'black'
+
 export const uid = () =>
   `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
 
 const round2 = (value: number) => Math.round(value * 100) / 100
+
+const shuffle = <T>(items: T[], random: () => number) => {
+  const result = [...items]
+
+  for (let index = result.length - 1; index > 0; index -= 1) {
+    const randomIndex = Math.floor(random() * (index + 1))
+    const current = result[index]
+    result[index] = result[randomIndex]
+    result[randomIndex] = current
+  }
+
+  return result
+}
 
 export const findActiveRound = (tournament: Tournament | null) =>
   tournament?.rounds.find((round) => round.status === 'active') ?? null
@@ -216,18 +231,14 @@ const getByeCandidates = (
     }
   }
 
-  const byLowestScoreAndName = (left: Participant, right: Participant) => {
+  const byLowestScore = (left: Participant, right: Participant) => {
     const leftStanding = standingsById.get(left.id)
     const rightStanding = standingsById.get(right.id)
 
     const leftPoints = leftStanding?.points ?? 0
     const rightPoints = rightStanding?.points ?? 0
 
-    if (leftPoints !== rightPoints) {
-      return leftPoints - rightPoints
-    }
-
-    return left.name.localeCompare(right.name, 'ru')
+    return leftPoints - rightPoints
   }
 
   const playersWithoutBye = sortedPlayers.filter(
@@ -240,15 +251,96 @@ const getByeCandidates = (
   // If there is at least one player without a BYE, prefer only this pool.
   // Players who already had BYE are used as a fallback when pairing is impossible.
   return [
-    ...playersWithoutBye.sort(byLowestScoreAndName),
-    ...playersWithBye.sort(byLowestScoreAndName),
+    ...playersWithoutBye.sort(byLowestScore),
+    ...playersWithBye.sort(byLowestScore),
   ]
+}
+
+const collectColorHistory = (tournament: Tournament) => {
+  const history = new Map<string, PlayerColor[]>()
+
+  for (const participant of tournament.participants) {
+    history.set(participant.id, [])
+  }
+
+  for (const round of tournament.rounds) {
+    for (const match of round.matches) {
+      if (!match.playerBId) {
+        continue
+      }
+
+      history.get(match.playerAId)?.push('white')
+      history.get(match.playerBId)?.push('black')
+    }
+  }
+
+  return history
+}
+
+const getColorPenalty = (history: PlayerColor[], nextColor: PlayerColor) => {
+  const whiteGames = history.filter((color) => color === 'white').length
+  const blackGames = history.length - whiteGames
+  const nextBalance =
+    whiteGames - blackGames + (nextColor === 'white' ? 1 : -1)
+  const lastColor = history.at(-1)
+  const previousColor = history.at(-2)
+
+  let penalty = Math.abs(nextBalance) * 10
+  if (lastColor === nextColor) {
+    penalty += 8
+  }
+  if (lastColor === nextColor && previousColor === nextColor) {
+    penalty += 30
+  }
+
+  return penalty
+}
+
+export const createColorBalancedMatches = (
+  tournament: Tournament,
+  pairs: Array<[Participant, Participant]>,
+  random: () => number = Math.random,
+): Match[] => {
+  const colorHistory = collectColorHistory(tournament)
+
+  return pairs.map(([first, second]) => {
+    const firstHistory = colorHistory.get(first.id) ?? []
+    const secondHistory = colorHistory.get(second.id) ?? []
+    const directPenalty =
+      getColorPenalty(firstHistory, 'white') +
+      getColorPenalty(secondHistory, 'black')
+    const reversedPenalty =
+      getColorPenalty(firstHistory, 'black') +
+      getColorPenalty(secondHistory, 'white')
+    const reverse =
+      reversedPenalty < directPenalty ||
+      (reversedPenalty === directPenalty && random() < 0.5)
+    const white = reverse ? second : first
+    const black = reverse ? first : second
+
+    colorHistory.set(white.id, [
+      ...(colorHistory.get(white.id) ?? []),
+      'white',
+    ])
+    colorHistory.set(black.id, [
+      ...(colorHistory.get(black.id) ?? []),
+      'black',
+    ])
+
+    return {
+      id: uid(),
+      playerAId: white.id,
+      playerBId: black.id,
+      result: null,
+    }
+  })
 }
 
 const getPairWeight = (
   player: Participant,
   candidate: Participant,
   standingsById: Map<string, Standing>,
+  colorHistory: Map<string, PlayerColor[]>,
   diversityPriority: boolean,
   avoidSameGroupPairings: boolean,
 ) => {
@@ -263,9 +355,22 @@ const getPairWeight = (
   )
   const sameGroup =
     avoidSameGroupPairings && player.groupId === candidate.groupId
+  const playerColors = colorHistory.get(player.id) ?? []
+  const candidateColors = colorHistory.get(candidate.id) ?? []
+  const directColorPenalty =
+    getColorPenalty(playerColors, 'white') +
+    getColorPenalty(candidateColors, 'black')
+  const reversedColorPenalty =
+    getColorPenalty(playerColors, 'black') +
+    getColorPenalty(candidateColors, 'white')
+  const colorCompatibilityPenalty =
+    Math.min(directColorPenalty, reversedColorPenalty) * 0.25
 
   return (
-    scoreDiff * 8 + buchholzDiff * 1.5 + (sameGroup ? (diversityPriority ? 50 : 7) : 0)
+    scoreDiff * 8 +
+    buchholzDiff * 1.5 +
+    colorCompatibilityPenalty +
+    (sameGroup ? (diversityPriority ? 50 : 7) : 0)
   )
 }
 
@@ -273,6 +378,7 @@ const buildPairsWithoutRepeats = (
   players: Participant[],
   standingsById: Map<string, Standing>,
   previousOpponents: Map<string, Set<string>>,
+  colorHistory: Map<string, PlayerColor[]>,
   diversityPriority: boolean,
   avoidSameGroupPairings: boolean,
 ): Array<[Participant, Participant]> | null => {
@@ -289,6 +395,7 @@ const buildPairsWithoutRepeats = (
         player,
         candidate,
         standingsById,
+        colorHistory,
         diversityPriority,
         avoidSameGroupPairings,
       ),
@@ -303,6 +410,7 @@ const buildPairsWithoutRepeats = (
       remaining,
       standingsById,
       previousOpponents,
+      colorHistory,
       diversityPriority,
       avoidSameGroupPairings,
     )
@@ -315,7 +423,10 @@ const buildPairsWithoutRepeats = (
   return null
 }
 
-export const generateSwissRound = (tournament: Tournament): Round => {
+export const generateSwissRound = (
+  tournament: Tournament,
+  random: () => number = Math.random,
+): Round => {
   const standings = buildStandings(tournament)
   const standingsById = new Map(standings.map((item) => [item.participantId, item]))
   const completedRounds = tournament.rounds.filter(
@@ -328,7 +439,7 @@ export const generateSwissRound = (tournament: Tournament): Round => {
     (participant) => (participant.isActive ?? true),
   )
 
-  const sortedPlayers = [...activeParticipants].sort((left, right) => {
+  const sortedPlayers = shuffle(activeParticipants, random).sort((left, right) => {
     const leftStanding = standingsById.get(left.id)
     const rightStanding = standingsById.get(right.id)
 
@@ -340,10 +451,11 @@ export const generateSwissRound = (tournament: Tournament): Round => {
       return (rightStanding?.buchholz ?? 0) - (leftStanding?.buchholz ?? 0)
     }
 
-    return left.name.localeCompare(right.name, 'ru')
+    return 0
   })
 
   const previousOpponents = collectPreviousOpponents(tournament)
+  const colorHistory = collectColorHistory(tournament)
   const matches: Match[] = []
   const byeCandidates =
     sortedPlayers.length % 2 === 1
@@ -361,6 +473,7 @@ export const generateSwissRound = (tournament: Tournament): Round => {
       unpairedPlayers,
       standingsById,
       previousOpponents,
+      colorHistory,
       diversityPriority,
       avoidSameGroupPairings,
     )
@@ -386,14 +499,7 @@ export const generateSwissRound = (tournament: Tournament): Round => {
     throw new Error('Cannot generate Swiss round without repeated pairs')
   }
 
-  for (const [playerA, playerB] of finalPairs) {
-    matches.push({
-      id: uid(),
-      playerAId: playerA.id,
-      playerBId: playerB.id,
-      result: null,
-    })
-  }
+  matches.push(...createColorBalancedMatches(tournament, finalPairs, random))
 
   return {
     id: uid(),
