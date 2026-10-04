@@ -37,7 +37,7 @@ const translations: Record<Language, Record<string, string>> = {
     'screen.tieBreakDescription':
       'В турнире есть несколько игроков с одинаковыми очками и коэффициентом Бухгольца на границе призовых мест. Сформировать тай-брейк?',
     'screen.tieBreakAction': 'Сформировать тай-брейк',
-    'screen.finishAnyway': 'Завершить турнир',
+    'screen.finishAnyway': 'Завершить без тай-брейка',
     'screen.recreateRoundTitle': 'Пересоздать тур?',
     'screen.recreateRoundDescription':
       'В текущем туре еще нет игровых результатов. Новый участник попадет в этот тур, а пары будут сформированы заново.',
@@ -80,6 +80,8 @@ const translations: Record<Language, Record<string, string>> = {
     'rounds.currentRound': 'Текущий тур: {number}',
     'rounds.currentTieBreak': 'Тай-брейк: тур {number}',
     'rounds.pair': 'Пара {number}',
+    'rounds.white': 'Белые',
+    'rounds.black': 'Чёрные',
     'rounds.result': 'Результат',
     'rounds.select': 'Выберите',
     'rounds.winA': 'Победил {name}',
@@ -131,7 +133,7 @@ const translations: Record<Language, Record<string, string>> = {
     'screen.tieBreakDescription':
       'There are multiple players with equal points and Buchholz on the prize boundary. Generate tie-break matches?',
     'screen.tieBreakAction': 'Generate tie-break',
-    'screen.finishAnyway': 'Finish tournament',
+    'screen.finishAnyway': 'Finish without tie-break',
     'screen.recreateRoundTitle': 'Regenerate round?',
     'screen.recreateRoundDescription':
       'The current round has no played results yet. The new participant will be added to this round and pairings will be generated again.',
@@ -174,6 +176,8 @@ const translations: Record<Language, Record<string, string>> = {
     'rounds.currentRound': 'Current round: {number}',
     'rounds.currentTieBreak': 'Tie-break: round {number}',
     'rounds.pair': 'Pair {number}',
+    'rounds.white': 'White',
+    'rounds.black': 'Black',
     'rounds.result': 'Result',
     'rounds.select': 'Select',
     'rounds.winA': '{name} won',
