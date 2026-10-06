@@ -11,12 +11,19 @@ import { useTournament } from '../../hooks/useTournament'
 import { useI18n } from '../../i18n/i18n'
 
 type Tab = 'create' | 'participants' | 'rounds'
-type DialogMode = 'finish' | 'tie-break' | 'recreate-round' | null
+type DialogMode =
+  | 'finish'
+  | 'tie-break'
+  | 'recreate-round'
+  | 'remove-participant'
+  | 'reset-tournament'
+  | null
 
 export const TournamentScreen = () => {
   const { t } = useI18n()
   const [tab, setTab] = useState<Tab>('create')
   const [dialogMode, setDialogMode] = useState<DialogMode>(null)
+  const [pendingParticipantId, setPendingParticipantId] = useState<string | null>(null)
   const {
     tournament,
     tournamentName,
@@ -64,6 +71,12 @@ export const TournamentScreen = () => {
   const handleResetTournament = () => {
     resetTournament()
     setTab('create')
+    setPendingParticipantId(null)
+    setDialogMode(null)
+  }
+
+  const handleRequestResetTournament = () => {
+    setDialogMode('reset-tournament')
   }
 
   const handleFinishTournament = () => {
@@ -82,7 +95,26 @@ export const TournamentScreen = () => {
     }
   }
 
-  const handleConfirmFinishTournament = () => {
+  const handleRemoveParticipant = (participantId: string) => {
+    setPendingParticipantId(participantId)
+    setDialogMode('remove-participant')
+  }
+
+  const handleConfirmDialog = () => {
+    if (dialogMode === 'reset-tournament') {
+      handleResetTournament()
+      return
+    }
+
+    if (dialogMode === 'remove-participant') {
+      if (pendingParticipantId) {
+        removeParticipant(pendingParticipantId)
+      }
+      setPendingParticipantId(null)
+      setDialogMode(null)
+      return
+    }
+
     if (dialogMode === 'recreate-round') {
       addParticipant(undefined, { recreateActiveRound: true })
       setDialogMode(null)
@@ -106,6 +138,7 @@ export const TournamentScreen = () => {
   }
 
   const handleCancelFinishDialog = () => {
+    setPendingParticipantId(null)
     setDialogMode(null)
   }
 
@@ -119,10 +152,7 @@ export const TournamentScreen = () => {
 
   return (
     <main className="layout">
-      <AppHeader
-        hasTournament={Boolean(tournament)}
-        onResetTournament={handleResetTournament}
-      />
+      <AppHeader />
 
       <div className="nav-controls">
         <AppTabs
@@ -132,13 +162,13 @@ export const TournamentScreen = () => {
         />
 
         {tournament && tournament.status === 'setup' ? (
-            <button
-              onClick={handleStartTournament}
-              disabled={activeParticipantsCount < 2 || tournament.groups.length === 0}
-            >
-              {t('screen.startFirstRound')}
-            </button>
-          ) : null}
+          <button
+            onClick={handleStartTournament}
+            disabled={activeParticipantsCount < 2 || tournament.groups.length === 0}
+          >
+            {t('screen.startFirstRound')}
+          </button>
+        ) : null}
       </div>
 
       {tab === 'create' ? (
@@ -153,6 +183,7 @@ export const TournamentScreen = () => {
           setAvoidSameGroupPairings={setAvoidSameGroupPairings}
           updateGroupName={updateGroupName}
           removeGroup={removeGroup}
+          onResetTournament={handleRequestResetTournament}
         />
       ) : null}
 
@@ -168,7 +199,7 @@ export const TournamentScreen = () => {
           addParticipant={handleAddParticipant}
           updateParticipantName={updateParticipantName}
           updateParticipantGroup={updateParticipantGroup}
-          removeParticipant={removeParticipant}
+          removeParticipant={handleRemoveParticipant}
           standings={standings}
         />
       ) : null}
@@ -194,21 +225,43 @@ export const TournamentScreen = () => {
       <ConfirmDialog
         isOpen={dialogMode !== null}
         title={
-          dialogMode === 'recreate-round'
+          dialogMode === 'reset-tournament'
+            ? t('screen.resetTournamentTitle')
+            : dialogMode === 'remove-participant'
+            ? t('screen.removeParticipantTitle')
+            : dialogMode === 'recreate-round'
             ? t('screen.recreateRoundTitle')
             : dialogMode === 'tie-break'
             ? t('screen.tieBreakTitle')
             : t('screen.finishTitle')
         }
         description={
-          dialogMode === 'recreate-round'
+          dialogMode === 'reset-tournament'
+            ? t('screen.resetTournamentDescription')
+            : dialogMode === 'remove-participant'
+            ? t(
+                tournament?.status === 'setup'
+                  ? 'screen.removeParticipantSetupDescription'
+                  : 'screen.removeParticipantDescription',
+                {
+                  name:
+                    (pendingParticipantId
+                      ? participantsById.get(pendingParticipantId)?.name
+                      : null) ?? t('common.unknown'),
+                },
+              )
+            : dialogMode === 'recreate-round'
             ? t('screen.recreateRoundDescription')
             : dialogMode === 'tie-break'
             ? t('screen.tieBreakDescription')
             : t('screen.finishDescription')
         }
         confirmLabel={
-          dialogMode === 'recreate-round'
+          dialogMode === 'reset-tournament'
+            ? t('screen.resetTournamentConfirm')
+            : dialogMode === 'remove-participant'
+            ? t('screen.removeParticipantConfirm')
+            : dialogMode === 'recreate-round'
             ? t('screen.recreateRoundConfirm')
             : dialogMode === 'tie-break'
             ? t('screen.tieBreakAction')
@@ -219,8 +272,14 @@ export const TournamentScreen = () => {
           dialogMode === 'tie-break' ? t('screen.finishAnyway') : undefined
         }
         alternateVariant="danger"
-        confirmVariant={dialogMode === 'finish' ? 'danger' : 'default'}
-        onConfirm={handleConfirmFinishTournament}
+        confirmVariant={
+          dialogMode === 'finish' ||
+          dialogMode === 'remove-participant' ||
+          dialogMode === 'reset-tournament'
+            ? 'danger'
+            : 'default'
+        }
+        onConfirm={handleConfirmDialog}
         onCancel={handleCancelFinishDialog}
         onAlternate={
           dialogMode === 'tie-break' ? handleFinishWithoutTieBreak : undefined

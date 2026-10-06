@@ -13,6 +13,7 @@ type CreateTournamentSectionProps = {
   setAvoidSameGroupPairings: (enabled: boolean) => void
   updateGroupName: (groupId: string, nextName: string) => void
   removeGroup: (groupId: string) => void
+  onResetTournament: () => void
 }
 
 export const CreateTournamentSection = ({
@@ -26,6 +27,7 @@ export const CreateTournamentSection = ({
   setAvoidSameGroupPairings,
   updateGroupName,
   removeGroup,
+  onResetTournament,
 }: CreateTournamentSectionProps) => {
   const { t } = useI18n()
   const canManageGroups =
@@ -57,7 +59,7 @@ export const CreateTournamentSection = ({
             <label className="toggle-setting">
               <input
                 type="checkbox"
-                checked={tournament.avoidSameGroupPairings ?? true}
+                checked={tournament.avoidSameGroupPairings ?? false}
                 disabled={tournament.status === 'finished'}
                 onChange={(event) =>
                   setAvoidSameGroupPairings(event.target.checked)
@@ -116,6 +118,17 @@ export const CreateTournamentSection = ({
                 })}
               </ul>
             )}
+          </div>
+
+          <div className="tournament-reset">
+            <p className="muted">{t('create.resetHint')}</p>
+            <button
+              type="button"
+              className="secondary reset-tournament-button"
+              onClick={onResetTournament}
+            >
+              {t('header.newTournament')}
+            </button>
           </div>
         </>
       )}

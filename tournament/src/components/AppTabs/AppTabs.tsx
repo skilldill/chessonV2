@@ -12,11 +12,20 @@ export const AppTabs = ({ tab, hasTournament, onTabChange }: AppTabsProps) => {
   const { t } = useI18n()
 
   return (
-    <nav className="tabs" aria-label={t('tabs.navLabel')}>
-      <button className={tab === 'create' ? 'active' : ''} onClick={() => onTabChange('create')}>
+    <nav className="tabs" aria-label={t('tabs.navLabel')} role="tablist">
+      <button
+        type="button"
+        role="tab"
+        aria-selected={tab === 'create'}
+        className={tab === 'create' ? 'active' : ''}
+        onClick={() => onTabChange('create')}
+      >
         {t('tabs.create')}
       </button>
       <button
+        type="button"
+        role="tab"
+        aria-selected={tab === 'participants'}
         className={tab === 'participants' ? 'active' : ''}
         onClick={() => onTabChange('participants')}
         disabled={!hasTournament}
@@ -24,6 +33,9 @@ export const AppTabs = ({ tab, hasTournament, onTabChange }: AppTabsProps) => {
         {t('tabs.participants')}
       </button>
       <button
+        type="button"
+        role="tab"
+        aria-selected={tab === 'rounds'}
         className={tab === 'rounds' ? 'active' : ''}
         onClick={() => onTabChange('rounds')}
         disabled={!hasTournament}

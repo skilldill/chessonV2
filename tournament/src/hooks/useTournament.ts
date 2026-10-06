@@ -91,12 +91,8 @@ export const useTournament = () => {
       return false
     }
 
-    if (tournament.status === 'setup') {
-      return true
-    }
-
-    return tournament.status === 'running' && !activeRound
-  }, [activeRound, tournament])
+    return tournament.status === 'setup' || tournament.status === 'running'
+  }, [tournament])
 
   const hasTieBreakRounds = useMemo(
     () => tournament?.rounds.some((round) => round.kind === 'tiebreak') ?? false,
@@ -160,7 +156,7 @@ export const useTournament = () => {
       id: uid(),
       name: cleanedName,
       status: 'setup',
-      avoidSameGroupPairings: true,
+      avoidSameGroupPairings: false,
       groups: [],
       participants: [],
       rounds: [],
