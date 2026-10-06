@@ -54,6 +54,18 @@ export type Standing = {
 
 type PlayerColor = 'white' | 'black'
 
+export type PairingPriorityInput = {
+  scoreDifference: number
+  buchholzDifference: number
+  colorCompatibilityPenalty: number
+  sameGroupPenalty: number
+}
+
+export type PairingPriority = {
+  scoreDifference: number
+  secondaryWeight: number
+}
+
 export const uid = () =>
   `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
 
@@ -77,26 +89,11 @@ export const findActiveRound = (tournament: Tournament | null) =>
 
 export const buildStandings = (tournament: Tournament): Standing[] => {
   const groupById = new Map(tournament.groups.map((group) => [group.id, group.name]))
-  const playedParticipantIds = new Set<string>()
-
-  for (const round of tournament.rounds) {
-    for (const match of round.matches) {
-      playedParticipantIds.add(match.playerAId)
-      if (match.playerBId) {
-        playedParticipantIds.add(match.playerBId)
-      }
-    }
-  }
 
   const byPlayer = new Map<string, Standing>()
   const opponentsByPlayer = new Map<string, string[]>()
 
   for (const player of tournament.participants) {
-    const isActive = player.isActive ?? true
-    if (!isActive && !playedParticipantIds.has(player.id)) {
-      continue
-    }
-
     byPlayer.set(player.id, {
       participantId: player.id,
       name: player.name,
@@ -296,6 +293,26 @@ const getColorPenalty = (history: PlayerColor[], nextColor: PlayerColor) => {
   return penalty
 }
 
+export const calculatePairingPriority = ({
+  scoreDifference,
+  buchholzDifference,
+  colorCompatibilityPenalty,
+  sameGroupPenalty,
+}: PairingPriorityInput): PairingPriority => ({
+  scoreDifference,
+  secondaryWeight:
+    buchholzDifference * 1.5 +
+    colorCompatibilityPenalty +
+    sameGroupPenalty,
+})
+
+const comparePairingPriorities = (
+  left: PairingPriority,
+  right: PairingPriority,
+) =>
+  left.scoreDifference - right.scoreDifference ||
+  left.secondaryWeight - right.secondaryWeight
+
 export const createColorBalancedMatches = (
   tournament: Tournament,
   pairs: Array<[Participant, Participant]>,
@@ -336,7 +353,7 @@ export const createColorBalancedMatches = (
   })
 }
 
-const getPairWeight = (
+const getPairingPriority = (
   player: Participant,
   candidate: Participant,
   standingsById: Map<string, Standing>,
@@ -366,12 +383,12 @@ const getPairWeight = (
   const colorCompatibilityPenalty =
     Math.min(directColorPenalty, reversedColorPenalty) * 0.25
 
-  return (
-    scoreDiff * 8 +
-    buchholzDiff * 1.5 +
-    colorCompatibilityPenalty +
-    (sameGroup ? (diversityPriority ? 50 : 7) : 0)
-  )
+  return calculatePairingPriority({
+    scoreDifference: scoreDiff,
+    buchholzDifference: buchholzDiff,
+    colorCompatibilityPenalty,
+    sameGroupPenalty: sameGroup ? (diversityPriority ? 50 : 7) : 0,
+  })
 }
 
 const buildPairsWithoutRepeats = (
@@ -391,7 +408,7 @@ const buildPairsWithoutRepeats = (
     .filter((candidate) => !previousOpponents.get(player.id)?.has(candidate.id))
     .map((candidate) => ({
       candidate,
-      weight: getPairWeight(
+      priority: getPairingPriority(
         player,
         candidate,
         standingsById,
@@ -400,7 +417,9 @@ const buildPairsWithoutRepeats = (
         avoidSameGroupPairings,
       ),
     }))
-    .sort((left, right) => left.weight - right.weight)
+    .sort((left, right) =>
+      comparePairingPriorities(left.priority, right.priority),
+    )
 
   for (const option of candidates) {
     const remaining = rest.filter(
@@ -433,7 +452,7 @@ export const generateSwissRound = (
     (round) => round.status === 'completed',
   ).length
   const diversityPriority = !leadersAreDefined(standings, completedRounds)
-  const avoidSameGroupPairings = tournament.avoidSameGroupPairings ?? true
+  const avoidSameGroupPairings = tournament.avoidSameGroupPairings ?? false
 
   const activeParticipants = tournament.participants.filter(
     (participant) => (participant.isActive ?? true),
