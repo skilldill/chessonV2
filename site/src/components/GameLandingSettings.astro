@@ -1,0 +1,177 @@
+---
+import { FRIEND_GAME_MINUTES, FRIEND_GAME_INCREMENTS, FRIEND_GAME_TRANSLATIONS, type FriendGameLanguage } from '../data/friendGame';
+import { BOT_GAME_DIFFICULTIES, BOT_GAME_TRANSLATIONS } from '../data/botGame';
+
+interface Props {
+  lang?: FriendGameLanguage;
+  mode?: 'friend' | 'bot';
+}
+const { lang = 'ru', mode = 'friend' } = Astro.props;
+const botContent = BOT_GAME_TRANSLATIONS[lang].settings;
+const content = mode === 'bot' ? botContent : FRIEND_GAME_TRANSLATIONS[lang].settings;
+const defaultMinutes = mode === 'bot' ? 30 : 10;
+const idPrefix = `${mode}-game`;
+const formatTime = (template: string, minutes: number, increment: number) =>
+  template.replace('{minutes}', String(minutes)).replace('{increment}', String(increment));
+
+const presets = [
+  { minutes: 3, increment: 2 },
+  { minutes: 5, increment: 0 },
+  { minutes: 10, increment: 0 },
+  { minutes: 15, increment: 10 },
+];
+---
+
+<form class="friend-settings" id={`${idPrefix}-settings`} data-game-settings data-summary-template={content.summary} action="https://game.chesson.me/create-room" method="get">
+  <input type="hidden" name="mode" value={mode} />
+  <input type="hidden" name="autoStart" value="1" />
+  <input type="hidden" name="gameMode" value="standard" />
+  <input type="hidden" name="source" value={`${mode}-landing`} />
+  <input type="hidden" name="requestId" value="" disabled />
+  <fieldset>
+    <legend>{content.legend}</legend>
+    {mode === 'bot' ? (
+      <div class="time-fields bot-fields">
+        <label for="bot-difficulty">
+          {botContent.difficulty}
+          <select id="bot-difficulty" name="botDifficulty">
+            {BOT_GAME_DIFFICULTIES.map((value, index) => (
+              <option value={value} selected={value === 'medium'}>{botContent.difficultyLabels[index]}</option>
+            ))}
+          </select>
+        </label>
+        <label for="bot-player-color">
+          {botContent.color}
+          <select id="bot-player-color" name="color">
+            <option value="white">{botContent.white}</option>
+            <option value="black">{botContent.black}</option>
+          </select>
+        </label>
+      </div>
+    ) : (
+    <div class="time-presets" role="group" aria-label={content.presetsLabel}>
+      {presets.map(({ minutes, increment }) => (
+        <button type="button" data-minutes={minutes} data-increment={increment}
+          aria-pressed={minutes === 10 && increment === 0 ? 'true' : 'false'}
+          aria-label={formatTime(content.presetLabel, minutes, increment)}>
+          {minutes} <span>+</span> {increment}
+        </button>
+      ))}
+    </div>
+    )}
+    <div class="time-fields">
+      <label for={`${idPrefix}-time-minutes`}>
+        {content.minutes}
+        <select id={`${idPrefix}-time-minutes`} name="timeMinutes">
+          {FRIEND_GAME_MINUTES.map((minutes) => <option value={minutes} selected={minutes === defaultMinutes}>{minutes}</option>)}
+        </select>
+      </label>
+      <label for={`${idPrefix}-increment-seconds`}>
+        {content.increment}
+        <select id={`${idPrefix}-increment-seconds`} name="incrementSeconds">
+          {FRIEND_GAME_INCREMENTS.map((seconds) => <option value={seconds} selected={seconds === 0}>{seconds}</option>)}
+        </select>
+      </label>
+    </div>
+  </fieldset>
+  <!-- ПОКА ЧТО ЗАБЛОКИРОВАЛ -->
+  <!-- {mode === 'friend' && <label class="ai-hints">
+    <span>{content.hints}</span>
+    <input type="checkbox" name="withAIhints" value="true" />
+  </label>} --> 
+  <div class="settings-footer">
+    <output for={`${idPrefix}-time-minutes ${idPrefix}-increment-seconds`} aria-live="polite">{formatTime(content.summary, defaultMinutes, 0)}</output>
+    <button type="submit" class="start-game">{content.submit}</button>
+  </div>
+</form>
+
+<script>
+  const form = document.querySelector<HTMLFormElement>('form[data-game-settings]');
+  if (form) {
+    const minutes = form.querySelector<HTMLSelectElement>('[name="timeMinutes"]')!;
+    const increment = form.querySelector<HTMLSelectElement>('[name="incrementSeconds"]')!;
+    const output = form.querySelector('output')!;
+    const presets = form.querySelectorAll<HTMLButtonElement>('[data-minutes]');
+    const mode = form.querySelector<HTMLInputElement>('[name="mode"]')!.value;
+    const storageKeys = mode === 'bot'
+      ? ['chesson_bot_time_minutes', 'chesson_bot_time_increment']
+      : ['chesson_room_time_minutes', 'chesson_room_time_increment'];
+    const updateSelection = () => {
+      output.textContent = form.dataset.summaryTemplate!
+        .replace('{minutes}', minutes.value).replace('{increment}', increment.value);
+      presets.forEach((preset) => {
+        preset.setAttribute('aria-pressed', String(preset.dataset.minutes === minutes.value && preset.dataset.increment === increment.value));
+      });
+    };
+    try {
+      [minutes, increment].forEach((select, index) => {
+        const saved = localStorage.getItem(storageKeys[index]);
+        if (saved && Array.from(select.options).some((option) => option.value === saved)) select.value = saved;
+      });
+    } catch {
+      // The form remains usable when browser storage is unavailable.
+    }
+    updateSelection();
+    presets.forEach((preset) => {
+      preset.addEventListener('click', () => {
+        minutes.value = preset.dataset.minutes!;
+        increment.value = preset.dataset.increment!;
+        updateSelection();
+      });
+    });
+    form.addEventListener('change', updateSelection);
+    form.addEventListener('submit', () => {
+      const requestId = form.querySelector<HTMLInputElement>('[name="requestId"]')!;
+      requestId.value = crypto.randomUUID();
+      requestId.disabled = false;
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      form.action = `https://${isMobile ? 'mobile' : 'game'}.chesson.me/create-room`;
+      try {
+        localStorage.setItem(storageKeys[0], minutes.value);
+        localStorage.setItem(storageKeys[1], increment.value);
+        localStorage.setItem(mode === 'bot' ? 'chesson_bot_time_customized' : 'chesson_room_time_customized', '1');
+      } catch {
+        // Selected values are still passed in the URL.
+      }
+    });
+  }
+</script>
+
+<style>
+  .friend-settings { width: 100%; max-width: 560px; padding: 22px; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; background: rgba(10, 10, 14, 0.94); text-align: left; }
+  fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+  legend { margin-bottom: 12px; font-size: 18px; font-weight: 650; }
+  .time-presets { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .time-presets button { min-height: 44px; border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 6px; background: rgba(255, 255, 255, 0.04); color: #fff; font-size: 18px; font-weight: 600; white-space: nowrap; cursor: pointer; }
+  .time-presets span { color: #9e9ca8; }
+  .time-presets button[aria-pressed="true"] { border-color: #a89bff; background: #4f39f6; }
+  .time-presets button[aria-pressed="true"] span { color: #fff; }
+  .time-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 18px; }
+  .time-fields label { position: relative; display: flex; flex-direction: column; gap: 8px; color: #c9c8ce; font-size: 14px; }
+  .time-fields label::after { content: ''; position: absolute; right: 16px; bottom: 19px; width: 8px; height: 8px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); pointer-events: none; }
+  .bot-fields { margin-top: 0; }
+  select { appearance: none; width: 100%; min-height: 44px; padding: 8px 36px 8px 12px; border: 1px solid rgba(255, 255, 255, 0.22); border-radius: 6px; background: #19191f; color: #fff; font-size: 16px; color-scheme: dark; cursor: pointer; }
+  .ai-hints { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 18px; font-size: 14px; cursor: pointer; }
+  .ai-hints input { width: 18px; height: 18px; accent-color: #78e8ad; }
+  .settings-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 20px; }
+  output { color: #c9c8ce; font-size: 14px; }
+  .start-game { min-height: 48px; padding: 12px 20px; border: 0; border-radius: 6px; background: #fff; color: #090909; font-size: 16px; font-weight: 700; cursor: pointer; }
+  .start-game:hover { background: #e4e4e7; }
+  button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid #bdb3ff; outline-offset: 4px; }
+  @media (max-width: 600px) {
+    .friend-settings { padding: 18px; }
+    .time-fields { gap: 10px; }
+    .time-fields label { font-size: 13px; }
+    .settings-footer { flex-direction: column; gap: 12px; }
+    .start-game { width: 100%; }
+  }
+  @media (max-width: 360px) {
+    .friend-settings { padding: 14px; }
+    legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+    .time-presets { gap: 6px; }
+    .time-presets button { font-size: 16px; }
+    .time-fields, .ai-hints { margin-top: 12px; }
+    select { padding-right: 32px; padding-left: 8px; font-size: 14px; }
+    .settings-footer { margin-top: 14px; }
+  }
+</style>

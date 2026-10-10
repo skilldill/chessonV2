@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { API_PREFIX } from "../constants/api";
 
 const BOT_GUEST_PROFILE_KEY = "botGuestProfile";
 
 type CreateRoomData = {
+    requestId?: string;
     timeMinutes: number;
     incrementSeconds: number;
     vsBot?: boolean;
@@ -25,7 +26,7 @@ export const useCreateRoom = () => {
     const [isCreating, setIsCreating] = useState(false);
     const [roomCreatingError, setRoomCreatingError] = useState<string | null>(null);
 
-    const createRoom = async (roomData: CreateRoomData, options: CreateRoomOptions | (() => void) = {}) => {
+    const createRoom = useCallback(async (roomData: CreateRoomData, options: CreateRoomOptions | (() => void) = {}) => {
         const normalizedOptions = typeof options === 'function' ? { onSuccess: options } : options;
         const { navigate = true, onCreated, onSuccess } = normalizedOptions;
 
@@ -37,11 +38,13 @@ export const useCreateRoom = () => {
 
             const response = await fetch(API_PREFIX + '/rooms', {
                 method: 'POST',
+                signal: roomData.requestId ? AbortSignal.timeout(20000) : undefined,
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 credentials: 'include',
                 body: JSON.stringify({
+                    requestId: roomData.requestId,
                     whiteTimer: timeSeconds,
                     blackTimer: timeSeconds,
                     increment: roomData.incrementSeconds,
@@ -61,7 +64,7 @@ export const useCreateRoom = () => {
 
             const data = await response.json();
 
-            if (data.roomId) {
+            if (data.success === true && typeof data.roomId === 'string' && /^[a-zA-Z0-9_-]+$/.test(data.roomId)) {
                 if (roomData.vsBot) {
                     const randomId = Math.floor(100 + Math.random() * 900);
                     const avatar = Math.floor(Math.random() * 6);
@@ -92,7 +95,7 @@ export const useCreateRoom = () => {
             setRoomCreatingError(err instanceof Error ? err.message : 'Failed to create room');
             setIsCreating(false);
         }
-    };
+    }, []);
 
     return {
         createRoom,

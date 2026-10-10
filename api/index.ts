@@ -25,6 +25,7 @@ import { gameAnalysisService } from './src/modules/game-analysis/game-analysis.s
 import { isPuzzleSolutionPlayable } from './src/modules/puzzle-generator/puzzle-validator';
 import mongoose from 'mongoose';
 import crypto from 'crypto';
+import { RoomCreationRequests, RoomCreationRequestError } from './utils/roomCreationRequests';
 
 // Connect to MongoDB
 if (process.env.WITHOUT_MONGO !== 'true') {
@@ -196,6 +197,7 @@ type RandomMatchAssignment = {
 };
 
 const rooms = new Map<string, Room>();
+const roomCreationRequests = new RoomCreationRequests<ReturnType<typeof createRoomResponse>>();
 const roomTimers = new Map<string, NodeJS.Timeout>();
 const roomLastActivity = new Map<string, number>(); // Время последней активности комнаты
 const userMessageCounts = new Map<string, { count: number, resetAt: number }>(); // Rate limiting для пользователей
@@ -408,6 +410,7 @@ function checkRateLimit(userId: string): boolean {
 
 // Функция для очистки неактивных комнат
 function cleanupInactiveRooms() {
+  roomCreationRequests.cleanup();
   const now = Date.now();
   let cleanedCount = 0;
   
@@ -4878,7 +4881,26 @@ app.delete('/api/random-match/leave', async ({ headers, query, set }) => {
 });
 
 // Create room endpoint
-app.post('/api/rooms', async ({ body }) => {
+function createRoomResponse(timerConfig: any) {
+  const { roomId, room, timerConfig: normalizedConfig } = createRoomWithConfig(timerConfig);
+  return {
+    success: true,
+    roomId,
+    message: 'Room created successfully',
+    gameMode: room.gameMode,
+    vsBot: room.botSettings?.enabled ?? false,
+    withAIhints: room.gameState.withAIhints,
+    botDifficulty: room.botSettings?.difficulty,
+    botMoveTimeMs: room.botSettings?.moveTimeMs,
+    timerConfig: {
+      whiteTimer: normalizedConfig.whiteTimer,
+      blackTimer: normalizedConfig.blackTimer,
+      increment: normalizedConfig.increment,
+    }
+  };
+}
+
+app.post('/api/rooms', async ({ body, set }) => {
   // Извлекаем конфигурацию таймеров или используем значения по умолчанию
   // В Elysia body может быть строкой или объектом, поэтому парсим если нужно
   let timerConfig: any = {};
@@ -4896,27 +4918,18 @@ app.post('/api/rooms', async ({ body }) => {
   console.log('TIMER CONFIG BODY', body);
   console.log('TIMER CONFIG', timerConfig);
 
-  const { roomId, room, timerConfig: normalizedConfig } = createRoomWithConfig(timerConfig);
-  
-  console.log('ROOM CREATED WITH TIMER:', room.gameState.timer);
-  console.log('ROOM ID:', roomId);
-  console.log('ROOM CREATED WITH FEN:', normalizedConfig.currentFEN);
-  
-  return {
-    success: true,
-    roomId,
-    message: 'Room created successfully',
-    gameMode: room.gameMode,
-    vsBot: room.botSettings?.enabled ?? false,
-    withAIhints: room.gameState.withAIhints,
-    botDifficulty: room.botSettings?.difficulty,
-    botMoveTimeMs: room.botSettings?.moveTimeMs,
-    timerConfig: {
-      whiteTimer: normalizedConfig.whiteTimer,
-      blackTimer: normalizedConfig.blackTimer,
-      increment: normalizedConfig.increment,
-    }
-  };
+  const signature = JSON.stringify([
+    timerConfig.whiteTimer, timerConfig.blackTimer, timerConfig.increment,
+    timerConfig.vsBot, timerConfig.withAIhints, timerConfig.botDifficulty,
+    timerConfig.botMoveTimeMs, timerConfig.color, timerConfig.currentFEN, timerConfig.gameMode,
+  ]);
+  try {
+    return roomCreationRequests.run(timerConfig.requestId, signature, () => createRoomResponse(timerConfig));
+  } catch (error) {
+    if (!(error instanceof RoomCreationRequestError)) throw error;
+    set.status = error.status;
+    return { success: false, error: error.message };
+  }
 });
 
 // Get room state endpoint

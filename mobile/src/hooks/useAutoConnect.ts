@@ -94,7 +94,7 @@ export const useAutoConnect = ({
     // Проверка авторизации и автоматическая подстановка данных
     useEffect(() => {
         // Если уже есть userName или storageGameData обрабатывается, пропускаем
-        if (userName || storageGameData) {
+        if (userName || storageGameData?.gameId === roomId) {
             if (!storageGameData) {
                 setCheckingAuth(false);
             }

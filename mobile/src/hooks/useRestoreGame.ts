@@ -26,9 +26,10 @@ export const useRestoreGame = () => {
 
     const checkStartedGame = async () => {
         if (!storageGameData) return;
-        if (window.location.pathname.startsWith('/analyze/') || window.location.pathname.startsWith('/analize/')) return;
+        if (window.location.pathname !== '/' && window.location.pathname !== '/main') return;
 
         const fetchedData = await fetchGameState(storageGameData.gameId);
+        if (window.location.pathname !== '/' && window.location.pathname !== '/main') return;
 
         if (!fetchedData) {
             removeGameData();
@@ -37,7 +38,7 @@ export const useRestoreGame = () => {
 
         const { gameState } = fetchedData;
 
-        if (gameState.gameEnded) return; // Игра закончилась, показать экран, что игры больше нет
+        if (!gameState || gameState.gameEnded) return;
 
         const targetPath = '/game/' + storageGameData.gameId;
 

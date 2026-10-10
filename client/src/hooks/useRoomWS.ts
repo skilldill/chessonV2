@@ -273,7 +273,7 @@ export const useRoomWS = (roomId: string) => {
         clearConnectionCheck();
         
         // Проверяем соединение каждые 5 secунд
-        connectionCheckIntervalRef.current = setInterval(() => {
+        connectionCheckIntervalRef.current = window.setInterval(() => {
             const ws = refWS.current;
             const now = Date.now();
             const timeSinceLastPong = now - lastPongTimeRef.current;
@@ -326,7 +326,7 @@ export const useRoomWS = (roomId: string) => {
         // Пытаемся переподключиться через экспоненциальную задержку
         const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current - 1), 10000);
         
-        reconnectTimeoutRef.current = setTimeout(async () => {
+        reconnectTimeoutRef.current = window.setTimeout(async () => {
             isReconnectingRef.current = false;
             await connectToRoom(userCredentialsRef.current!, true);
         }, delay);
@@ -366,7 +366,7 @@ export const useRoomWS = (roomId: string) => {
 
         refWS.current = new WebSocket(wsUrl);
 
-        connectTimeoutRef.current = setTimeout(() => {
+        connectTimeoutRef.current = window.setTimeout(() => {
             const ws = refWS.current;
             if (!ws) return;
 

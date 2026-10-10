@@ -8,7 +8,7 @@ type ShareLinkBlockProps = {
     onClose: () => void;
 }
 
-const SITE_BASE_URL = import.meta.env.VITE_TEST_MODE ? 'http://localhost:' + window.location.port : import.meta.env.VITE_MAIN_SITE;
+const SITE_BASE_URL = import.meta.env.VITE_TEST_MODE ? window.location.origin : (import.meta.env.VITE_MAIN_SITE || 'https://chesson.me');
 
 export const ShareLinkBlock: FC<ShareLinkBlockProps> = () => {
     const { t } = useTranslation();

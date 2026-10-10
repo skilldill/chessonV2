@@ -1,0 +1,19 @@
+---
+import FriendGamePage from '../../components/FriendGamePage.astro';
+import { FRIEND_GAME_SLUGS } from '../../data/friendGame';
+import BotGamePage from '../../components/BotGamePage.astro';
+import { BOT_GAME_RU_SLUGS, BOT_GAME_EN_SLUGS } from '../../data/botGame';
+import type { FriendGameLanguage } from '../../data/friendGame';
+
+export function getStaticPaths() {
+  return [
+    ...FRIEND_GAME_SLUGS.map((friendSlug) => ({ params: { friendSlug }, props: { mode: 'friend', lang: 'ru' } })),
+    ...BOT_GAME_RU_SLUGS.map((friendSlug) => ({ params: { friendSlug }, props: { mode: 'bot', lang: 'ru' } })),
+    ...BOT_GAME_EN_SLUGS.map((friendSlug) => ({ params: { friendSlug }, props: { mode: 'bot', lang: 'en' } })),
+  ];
+}
+interface Props { mode: 'friend' | 'bot'; lang: FriendGameLanguage; }
+const { mode, lang } = Astro.props;
+---
+
+{mode === 'bot' ? <BotGamePage lang={lang} /> : <FriendGamePage lang={lang} />}

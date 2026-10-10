@@ -1,0 +1,121 @@
+---
+import Layout from '../layouts/Layout.astro';
+import HeroBackdrop from './HeroBackdrop.astro';
+import GameLandingSettings from './GameLandingSettings.astro';
+import { FRIEND_GAME_CANONICAL, FRIEND_GAME_EN_CANONICAL, FRIEND_GAME_TRANSLATIONS, type FriendGameLanguage } from '../data/friendGame';
+import { BOT_GAME_CANONICAL, BOT_GAME_EN_CANONICAL, BOT_GAME_TRANSLATIONS } from '../data/botGame';
+
+interface Props {
+  lang?: FriendGameLanguage;
+  mode?: 'friend' | 'bot';
+}
+const { lang = 'ru', mode = 'friend' } = Astro.props;
+const content = mode === 'bot' ? BOT_GAME_TRANSLATIONS[lang] : FRIEND_GAME_TRANSLATIONS[lang];
+const canonicalRu = mode === 'bot' ? BOT_GAME_CANONICAL : FRIEND_GAME_CANONICAL;
+const canonicalEn = mode === 'bot' ? BOT_GAME_EN_CANONICAL : FRIEND_GAME_EN_CANONICAL;
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: content.faq.map(({ question, answer }) => ({
+    '@type': 'Question',
+    name: question,
+    acceptedAnswer: { '@type': 'Answer', text: answer },
+  })),
+};
+---
+
+<Layout
+  lang={lang}
+  title={content.title}
+  description={content.description}
+  canonicalUrl={content.canonical}
+  ogImage="https://chesson.me/og.png"
+  locale={content.locale}
+  alternates={[
+    { lang: 'ru', url: canonicalRu },
+    { lang: 'en', url: canonicalEn },
+    { lang: 'x-default', url: canonicalEn },
+  ]}
+>
+  <main class="friend-page">
+    <section class="friend-hero" aria-labelledby="friend-title">
+      <HeroBackdrop homeHref={content.homeHref} interactive={false} />
+      <div class="friend-hero-content">
+        <h1 id="friend-title">{content.heading[0]}<br />{content.heading[1]}</h1>
+        <p class="hero-summary">{content.summary}</p>
+        <p class="hero-benefits">{content.benefits}</p>
+        <GameLandingSettings lang={lang} mode={mode} />
+      </div>
+    </section>
+
+    <section class="friend-section how-section" aria-labelledby="how-title">
+      <h2 id="how-title">{content.howTitle}</h2>
+      <ol class="friend-steps">
+        {content.steps.map(({ title, description }, index) => (
+          <li><span class="step-number">{String(index + 1).padStart(2, '0')}</span><h3>{title}</h3><p>{description}</p></li>
+        ))}
+      </ol>
+    </section>
+
+    <section class="friend-section faq-section" aria-labelledby="faq-title">
+      <h2 id="faq-title">{content.faqTitle}</h2>
+      {content.faq.map(({ question, answer }) => (
+        <details><summary>{question}</summary><p>{answer}</p></details>
+      ))}
+      <a class="back-to-settings" href={`#${mode}-game-settings`}>{content.backToSettings}</a>
+    </section>
+
+    <footer class="friend-footer">
+      <a href={content.homeHref}>Chesson</a>
+      <div>
+        <a href={content.homeHref + 'chess-rules-for-beginners/'}>{content.rules}</a>
+        <a href={content.homeHref + 'privacy-policy/'}>{content.privacy}</a>
+        <a href={content.homeHref + 'terms-of-use/'}>{content.terms}</a>
+      </div>
+    </footer>
+  </main>
+  <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
+</Layout>
+
+<style>
+  .friend-page { background: #070707; color: #fff; font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif; letter-spacing: 0; }
+  .friend-hero { position: relative; display: flex; align-items: center; justify-content: center; min-height: calc(100svh - 80px); overflow: hidden; }
+  .friend-hero-content { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 960px; padding: 110px 24px 56px; text-align: center; }
+  h1 { margin: 0; font-size: 56px; font-weight: 750; line-height: 1.12; text-wrap: balance; }
+  .hero-summary { margin: 20px 0 0; font-size: 20px; line-height: 1.5; }
+  .hero-benefits { margin: 10px 0 26px; color: #cdccd2; font-size: 14px; line-height: 1.6; }
+  .friend-section { max-width: 1100px; margin: 0 auto; padding: 48px 32px; }
+  h2 { margin: 0 0 28px; font-size: 28px; font-weight: 650; line-height: 1.25; }
+  .how-section { border-bottom: 1px solid #252528; }
+  .friend-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 36px; margin: 0; padding: 0; list-style: none; }
+  .step-number { color: #a89bff; font-size: 14px; font-weight: 650; }
+  h3 { margin: 12px 0 8px; font-size: 18px; font-weight: 650; }
+  .friend-steps p, details p { margin: 0; color: #b8b7c1; font-size: 16px; line-height: 1.65; }
+  .faq-section { max-width: 820px; }
+  details { padding: 20px 0; border-bottom: 1px solid #252528; }
+  summary { cursor: pointer; font-size: 17px; line-height: 1.5; }
+  details p { margin-top: 12px; }
+  .back-to-settings { display: inline-block; margin-top: 28px; color: #c4baff; text-underline-offset: 4px; }
+  .friend-footer { display: flex; justify-content: space-between; gap: 24px; max-width: 1100px; margin: 0 auto; padding: 32px; border-top: 1px solid #252528; }
+  .friend-footer > a { font-size: 18px; font-weight: 650; }
+  .friend-footer div { display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; color: #b8b7c1; }
+  a:focus-visible, summary:focus-visible { outline: 2px solid #bdb3ff; outline-offset: 4px; }
+  @media (max-width: 600px) {
+    .friend-hero-content { padding: 96px 16px 24px; }
+    h1 { font-size: 32px; }
+    .hero-summary { margin-top: 14px; font-size: 16px; }
+    .hero-benefits { max-width: 290px; margin-bottom: 20px; font-size: 13px; }
+    .friend-section { padding: 32px 20px; }
+    .how-section { padding-top: 24px; }
+    h2 { font-size: 24px; }
+    .friend-steps { grid-template-columns: 1fr; gap: 24px; }
+    .friend-footer { flex-direction: column; padding: 24px 20px; }
+  }
+  @media (max-width: 360px) {
+    .friend-hero-content { padding-top: 80px; padding-bottom: 24px; }
+    h1 { font-size: 28px; }
+    .hero-summary { margin-top: 10px; font-size: 14px; }
+    .hero-benefits { margin-bottom: 16px; }
+  }
+</style>

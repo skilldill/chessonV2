@@ -1,0 +1,11 @@
+---
+import GameLandingPage from './GameLandingPage.astro';
+import type { FriendGameLanguage } from '../data/friendGame';
+
+interface Props {
+  lang?: FriendGameLanguage;
+}
+const { lang = 'ru' } = Astro.props;
+---
+
+<GameLandingPage lang={lang} mode="friend" />

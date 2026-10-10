@@ -1,4 +1,8 @@
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
+import { isFriendGameEntry } from '../../utils/friendGameEntry';
+import { isBotGameEntry } from '../../utils/botGameEntry';
+import { GameEntryScreen } from '../GameEntryScreen/GameEntryScreen';
 import { useCreateRoom } from '../../hooks/useCreateRoom';
 import { useQuickPlayEntry } from '../../hooks/useQuickPlayEntry';
 import { BotDifficultyModal, type BotDifficulty } from '../../components/BotDifficultyModal/BotDifficultyModal';
@@ -218,4 +222,10 @@ function LabsModal({
     );
 }
 
-export default CreateRoomScreen;
+const CreateRoomEntry = () => {
+    const location = useLocation();
+    if (isBotGameEntry(location.search)) return <GameEntryScreen key="bot" mode="bot" />;
+    return isFriendGameEntry(location.search) ? <GameEntryScreen key="friend" /> : <CreateRoomScreen />;
+};
+
+export default CreateRoomEntry;

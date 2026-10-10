@@ -6,66 +6,37 @@ import { useHistory, useLocation } from 'react-router-dom';
 export const useRestoreGame = () => {
     const history = useHistory();
     const location = useLocation();
-    const removeGameData = () => localStorage.removeItem('gameData');
-
-    const fetchGameState = async (gameId: string) => {
-        try {
-            const response = await fetch(API_PREFIX + '/rooms/' + gameId, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            })
-
-            const resData = await response.json();
-            const data = (resData as { gameState: GameState });
-
-            return data;
-        } catch (err) {
-            console.error('Error fetching game data:', err);
-        }
-    }
-
-    const checkStartedGame = async () => {
-        if (location.pathname.startsWith('/analyze/') || location.pathname.startsWith('/analize/')) {
-            return;
-        }
-
-        const rawGameData = localStorage.getItem('gameData');
-        if (!rawGameData) return;
-
-        let storageGameData: { gameId: string } | null = null;
-        try {
-            storageGameData = JSON.parse(rawGameData);
-        } catch (error) {
-            removeGameData();
-            return;
-        }
-
-        if (!storageGameData?.gameId) {
-            removeGameData();
-            return;
-        }
-
-        const fetchedData = await fetchGameState(storageGameData.gameId);
-
-        if (!fetchedData) {
-            removeGameData();
-            return;
-        }
-
-        const { gameState } = fetchedData;
-
-        if (gameState.gameEnded) {
-            removeGameData();
-            return;
-        }
-
-        if (!history) return;
-        history.push('/game/' + storageGameData.gameId);
-    }
-
     useEffect(() => {
-        checkStartedGame();
-    }, [location.pathname, history])
+        // Explicit room creation and invitation links take priority over saved games.
+        if (location.pathname !== '/' && location.pathname !== '/main') return;
+        let active = true;
+        const restore = async () => {
+            const raw = localStorage.getItem('gameData');
+            if (!raw) return;
+            let gameId: string;
+            try {
+                const saved = JSON.parse(raw);
+                if (typeof saved?.gameId !== 'string') throw new Error('Invalid saved game');
+                gameId = saved.gameId;
+            } catch {
+                localStorage.removeItem('gameData');
+                return;
+            }
+            try {
+                const response = await fetch(API_PREFIX + '/rooms/' + gameId);
+                if (!response.ok) return;
+                const data = await response.json() as { gameState?: GameState };
+                if (!active) return;
+                if (!data.gameState || data.gameState.gameEnded) {
+                    localStorage.removeItem('gameData');
+                    return;
+                }
+                history.replace('/game/' + gameId);
+            } catch (error) {
+                console.error('Error restoring game:', error);
+            }
+        };
+        void restore();
+        return () => { active = false; };
+    }, [location.pathname, history]);
 }

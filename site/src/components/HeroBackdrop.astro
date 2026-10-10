@@ -1,0 +1,24 @@
+---
+import { Chessboard3D } from './Chessboard3D';
+
+const { homeHref = '/', interactive = true } = Astro.props as {
+  homeHref?: string;
+  interactive?: boolean;
+};
+---
+
+<div class:list={['hero-scene', { 'hero-scene-passive': !interactive }]} aria-hidden="true">
+  <Chessboard3D client:idle />
+</div>
+<header class="absolute top-0 left-0 right-0 z-10 p-9">
+  <nav class="flex justify-between items-center max-w-6xl mx-auto">
+    <a href={homeHref} aria-label="Chesson" class="inline-flex">
+      <img src="/chesson-logo.svg" alt="Chesson" width="156" height="32" />
+    </a>
+  </nav>
+</header>
+
+<style>
+  .hero-scene { position: absolute; inset: 0; }
+  .hero-scene-passive { pointer-events: none; }
+</style>

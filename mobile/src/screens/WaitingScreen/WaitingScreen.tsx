@@ -6,7 +6,7 @@ import cn from 'classnames';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-const SITE_BASE_URL = import.meta.env.VITE_TEST_MODE ? 'http://localhost:' + window.location.port : import.meta.env.VITE_MAIN_SITE;
+const SITE_BASE_URL = import.meta.env.VITE_TEST_MODE ? window.location.origin : (import.meta.env.VITE_MAIN_SITE || 'https://chesson.me');
 
 type WaitingScreenProps = {
   onLeave?: () => void;
@@ -58,8 +58,8 @@ const WaitingScreen: React.FC<WaitingScreenProps> = ({ onLeave }) => {
   };
 
   return (
-    <div className="flex justify-center items-center" style={{ height: window.innerHeight }}>
-      <div className="grid grid-rows-[1fr_92px]">
+    <div className="flex justify-center items-center py-6" style={{ minHeight: window.innerHeight }}>
+      <div className="grid grid-rows-[1fr_auto] w-full max-w-[430px]">
         <div className="flex flex-col items-center justify-center gap-[44px]">
           <div className="w-[72px] h-[72px] flex items-center justify-center bg-black rounded-full border-[1px] border-[#364153]">
             <img style={{ width: '43px', height: '43px' }} src={ShareLinkSVG} />
@@ -78,14 +78,22 @@ const WaitingScreen: React.FC<WaitingScreenProps> = ({ onLeave }) => {
           >Room's ID: {roomId}</p>
         </div>
         <div className="py-[20px] px-[36px] flex flex-col gap-3">
-          <ChessButton onClick={handleShare}>
+          <ChessButton onClick={handleCopy}>
             <div className="flex flex-1 items-center justify-center gap-[4px]">
-              <img src={ShareIconSVG} />
+              <img src={ShareLinkSVG} alt="" className="w-5 h-5" />
               <span>
                 {t("share.copyLink")}
               </span>
             </div>
           </ChessButton>
+          {typeof navigator.share === 'function' && (
+            <ChessButton onClick={handleShare} className="bg-white/10 border border-white/15">
+              <div className="flex items-center justify-center gap-2">
+                <img src={ShareIconSVG} alt="" />
+                <span>{t("share.sendLink")}</span>
+              </div>
+            </ChessButton>
+          )}
           {/* <ChessButton onClick={handleLeave} className="bg-white/10 border border-white/15">
               <span>Leave</span>
             </ChessButton> */}

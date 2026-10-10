@@ -86,6 +86,7 @@ select {
   border-radius: 10px;
   padding: 0.55rem 0.7rem;
   background: var(--surface);
+  padding-right: 5px;
   color: var(--text);
 }
 
