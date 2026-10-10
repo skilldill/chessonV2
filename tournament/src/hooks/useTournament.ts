@@ -2,11 +2,11 @@ import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import {
   buildStandings,
+  createColorBalancedMatches,
   findActiveRound,
   generateSwissRound,
   uid,
   type Group,
-  type Match,
   type MatchResult,
   type Round,
   type Tournament,
@@ -91,12 +91,8 @@ export const useTournament = () => {
       return false
     }
 
-    if (tournament.status === 'setup') {
-      return true
-    }
-
-    return tournament.status === 'running' && !activeRound
-  }, [activeRound, tournament])
+    return tournament.status === 'setup' || tournament.status === 'running'
+  }, [tournament])
 
   const hasTieBreakRounds = useMemo(
     () => tournament?.rounds.some((round) => round.kind === 'tiebreak') ?? false,
@@ -160,7 +156,7 @@ export const useTournament = () => {
       id: uid(),
       name: cleanedName,
       status: 'setup',
-      avoidSameGroupPairings: true,
+      avoidSameGroupPairings: false,
       groups: [],
       participants: [],
       rounds: [],
@@ -469,7 +465,10 @@ export const useTournament = () => {
       return false
     }
 
-    const matches: Match[] = []
+    const pairs: Array<[
+      NonNullable<ReturnType<typeof participantsById.get>>,
+      NonNullable<ReturnType<typeof participantsById.get>>,
+    ]> = []
     for (const group of prizeTieGroups) {
       const participants = group
         .map((item) => participantsById.get(item.participantId))
@@ -484,19 +483,16 @@ export const useTournament = () => {
           candidateIndex < participants.length;
           candidateIndex += 1
         ) {
-          matches.push({
-            id: uid(),
-            playerAId: participants[index].id,
-            playerBId: participants[candidateIndex].id,
-            result: null,
-          })
+          pairs.push([participants[index], participants[candidateIndex]])
         }
       }
     }
 
-    if (matches.length === 0) {
+    if (pairs.length === 0) {
       return false
     }
+
+    const matches = createColorBalancedMatches(tournament, pairs)
 
     setTournament({
       ...tournament,

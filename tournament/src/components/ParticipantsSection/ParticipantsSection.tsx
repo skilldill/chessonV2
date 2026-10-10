@@ -38,7 +38,7 @@ export const ParticipantsSection = ({
   return (
     <section className="card stack">
       <h2>{t('participants.title')}</h2>
-      <p className="muted">{t('participants.hint')}</p>
+      <p className="muted section-description">{t('participants.hint')}</p>
 
       <form className="row" onSubmit={addParticipant}>
         <label className="field grow">
@@ -122,7 +122,9 @@ export const ParticipantsSection = ({
                         <>
                           {item.name}
                           {(participant.isActive ?? true) ? null : (
-                            <span className="participant-removed"> ({t('participants.removed')})</span>
+                            <span className="participant-removed">
+                              {t('participants.removed')}
+                            </span>
                           )}
                         </>
                       )}
@@ -151,11 +153,13 @@ export const ParticipantsSection = ({
                       <td>
                         <button
                           type="button"
-                          className="danger table-action"
+                          className="secondary table-action participant-action"
                           onClick={() => removeParticipant(item.participantId)}
                           disabled={!(participant.isActive ?? true)}
                         >
-                          {t('create.delete')}
+                          {canEditParticipants
+                            ? t('create.delete')
+                            : t('participants.withdraw')}
                         </button>
                       </td>
                     ) : null}

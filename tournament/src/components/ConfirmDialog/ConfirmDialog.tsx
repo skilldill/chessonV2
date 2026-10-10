@@ -7,11 +7,14 @@ type ConfirmDialogProps = {
   description?: string
   confirmLabel?: string
   cancelLabel?: string
+  alternateLabel?: string
   confirmVariant?: 'default' | 'danger'
+  alternateVariant?: 'default' | 'danger'
   closeOnOverlay?: boolean
   closeOnEscape?: boolean
   onConfirm: () => void
   onCancel: () => void
+  onAlternate?: () => void
 }
 
 export const ConfirmDialog = ({
@@ -20,11 +23,14 @@ export const ConfirmDialog = ({
   description,
   confirmLabel,
   cancelLabel,
+  alternateLabel,
   confirmVariant = 'default',
+  alternateVariant = 'default',
   closeOnOverlay = true,
   closeOnEscape = true,
   onConfirm,
   onCancel,
+  onAlternate,
 }: ConfirmDialogProps) => {
   const { t } = useI18n()
 
@@ -61,7 +67,12 @@ export const ConfirmDialog = ({
       role="presentation"
     >
       <div
-        className="confirm-dialog"
+        className={[
+          'confirm-dialog',
+          alternateLabel && onAlternate ? 'confirm-dialog-wide' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
         role="dialog"
         aria-modal="true"
         aria-label={title}
@@ -74,6 +85,15 @@ export const ConfirmDialog = ({
           <button type="button" className="secondary" onClick={onCancel}>
             {resolvedCancelLabel}
           </button>
+          {alternateLabel && onAlternate ? (
+            <button
+              type="button"
+              className={alternateVariant === 'danger' ? 'danger' : undefined}
+              onClick={onAlternate}
+            >
+              {alternateLabel}
+            </button>
+          ) : null}
           <button
             type="button"
             className={confirmVariant === 'danger' ? 'danger' : undefined}
