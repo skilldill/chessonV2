@@ -8,7 +8,7 @@ import { landingPages } from '../src/data/landingPages.mjs';
 
 const dist = new URL('../dist/', import.meta.url);
 const specs = [
-  { slug: '', heading: 'онлайн', description: 'Просто шахматы онлайн без регистрации бесплатно' },
+  { slug: '', heading: landingPages[0].heading, description: landingPages[0].description, buttons: landingPages[0].buttons },
   ...landingPages,
 ];
 const attr = (node, name) => node.attrs?.find((item) => item.name === name)?.value;
@@ -27,7 +27,7 @@ test('Landing canonical and room creation use separate production hosts', () => 
   assert.notEqual(new URL(SITE_URL).origin, new URL(GAME_URL).origin);
 });
 
-for (const { html, path, heading, description, title } of docs) {
+for (const { html, path, heading, description, title, buttons } of docs) {
   test(`Yandex.Metrika counter and no-JavaScript fallback: ${path}`, async () => {
     const trackers = elements(html, 'script').filter((node) => textContent(node).includes('https://mc.yandex.ru/metrika/tag.js?id=113658367'));
     assert.equal(trackers.length, 1);
@@ -87,14 +87,19 @@ for (const { html, path, heading, description, title } of docs) {
 
     const links = elements(html, 'a').filter((node) => attr(node, 'data-game-link') !== undefined);
     assert.equal(links.length, 2);
-    const expectedOrder = path === '/shahmaty_online_s_botom/' ? ['bot', 'friend'] : ['friend', 'bot'];
-    assert.deepEqual(links.map((link) => new URL(attr(link, 'href')).searchParams.get('mode')), expectedOrder);
-    const primaryClasses = attr(links[0], 'class').split(/\s+/);
-    const secondaryClasses = attr(links[1], 'class').split(/\s+/);
-    assert.ok(primaryClasses.includes('bg-white'));
-    assert.ok(primaryClasses.includes('text-black'));
-    assert.ok(secondaryClasses.includes('bg-transparent'));
-    assert.ok(!secondaryClasses.includes('bg-white'));
+    const expectedButtons = buttons ?? [
+      { text: 'Играть с другом', apperance: 'primary', mode: 'friend' },
+      { text: 'Играть с ботом', apperance: 'secondary', mode: 'bot' },
+    ];
+    assert.deepEqual(links.map((link) => new URL(attr(link, 'href')).searchParams.get('mode')), expectedButtons.map((button) => button.mode));
+    assert.deepEqual(links.map((link) => textContent(link).trim()), expectedButtons.map((button) => button.text));
+    for (const [index, link] of links.entries()) {
+      const classes = attr(link, 'class').split(/\s+/);
+      const primary = expectedButtons[index].apperance === 'primary';
+      assert.equal(classes.includes('bg-white'), primary);
+      assert.equal(classes.includes('text-black'), primary);
+      assert.equal(classes.includes('bg-transparent'), !primary);
+    }
     for (const link of links) {
       assert.equal(attr(link, 'rel'), 'nofollow');
       const url = new URL(attr(link, 'href'));
@@ -128,16 +133,35 @@ test('All five requested friend URLs have dedicated Russian content and prioriti
     assert.match(page.title, /с другом/);
     assert.match(page.description, /ссылк/);
     const links = elements(page.html, 'a').filter((node) => attr(node, 'data-game-link') !== undefined);
-    assert.equal(textContent(links[0]).trim(), 'Играть с другом');
+    assert.equal(textContent(links[0]).trim(), page.buttons[0].text);
     assert.equal(new URL(attr(links[0], 'href')).searchParams.get('mode'), 'friend');
   }
 });
 
 test('Only configured pages are built with distinct headings and metadata', async () => {
   const files = await readdir(dist, { recursive: true });
-  assert.deepEqual(files.filter((file) => file.endsWith('.html')).sort(), docs.map(({ slug }) => `${slug ? `${slug}/` : ''}index.html`).sort());
-  for (const selector of ['h1', 'title']) assert.equal(new Set(docs.map(({ html }) => textContent(elements(html, selector)[0]))).size, docs.length);
+  assert.deepEqual(files.filter((file) => file.endsWith('.html')).sort(), ['404.html', ...docs.map(({ slug }) => `${slug ? `${slug}/` : ''}index.html`)].sort());
+  const thematicPages = docs.filter(({ slug }) => slug);
+  assert.equal(new Set(thematicPages.map(({ html }) => textContent(elements(html, 'h1')[0]))).size, thematicPages.length);
+  assert.equal(new Set(docs.map(({ html }) => textContent(elements(html, 'title')[0]))).size, docs.length);
   assert.equal(new Set(docs.map(({ html }) => attr(elements(html, 'meta').find((node) => attr(node, 'name') === 'description'), 'content'))).size, docs.length);
+});
+
+test('Custom 404 keeps the hero and default game buttons, but is not indexable or in the sitemap', async () => {
+  const html = parse(await readFile(new URL('404.html', dist), 'utf8'));
+  assert.equal(elements(html, 'main').length, 1);
+  assert.equal(elements(html, 'section').length, 1);
+  assert.equal(elements(html, 'h1').length, 1);
+  assert.equal(textContent(elements(html, 'h1')[0]).replace(/\s+/g, ' ').trim(), 'Шахматы онлайн 404');
+  assert.equal(elements(html, 'p').length, 1);
+  assert.equal(textContent(elements(html, 'p')[0]).trim(), 'Адрес, который вы указали, не существует. Но вы можете сыграть в шахматы прямо отсюда: с другом по ссылке или с ботом.');
+  assert.equal(attr(elements(html, 'meta').find((node) => attr(node, 'name') === 'robots'), 'content'), 'noindex,follow');
+  const links = elements(html, 'a').filter((node) => attr(node, 'data-game-link') !== undefined);
+  assert.deepEqual(links.map(textContent), ['Играть с другом', 'Играть с ботом']);
+  assert.deepEqual(links.map((node) => attr(node, 'href')), [createGameUrl('friend'), createGameUrl('bot')]);
+  assert.ok(attr(links[0], 'class').split(/\s+/).includes('bg-white'));
+  assert.ok(!(await readFile(new URL('sitemap-0.xml', dist), 'utf8')).includes('/404'));
+  assert.match(await readFile(new URL('../Dockerfile', import.meta.url), 'utf8'), /CMD \["httpd-foreground", "-c", "ErrorDocument 404 \/404.html"\]/);
 });
 
 test('Metrika initializes the requested settings asynchronously with the page URL and referrer', () => {

@@ -1,11 +1,14 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import GameHero from '../components/GameHero.astro';
+import { landingPages } from '../data/landingPages.mjs';
+
+const mainPage = landingPages[0];
 ---
 
 <Layout
   title="Шахматы онлайн бесплатно и без регистрации — с другом или ботом"
   description="Играйте в шахматы онлайн бесплатно и без регистрации. Создайте комнату для друга по ссылке или начните партию с ботом в браузере телефона и компьютера."
 >
-  <GameHero home />
+  <GameHero home heading={mainPage.heading} description={mainPage.description} buttons={mainPage.buttons}  />
 </Layout>

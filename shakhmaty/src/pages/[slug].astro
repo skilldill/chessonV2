@@ -11,5 +11,5 @@ const { page } = Astro.props;
 ---
 
 <Layout title={page.title} description={page.description} path={`/${page.slug}/`}>
-  <GameHero heading={page.heading} description={page.description} primaryMode={page.primaryMode} />
+  <GameHero heading={page.heading} description={page.description} buttons={page.buttons} />
 </Layout>

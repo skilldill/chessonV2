@@ -1,0 +1,10 @@
+---
+import Layout from '../layouts/Layout.astro';
+import GameHero from '../components/GameHero.astro';
+
+const description = 'Адрес, который вы указали, не существует. Но вы можете сыграть в шахматы прямо отсюда: с другом по ссылке или с ботом.';
+---
+
+<Layout title="Шахматы онлайн 404 — страница не найдена" description={description} path="/404.html" noindex>
+  <GameHero heading="онлайн 404" description={description} />
+</Layout>

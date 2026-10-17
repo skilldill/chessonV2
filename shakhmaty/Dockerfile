@@ -17,3 +17,4 @@ RUN PUBLIC_SITE_URL="$PUBLIC_SITE_URL" npm run build
 FROM httpd:2.4-alpine AS runtime
 COPY --from=build /app/dist /usr/local/apache2/htdocs/
 EXPOSE 80
+CMD ["httpd-foreground", "-c", "ErrorDocument 404 /404.html"]

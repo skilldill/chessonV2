@@ -1,7 +1,7 @@
 export const SITE_URL = new URL(process.env.PUBLIC_SITE_URL || 'https://шахматы-онлайн.рф').origin;
 export const GAME_URL = 'https://3d.chesson.me';
 
-/** @param {'friend' | 'bot'} mode */
+/** @param {string} mode */
 export function createGameUrl(mode) {
   if (mode !== 'friend' && mode !== 'bot') throw new Error('Unknown game mode');
   const url = new URL('/create-room', GAME_URL);
