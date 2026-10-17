@@ -112,7 +112,28 @@ for (const { html, path, heading, description, title } of docs) {
   });
 }
 
-test('Exactly the requested four pages are built with distinct headings and metadata', async () => {
+test('All five requested friend URLs have dedicated Russian content and prioritize friend mode', () => {
+  const requiredSlugs = [
+    'shahmaty_online_s_drugom_po_ssylke',
+    'shahmaty_online_s_drugom',
+    'onlayn_shahmaty_po_ssylke_s_drugom',
+    'shahmaty_s_drugom_onlayn',
+    'shahmaty_s_drugom',
+  ];
+  for (const slug of requiredSlugs) {
+    const page = docs.find((item) => item.slug === slug);
+    assert.ok(page, `Missing requested URL: /${slug}/`);
+    assert.match(page.heading, /с другом/);
+    assert.match(page.title, /[Шш]ахматы/);
+    assert.match(page.title, /с другом/);
+    assert.match(page.description, /ссылк/);
+    const links = elements(page.html, 'a').filter((node) => attr(node, 'data-game-link') !== undefined);
+    assert.equal(textContent(links[0]).trim(), 'Играть с другом');
+    assert.equal(new URL(attr(links[0], 'href')).searchParams.get('mode'), 'friend');
+  }
+});
+
+test('Only configured pages are built with distinct headings and metadata', async () => {
   const files = await readdir(dist, { recursive: true });
   assert.deepEqual(files.filter((file) => file.endsWith('.html')).sort(), docs.map(({ slug }) => `${slug ? `${slug}/` : ''}index.html`).sort());
   for (const selector of ['h1', 'title']) assert.equal(new Set(docs.map(({ html }) => textContent(elements(html, selector)[0]))).size, docs.length);
@@ -147,7 +168,7 @@ test('Metrika initializes the requested settings asynchronously with the page UR
   });
 });
 
-test('Sitemap contains all four canonical URLs and robots uses the canonical domain', async () => {
+test('Sitemap contains every canonical URL and robots uses the canonical domain', async () => {
   const sitemap = await readFile(new URL('sitemap-0.xml', dist), 'utf8');
   assert.equal((sitemap.match(/<url>/g) ?? []).length, docs.length);
   for (const { path } of docs) assert.ok(sitemap.includes(`<loc>${SITE_URL}${path}</loc>`));
@@ -165,6 +186,9 @@ test('Launch script generates a fresh request ID without replacing the game doma
   const link = { href: createGameUrl('friend'), addEventListener: (event, handler) => { listeners[event] = handler; } };
   let nextId = 0;
   const context = { URL, document: { querySelectorAll: () => [link] }, crypto: { randomUUID: () => `00000000-0000-4000-8000-${String(++nextId).padStart(12, '0')}` } };
+  const goals = [];
+  context.window = { ym: (...args) => goals.push(args) };
+  context.location = { pathname: '/shahmaty_s_drugom/' };
   runInNewContext(script, context);
   listeners.click();
   const first = new URL(link.href);
@@ -174,6 +198,14 @@ test('Launch script generates a fresh request ID without replacing the game doma
   assert.equal(second.origin, new URL(GAME_URL).origin);
   assert.equal(second.searchParams.getAll('requestId').length, 1);
   assert.equal(second.searchParams.get('mode'), 'friend');
+  assert.equal(goals.length, 2);
+  assert.deepEqual(JSON.parse(JSON.stringify(goals[0])), [113658367, 'reachGoal', 'play_click', {
+    app: 'shakhmaty', placement: 'landing', mode: 'friend', landing_path: '/shahmaty_s_drugom/',
+  }]);
   delete context.crypto.randomUUID;
   assert.doesNotThrow(() => listeners.click());
+  assert.equal(goals.length, 3);
+  context.window.ym = () => { throw new Error('Blocked'); };
+  assert.doesNotThrow(() => listeners.click());
+  assert.equal(new URL(link.href).origin, new URL(GAME_URL).origin);
 });

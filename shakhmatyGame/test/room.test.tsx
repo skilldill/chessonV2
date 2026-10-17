@@ -22,6 +22,26 @@ class MockSocket {
 beforeEach(() => { MockSocket.instances = []; vi.stubGlobal('WebSocket', MockSocket); vi.stubGlobal('fetch', vi.fn(async (url: string) => ({ ok: true, json: async () => url.includes('/auth/') ? { success: false } : { gameState: initial() } }))) })
 
 describe('room connection', () => {
+  it('tracks play only after server confirmation, not after an optimistic board update', async () => {
+    const ym = vi.fn(); vi.stubGlobal('ym', ym)
+    const { result } = renderHook(() => useRoomConnection('analytics-authority'))
+    await waitFor(() => expect(MockSocket.instances.length).toBe(1))
+    const socket = MockSocket.instances[0]
+    act(() => socket.receive({ type: 'connection', gameState: initial() }))
+    const chess = new Chess(); chess.move('e4')
+    const move = { from: [4, 6] as [number, number], to: [4, 4] as [number, number], figure: { type: 'pawn' as const, color: 'white' as const }, FEN: chess.fen() }
+    act(() => { result.current.sendMove(move) })
+    expect(ym).not.toHaveBeenCalled()
+    const confirmed = { ...initial(), currentFEN: chess.fen(), moveHistory: [move] }
+    act(() => socket.receive({ type: 'move', gameState: confirmed }))
+    expect(ym).toHaveBeenCalledExactlyOnceWith(113658367, 'reachGoal', 'game_started', { app: 'shakhmaty-game', mode: 'friend' })
+    act(() => socket.receive({ type: 'reconnection', gameState: confirmed }))
+    expect(ym).toHaveBeenCalledTimes(1)
+    act(() => socket.receive({ type: 'gameResult', gameResult: { resultType: 'pat' } }))
+    act(() => socket.receive({ type: 'gameEnd' }))
+    expect(ym).toHaveBeenLastCalledWith(113658367, 'reachGoal', 'game_completed', { app: 'shakhmaty-game', mode: 'friend', result: 'pat' })
+    expect(ym).toHaveBeenCalledTimes(2)
+  })
   it.each(['mat', 'pat'] as const)('applies a %s result even without a full game state', async (resultType) => {
     const { result } = renderHook(() => useRoomConnection('terminal-room'))
     await waitFor(() => expect(MockSocket.instances.length).toBe(1))

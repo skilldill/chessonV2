@@ -51,10 +51,15 @@ const orderedActions = primaryMode === 'bot' ? [actions[1], actions[0]] : action
 <script>
   for (const link of document.querySelectorAll<HTMLAnchorElement>('[data-game-link]')) {
     link.addEventListener('click', () => {
-      if (typeof crypto.randomUUID !== 'function') return;
       const url = new URL(link.href);
-      url.searchParams.set('requestId', crypto.randomUUID());
+      if (typeof crypto.randomUUID === 'function') url.searchParams.set('requestId', crypto.randomUUID());
       link.href = url.href;
+      try {
+        const metrika = (window as Window & { ym?: (...args: unknown[]) => void }).ym;
+        metrika?.(113658367, 'reachGoal', 'play_click', {
+          app: 'shakhmaty', placement: 'landing', mode: url.searchParams.get('mode'), landing_path: location.pathname,
+        });
+      } catch { /* Analytics must not interrupt navigation. */ }
     });
   }
 </script>

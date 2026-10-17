@@ -4,12 +4,14 @@ import { clearRoom, saveRoom } from '../lib/storage'
 import { isRoomId, systemNotice } from '../lib/game'
 import type { ClientMessage, ConnectionStatus, GameState, MoveData, ServerMessage } from '../types/game'
 import { usePlayerIdentity } from './usePlayerIdentity'
+import { useGameAnalytics } from './useGameAnalytics'
 
 type Session = { game: GameState | null; status: ConnectionStatus; resetVersion: number; notice?: { id: number; text: string }; drawSent: boolean; error: string }
 const initialSession: Session = { game: null, status: 'loading', resetVersion: 0, drawSent: false, error: '' }
 
 export function useRoomConnection(roomId: string) {
   const identity = usePlayerIdentity()
+  const trackGame = useGameAnalytics(roomId)
   const [session, setSession] = useState<Session>(initialSession)
   const [attempt, setAttempt] = useState(0)
   const socketRef = useRef<WebSocket | null>(null)
@@ -33,6 +35,7 @@ export function useRoomConnection(roomId: string) {
     const apply = (game: GameState, reset = false) => {
       if (!game || typeof game.currentFEN !== 'string' || !Array.isArray(game.moveHistory)) return
       gameRef.current = game
+      trackGame(game)
       if (game.gameEnded || game.isSpectator) clearRoom(roomId)
       else saveRoom(roomId)
       setSession(prev => ({ ...prev, game, resetVersion: prev.resetVersion + Number(reset), ...(game.gameEnded ? { drawSent: false } : {}) }))
@@ -114,7 +117,7 @@ export function useRoomConnection(roomId: string) {
       if (socket) { socket.onclose = null; socket.onmessage = null; socket.onerror = null; socket.close(1000, 'Leaving room') }
       socketRef.current = null
     }
-  }, [roomId, identity, attempt, notify])
+  }, [roomId, identity, attempt, notify, trackGame])
 
   const send = useCallback((message: ClientMessage) => {
     const socket = socketRef.current, game = gameRef.current

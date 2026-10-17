@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react'
 import { fetchJSON } from '../lib/api'
 import { isRoomId, roomPayload } from '../lib/game'
+import { trackRoomGoal } from '../lib/analytics'
 import type { Settings } from '../types/game'
 
 export function useCreateRoom() {
@@ -18,6 +19,7 @@ export function useCreateRoom() {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(20_000), body: JSON.stringify(roomPayload(settings, attempt.current.id)),
     }).then(data => {
       if (!data.success || !data.roomId || !isRoomId(data.roomId)) throw new Error(data.error || 'Не удалось создать комнату.')
+      trackRoomGoal('room_created', data.roomId, { mode: settings.mode, time_minutes: settings.timeMinutes, increment_seconds: settings.incrementSeconds })
       attempt.current = null
       return data.roomId
     }).catch((reason: unknown) => { setError(reason instanceof Error && reason.name !== 'TimeoutError' ? reason.message : 'Сервер не ответил. Проверьте соединение и повторите попытку.'); return undefined })

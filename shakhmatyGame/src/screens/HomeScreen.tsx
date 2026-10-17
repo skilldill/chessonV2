@@ -7,10 +7,12 @@ import { Dialog } from '../components/Dialog'
 import { fetchJSON } from '../lib/api'
 import { clearRoom, getSavedRoom } from '../lib/storage'
 import { isRoomId } from '../lib/game'
+import { trackGoal } from '../lib/analytics'
 
 export function HomeScreen() {
   const [mode, setMode] = useState<GameMode | null>(null), [saved, setSaved] = useState<string | null>(null)
   const navigate = useNavigate()
+  const chooseMode = (selected: GameMode) => { trackGoal('play_click', { mode: selected, placement: 'game' }); setMode(selected) }
   useEffect(() => {
     const id = getSavedRoom()
     if (!id || !isRoomId(id)) return
@@ -23,7 +25,7 @@ export function HomeScreen() {
     return () => controller.abort()
   }, [])
   return <main className="home-screen"><section className="home-content" aria-labelledby="home-title"><h1 id="home-title"><em>Шахматы</em> <span>онлайн</span></h1><div className="home-actions">
-    <button className="button button-primary" onClick={() => setMode('friend')}><UsersRound size={19} />Играть с другом</button><button className="button button-secondary" onClick={() => setMode('bot')}><Bot size={20} />Играть с ботом</button>
+    <button className="button button-primary" onClick={() => chooseMode('friend')}><UsersRound size={19} />Играть с другом</button><button className="button button-secondary" onClick={() => chooseMode('bot')}><Bot size={20} />Играть с ботом</button>
   </div></section>
     {mode && <CreateGameDialog key={mode} mode={mode} onClose={() => setMode(null)} />}
     {saved && !mode && <Dialog title="У вас есть незавершённая партия" description="Вернуться в комнату или начать новую игру?" onClose={() => { clearRoom(saved); setSaved(null) }}><div className="dialog-actions"><button className="button button-primary" onClick={() => navigate(`/game/${saved}`)}>Вернуться в партию</button><button className="button button-secondary" onClick={() => { clearRoom(saved); setSaved(null) }}>Новая игра</button></div></Dialog>}
