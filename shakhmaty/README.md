@@ -66,8 +66,13 @@ Dockerfile собирает Astro на Node.js 24 и публикует стат
 на внутреннем порту 80, по аналогии с `site`. `.dockerignore` исключает локальные
 зависимости, сборки и `.env` из контекста. Для смены canonical доступен build argument
 `PUBLIC_SITE_URL`; по умолчанию остаётся `https://шахматы-онлайн.рф`.
-Зеркало npm по умолчанию совпадает с существующими Dockerfile. Если оно недоступно
-или работает медленно, используйте `docker compose build --build-arg NPM_REGISTRY=https://registry.npmjs.org shakhmaty shakhmaty-game`.
+Для `shakhmaty` используется официальный реестр `https://registry.npmjs.org`:
+стороннее зеркало возвращало 403 при скачивании `p-queue`. При необходимости реестр
+можно переопределить через build argument `NPM_REGISTRY`. Для сборки без изменения
+старого Dockerfile используйте `docker compose build --build-arg NPM_REGISTRY=https://registry.npmjs.org shakhmaty`,
+затем `docker compose up -d --no-deps shakhmaty` (без повторного `--build`).
+В `shakhmaty-game` пока сохранено прежнее зеркало; официальный реестр для него
+выбирается той же командой с именем сервиса `shakhmaty-game`.
 
 В корневом docker-compose.yml добавлены сервисы `shakhmaty` и `shakhmaty-game`.
 Контейнеры: `chesson-shakhmaty` и `chesson-shakhmaty-game`.

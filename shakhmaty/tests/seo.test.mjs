@@ -27,6 +27,16 @@ test('Landing canonical and room creation use separate production hosts', () => 
   assert.notEqual(new URL(SITE_URL).origin, new URL(GAME_URL).origin);
 });
 
+test('Docker installs locked packages from the official npm registry by default', async () => {
+  const dockerfile = await readFile(new URL('../Dockerfile', import.meta.url), 'utf8');
+  assert.match(dockerfile, /^ARG NPM_REGISTRY=https:\/\/registry\.npmjs\.org$/m);
+  assert.match(dockerfile, /npm ci/);
+  const lock = JSON.parse(await readFile(new URL('../package-lock.json', import.meta.url), 'utf8'));
+  for (const pkg of Object.values(lock.packages)) {
+    if (pkg.resolved?.startsWith('https://')) assert.equal(new URL(pkg.resolved).host, 'registry.npmjs.org');
+  }
+});
+
 for (const { html, path, heading, description, title, buttons } of docs) {
   test(`Yandex.Metrika counter and no-JavaScript fallback: ${path}`, async () => {
     const trackers = elements(html, 'script').filter((node) => textContent(node).includes('https://mc.yandex.ru/metrika/tag.js?id=113658367'));

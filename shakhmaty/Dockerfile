@@ -2,7 +2,7 @@ FROM node:24-alpine AS build
 WORKDIR /app
 
 COPY package*.json ./
-ARG NPM_REGISTRY=https://npm-mirror.gitverse.ru
+ARG NPM_REGISTRY=https://registry.npmjs.org
 RUN npm config set registry "$NPM_REGISTRY" && \
   npm ci \
   --fetch-retries=5 \
