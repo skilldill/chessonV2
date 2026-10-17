@@ -89,6 +89,22 @@ services:
     networks:
       - app-network
 
+  shakhmaty:
+    build: ./shakhmaty
+    container_name: chesson-shakhmaty
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  shakhmaty-game:
+    build: ./shakhmatyGame
+    container_name: chesson-shakhmaty-game
+    restart: unless-stopped
+    depends_on:
+      - api
+    networks:
+      - app-network
+
   mongodb:
     image: mongo:latest
     container_name: mongodb
@@ -114,6 +130,8 @@ services:
       - site
       - mobile
       - tournament
+      - shakhmaty
+      - shakhmaty-game
     networks:
       - app-network
 

@@ -1,0 +1,15 @@
+---
+import Layout from '../layouts/Layout.astro';
+import GameHero from '../components/GameHero.astro';
+import { landingPages } from '../data/landingPages.mjs';
+
+export function getStaticPaths() {
+  return landingPages.map((page) => ({ params: { slug: page.slug }, props: { page } }));
+}
+interface Props { page: (typeof landingPages)[number] }
+const { page } = Astro.props;
+---
+
+<Layout title={page.title} description={page.description} path={`/${page.slug}/`}>
+  <GameHero heading={page.heading} description={page.description} buttons={page.buttons} />
+</Layout>

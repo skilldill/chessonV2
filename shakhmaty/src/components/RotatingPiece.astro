@@ -1,0 +1,64 @@
+---
+interface Props {
+  piece: 'queen' | 'king';
+}
+const { piece } = Astro.props;
+---
+
+<div class:list={['piece-scene', `piece-scene--${piece}`]} data-piece={piece} aria-hidden="true"></div>
+
+<script>
+  import { mountPieceScene } from '../scripts/pieceScene';
+
+  const cleanups = Array.from(document.querySelectorAll<HTMLElement>('[data-piece]'), mountPieceScene);
+  const cleanup = () => cleanups.forEach((dispose) => dispose());
+  document.addEventListener('astro:before-swap', cleanup, { once: true });
+  if (import.meta.hot) import.meta.hot.dispose(cleanup);
+</script>
+
+<style>
+  .piece-scene {
+    position: absolute;
+    width: 400px;
+    height: 480px;
+    pointer-events: none;
+  }
+
+  .piece-scene--queen { right: -280px; bottom: -200px; }
+  .piece-scene--king { left: -280px; top: -300px; }
+
+  .piece-scene :global(canvas) {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  @media (min-width: 1280px) and (max-width: 1399px), (min-width: 1280px) and (max-height: 740px) {
+    .piece-scene {
+      width: 334px;
+      height: 400px;
+    }
+    .piece-scene--queen { right: -220px; bottom: -150px; }
+    .piece-scene--king { left: -220px; top: -200px; }
+  }
+
+  @media (max-width: 1279px) {
+    .piece-scene {
+      width: 160px;
+      height: 200px;
+    }
+    .piece-scene--queen { right: -20px; top: calc(100% + 4px); bottom: auto; }
+    .piece-scene--king { left: -20px; top: auto; bottom: calc(100% + 4px); }
+  }
+
+  @media (max-width: 639px) and (max-height: 700px) {
+    .piece-scene--king { left: -8px; width: 72px; height: 88px; }
+    .piece-scene--queen { right: -12px; width: 96px; height: 120px; }
+  }
+
+  @media (max-height: 500px) {
+    .piece-scene { width: 72px; height: 88px; }
+    .piece-scene--queen { right: -8px; top: calc(100% - 4px); bottom: auto; }
+    .piece-scene--king { left: -8px; top: auto; bottom: calc(100% - 4px); }
+  }
+</style>
