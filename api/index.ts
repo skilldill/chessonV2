@@ -205,6 +205,7 @@ const randomMatchQueueByTime = new Map<string, RandomMatchQueueEntry[]>();
 const randomMatchUserToTimeKey = new Map<string, string>();
 const randomMatchAssignments = new Map<string, RandomMatchAssignment>();
 const botMoveInProgressRooms = new Set<string>();
+const pendingBotRoomMoves = new Map<string, Promise<string>>();
 const tournamentClients = new Map<string, Map<string, ElysiaWS<any, any>>>();
 const tournamentStartTimers = new Map<string, NodeJS.Timeout>();
 
@@ -2302,6 +2303,8 @@ async function triggerBotMoveIfNeeded(roomId: string) {
       moveTimeMs: room.botSettings.moveTimeMs
     });
 
+    if (room.gameState.gameEnded) return;
+
     room.gameState.currentFEN = botMove.moveData.FEN;
     room.gameState.moveHistory.push(botMove.moveData);
 
@@ -2337,7 +2340,7 @@ async function triggerBotMoveIfNeeded(roomId: string) {
       }
     }
   } catch (error) {
-    console.error('[chess-bot] Failed to make bot move:', error);
+    if (!room.gameState.gameEnded) console.error('[chess-bot] Failed to make bot move:', error);
   } finally {
     botMoveInProgressRooms.delete(roomId);
   }
@@ -6186,14 +6189,17 @@ app.ws('/ws/room', {
           // пересчитываем его на сервере из предыдущей позиции + UCI хода.
           if (room.botSettings?.enabled) {
             try {
-              const resolvedFen = await chessBot.getFenAfterRoomMove({
+              const pendingMove = chessBot.getFenAfterRoomMove({
                 fen: previousFen,
                 moveData: moveDataFromClient,
               });
-              resolvedMoveData = {
-                ...moveDataFromClient,
-                FEN: resolvedFen,
-              };
+              pendingBotRoomMoves.set(roomId, pendingMove);
+              try {
+                const resolvedFen = await pendingMove;
+                resolvedMoveData = { ...moveDataFromClient, FEN: resolvedFen };
+              } finally {
+                if (pendingBotRoomMoves.get(roomId) === pendingMove) pendingBotRoomMoves.delete(roomId);
+              }
             } catch (error) {
               ws.send({ system: true, message: "Invalid move: server failed to resolve position" });
               return;
@@ -6403,6 +6409,11 @@ app.ws('/ws/room', {
               void triggerBotMoveIfNeeded(roomId);
           }
       } else if (data.type === "gameResult") {
+          // A terminal result can arrive while Stockfish is still resolving the preceding move.
+          const pendingMove = pendingBotRoomMoves.get(roomId);
+          if (pendingMove) {
+              try { await pendingMove; } catch { return; }
+          }
           // Результат игры
           if (!room.gameState.gameStarted) {
               ws.send({ system: true, message: "Game has not started yet" });
